@@ -1,4 +1,4 @@
-// Message renderer — port of openclaude Message + Markdown + AssistantTextMessage.
+// Message renderer — port of neom_claw Message + Markdown + AssistantTextMessage.
 // Renders conversation messages with markdown, code blocks, and tool outputs.
 
 import 'package:flutter/material.dart';

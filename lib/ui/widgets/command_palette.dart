@@ -1,4 +1,4 @@
-// CommandPalette — port of openclaude/src/components/CommandPalette/.
+// CommandPalette — port of neom_claw/src/components/CommandPalette/.
 // Quick command search, file finder, symbol navigation overlay.
 
 import 'dart:async';
@@ -212,8 +212,8 @@ class _CommandPaletteState extends State<CommandPalette> {
     if (key == LogicalKeyboardKey.arrowUp) {
       setState(() {
         _selectedIndex =
-            (_selectedIndex - 1 + max(1, _entries.length)) %
-                max(1, _entries.length);
+            ((_selectedIndex - 1 + max(1, _entries.length)) %
+                max(1, _entries.length)) as int;
       });
       return KeyEventResult.handled;
     }

@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'tool.dart';
 
-/// Execute shell commands — port of openclaude/src/tools/BashTool.
+/// Execute shell commands — port of neom_claw/src/tools/BashTool.
 /// Available on macOS, Linux, and Windows (via PowerShell).
 class BashTool extends Tool with ShellToolMixin {
   final Duration timeout;

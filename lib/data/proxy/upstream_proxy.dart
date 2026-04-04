@@ -6,7 +6,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 /// Configuration for [UpstreamProxy].
 class ProxyConfig {

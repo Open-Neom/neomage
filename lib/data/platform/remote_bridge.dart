@@ -1,10 +1,10 @@
-// RemoteBridge — port of openclaude/src/bridge/ + src/remote/ + src/server/.
+// RemoteBridge — port of neom_claw/src/bridge/ + src/remote/ + src/server/.
 // Full remote session management: HTTP/WebSocket server, client reconnection,
 // session relay, and multi-device synchronization.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 // ─── Types ───
 
@@ -181,7 +181,7 @@ class RemoteLatencyUpdated extends RemoteEvent {
 
 // ─── Remote Client ───
 
-/// Client for connecting to a remote Claude session.
+/// Client for connecting to a remote NeomClaw session.
 class RemoteClient {
   final String _url;
   final String? _authToken;

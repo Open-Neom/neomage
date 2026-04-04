@@ -1,9 +1,9 @@
-// Clipboard service — port of openclaude clipboard management.
+// Clipboard service — port of neom_claw clipboard management.
 // Provides clipboard ring, history, system clipboard integration,
 // and specialised copy operations for code, diffs, and tool output.
 
 import 'dart:async';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'package:flutter/services.dart';
 

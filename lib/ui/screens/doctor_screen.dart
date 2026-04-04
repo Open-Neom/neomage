@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 // ---------------------------------------------------------------------------
-// Doctor / Diagnostic screen — ported from OpenClaude's doctor functionality.
+// Doctor / Diagnostic screen — ported from NeomClaw's doctor functionality.
 // Runs a battery of system, network, API, tool, MCP, git, and permission
 // checks and displays results grouped by category.
 // ---------------------------------------------------------------------------
@@ -417,7 +417,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
     final home = Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '/tmp';
-    final settingsFile = File('$home/.claude/settings.json');
+    final settingsFile = File('$home/.neomclaw/settings.json');
     if (await settingsFile.exists()) {
       try {
         final content = await settingsFile.readAsString();
@@ -435,7 +435,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
       }
     } else {
       check.status = DiagnosticStatus.warn;
-      check.detail = 'No ~/.claude/settings.json found (using defaults)';
+      check.detail = 'No ~/.neomclaw/settings.json found (using defaults)';
     }
   }
 
@@ -466,7 +466,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
     final home = Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '/tmp';
-    final userFile = File('$home/.claude/settings.json');
+    final userFile = File('$home/.neomclaw/settings.json');
 
     final hasLocal = await localFile.exists();
     final hasUser = await userFile.exists();
@@ -475,7 +475,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
       check.status = DiagnosticStatus.pass;
       check.detail = [
         if (hasLocal) '.mcp.json found',
-        if (hasUser) '~/.claude/settings.json found',
+        if (hasUser) '~/.neomclaw/settings.json found',
       ].join(', ');
     } else {
       check.status = DiagnosticStatus.warn;
@@ -532,7 +532,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
 
   String _generateReport() {
     final buf = StringBuffer();
-    buf.writeln('=== Flutter Claw Diagnostic Report ===');
+    buf.writeln('=== Neom Claw Diagnostic Report ===');
     buf.writeln('Date: ${DateTime.now().toIso8601String()}');
     buf.writeln('Platform: ${Platform.operatingSystem} '
         '${Platform.operatingSystemVersion}');

@@ -1,4 +1,4 @@
-// Command and skill types — ported from OpenClaude src/types/command.ts.
+// Command and skill types — ported from NeomClaw src/types/command.ts.
 
 /// Command result display mode.
 enum CommandResultDisplay { skip, system, user }
@@ -40,7 +40,7 @@ class ResumeEntrypoint {
 }
 
 /// Command availability context.
-enum CommandAvailability { claudeAi, console, both }
+enum CommandAvailability { neomClawAi, console, both }
 
 /// Base command definition with metadata.
 class CommandBase {

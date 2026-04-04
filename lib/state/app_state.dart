@@ -1,5 +1,5 @@
 // app_state.dart — Global application state for flutter_claw
-// Port of openclaude/src/state/ (~1.2K TS LOC) adapted to Sint patterns.
+// Port of neom_claw/src/state/ (~1.2K TS LOC) adapted to Sint patterns.
 
 import 'dart:async';
 
@@ -743,7 +743,7 @@ class AppStateManager {
 
   /// Listen for events of a specific type.
   Stream<T> on<T extends StateEvent>() =>
-      _eventController.stream.whereType<T>();
+      _eventController.stream.where((e) => e is T).cast<T>();
 
   // -- Cleanup --------------------------------------------------------------
 

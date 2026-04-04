@@ -1,6 +1,6 @@
-# Flutter Claw — Migration Progress
+# Neom Claw — Migration Progress
 
-## Source: OpenClaude (Claude Code leaked source, ~517K LOC TypeScript, 1,921 files)
+## Source: NeomClaw (Claude Code leaked source, ~517K LOC TypeScript, 1,921 files)
 ## Target: flutter_claw (Flutter + Sint framework, Open Neom ecosystem)
 ## Plan: `/Users/serzen/.claude/plans/nested-fluttering-lamport.md`
 
@@ -99,7 +99,7 @@
 - [ ] Port services/tools/ → tool execution service
 - [ ] Port services/compact/ → context compaction
 - [ ] Port assistant/ → session history
-- [ ] Port memdir/ → persistent memory (CLAUDE.md, MEMORY.md)
+- [ ] Port memdir/ → persistent memory (NEOMCLAW.md, MEMORY.md)
 - [ ] Port services/SessionMemory/
 - [ ] Port migrations/
 - [ ] Permission system UI (Flutter dialogs)

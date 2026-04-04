@@ -1,4 +1,4 @@
-// Enhanced tool base — ported from OpenClaude src/Tool.ts.
+// Enhanced tool base — ported from NeomClaw src/Tool.ts.
 
 import '../../domain/models/permissions.dart';
 import '../../domain/models/tool_definition.dart';
@@ -70,7 +70,7 @@ class AbortSignal {
 }
 
 /// Abstract base for all tools.
-/// Enhanced port of openclaude/src/Tool.ts with permissions, safety flags,
+/// Enhanced port of neom_claw/src/Tool.ts with permissions, safety flags,
 /// and execution context.
 abstract class Tool {
   /// Tool name as registered with the API.

@@ -1,6 +1,6 @@
-import 'dart:io' show Platform;
+import 'package:flutter_claw/core/platform/claw_io.dart' show Platform;
 
-/// Unicode figure constants — ported from OpenClaude src/constants/figures.ts.
+/// Unicode figure constants — ported from NeomClaw src/constants/figures.ts.
 
 final String blackCircle = Platform.isMacOS ? '\u23fa' : '\u25cf'; // ⏺ or ●
 const String bulletOperator = '\u2219'; // ∙

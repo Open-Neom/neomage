@@ -1,4 +1,4 @@
-// TodoWrite tool — port of openclaude/src/tools/TodoWriteTool.
+// TodoWrite tool — port of neom_claw/src/tools/TodoWriteTool.
 // Manages structured task lists for tracking multi-step work.
 
 import 'tool.dart';

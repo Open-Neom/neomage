@@ -1,4 +1,4 @@
-// AgentPanel — port of openclaude/src/components/AgentPanel/.
+// AgentPanel — port of neom_claw/src/components/AgentPanel/.
 // Shows spawned agents, their status, tasks, logs, and swarm overview.
 
 import 'dart:async';

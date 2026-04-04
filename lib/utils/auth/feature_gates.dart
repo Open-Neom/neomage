@@ -7,7 +7,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 /// Available feature gates that can be toggled per plan or organization.
 enum FeatureGate {
@@ -148,9 +148,9 @@ const Map<Plan, Set<FeatureGate>> _planDefaults = {
 
 /// Upgrade URLs per plan tier.
 const Map<Plan, String> _upgradeUrls = {
-  Plan.free: 'https://claude.ai/upgrade?plan=pro',
-  Plan.pro: 'https://claude.ai/upgrade?plan=team',
-  Plan.team: 'https://claude.ai/upgrade?plan=enterprise',
+  Plan.free: 'https://neomclaw.ai/upgrade?plan=pro',
+  Plan.pro: 'https://neomclaw.ai/upgrade?plan=team',
+  Plan.team: 'https://neomclaw.ai/upgrade?plan=enterprise',
   Plan.enterprise: '',
 };
 

@@ -7,7 +7,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 /// Server lifecycle status.
 enum ServerStatus {
@@ -474,7 +474,7 @@ class DirectServer {
 
   Future<Map<String, dynamic>?> _readJsonBody(HttpRequest request) async {
     try {
-      final raw = await request.transform(utf8.decoder).join();
+      final raw = await utf8.decoder.bind(request).join();
       if (raw.isEmpty) return null;
       return jsonDecode(raw) as Map<String, dynamic>;
     } catch (_) {

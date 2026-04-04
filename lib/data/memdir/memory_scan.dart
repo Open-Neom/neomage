@@ -1,7 +1,7 @@
-// Memory file discovery — port of openclaude/src/memdir/memoryScan.ts.
+// Memory file discovery — port of neom_claw/src/memdir/memoryScan.ts.
 // Scans memory directory for .md files and parses their frontmatter.
 
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'memory_types.dart';
 

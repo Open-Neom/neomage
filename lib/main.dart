@@ -16,7 +16,7 @@ class FlutterClawApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SintMaterialApp(
-      title: 'Flutter Claw',
+      title: 'Neom Claw',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

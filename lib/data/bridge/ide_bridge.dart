@@ -1,10 +1,10 @@
-// IDE bridge — port of openclaude/src/bridge/.
+// IDE bridge — port of neom_claw/src/bridge/.
 // Protocol for VS Code, JetBrains, and other IDE integrations.
 // Communication via WebSocket or stdin/stdout with JSON-RPC-like messages.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'package:uuid/uuid.dart';
 
@@ -49,9 +49,9 @@ enum IdeType {
 // Bridge message types
 // ---------------------------------------------------------------------------
 
-/// Bridge message types (IDE <-> Claude Code).
+/// Bridge message types (IDE <-> NeomClaw).
 enum BridgeMessageType {
-  // IDE -> Claude: requests
+  // IDE -> NeomClaw: requests
   openFile,
   showDiff,
   applyEdit,
@@ -61,7 +61,7 @@ enum BridgeMessageType {
   getDiagnostics,
   navigate,
 
-  // Claude -> IDE: notifications/responses
+  // NeomClaw -> IDE: notifications/responses
   fileOpened,
   editApplied,
   selectionResponse,
@@ -617,7 +617,7 @@ class IdeBridge {
       type: BridgeMessageType.handshake,
       payload: {
         'protocolVersion': '1.0',
-        'clientType': 'claude-code',
+        'clientType': 'neom-claw',
         'ideType': ideType.name,
       },
     );
@@ -913,7 +913,7 @@ class IdeBridgeServer {
 // ---------------------------------------------------------------------------
 
 /// A bridge connection over stdin/stdout, used for IDE extensions that
-/// launch Claude Code as a subprocess.
+/// launch NeomClaw as a subprocess.
 class StdioBridge {
   final IdeBridge bridge;
   final Stream<List<int>> _stdin;
@@ -974,13 +974,13 @@ class StdioBridge {
 // IDE manifest generation
 // ---------------------------------------------------------------------------
 
-/// Generate a VS Code extension manifest (package.json) for the Claude Code
+/// Generate a VS Code extension manifest (package.json) for the NeomClaw
 /// bridge extension.
 Map<String, dynamic> generateVscodeManifest({
-  String name = 'claude-code-bridge',
-  String displayName = 'Claude Code Bridge',
+  String name = 'neom-claw-bridge',
+  String displayName = 'NeomClaw Bridge',
   String version = '1.0.0',
-  String description = 'Bridge extension connecting VS Code to Claude Code',
+  String description = 'Bridge extension connecting VS Code to NeomClaw',
   int port = 19836,
 }) {
   return {
@@ -996,31 +996,31 @@ Map<String, dynamic> generateVscodeManifest({
     'contributes': {
       'commands': [
         {
-          'command': 'claude-code.connect',
-          'title': 'Claude Code: Connect',
+          'command': 'neom-claw.connect',
+          'title': 'NeomClaw: Connect',
         },
         {
-          'command': 'claude-code.disconnect',
-          'title': 'Claude Code: Disconnect',
+          'command': 'neom-claw.disconnect',
+          'title': 'NeomClaw: Disconnect',
         },
         {
-          'command': 'claude-code.showDiff',
-          'title': 'Claude Code: Show Diff',
+          'command': 'neom-claw.showDiff',
+          'title': 'NeomClaw: Show Diff',
         },
         {
-          'command': 'claude-code.sendSelection',
-          'title': 'Claude Code: Send Selection',
+          'command': 'neom-claw.sendSelection',
+          'title': 'NeomClaw: Send Selection',
         },
       ],
       'configuration': {
-        'title': 'Claude Code Bridge',
+        'title': 'NeomClaw Bridge',
         'properties': {
-          'claudeCode.port': {
+          'neomClawCode.port': {
             'type': 'number',
             'default': port,
-            'description': 'Port for the Claude Code bridge server',
+            'description': 'Port for the NeomClaw bridge server',
           },
-          'claudeCode.autoConnect': {
+          'neomClawCode.autoConnect': {
             'type': 'boolean',
             'default': true,
             'description': 'Automatically connect on startup',
@@ -1030,9 +1030,9 @@ Map<String, dynamic> generateVscodeManifest({
       'menus': {
         'editor/context': [
           {
-            'command': 'claude-code.sendSelection',
+            'command': 'neom-claw.sendSelection',
             'when': 'editorHasSelection',
-            'group': 'claude-code',
+            'group': 'neom-claw',
           },
         ],
       },
@@ -1055,10 +1055,10 @@ Map<String, dynamic> generateVscodeManifest({
 
 /// Generate a JetBrains plugin descriptor (plugin.xml content as a map).
 Map<String, dynamic> generateJetbrainsConfig({
-  String id = 'com.anthropic.claude-code-bridge',
-  String name = 'Claude Code Bridge',
+  String id = 'com.anthropic.neom-claw-bridge',
+  String name = 'NeomClaw Bridge',
   String version = '1.0.0',
-  String description = 'Bridge plugin connecting JetBrains IDEs to Claude Code',
+  String description = 'Bridge plugin connecting JetBrains IDEs to NeomClaw',
   int port = 19836,
 }) {
   return {
@@ -1090,31 +1090,31 @@ Map<String, dynamic> generateJetbrainsConfig({
             'com.anthropic.claudecode.bridge.BridgeStartupActivity',
       },
       'notificationGroup': {
-        'id': 'Claude Code',
+        'id': 'NeomClaw',
         'displayType': 'BALLOON',
       },
     },
     'actions': {
       'group': {
-        'id': 'ClaudeCode.Menu',
-        'text': 'Claude Code',
+        'id': 'NeomClawCode.Menu',
+        'text': 'NeomClaw',
         'popup': true,
         'addToGroup': {'groupId': 'ToolsMenu', 'anchor': 'last'},
         'actions': [
           {
-            'id': 'ClaudeCode.Connect',
-            'text': 'Connect to Claude Code',
-            'description': 'Establish connection to Claude Code bridge',
+            'id': 'NeomClawCode.Connect',
+            'text': 'Connect to NeomClaw',
+            'description': 'Establish connection to NeomClaw bridge',
           },
           {
-            'id': 'ClaudeCode.Disconnect',
+            'id': 'NeomClawCode.Disconnect',
             'text': 'Disconnect',
-            'description': 'Disconnect from Claude Code bridge',
+            'description': 'Disconnect from NeomClaw bridge',
           },
           {
-            'id': 'ClaudeCode.SendSelection',
-            'text': 'Send Selection to Claude',
-            'description': 'Send the current editor selection to Claude Code',
+            'id': 'NeomClawCode.SendSelection',
+            'text': 'Send Selection to NeomClaw',
+            'description': 'Send the current editor selection to NeomClaw',
           },
         ],
       },

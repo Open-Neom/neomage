@@ -1,10 +1,10 @@
-// Project service — port of openclaude project detection and management.
+// Project service — port of neom_claw project detection and management.
 // Detects project types, frameworks, package managers, and generates
 // project summaries for system prompt context.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 // ---------------------------------------------------------------------------
 // Enums

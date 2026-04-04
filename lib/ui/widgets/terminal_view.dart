@@ -1,4 +1,4 @@
-// TerminalView — port of openclaude/src/components/Terminal/.
+// TerminalView — port of neom_claw/src/components/Terminal/.
 // Terminal output display with ANSI colors, scrollback, copy support.
 
 import 'dart:async';

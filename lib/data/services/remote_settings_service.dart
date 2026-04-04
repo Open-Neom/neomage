@@ -1,10 +1,10 @@
 // Remote managed settings service — port of
-// openclaude/src/services/remoteManagedSettings/.
+// neom_claw/src/services/remoteManagedSettings/.
 // Fetches, caches, and merges remote configuration with local overrides.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 // ── Enums ──────────────────────────────────────────────────────────────────
 

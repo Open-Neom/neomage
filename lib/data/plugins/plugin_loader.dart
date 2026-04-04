@@ -1,8 +1,8 @@
-// Plugin loader — port of openclaude/src/plugins.
+// Plugin loader — port of neom_claw/src/plugins.
 // Discovers, loads, and manages plugins.
 
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import '../../domain/models/plugin.dart';
 import '../mcp/mcp_types.dart';
@@ -36,15 +36,15 @@ Future<List<LoadedPlugin>> loadAllPlugins({String? projectRoot}) async {
       Platform.environment['USERPROFILE'] ??
       '/tmp';
 
-  // 1. User plugins: ~/.claude/plugins/
+  // 1. User plugins: ~/.neomclaw/plugins/
   plugins.addAll(
-    await loadPluginsFromDir('$homeDir/.claude/plugins'),
+    await loadPluginsFromDir('$homeDir/.neomclaw/plugins'),
   );
 
-  // 2. Project plugins: .claude/plugins/
+  // 2. Project plugins: .neomclaw/plugins/
   if (projectRoot != null) {
     plugins.addAll(
-      await loadPluginsFromDir('$projectRoot/.claude/plugins'),
+      await loadPluginsFromDir('$projectRoot/.neomclaw/plugins'),
     );
   }
 

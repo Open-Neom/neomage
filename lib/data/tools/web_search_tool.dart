@@ -1,4 +1,4 @@
-// WebSearchTool — port of openclaude/src/tools/WebSearchTool/.
+// WebSearchTool — port of neom_claw/src/tools/WebSearchTool/.
 // Performs web searches via API, returns structured results with links.
 
 import '../api/api_provider.dart';
@@ -217,7 +217,11 @@ bool isWebSearchEnabled(ApiProviderType provider, String modelName) {
     ApiProviderType.anthropic => true,
     ApiProviderType.vertex => modelName.contains('4'),
     ApiProviderType.bedrock => true,
+    ApiProviderType.gemini => true,
     ApiProviderType.openai => false,
+    ApiProviderType.qwen => false,
+    ApiProviderType.deepseek => false,
+    ApiProviderType.ollama => false,
     ApiProviderType.custom => false,
   };
 }

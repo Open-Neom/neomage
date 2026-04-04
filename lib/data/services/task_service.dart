@@ -1,5 +1,5 @@
 // task_service.dart — Background task management for flutter_claw
-// Port of openclaude/src/tasks/ (~3.3K TS LOC) to pure Dart.
+// Port of neom_claw/src/tasks/ (~3.3K TS LOC) to pure Dart.
 
 import 'dart:async';
 import 'dart:collection';

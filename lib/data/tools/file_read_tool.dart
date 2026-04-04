@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
@@ -98,7 +98,7 @@ class _MagicBytes {
   static const wasm = [0x00, 0x61, 0x73, 0x6D];
 }
 
-/// Read file contents — full port of openclaude/src/tools/FileReadTool.
+/// Read file contents — full port of neom_claw/src/tools/FileReadTool.
 ///
 /// Features:
 /// - Binary file detection via magic bytes
@@ -416,7 +416,7 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
     buf.writeln();
     buf.writeln(
         'This is an image file. When reading an image file the contents '
-        'are presented visually as Claude is a multimodal LLM.');
+        'are presented visually as NeomClaw is a multimodal LLM.');
 
     final output = FileReadOutput(
       content: buf.toString(),

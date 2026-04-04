@@ -1,8 +1,8 @@
-// Context builder — port of openclaude/src/utils/context/.
+// Context builder — port of neom_claw/src/utils/context/.
 // Builds context for LLM: file contents, git state, project info, search results.
 
 import 'dart:async';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -160,7 +160,7 @@ class ProjectInfoContext extends ContextItem {
   ContextPriority get priority => ContextPriority.low;
 }
 
-/// Memory file context (CLAUDE.md).
+/// Memory file context (NEOMCLAW.md).
 class MemoryContext extends ContextItem {
   final String source; // 'user', 'project', 'parent'
   final String memoryContent;

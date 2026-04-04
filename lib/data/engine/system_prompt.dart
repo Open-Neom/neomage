@@ -1,4 +1,4 @@
-// System prompt builder — port of openclaude system prompt construction.
+// System prompt builder — port of neom_claw system prompt construction.
 // Assembles the system prompt from multiple sources.
 
 import '../platform/platform_bridge.dart';
@@ -86,7 +86,7 @@ Today's date is ${_formatDate(_now)}.''',
     ));
   }
 
-  /// Add user instructions (.claude/INSTRUCTIONS.md content).
+  /// Add user instructions (.neomclaw/INSTRUCTIONS.md content).
   void addUserInstructions(String instructions) {
     if (instructions.trim().isEmpty) return;
 

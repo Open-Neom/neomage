@@ -1,9 +1,9 @@
-// File operations — port of openclaude/src/utils/file/.
+// File operations — port of neom_claw/src/utils/file/.
 // Multi-edit, diff apply, notebook operations, file validation, backup.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 

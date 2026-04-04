@@ -1,7 +1,7 @@
-// Extended commands — port of remaining OpenClaude commands.
+// Extended commands — port of remaining NeomClaw commands.
 // All commands not already ported as individual files are collected here.
 
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';
@@ -926,13 +926,13 @@ class AgentsCommand extends LocalCommand {
 // Development
 // ════════════════════════════════════════════════════════════════════════════
 
-/// /init — initialize project configuration (.claude/).
+/// /init — initialize project configuration (.neomclaw/).
 class InitCommand extends LocalCommand {
   @override
   String get name => 'init';
 
   @override
-  String get description => 'Initialize project configuration in .claude/';
+  String get description => 'Initialize project configuration in .neomclaw/';
 
   @override
   String? get argumentHint => '[--force]';
@@ -940,17 +940,17 @@ class InitCommand extends LocalCommand {
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final force = args.trim() == '--force';
-    final projectDir = Directory('${context.cwd}/.claude');
+    final projectDir = Directory('${context.cwd}/.neomclaw');
 
     if (await projectDir.exists() && !force) {
       return const TextCommandResult(
-        'Project already initialized (.claude/ exists).\n'
+        'Project already initialized (.neomclaw/ exists).\n'
         'Use /init --force to reinitialize.',
       );
     }
 
     try {
-      // Create .claude directory structure
+      // Create .neomclaw directory structure
       await projectDir.create(recursive: true);
 
       // Create settings.json
@@ -965,10 +965,10 @@ class InitCommand extends LocalCommand {
         );
       }
 
-      // Create CLAUDE.md
-      final claudeFile = File('${context.cwd}/CLAUDE.md');
-      if (!await claudeFile.exists() || force) {
-        await claudeFile.writeAsString(
+      // Create NEOMCLAW.md
+      final neomClawFile = File('${context.cwd}/NEOMCLAW.md');
+      if (!await neomClawFile.exists() || force) {
+        await neomClawFile.writeAsString(
           '# Project Instructions\n\n'
           'Add project-specific instructions for the AI assistant here.\n\n'
           '## Build & Test\n\n'
@@ -982,10 +982,10 @@ class InitCommand extends LocalCommand {
 
       final buffer = StringBuffer();
       buffer.writeln('Project initialized:');
-      buffer.writeln('  Created .claude/settings.json');
-      buffer.writeln('  Created CLAUDE.md');
+      buffer.writeln('  Created .neomclaw/settings.json');
+      buffer.writeln('  Created NEOMCLAW.md');
       buffer.writeln();
-      buffer.writeln('Edit CLAUDE.md to add project-specific instructions.');
+      buffer.writeln('Edit NEOMCLAW.md to add project-specific instructions.');
       return TextCommandResult(buffer.toString());
     } catch (e) {
       return TextCommandResult('Initialization failed: $e');
@@ -1028,7 +1028,7 @@ class BugCommand extends LocalCommand {
       buffer.writeln();
       buffer.writeln('Bug report prepared. To submit:');
       buffer.writeln('  1. Copy this output');
-      buffer.writeln('  2. Open https://github.com/anthropics/claude-code/issues/new');
+      buffer.writeln('  2. Open https://github.com/anthropics/neom-claw/issues/new');
       buffer.writeln('  3. Paste and submit');
     } else {
       buffer.writeln('Usage: /bug <description of the issue>');
@@ -1070,15 +1070,15 @@ class DoctorCommand extends LocalCommand {
     final gitResult = await _runCommand('git', ['--version']);
     buffer.writeln(_check('Git', gitResult != null, 'Install git'));
 
-    // Check .claude directory
-    final claudeDir = Directory('${context.cwd}/.claude');
-    final hasClaudeDir = await claudeDir.exists();
-    buffer.writeln(_check('.claude/ config', hasClaudeDir, 'Run /init'));
+    // Check .neomclaw directory
+    final neomClawDir = Directory('${context.cwd}/.neomclaw');
+    final hasNeomClawDir = await neomClawDir.exists();
+    buffer.writeln(_check('.neomclaw/ config', hasNeomClawDir, 'Run /init'));
 
-    // Check CLAUDE.md
-    final claudeMd = File('${context.cwd}/CLAUDE.md');
-    final hasClaudeMd = await claudeMd.exists();
-    buffer.writeln(_check('CLAUDE.md', hasClaudeMd, 'Run /init or create manually'));
+    // Check NEOMCLAW.md
+    final claudeMd = File('${context.cwd}/NEOMCLAW.md');
+    final hasNeomClawMd = await claudeMd.exists();
+    buffer.writeln(_check('NEOMCLAW.md', hasNeomClawMd, 'Run /init or create manually'));
 
     // Check ripgrep
     final rgResult = await _runCommand('rg', ['--version']);
@@ -1152,7 +1152,7 @@ class ReleaseNotesCommand extends LocalCommand {
     buffer.writeln('Claw v$version');
     buffer.writeln();
     buffer.writeln('To view the full changelog, visit:');
-    buffer.writeln('  https://github.com/anthropics/claude-code/releases');
+    buffer.writeln('  https://github.com/anthropics/neom-claw/releases');
     buffer.writeln();
     buffer.writeln('To check for updates:');
     buffer.writeln('  flutter pub upgrade');

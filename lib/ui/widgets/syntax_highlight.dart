@@ -1,4 +1,4 @@
-// Syntax highlighting — port of openclaude native-ts/color-diff + utils/cliHighlight.
+// Syntax highlighting — port of neom_claw native-ts/color-diff + utils/cliHighlight.
 // Provides token-based syntax highlighting for code blocks.
 // Uses a lightweight rule-based highlighter (no native module dependency).
 

@@ -1,22 +1,22 @@
-// Memdir path resolution — port of openclaude/src/memdir/paths.ts.
+// Memdir path resolution — port of neom_claw/src/memdir/paths.ts.
 // Resolves memory directory locations with security validation.
 
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 
-/// Default memory base directory (~/.claude).
+/// Default memory base directory (~/.neomclaw).
 String getMemoryBaseDir() {
-  final envOverride = Platform.environment['CLAUDE_CODE_REMOTE_MEMORY_DIR'];
+  final envOverride = Platform.environment['NEOMCLAW_REMOTE_MEMORY_DIR'];
   if (envOverride != null && envOverride.isNotEmpty) return envOverride;
-  return p.join(_homeDir, '.claude');
+  return p.join(_homeDir, '.neomclaw');
 }
 
 /// Get the auto-memory directory for the current project.
-/// Pattern: `~/.claude/projects/{sanitized-path}/memory/`
+/// Pattern: `~/.neomclaw/projects/{sanitized-path}/memory/`
 String getAutoMemPath({String? projectRoot}) {
   final envOverride =
-      Platform.environment['CLAUDE_COWORK_MEMORY_PATH_OVERRIDE'];
+      Platform.environment['NEOMCLAW_COWORK_MEMORY_PATH_OVERRIDE'];
   if (envOverride != null && envOverride.isNotEmpty) return envOverride;
 
   final root = projectRoot ?? Directory.current.path;

@@ -1,4 +1,4 @@
-// SessionBrowserScreen — port of openclaude/src/components/SessionBrowser/.
+// SessionBrowserScreen — port of neom_claw/src/components/SessionBrowser/.
 // Browse, search, resume, fork, export, and delete past sessions.
 
 import 'dart:async';

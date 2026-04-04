@@ -1,4 +1,4 @@
-// Extended tools — port of remaining openclaude/src/tools/.
+// Extended tools — port of remaining neom_claw/src/tools/.
 // All tools not already ported individually.
 //
 // Already ported: Bash, FileRead, FileWrite, FileEdit, Grep, Glob,
@@ -6,7 +6,7 @@
 //   WebSearch.
 
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import '../../domain/models/tool_definition.dart';
 import 'tool.dart';
@@ -896,7 +896,7 @@ class ConfigTool extends Tool {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MemoryTool — read/write to CLAUDE.md memory files
+// MemoryTool — read/write to NEOMCLAW.md memory files
 // ═══════════════════════════════════════════════════════════════════════════
 
 class MemoryToolInput {
@@ -941,7 +941,7 @@ class MemoryTool extends Tool with FileWriteToolMixin {
 
   @override
   String get description =>
-      'Read, write, or append to CLAUDE.md memory files. '
+      'Read, write, or append to NEOMCLAW.md memory files. '
       'Memory files persist context across sessions.';
 
   @override
@@ -1016,11 +1016,11 @@ class MemoryTool extends Tool with FileWriteToolMixin {
         return ToolResult.success('Appended to ${parsed.path}');
 
       case 'list':
-        // List CLAUDE.md files in common locations.
+        // List NEOMCLAW.md files in common locations.
         final candidates = [
-          'CLAUDE.md',
-          '.claude/CLAUDE.md',
-          '.claude/memory/',
+          'NEOMCLAW.md',
+          '.neomclaw/NEOMCLAW.md',
+          '.neomclaw/memory/',
         ];
         final found = <String>[];
         for (final c in candidates) {

@@ -1,4 +1,4 @@
-/// Complete theming system for Flutter Claw, ported from OpenClaude (Claude Code).
+/// Complete theming system for Neom Claw, ported from NeomClaw (NeomClaw).
 ///
 /// Provides a rich color scheme, text theme, component theme, predefined themes
 /// (dark and light variants), syntax highlighting colors, and a [ThemeManager]
@@ -15,7 +15,7 @@ import 'package:flutter/material.dart';
 
 /// Extended color palette used throughout the Claw UI.
 ///
-/// Mirrors the semantic tokens found in OpenClaude's terminal theme, adapted
+/// Mirrors the semantic tokens found in NeomClaw's terminal theme, adapted
 /// for Flutter's widget-based rendering.
 class ClawColorScheme {
   const ClawColorScheme({

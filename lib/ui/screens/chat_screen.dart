@@ -1,5 +1,5 @@
 // Chat screen — primary UI of flutter_claw.
-// Port of openclaude's main chat interface with side panel, command palette,
+// Port of neom_claw's main chat interface with side panel, command palette,
 // toast notifications, keyboard shortcuts, and responsive layout.
 
 import 'dart:async';
@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:sint/sint.dart';
 
 import '../../claw_routes.dart';
+import '../../data/auth/auth_service.dart';
 import '../../domain/models/message.dart';
 import '../../domain/models/permissions.dart';
 import '../../utils/config/settings.dart';
@@ -84,7 +85,7 @@ class _ChatScreenState extends State<ChatScreen>
   Timer? _toastTimer;
 
   // Model selector
-  String _selectedModel = 'claude-sonnet-4-20250514';
+  String _selectedModel = 'gemini-2.5-flash';
   bool _modelDropdownOpen = false;
 
   // Session info
@@ -110,9 +111,18 @@ class _ChatScreenState extends State<ChatScreen>
 
   Future<void> _loadSettings() async {
     final settings = await AppSettings.load();
-    setState(() {
-      _selectedModel = 'claude-sonnet-4-20250514';
-    });
+    // Load the actually configured model from auth service
+    try {
+      final authService = Sint.find<AuthService>();
+      final config = await authService.loadApiConfig();
+      if (config != null) {
+        setState(() {
+          _selectedModel = config.model;
+        });
+      }
+    } catch (_) {
+      // AuthService not yet registered — keep default
+    }
   }
 
   @override
@@ -180,7 +190,7 @@ class _ChatScreenState extends State<ChatScreen>
       _CommandEntry(
         label: 'Toggle Side Panel',
         shortcut: 'Ctrl+B',
-        icon: Icons.side_navigation,
+        icon: Icons.view_sidebar,
         action: () {
           setState(() => _sidePanelOpen = !_sidePanelOpen);
           _closeCommandPalette();
@@ -467,7 +477,10 @@ class _ChatScreenState extends State<ChatScreen>
 
                       // Input area
                       Obx(() => InputBar(
-                            onSubmit: chat.sendMessage,
+                            onSubmit: (text, {attachments = const []}) {
+                              chat.sendMessage(text,
+                                  attachments: attachments);
+                            },
                             isLoading: chat.isLoading.value,
                           )),
                     ],
@@ -538,7 +551,7 @@ class _ChatScreenState extends State<ChatScreen>
             IconButton(
               icon: Icon(
                 _sidePanelOpen
-                    ? Icons.side_navigation
+                    ? Icons.view_sidebar
                     : Icons.menu,
                 size: 20,
               ),
@@ -553,7 +566,7 @@ class _ChatScreenState extends State<ChatScreen>
           Icon(Icons.terminal, size: 18, color: colorScheme.primary),
           const SizedBox(width: 6),
           Text(
-            'Flutter Claw',
+            'Neom Claw',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
@@ -676,12 +689,18 @@ class _ModelChip extends StatelessWidget {
   });
 
   String get _shortName {
+    if (model.contains('gemini')) return 'Gemini';
+    if (model.contains('qwen')) return 'Qwen';
+    if (model.contains('deepseek')) return 'DeepSeek';
     if (model.contains('opus')) return 'Opus';
     if (model.contains('sonnet')) return 'Sonnet';
     if (model.contains('haiku')) return 'Haiku';
     if (model.contains('gpt-4o')) return 'GPT-4o';
     if (model.contains('o1')) return 'o1';
     if (model.contains('o3')) return 'o3';
+    if (model.contains('llama')) return 'Llama';
+    if (model.contains('mistral')) return 'Mistral';
+    if (model.contains('codestral')) return 'Codestral';
     if (model.length > 20) return '${model.substring(0, 18)}...';
     return model;
   }
@@ -770,16 +789,33 @@ class _ModelSelectorDialog extends StatelessWidget {
   });
 
   static const _models = <String, List<String>>{
-    'Anthropic': [
-      'claude-opus-4-20250514',
-      'claude-sonnet-4-20250514',
-      'claude-haiku-3-5-20241022',
+    'Gemini': [
+      'gemini-2.5-flash',
+      'gemini-2.5-pro',
+      'gemini-2.0-flash',
+      'gemini-1.5-pro',
+    ],
+    'Qwen': [
+      'qwen-plus',
+      'qwen-max',
+      'qwen-turbo',
+      'qwen2.5-coder-32b-instruct',
     ],
     'OpenAI': [
       'gpt-4o',
       'gpt-4o-mini',
       'o1-preview',
       'o3-mini',
+    ],
+    'DeepSeek': [
+      'deepseek-chat',
+      'deepseek-coder',
+      'deepseek-reasoner',
+    ],
+    'Anthropic': [
+      'claude-opus-4-20250514',
+      'claude-sonnet-4-20250514',
+      'claude-haiku-3-5-20241022',
     ],
     'Ollama': [
       'llama3.1',
@@ -1000,12 +1036,154 @@ class _TasksPanel extends StatelessWidget {
 
 // ── MCP Servers Panel ──
 
-class _McpServersPanel extends StatelessWidget {
+class _McpServersPanel extends StatefulWidget {
   final ColorScheme colorScheme;
   const _McpServersPanel({required this.colorScheme});
 
   @override
+  State<_McpServersPanel> createState() => _McpServersPanelState();
+}
+
+class _McpServersPanelState extends State<_McpServersPanel> {
+  final List<_McpServerEntry> _servers = [];
+
+  void _showAddServerDialog() {
+    final nameCtrl = TextEditingController();
+    final commandCtrl = TextEditingController();
+    final urlCtrl = TextEditingController();
+    var transportType = 'stdio'; // stdio | sse
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Add MCP Server'),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Server Name',
+                    hintText: 'e.g. filesystem, github',
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text('Transport',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                    )),
+                const SizedBox(height: 6),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'stdio', label: Text('stdio')),
+                    ButtonSegment(value: 'sse', label: Text('SSE')),
+                  ],
+                  selected: {transportType},
+                  onSelectionChanged: (s) {
+                    setDialogState(() => transportType = s.first);
+                  },
+                ),
+                const SizedBox(height: 12),
+                if (transportType == 'stdio')
+                  TextField(
+                    controller: commandCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Command',
+                      hintText: 'e.g. npx -y @modelcontextprotocol/server-filesystem /path',
+                      isDense: true,
+                    ),
+                    maxLines: 2,
+                  )
+                else
+                  TextField(
+                    controller: urlCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Server URL',
+                      hintText: 'e.g. http://localhost:3001/sse',
+                      isDense: true,
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx)
+                        .colorScheme
+                        .surfaceContainerHighest
+                        .withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline,
+                          size: 14,
+                          color: Theme.of(ctx).colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          transportType == 'stdio'
+                              ? 'The command will be executed as a subprocess.\n'
+                                'Example: npx -y @modelcontextprotocol/server-github'
+                              : 'Connect to a running MCP server via SSE.\n'
+                                'The server must be accessible at the given URL.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                if (name.isEmpty) return;
+                final config = transportType == 'stdio'
+                    ? commandCtrl.text.trim()
+                    : urlCtrl.text.trim();
+                if (config.isEmpty) return;
+
+                setState(() {
+                  _servers.add(_McpServerEntry(
+                    name: name,
+                    transport: transportType,
+                    config: config,
+                  ));
+                });
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _removeServer(int index) {
+    setState(() => _servers.removeAt(index));
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final cs = widget.colorScheme;
+
     return Column(
       children: [
         Padding(
@@ -1017,52 +1195,123 @@ class _McpServersPanel extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
-                  color: colorScheme.onSurface,
+                  color: cs.onSurface,
                 ),
               ),
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.add, size: 18),
-                onPressed: () {},
+                onPressed: _showAddServerDialog,
                 tooltip: 'Add MCP server',
               ),
             ],
           ),
         ),
         Expanded(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.dns, size: 48,
-                      color: colorScheme.onSurfaceVariant
-                          .withValues(alpha: 0.3)),
-                  const SizedBox(height: 12),
-                  Text(
-                    'No MCP servers configured',
-                    style:
-                        TextStyle(color: colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add servers in Settings > MCP to extend capabilities.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurfaceVariant
-                          .withValues(alpha: 0.7),
+          child: _servers.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.dns, size: 48,
+                            color: cs.onSurfaceVariant
+                                .withValues(alpha: 0.3)),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No MCP servers configured',
+                          style: TextStyle(color: cs.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Click + to add an MCP server and extend\n'
+                          'NeomClaw with custom tools and resources.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: cs.onSurfaceVariant
+                                .withValues(alpha: 0.7),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                    textAlign: TextAlign.center,
                   ),
-                ],
-              ),
-            ),
-          ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  itemCount: _servers.length,
+                  itemBuilder: (context, index) {
+                    final server = _servers[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.amber,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    server.name,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: cs.onSurface,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${server.transport} · ${server.config}',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: cs.onSurfaceVariant,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete_outline,
+                                  size: 16, color: cs.error),
+                              onPressed: () => _removeServer(index),
+                              tooltip: 'Remove',
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
         ),
       ],
     );
   }
+}
+
+class _McpServerEntry {
+  final String name;
+  final String transport;
+  final String config;
+
+  const _McpServerEntry({
+    required this.name,
+    required this.transport,
+    required this.config,
+  });
 }
 
 // ── Command Palette Overlay ──
@@ -1395,7 +1644,7 @@ class _EmptyState extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Flutter Claw',
+                'Neom Claw',
                 style:
                     Theme.of(context).textTheme.headlineSmall?.copyWith(
                           color: colorScheme.onSurface

@@ -1,9 +1,9 @@
-// MCP client — port of openclaude/src/services/mcp/client.ts.
+// MCP client — port of neom_claw/src/services/mcp/client.ts.
 // Manages connections to MCP servers, tool discovery, and execution.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import '../tools/tool.dart';
 import '../tools/tool_registry.dart';

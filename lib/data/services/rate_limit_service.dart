@@ -1,8 +1,8 @@
-// Rate limit / policy limits service — port of openclaude/src/services/policyLimits.
+// Rate limit / policy limits service — port of neom_claw/src/services/policyLimits.
 // Fetches and caches organization-level policy restrictions.
 
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'package:http/http.dart' as http;
 
@@ -110,7 +110,7 @@ class RateLimitService {
     final auth = apiKey ?? oauthToken;
     if (auth == null) return null;
 
-    final uri = Uri.parse('$baseUrl/api/claude_code/policy_limits');
+    final uri = Uri.parse('$baseUrl/api/neomclaw/policy_limits');
     final headers = <String, String>{
       'Content-Type': 'application/json',
     };

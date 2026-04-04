@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.openneom" "\0"
-            VALUE "FileDescription", "openclaude_flutter" "\0"
+            VALUE "FileDescription", "neom_claw" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "openclaude_flutter" "\0"
+            VALUE "InternalName", "neom_claw" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.openneom. All rights reserved." "\0"
-            VALUE "OriginalFilename", "openclaude_flutter.exe" "\0"
-            VALUE "ProductName", "openclaude_flutter" "\0"
+            VALUE "OriginalFilename", "neom_claw.exe" "\0"
+            VALUE "ProductName", "neom_claw" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

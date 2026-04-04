@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// App-wide settings — port of openclaude's configuration system.
+/// App-wide settings — port of neom_claw's configuration system.
 class AppSettings {
   static const _themeKey = 'theme_mode';
   static const _maxTokensKey = 'max_tokens';
@@ -43,9 +43,9 @@ class AppSettings {
     }
   }
 
-  /// Default system prompt — matches openclaude's system.ts.
+  /// Default system prompt — matches neom_claw's system.ts.
   static const defaultSystemPrompt =
-      'You are OpenClaude, an AI coding assistant powered by Flutter. '
+      'You are NeomClaw, an AI coding assistant powered by Flutter. '
       'You help users with software engineering tasks including writing code, '
       'debugging, refactoring, and explaining code. '
       'You have access to tools for reading files, writing files, '

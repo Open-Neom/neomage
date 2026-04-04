@@ -1,5 +1,5 @@
 // Tool name constants and tool availability sets —
-// ported from OpenClaude src/constants/tools.ts.
+// ported from NeomClaw src/constants/tools.ts.
 
 // ── Tool Names ──
 const String bashToolName = 'Bash';

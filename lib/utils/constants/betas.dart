@@ -1,6 +1,6 @@
-// API beta headers — ported from OpenClaude src/constants/betas.ts.
+// API beta headers — ported from NeomClaw src/constants/betas.ts.
 
-const String claudeCode20250219BetaHeader = 'claude-code-20250219';
+const String neomClaw20250219BetaHeader = 'neom-claw-20250219';
 const String interleavedThinkingBetaHeader =
     'interleaved-thinking-2025-05-14';
 const String context1mBetaHeader = 'context-1m-2025-08-07';
@@ -8,7 +8,7 @@ const String contextManagementBetaHeader = 'context-management-2025-06-27';
 const String structuredOutputsBetaHeader = 'structured-outputs-2025-12-15';
 const String webSearchBetaHeader = 'web-search-2025-03-05';
 
-/// Tool search beta header for Claude API / Foundry (1P).
+/// Tool search beta header for NeomClaw API / Foundry (1P).
 const String toolSearchBetaHeader1p = 'advanced-tool-use-2025-11-20';
 
 /// Tool search beta header for Vertex AI / Bedrock (3P).
@@ -36,7 +36,7 @@ const Set<String> bedrockExtraParamsHeaders = {
 
 /// Betas allowed on Vertex countTokens API.
 const Set<String> vertexCountTokensAllowedBetas = {
-  claudeCode20250219BetaHeader,
+  neomClaw20250219BetaHeader,
   interleavedThinkingBetaHeader,
   contextManagementBetaHeader,
 };

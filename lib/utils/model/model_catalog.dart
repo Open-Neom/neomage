@@ -1,4 +1,4 @@
-// Model catalog — port of openclaude/src/utils/model/.
+// Model catalog — port of neom_claw/src/utils/model/.
 // Model configs, pricing, capabilities, provider mappings, aliases.
 
 /// API providers.

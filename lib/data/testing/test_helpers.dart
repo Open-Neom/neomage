@@ -1,4 +1,4 @@
-/// Test infrastructure stubs for Flutter Claw.
+/// Test infrastructure stubs for Neom Claw.
 ///
 /// Provides mocks, fixtures, custom matchers, and utility helpers that make
 /// it easy to write isolated unit and widget tests without depending on real
@@ -7,7 +7,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' as io;
+import 'package:flutter_claw/core/platform/claw_io.dart' as io;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -444,7 +444,7 @@ class TestFixtures {
     return Message(
       id: id ?? _nextId('msg'),
       role: 'user',
-      content: content ?? 'Hello, Claude.',
+      content: content ?? 'Hello, NeomClaw.',
       timestamp: DateTime(2026, 1, 15, 10, 30),
     );
   }

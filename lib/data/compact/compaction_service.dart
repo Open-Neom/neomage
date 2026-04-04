@@ -1,4 +1,4 @@
-// Context compaction service — ported from OpenClaude src/services/compact/.
+// Context compaction service — ported from NeomClaw src/services/compact/.
 // Three-phase system: microcompact → auto-compact → full compaction.
 
 import '../../domain/models/message.dart';

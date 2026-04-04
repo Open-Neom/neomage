@@ -1,4 +1,4 @@
-// API streaming — port of openclaude/src/services/api/ streaming infrastructure.
+// API streaming — port of neom_claw/src/services/api/ streaming infrastructure.
 // SSE parsing, streaming message assembly, multimodal content handling.
 
 import 'dart:async';
@@ -747,7 +747,7 @@ class CacheConfig {
   final List<int> breakpoints;
 
   /// Minimum number of tokens a cacheable prefix should have (API requires
-  /// at least 1024 tokens for caching to be effective with Claude models).
+  /// at least 1024 tokens for caching to be effective with NeomClaw models).
   final int minTokensForCache;
 
   const CacheConfig({
@@ -984,8 +984,8 @@ Future<Message> collectStreamToMessage(
   Stream<StreamUpdate> stream, {
   void Function(StreamUpdate update)? onUpdate,
 }) async {
-  String? messageId;
-  String? model;
+  String? accMessageId;
+  String? accModel;
   String? stopReason;
   int inputTokens = 0;
   int outputTokens = 0;
@@ -997,9 +997,9 @@ Future<Message> collectStreamToMessage(
     onUpdate?.call(update);
 
     switch (update) {
-      case MessageStartUpdate(:final messageId as String, :final model as String):
-        messageId = update.messageId;
-        model = update.model;
+      case MessageStartUpdate():
+        accMessageId = update.messageId;
+        accModel = update.model;
         if (update.usage != null) {
           inputTokens = update.usage!.inputTokens;
           outputTokens = update.usage!.outputTokens;
@@ -1020,7 +1020,7 @@ Future<Message> collectStreamToMessage(
       case ToolUseInputDelta(:final partialJson, :final blockIndex):
         final acc = blocks[blockIndex];
         if (acc is ToolUseAccumulator) acc.append(partialJson);
-      case UsageUpdate(:final inputTokens as int, :final outputTokens as int):
+      case UsageUpdate():
         inputTokens = update.inputTokens;
         outputTokens = update.outputTokens;
         cacheCreationTokens = update.cacheCreationInputTokens;
@@ -1047,7 +1047,7 @@ Future<Message> collectStreamToMessage(
   };
 
   return Message(
-    id: messageId,
+    id: accMessageId,
     role: MessageRole.assistant,
     content: content.isEmpty ? [const TextBlock('')] : content,
     stopReason: stopReasonEnum,

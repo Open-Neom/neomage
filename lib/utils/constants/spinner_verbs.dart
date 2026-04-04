@@ -1,4 +1,4 @@
-// Spinner loading verbs — ported from OpenClaude src/constants/spinnerVerbs.ts.
+// Spinner loading verbs — ported from NeomClaw src/constants/spinnerVerbs.ts.
 
 import 'dart:math';
 

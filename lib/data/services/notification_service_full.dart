@@ -1,10 +1,10 @@
-// Full notification service — port of openclaude notification system.
+// Full notification service — port of neom_claw notification system.
 // Extends the basic NotificationService (platform/notification_service.dart)
 // with channels, preferences, scheduling, grouping, and export.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 // ---------------------------------------------------------------------------
 // Enums

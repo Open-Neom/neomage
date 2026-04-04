@@ -1,8 +1,8 @@
-// Session history — port of openclaude/src/assistant/sessionHistory.ts.
+// Session history — port of neom_claw/src/assistant/sessionHistory.ts.
 // Persistence and resume for conversation sessions.
 
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import '../../domain/models/message.dart';
 

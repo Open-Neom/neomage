@@ -1,9 +1,9 @@
-// AutocompleteService — port of openclaude/src/services/PromptSuggestion/.
+// AutocompleteService — port of neom_claw/src/services/PromptSuggestion/.
 // Provides intelligent prompt suggestions, file completions, command completions,
 // and contextual auto-complete for the chat input.
 
 import 'dart:async';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 import 'dart:math';
 
 // ─── Types ───

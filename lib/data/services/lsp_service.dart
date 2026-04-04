@@ -1,10 +1,10 @@
-// LSP service — port of openclaude/src/services/lsp/.
+// LSP service — port of neom_claw/src/services/lsp/.
 // Language Server Protocol client for code intelligence.
 // Manages LSP server lifecycles, file synchronization, and diagnostics.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 /// LSP server states.
 enum LspServerState { stopped, starting, running, stopping, error }

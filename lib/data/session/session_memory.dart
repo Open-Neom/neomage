@@ -1,8 +1,8 @@
-// Session memory service — port of openclaude/src/services/SessionMemory.
+// Session memory service — port of neom_claw/src/services/SessionMemory.
 // Periodic background extraction of conversation notes into structured
 // markdown, enabling context-aware compaction and session resume.
 
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import '../../domain/models/message.dart';
 

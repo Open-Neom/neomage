@@ -1,4 +1,4 @@
-// Plugin system types — ported from OpenClaude src/types/plugin.ts.
+// Plugin system types — ported from NeomClaw src/types/plugin.ts.
 
 /// Plugin author metadata.
 class PluginAuthor {

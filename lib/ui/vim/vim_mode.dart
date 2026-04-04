@@ -1,5 +1,5 @@
 // vim_mode.dart — Vim emulation layer for flutter_claw
-// Port of openclaude/src/vim/ (~1.5K TS LOC) to pure Dart + minimal Flutter.
+// Port of neom_claw/src/vim/ (~1.5K TS LOC) to pure Dart + minimal Flutter.
 
 import 'dart:math';
 
@@ -685,7 +685,7 @@ class VimKeyHandler {
       case CharMotion m:
         final newCol = (state.cursor.column + m.delta * count)
             .clamp(0, max(0, _currentLineLength() - 1));
-        state.cursor = state.cursor.copyWith(column: newCol);
+        state.cursor = state.cursor.copyWith(column: newCol.toInt());
       case LineMotion m:
         final newLine =
             (state.cursor.line + m.delta * count).clamp(0, _lines.length - 1);

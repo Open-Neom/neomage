@@ -1,4 +1,4 @@
-// Bash parser utilities — port of openclaude/src/utils/bash/.
+// Bash parser utilities — port of neom_claw/src/utils/bash/.
 // Command parsing, AST analysis, heredoc handling, security checks.
 
 /// Bash token types.

@@ -1,4 +1,7 @@
-import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:sint/sint.dart';
@@ -17,6 +20,7 @@ import '../../data/tools/file_write_tool.dart';
 import '../../data/tools/glob_tool.dart';
 import '../../data/tools/grep_tool.dart';
 import '../../data/tools/tool_registry.dart';
+import '../widgets/input_bar.dart';
 
 /// Main chat state controller — Sint pattern.
 class ChatController extends SintController {
@@ -97,8 +101,10 @@ class ChatController extends SintController {
 
   // ── Chat ──
 
-  Future<void> sendMessage(String text) async {
-    if (text.trim().isEmpty || _engine == null) return;
+  Future<void> sendMessage(String text,
+      {List<InputAttachment> attachments = const []}) async {
+    if (text.trim().isEmpty && attachments.isEmpty) return;
+    if (_engine == null) return;
 
     error.value = null;
     isLoading.value = true;
@@ -106,7 +112,35 @@ class ChatController extends SintController {
     streamingText.value = '';
     currentToolName.value = null;
 
-    final userMessage = Message.user(text);
+    // Build content blocks: images first, then text
+    final content = <ContentBlock>[];
+    for (final att in attachments) {
+      if (att.isImage) {
+        content.add(ImageBlock(
+          mediaType: att.mimeType,
+          base64Data: att.base64Data,
+        ));
+      } else {
+        // Non-image files: include as text with filename context
+        final decoded = _tryDecodeText(att.bytes);
+        if (decoded != null) {
+          content
+              .add(TextBlock('[File: ${att.name}]\n$decoded'));
+        } else {
+          content.add(TextBlock(
+              '[Attached binary file: ${att.name} '
+              '(${att.bytes.length} bytes)]'));
+        }
+      }
+    }
+    if (text.trim().isNotEmpty) {
+      content.add(TextBlock(text));
+    }
+
+    final userMessage = Message(
+      role: MessageRole.user,
+      content: content,
+    );
     messages.add(userMessage);
 
     try {
@@ -146,5 +180,19 @@ class ChatController extends SintController {
     _provider = null;
     _engine = null;
     await initialize();
+  }
+
+  /// Try to decode bytes as UTF-8 text, return null if binary.
+  String? _tryDecodeText(Uint8List bytes) {
+    try {
+      final text = utf8.decode(bytes);
+      // Heuristic: if too many control chars, it's binary
+      final controlCount =
+          text.codeUnits.where((c) => c < 32 && c != 10 && c != 13 && c != 9).length;
+      if (controlCount > text.length * 0.1) return null;
+      return text;
+    } catch (_) {
+      return null;
+    }
   }
 }

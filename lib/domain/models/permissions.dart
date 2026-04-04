@@ -1,4 +1,4 @@
-// Permission system types — ported from OpenClaude src/types/permissions.ts.
+// Permission system types — ported from NeomClaw src/types/permissions.ts.
 // Contains only type definitions to break import cycles.
 
 /// User-addressable permission modes.
@@ -28,7 +28,7 @@ enum PermissionBehavior { allow, deny, ask }
 enum PermissionRuleSource {
   commandLine,
   user,
-  claudeMd,
+  neomClawMd,
   autoAllow,
   mcpServer,
 }

@@ -1,7 +1,7 @@
-// Platform bridge — port of openclaude platform-specific abstractions.
+// Platform bridge — port of neom_claw platform-specific abstractions.
 // Provides unified API across desktop, mobile, web, and CLI.
 
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 /// Supported platforms.
 enum ClawPlatform {
@@ -139,7 +139,7 @@ class PlatformBridge {
   /// Home directory.
   String get homeDir => _homeDir;
 
-  /// Config directory (~/.claude).
+  /// Config directory (~/.neomclaw).
   String get configDir => _configDir;
 
   /// Environment variables.
@@ -231,8 +231,8 @@ class PlatformBridge {
 
   static String _resolveConfigDir(Map<String, String> env, String home) {
     final xdg = env['XDG_CONFIG_HOME'];
-    if (xdg != null) return '$xdg/claude';
-    return '$home/.claude';
+    if (xdg != null) return '$xdg/neomclaw';
+    return '/.neomclaw';
   }
 }
 
@@ -247,7 +247,7 @@ class PlatformPaths {
 
   /// Project-level settings.
   String projectSettings(String projectDir) =>
-      '$projectDir/.claude/settings.json';
+      '$projectDir/.neomclaw/settings.json';
 
   /// MCP config file.
   String get mcpConfigFile => '${bridge.configDir}/.mcp.json';

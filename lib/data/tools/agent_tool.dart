@@ -1,4 +1,4 @@
-// AgentTool — port of openclaude/src/tools/AgentTool.
+// AgentTool — port of neom_claw/src/tools/AgentTool.
 // Spawns sub-agents to handle complex, multi-step tasks autonomously.
 
 import 'dart:async';

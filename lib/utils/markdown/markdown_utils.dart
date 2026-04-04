@@ -1,4 +1,4 @@
-// Markdown utilities — port of openclaude/src/utils/markdown/.
+// Markdown utilities — port of neom_claw/src/utils/markdown/.
 // Markdown parsing, rendering helpers, code block extraction, table formatting.
 
 import 'dart:math';

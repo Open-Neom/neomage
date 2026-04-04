@@ -1,4 +1,4 @@
-// Keybinding types — port of openclaude/src/keybindings/.
+// Keybinding types — port of neom_claw/src/keybindings/.
 // Keystroke parsing, chord state machine, and binding resolution.
 
 /// A parsed keystroke.
@@ -8,6 +8,7 @@ class ParsedKeystroke {
   final bool alt;
   final bool shift;
   final bool meta;
+  final bool superKey;
 
   const ParsedKeystroke({
     required this.key,
@@ -15,6 +16,7 @@ class ParsedKeystroke {
     this.alt = false,
     this.shift = false,
     this.meta = false,
+    this.superKey = false,
   });
 
   @override
@@ -24,10 +26,11 @@ class ParsedKeystroke {
       ctrl == other.ctrl &&
       alt == other.alt &&
       shift == other.shift &&
-      meta == other.meta;
+      meta == other.meta &&
+      superKey == other.superKey;
 
   @override
-  int get hashCode => Object.hash(key, ctrl, alt, shift, meta);
+  int get hashCode => Object.hash(key, ctrl, alt, shift, meta, superKey);
 
   @override
   String toString() => toDisplayString();
@@ -60,6 +63,23 @@ enum KeybindingContext {
   planMode,
   agentView,
   settingsView,
+  confirmation,
+  help,
+  transcript,
+  historySearch,
+  task,
+  themePicker,
+  settings,
+  tabs,
+  attachments,
+  footer,
+  messageSelector,
+  diffDialog,
+  modelPicker,
+  select,
+  plugin,
+  scroll,
+  messageActions,
 }
 
 /// A resolved keybinding.

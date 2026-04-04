@@ -1,9 +1,9 @@
-// BashTool full — port of openclaude/src/tools/BashTool/.
+// BashTool full — port of neom_claw/src/tools/BashTool/.
 // Complete shell command execution with security, sandboxing, output handling.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'tool.dart';
 
@@ -325,7 +325,7 @@ const _protectedFrameworkPaths = {
 /// Dangerous config files that need extra permission.
 const _dangerousFiles = {
   '.gitconfig', '.gitmodules', '.bashrc', '.bash_profile', '.zshrc',
-  '.zprofile', '.profile', '.ripgreprc', '.mcp.json', '.claude.json',
+  '.zprofile', '.profile', '.ripgreprc', '.mcp.json', '.neomclaw.json',
   '.npmrc', '.yarnrc', '.env', '.env.local', '.env.production',
 };
 
@@ -612,7 +612,7 @@ Future<BashToolOutput> executeCommand(
   // 4. Build environment
   final env = <String, String>{
     ...?options.environment,
-    'CLAUDECODE': '1', // Side-channel hint
+    'NEOMCLAWCODE': '1', // Side-channel hint
     'TERM': 'dumb',    // Disable terminal features
   };
 

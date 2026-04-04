@@ -1,8 +1,8 @@
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'tool.dart';
 
-/// Find files by pattern — port of openclaude/src/tools/GlobTool.
+/// Find files by pattern — port of neom_claw/src/tools/GlobTool.
 class GlobTool extends Tool with ReadOnlyToolMixin {
   @override
   String get name => 'Glob';

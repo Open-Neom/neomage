@@ -1,8 +1,8 @@
-// Diff service — port of openclaude diff functionality.
+// Diff service — port of neom_claw diff functionality.
 // Provides Myers diff algorithm, patch application, three-way merge,
 // and various diff formatting utilities.
 
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 import 'dart:math' as math;
 
 // ---------------------------------------------------------------------------

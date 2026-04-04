@@ -1,4 +1,4 @@
-// Memory type system — port of openclaude/src/memdir/memoryTypes.ts.
+// Memory type system — port of neom_claw/src/memdir/memoryTypes.ts.
 // Closed 4-type taxonomy for persistent memory.
 
 /// The four types of persistent memory.

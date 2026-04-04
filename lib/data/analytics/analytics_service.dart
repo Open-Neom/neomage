@@ -1,4 +1,4 @@
-// Analytics service — port of openclaude/src/services/analytics.
+// Analytics service — port of neom_claw/src/services/analytics.
 // Event logging, sinks, feature flags, and session metrics.
 
 /// Analytics event with metadata.

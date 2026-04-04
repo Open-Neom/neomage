@@ -1,4 +1,4 @@
-// Encoding utilities — port of openclaude encoding/escaping helpers.
+// Encoding utilities — port of neom_claw encoding/escaping helpers.
 // Token estimation, text encoding, content escaping.
 
 import 'dart:convert';

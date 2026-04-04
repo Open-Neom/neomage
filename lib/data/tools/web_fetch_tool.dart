@@ -1,9 +1,9 @@
-// WebFetchTool — port of openclaude/src/tools/WebFetchTool/.
+// WebFetchTool — port of neom_claw/src/tools/WebFetchTool/.
 // Fetches URL content, converts HTML to markdown, applies prompt via secondary model.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'tool.dart';
 
@@ -158,8 +158,8 @@ bool isPermittedRedirect(Uri original, Uri redirect) {
 const preapprovedHosts = {
   // Anthropic
   'docs.anthropic.com',
-  'platform.claude.com',
-  'code.claude.com',
+  'platform.neomclaw.com',
+  'code.neomclaw.com',
   'modelcontextprotocol.io',
 
   // Python

@@ -1,8 +1,8 @@
-// Full entrypoint definitions — ported from OpenClaude src/entrypoints/.
+// Full entrypoint definitions — ported from NeomClaw src/entrypoints/.
 // Covers all entry modes: CLI, SDK, MCP server, headless, embedded, piped, remote.
 
 import 'dart:async';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'package:flutter_claw/domain/models/message.dart';
 import 'package:flutter_claw/domain/models/permissions.dart';

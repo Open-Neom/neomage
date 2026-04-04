@@ -1,4 +1,4 @@
-// Full constants — port of remaining openclaude/src/constants/.
+// Full constants — port of remaining neom_claw/src/constants/.
 // All constants not already in individual constant files.
 
 /// Maximum conversation turns before suggesting compaction.
@@ -92,15 +92,15 @@ const modelMaxOutputTokens = <String, int>{
   'gemini-2.5-pro': 65536,
 };
 
-/// Default .gitignore patterns for .claude/ directory.
-const claudeGitignorePatterns = [
-  '# Claude Code local files',
-  '.claude/settings.local.json',
-  '.claude/sessions/',
-  '.claude/telemetry/',
-  '.claude/todos/',
-  '.claude/cache/',
-  '.claude/logs/',
+/// Default .gitignore patterns for .neomclaw/ directory.
+const neomClawGitignorePatterns = [
+  '# NeomClaw local files',
+  '.neomclaw/settings.local.json',
+  '.neomclaw/sessions/',
+  '.neomclaw/telemetry/',
+  '.neomclaw/todos/',
+  '.neomclaw/cache/',
+  '.neomclaw/logs/',
 ];
 
 /// Commands that ALWAYS require explicit permission.
@@ -153,17 +153,17 @@ const safeGitCommands = <String>{
 /// Standard permission prompt templates.
 class PermissionPrompts {
   static const fileWrite =
-      'Claude wants to write to file: {path}\nAllow this operation?';
+      'NeomClaw wants to write to file: {path}\nAllow this operation?';
   static const fileDelete =
-      'Claude wants to delete file: {path}\nAllow this operation?';
+      'NeomClaw wants to delete file: {path}\nAllow this operation?';
   static const shellCommand =
-      'Claude wants to run: {command}\nAllow this operation?';
+      'NeomClaw wants to run: {command}\nAllow this operation?';
   static const networkAccess =
-      'Claude wants to access: {url}\nAllow this operation?';
+      'NeomClaw wants to access: {url}\nAllow this operation?';
   static const mcpConnect =
-      'Claude wants to connect to MCP server: {name}\nAllow this connection?';
+      'NeomClaw wants to connect to MCP server: {name}\nAllow this connection?';
   static const agentSpawn =
-      'Claude wants to spawn agent: {name} with model {model}\nAllow?';
+      'NeomClaw wants to spawn agent: {name} with model {model}\nAllow?';
 
   static String format(String template, Map<String, String> params) {
     var result = template;
@@ -212,7 +212,7 @@ class ErrorMessages {
 
 /// Release info.
 const releaseVersion = '1.0.0-beta.1';
-const releaseName = 'Flutter Claw';
+const releaseName = 'Neom Claw';
 const releaseCodename = 'Garuda';
 const buildDate = '2026-04-01';
 const protocolVersion = '2024-11-05';
@@ -314,10 +314,10 @@ class TelemetryEvents {
 }
 
 /// Default memory file content.
-const defaultClaudeMd = '''
+const defaultNeomClawMd = '''
 # Project Instructions
 
-This file provides guidance to Claude Code when working with this project.
+This file provides guidance to NeomClaw when working with this project.
 
 ## Overview
 

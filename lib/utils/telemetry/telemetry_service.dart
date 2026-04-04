@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 import 'dart:math';
 
 // ---------------------------------------------------------------------------
@@ -184,11 +184,11 @@ class ConsoleTelemetrySink implements TelemetrySink {
 // ---------------------------------------------------------------------------
 
 /// Appends events as newline-delimited JSON to a file inside
-/// `~/.claude/telemetry/`.
+/// `~/.neomclaw/telemetry/`.
 class FileTelemetrySink implements TelemetrySink {
   FileTelemetrySink({String? directory})
       : _directory = directory ??
-            '${Platform.environment['HOME'] ?? '/tmp'}/.claude/telemetry';
+            '${Platform.environment['HOME'] ?? '/tmp'}/.neomclaw/telemetry';
 
   final String _directory;
   IOSink? _sink;
@@ -257,7 +257,7 @@ class HttpTelemetrySink implements TelemetrySink {
     this.authToken,
     this.maxRetries = 2,
   }) : endpoint =
-            endpoint ?? 'https://telemetry.claude.ai/v1/events'; // stub URL
+            endpoint ?? 'https://telemetry.neomclaw.ai/v1/events'; // stub URL
 
   final String endpoint;
   final int timeoutSeconds;

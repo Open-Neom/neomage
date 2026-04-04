@@ -1,4 +1,4 @@
-// ToolSearch tool — port of openclaude/src/tools/ToolSearchTool.
+// ToolSearch tool — port of neom_claw/src/tools/ToolSearchTool.
 // Finds deferred tools by name or keyword search.
 
 import 'tool.dart';

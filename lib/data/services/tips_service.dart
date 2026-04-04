@@ -1,4 +1,4 @@
-// Tips service — port of openclaude/src/services/tips.
+// Tips service — port of neom_claw/src/services/tips.
 // Shows contextual tips during spinner/loading states.
 
 /// A tip that can be shown to the user.

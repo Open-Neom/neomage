@@ -1,14 +1,14 @@
-/// Configuration management service for Flutter Claw, ported from OpenClaude.
+/// Configuration management service for Neom Claw, ported from NeomClaw.
 ///
 /// Supports scoped configuration (global, project, session), multiple sources
 /// (file, environment, CLI, API, defaults), reactive watching, validation,
-/// and import/export — including migration from Claude Code's `~/.claude/`
+/// and import/export — including migration from NeomClaw's `~/.neomclaw/`
 /// directory layout.
 library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -236,17 +236,17 @@ abstract final class ConfigKeys {
 /// Map from environment variable names to their corresponding config keys.
 const Map<String, String> _envMapping = {
   'ANTHROPIC_API_KEY': ConfigKeys.apiKey,
-  'CLAUDE_MODEL': ConfigKeys.model,
+  'NEOMCLAW_MODEL': ConfigKeys.model,
   'ANTHROPIC_BASE_URL': ConfigKeys.baseUrl,
-  'CLAUDE_MAX_TOKENS': ConfigKeys.maxTokens,
-  'CLAUDE_TEMPERATURE': ConfigKeys.temperature,
-  'CLAUDE_PERMISSION_MODE': ConfigKeys.permissionMode,
-  'CLAUDE_THEME': ConfigKeys.theme,
-  'CLAUDE_VIM_MODE': ConfigKeys.vimMode,
-  'CLAUDE_TELEMETRY': ConfigKeys.telemetryEnabled,
-  'CLAUDE_LOG_LEVEL': ConfigKeys.logLevel,
-  'CLAUDE_TIMEOUT': ConfigKeys.timeout,
-  'CLAUDE_SHELL': ConfigKeys.shell,
+  'NEOMCLAW_MAX_TOKENS': ConfigKeys.maxTokens,
+  'NEOMCLAW_TEMPERATURE': ConfigKeys.temperature,
+  'NEOMCLAW_PERMISSION_MODE': ConfigKeys.permissionMode,
+  'NEOMCLAW_THEME': ConfigKeys.theme,
+  'NEOMCLAW_VIM_MODE': ConfigKeys.vimMode,
+  'NEOMCLAW_TELEMETRY': ConfigKeys.telemetryEnabled,
+  'NEOMCLAW_LOG_LEVEL': ConfigKeys.logLevel,
+  'NEOMCLAW_TIMEOUT': ConfigKeys.timeout,
+  'NEOMCLAW_SHELL': ConfigKeys.shell,
 };
 
 // ---------------------------------------------------------------------------
@@ -570,22 +570,22 @@ class ConfigService {
   // Import / Export
   // -----------------------------------------------------------------------
 
-  /// Attempt to migrate settings from an existing Claude Code installation at
-  /// `~/.claude/`.
+  /// Attempt to migrate settings from an existing NeomClaw installation at
+  /// `~/.neomclaw/`.
   ///
-  /// This reads `~/.claude/settings.json` (if present) and maps known keys
+  /// This reads `~/.neomclaw/settings.json` (if present) and maps known keys
   /// into the Claw configuration format.
-  Future<bool> importFromClaudeCode() async {
+  Future<bool> importFromNeomClaw() async {
     final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
     if (home == null) return false;
-    final settingsFile = File('$home/.claude/settings.json');
+    final settingsFile = File('$home/.neomclaw/settings.json');
     if (!await settingsFile.exists()) return false;
 
     try {
       final content = await settingsFile.readAsString();
       final map = json.decode(content) as Map<String, dynamic>;
 
-      // Map Claude Code keys to Claw keys where possible.
+      // Map NeomClaw keys to Claw keys where possible.
       const mapping = <String, String>{
         'model': ConfigKeys.model,
         'apiKey': ConfigKeys.apiKey,

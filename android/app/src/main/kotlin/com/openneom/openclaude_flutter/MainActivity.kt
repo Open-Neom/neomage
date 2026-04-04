@@ -1,4 +1,4 @@
-package com.openneom.openclaude_flutter
+package com.openneom.neom_claw
 
 import io.flutter.embedding.android.FlutterActivity
 

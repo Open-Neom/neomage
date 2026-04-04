@@ -1,4 +1,4 @@
-// StatusBar — port of openclaude/src/components/StatusBar/.
+// StatusBar — port of neom_claw/src/components/StatusBar/.
 // Bottom status bar with model, tokens, cost, git branch, connection status.
 
 import 'dart:async';

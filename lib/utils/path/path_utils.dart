@@ -1,11 +1,11 @@
-/// Path manipulation utilities ported from OpenClaude TypeScript.
+/// Path manipulation utilities ported from NeomClaw TypeScript.
 ///
 /// Provides path normalization, glob matching, gitignore parsing,
 /// prefix-based trie lookup, and file system watching primitives.
 library;
 
 import 'dart:async';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 // ---------------------------------------------------------------------------
 // Core path helpers

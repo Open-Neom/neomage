@@ -1,4 +1,4 @@
-// Anthropic API Limits — ported from OpenClaude src/constants/apiLimits.ts.
+// Anthropic API Limits — ported from NeomClaw src/constants/apiLimits.ts.
 
 // ── Image Limits ──
 

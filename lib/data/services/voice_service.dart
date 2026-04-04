@@ -1,9 +1,9 @@
-// VoiceService — port of openclaude/src/services/voice/.
+// VoiceService — port of neom_claw/src/services/voice/.
 // Speech-to-text and text-to-speech for multi-platform voice input.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 import 'dart:math';
 import 'dart:typed_data';
 

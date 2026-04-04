@@ -1,7 +1,7 @@
 # Fase 1: Core Foundation + Sint — Reporte Completo
 
 **Proyecto:** flutter_claw (Open Neom)
-**Fuente:** OpenClaude (~517,610 LOC TypeScript, 1,921 archivos)
+**Fuente:** NeomClaw (~517,610 LOC TypeScript, 1,921 archivos)
 **Fecha de inicio:** Marzo 2026
 **Fecha de cierre Fase 1:** Abril 2026
 **Estado:** COMPLETADA

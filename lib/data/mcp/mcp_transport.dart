@@ -1,9 +1,9 @@
-// MCP transport layer — port of openclaude/src/services/mcp/ transports.
+// MCP transport layer — port of neom_claw/src/services/mcp/ transports.
 // Stdio, SSE, HTTP, WebSocket transports, JSON-RPC protocol, server lifecycle.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 import 'dart:math';
 
 import 'mcp_types.dart';

@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sint/sint.dart';
@@ -12,7 +12,7 @@ import '../../utils/config/settings.dart';
 import '../controllers/chat_controller.dart';
 
 // ---------------------------------------------------------------------------
-// Onboarding wizard — multi-step setup ported from OpenClaude's onboarding.
+// Onboarding wizard — multi-step setup ported from NeomClaw's onboarding.
 // Steps: Welcome -> API Config -> Permission Mode -> Workspace -> Features
 //        -> Completion
 // ---------------------------------------------------------------------------
@@ -35,10 +35,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   int _currentStep = 0;
 
   // ── Step 1: API Configuration state ──
-  ApiProviderType _providerType = ApiProviderType.anthropic;
+  ApiProviderType _providerType = ApiProviderType.gemini;
   final _apiKeyController = TextEditingController();
   final _baseUrlController = TextEditingController();
-  String _selectedModel = 'claude-sonnet-4-20250514';
+  String _selectedModel = 'gemini-2.5-flash';
   bool _obscureApiKey = true;
   bool _testingConnection = false;
   _ConnectionTestResult? _connectionTestResult;
@@ -49,7 +49,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // ── Step 3: Workspace state ──
   final _workspaceDirController = TextEditingController();
   bool _enableGitIntegration = true;
-  bool _createClaudeMd = true;
+  bool _createNeomClawMd = true;
 
   // ── Step 4: Features carousel ──
   final _featuresPageController = PageController();
@@ -69,7 +69,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   void initState() {
     super.initState();
-    _workspaceDirController.text = Directory.current.path;
+    _workspaceDirController.text = _getDefaultWorkspacePath();
 
     // Logo animation
     _logoAnimController = AnimationController(
@@ -247,7 +247,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       // Persist workspace prefs via SharedPreferences (AppSettings).
       final settings = await AppSettings.load();
       // Permission mode is stored as a string for simplicity.
-      // Workspace dir, git toggle, CLAUDE.md are handled by the engine.
+      // Workspace dir, git toggle, NEOMCLAW.md are handled by the engine.
 
       if (mounted) {
         final chat = Sint.find<ChatController>();
@@ -270,16 +270,33 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // ── Model lists per provider ──
 
   List<String> _modelsForProvider(ApiProviderType type) => switch (type) {
-        ApiProviderType.anthropic => [
-            'claude-sonnet-4-20250514',
-            'claude-opus-4-20250514',
-            'claude-haiku-3-5-20241022',
+        ApiProviderType.gemini => [
+            'gemini-2.5-flash',
+            'gemini-2.5-pro',
+            'gemini-2.0-flash',
+            'gemini-1.5-pro',
+          ],
+        ApiProviderType.qwen => [
+            'qwen-plus',
+            'qwen-max',
+            'qwen-turbo',
+            'qwen-long',
           ],
         ApiProviderType.openai => [
             'gpt-4o',
             'gpt-4o-mini',
             'gpt-4-turbo',
             'o3-mini',
+          ],
+        ApiProviderType.deepseek => [
+            'deepseek-chat',
+            'deepseek-coder',
+            'deepseek-reasoner',
+          ],
+        ApiProviderType.anthropic => [
+            'claude-sonnet-4-20250514',
+            'claude-opus-4-20250514',
+            'claude-haiku-3-5-20241022',
           ],
         ApiProviderType.ollama => [
             'llama3.1',
@@ -297,7 +314,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           ],
         ApiProviderType.custom => [
             'gpt-4o',
-            'claude-sonnet-4-20250514',
             'custom-model',
           ],
       };
@@ -362,9 +378,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     gitEnabled: _enableGitIntegration,
                     onGitChanged: (v) =>
                         setState(() => _enableGitIntegration = v),
-                    createClaudeMd: _createClaudeMd,
-                    onClaudeMdChanged: (v) =>
-                        setState(() => _createClaudeMd = v),
+                    createNeomClawMd: _createNeomClawMd,
+                    onNeomClawMdChanged: (v) =>
+                        setState(() => _createNeomClawMd = v),
                   ),
                   _FeaturesStep(
                     pageController: _featuresPageController,
@@ -450,7 +466,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               child: Column(
                 children: [
                   Text(
-                    'Flutter Claw',
+                    'Neom Claw',
                     style: theme.textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -657,9 +673,10 @@ class _ApiConfigStep extends StatelessWidget {
                 runSpacing: 8,
                 children: [
                   for (final entry in {
-                    ApiProviderType.anthropic: 'Anthropic',
+                    ApiProviderType.gemini: 'Gemini',
+                    ApiProviderType.qwen: 'Qwen',
                     ApiProviderType.openai: 'OpenAI',
-                    ApiProviderType.bedrock: 'Azure/Bedrock',
+                    ApiProviderType.deepseek: 'DeepSeek',
                     ApiProviderType.custom: 'Custom',
                   }.entries)
                     ChoiceChip(
@@ -1019,15 +1036,15 @@ class _WorkspaceStep extends StatelessWidget {
   final TextEditingController dirController;
   final bool gitEnabled;
   final ValueChanged<bool> onGitChanged;
-  final bool createClaudeMd;
-  final ValueChanged<bool> onClaudeMdChanged;
+  final bool createNeomClawMd;
+  final ValueChanged<bool> onNeomClawMdChanged;
 
   const _WorkspaceStep({
     required this.dirController,
     required this.gitEnabled,
     required this.onGitChanged,
-    required this.createClaudeMd,
-    required this.onClaudeMdChanged,
+    required this.createNeomClawMd,
+    required this.onNeomClawMdChanged,
   });
 
   @override
@@ -1090,16 +1107,16 @@ class _WorkspaceStep extends StatelessWidget {
               ),
               const Divider(),
 
-              // CLAUDE.md setup
+              // NEOMCLAW.md setup
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Create CLAUDE.md'),
+                title: const Text('Create NEOMCLAW.md'),
                 subtitle: const Text(
                     'Initialize a memory file with project context and instructions'),
                 secondary:
                     Icon(Icons.description_outlined, color: cs.primary),
-                value: createClaudeMd,
-                onChanged: onClaudeMdChanged,
+                value: createNeomClawMd,
+                onChanged: onNeomClawMdChanged,
               ),
               const Divider(),
               const SizedBox(height: 16),
@@ -1118,7 +1135,7 @@ class _WorkspaceStep extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'CLAUDE.md is loaded automatically at the start of '
+                        'NEOMCLAW.md is loaded automatically at the start of '
                         'each conversation. It can contain coding standards, '
                         'repo structure notes, and custom instructions.',
                         style: theme.textTheme.bodySmall
@@ -1352,6 +1369,22 @@ class _CompletionStep extends StatelessWidget {
 // ---------------------------------------------------------------------------
 // Helper data class for connection test result
 // ---------------------------------------------------------------------------
+
+// Platform-safe initial workspace path.
+// On web, Uri.base gives the page URL; toFilePath() may throw, so we fallback.
+String _getDefaultWorkspacePath() {
+  if (kIsWeb) {
+    // Use the URL path as a reasonable default on web.
+    final path = Uri.base.path;
+    return path.isEmpty || path == '/' ? '/workspace' : path;
+  }
+  // On native platforms, try Directory.current via path_provider or fallback.
+  try {
+    return Uri.base.toFilePath();
+  } catch (_) {
+    return '/workspace';
+  }
+}
 
 class _ConnectionTestResult {
   final bool success;

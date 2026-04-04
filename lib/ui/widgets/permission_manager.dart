@@ -1,4 +1,4 @@
-// PermissionManager — port of openclaude/src/components/PermissionManager/.
+// PermissionManager — port of neom_claw/src/components/PermissionManager/.
 // Permission rule editor, review, and management UI.
 
 import 'package:flutter/material.dart';

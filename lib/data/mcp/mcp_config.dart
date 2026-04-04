@@ -1,8 +1,8 @@
-// MCP config — port of openclaude/src/services/mcp/config.ts.
+// MCP config — port of neom_claw/src/services/mcp/config.ts.
 // Configuration loading and validation for MCP servers.
 
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'mcp_types.dart';
 
@@ -31,11 +31,11 @@ Future<List<McpServerConfig>> loadAllMcpConfigs({
     configs.addAll(await loadMcpConfigFile('$projectRoot/.mcp.json'));
   }
 
-  // 2. User: ~/.claude/settings.json (mcpServers key)
+  // 2. User: ~/.neomclaw/settings.json (mcpServers key)
   final homeDir = Platform.environment['HOME'] ??
       Platform.environment['USERPROFILE'] ??
       '/tmp';
-  final userSettings = File('$homeDir/.claude/settings.json');
+  final userSettings = File('$homeDir/.neomclaw/settings.json');
   if (await userSettings.exists()) {
     try {
       final json = jsonDecode(await userSettings.readAsString());
@@ -46,8 +46,8 @@ Future<List<McpServerConfig>> loadAllMcpConfigs({
     } catch (_) {}
   }
 
-  // 3. Managed: ~/.claude/managed/managed-mcp.json
-  final managedFile = File('$homeDir/.claude/managed/managed-mcp.json');
+  // 3. Managed: ~/.neomclaw/managed/managed-mcp.json
+  final managedFile = File('$homeDir/.neomclaw/managed/managed-mcp.json');
   if (await managedFile.exists()) {
     configs.addAll(await loadMcpConfigFile(managedFile.path));
   }

@@ -1,13 +1,13 @@
-// Error handling — port of openclaude/src/utils/errors/.
+// Error handling — port of neom_claw/src/utils/errors/.
 // Structured errors, diagnostics, recovery, reporting.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 // ─── Error types ───
 
-/// Base error for all Flutter Claw errors.
+/// Base error for all Neom Claw errors.
 abstract class ClawError implements Exception {
   String get message;
   String get errorId;
@@ -647,9 +647,9 @@ Future<DiagnosticCheck> _checkDiskSpace() async {
 
 Future<DiagnosticCheck> _checkConfig() async {
   final home = Platform.environment['HOME'] ?? '';
-  final configDir = Directory('$home/.claude');
+  final configDir = Directory('/.neomclaw');
   if (await configDir.exists()) {
-    final settings = File('$home/.claude/settings.json');
+    final settings = File('$home/.neomclaw/settings.json');
     if (await settings.exists()) {
       return DiagnosticCheck(
         name: 'Configuration',
@@ -666,7 +666,7 @@ Future<DiagnosticCheck> _checkConfig() async {
   return DiagnosticCheck(
     name: 'Configuration',
     status: DiagnosticStatus.warn,
-    detail: 'No ~/.claude directory. Run /init to create one.',
+    detail: 'No ~/.neomclaw directory. Run /init to create one.',
   );
 }
 
@@ -691,8 +691,9 @@ Map<String, dynamic>? _tryParseJson(String input) {
 
 /// Install a global error handler for uncaught errors.
 void installGlobalErrorHandler(ErrorHandler handler) {
-  // Zone-based error catching
-  Zone.current.handleUncaughtError(
+  // Zone-based error catching — use runZonedGuarded to intercept uncaught errors.
+  runZonedGuarded(
+    () {},
     (Object error, StackTrace stackTrace) {
       handler.handle(error, stackTrace);
     },

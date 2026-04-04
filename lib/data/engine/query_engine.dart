@@ -1,4 +1,4 @@
-// Query engine — enhanced port of openclaude/src/QueryEngine.ts.
+// Query engine — enhanced port of neom_claw/src/QueryEngine.ts.
 // Implements the agentic loop with permission checking, compaction,
 // session memory tracking, and thinking block support.
 

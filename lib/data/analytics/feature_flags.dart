@@ -1,4 +1,4 @@
-// Feature flags — port of openclaude/src/services/analytics/growthbook.ts.
+// Feature flags — port of neom_claw/src/services/analytics/growthbook.ts.
 // Local feature flag evaluation with remote refresh support.
 
 /// Feature flag value.

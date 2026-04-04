@@ -1,5 +1,5 @@
 // Design system — reusable widgets, tokens, and theme utilities.
-// Port of openclaude/src/components/ design tokens and shared components.
+// Port of neom_claw/src/components/ design tokens and shared components.
 
 import 'dart:async';
 
@@ -70,9 +70,12 @@ class ClawColors {
   static const codeString = Color(0xFFA5D6FF);
   static const codeComment = Color(0xFF8B949E);
   static const codeFunction = Color(0xFFD2A8FF);
+  static const codeGreen = Color(0xFF7EE787);
+  static const codeYellow = Color(0xFFD29922);
+  static const codeRed = Color(0xFFF85149);
 
   // ── Agent / model indicators ──
-  static const agentClaude = Color(0xFFD97706);
+  static const agentNeomClaw = Color(0xFFD97706);
   static const agentSonnet = Color(0xFF58A6FF);
   static const agentHaiku = Color(0xFF7EE787);
   static const agentOpus = Color(0xFFD2A8FF);

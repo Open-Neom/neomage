@@ -1,9 +1,9 @@
-// Search service — port of openclaude search functionality.
+// Search service — port of neom_claw search functionality.
 // Provides file search, content search, symbol search, and search history.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 import 'dart:math' as math;
 
 // ---------------------------------------------------------------------------

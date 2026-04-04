@@ -25,14 +25,14 @@ class HelpCommand extends LocalCommand {
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     if (args.isNotEmpty) {
       // Help for a specific command
-      final cmd = registry.find(args.trim());
+      final cmd = registry.get(args.trim());
       if (cmd == null) {
         return TextCommandResult('Unknown command: /$args');
       }
       return TextCommandResult(
-        '/${cmd.name} — ${cmd.description}'
-        '${cmd.aliases.isNotEmpty ? '\n  Aliases: ${cmd.aliases.map((a) => "/$a").join(", ")}' : ''}'
-        '${cmd.argumentHint != null ? '\n  Usage: /${cmd.name} ${cmd.argumentHint}' : ''}',
+        '/${cmd.name} — ${cmd.command.description}'
+        '${cmd.allAliases.isNotEmpty ? '\n  Aliases: ${cmd.allAliases.map((a) => "/$a").join(", ")}' : ''}'
+        '${cmd.command.argumentHint != null ? '\n  Usage: /${cmd.name} ${cmd.command.argumentHint}' : ''}',
       );
     }
 
@@ -45,8 +45,8 @@ class HelpCommand extends LocalCommand {
     buffer.writeln();
 
     for (final cmd in commands) {
-      final hint = cmd.argumentHint != null ? ' ${cmd.argumentHint}' : '';
-      buffer.writeln('  /${cmd.name}$hint — ${cmd.description}');
+      final hint = cmd.command.argumentHint != null ? ' ${cmd.command.argumentHint}' : '';
+      buffer.writeln('  /${cmd.name}$hint — ${cmd.command.description}');
     }
 
     buffer.writeln();

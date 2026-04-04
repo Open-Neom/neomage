@@ -1,18 +1,18 @@
-// SkillRegistry — port of openclaude/src/skills/.
+// SkillRegistry — port of neom_claw/src/skills/.
 // Manages skill definitions, loading, resolution, and execution.
 // Skills are modular prompt-based capabilities (like /commit, /review-pr, /pdf).
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 // ─── Types ───
 
 /// Skill source type.
 enum SkillSource {
   builtin, // Shipped with app
-  project, // .claude/skills/ in project
-  user, // ~/.claude/skills/ user-global
+  project, // .neomclaw/skills/ in project
+  user, // ~/.neomclaw/skills/ user-global
   mcp, // From MCP server
   remote, // Downloaded from registry
 }
@@ -278,16 +278,16 @@ class SkillRegistry {
 
     // Add search paths.
     if (projectRoot != null) {
-      _searchPaths.add('$projectRoot/.claude/skills');
-      _searchPaths.add('$projectRoot/.claude/commands'); // Legacy path
+      _searchPaths.add('$projectRoot/.neomclaw/skills');
+      _searchPaths.add('$projectRoot/.neomclaw/commands'); // Legacy path
     }
 
     final home = homeDir ??
         Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'];
     if (home != null) {
-      _searchPaths.add('$home/.claude/skills');
-      _searchPaths.add('$home/.claude/commands'); // Legacy path
+      _searchPaths.add('$home/.neomclaw/skills');
+      _searchPaths.add('$home/.neomclaw/commands'); // Legacy path
     }
 
     // Load from file system.
@@ -603,7 +603,7 @@ Include:
       final dir = Directory(searchPath);
       if (!await dir.exists()) continue;
 
-      final source = searchPath.contains('.claude/skills') &&
+      final source = searchPath.contains('.neomclaw/skills') &&
               !searchPath.startsWith(Platform.environment['HOME'] ?? '')
           ? SkillSource.project
           : SkillSource.user;

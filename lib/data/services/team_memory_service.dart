@@ -1,19 +1,19 @@
-// TeamMemoryService — port of openclaude/src/services/teamMemorySync/.
-// Manages shared team memory files (CLAUDE.md) sync, conflict resolution,
+// TeamMemoryService — port of neom_claw/src/services/teamMemorySync/.
+// Manages shared team memory files (NEOMCLAW.md) sync, conflict resolution,
 // and collaborative memory management.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 // ─── Types ───
 
 /// Memory file type.
 enum MemoryFileType {
-  claudeMd, // CLAUDE.md — project-level instructions
-  claudeLocalMd, // CLAUDE.local.md — personal instructions
+  neomClawMd, // NEOMCLAW.md — project-level instructions
+  neomClawLocalMd, // NEOMCLAW.local.md — personal instructions
   teamMd, // TEAM.md — shared team instructions
-  ruleset, // .claude/rules/*.md — modular rules
+  ruleset, // .neomclaw/rules/*.md — modular rules
 }
 
 /// Sync status for a memory file.
@@ -315,29 +315,29 @@ class TeamMemoryService {
   Future<List<MemoryFile>> loadAll() async {
     final paths = <String, MemoryFileType>{};
 
-    // CLAUDE.md at project root.
-    paths['$_projectRoot/CLAUDE.md'] = MemoryFileType.claudeMd;
+    // NEOMCLAW.md at project root.
+    paths['$_projectRoot/NEOMCLAW.md'] = MemoryFileType.neomClawMd;
 
-    // CLAUDE.local.md.
-    paths['$_projectRoot/CLAUDE.local.md'] = MemoryFileType.claudeLocalMd;
+    // NEOMCLAW.local.md.
+    paths['$_projectRoot/NEOMCLAW.local.md'] = MemoryFileType.neomClawLocalMd;
 
     // TEAM.md.
     paths['$_projectRoot/TEAM.md'] = MemoryFileType.teamMd;
 
-    // Walk parent directories for CLAUDE.md files.
+    // Walk parent directories for NEOMCLAW.md files.
     var dir = Directory(_projectRoot).parent;
     for (int i = 0; i < 5; i++) {
       // Max 5 levels up.
-      final claudeMd = File('${dir.path}/CLAUDE.md');
+      final claudeMd = File('${dir.path}/NEOMCLAW.md');
       if (await claudeMd.exists()) {
-        paths[claudeMd.path] = MemoryFileType.claudeMd;
+        paths[claudeMd.path] = MemoryFileType.neomClawMd;
       }
       if (dir.path == dir.parent.path) break; // Reached root.
       dir = dir.parent;
     }
 
-    // .claude/rules/*.md files.
-    final rulesDir = Directory('$_projectRoot/.claude/rules');
+    // .neomclaw/rules/*.md files.
+    final rulesDir = Directory('$_projectRoot/.neomclaw/rules');
     if (await rulesDir.exists()) {
       await for (final entity in rulesDir.list()) {
         if (entity is File && entity.path.endsWith('.md')) {
@@ -346,11 +346,11 @@ class TeamMemoryService {
       }
     }
 
-    // Home directory CLAUDE.md.
+    // Home directory NEOMCLAW.md.
     final home = Platform.environment['HOME'] ?? '';
     if (home.isNotEmpty) {
-      final homeClaude = '$home/.claude/CLAUDE.md';
-      paths[homeClaude] = MemoryFileType.claudeMd;
+      final homeNeomClaw = '$home/.neomclaw/NEOMCLAW.md';
+      paths[homeNeomClaw] = MemoryFileType.neomClawMd;
     }
 
     // Load each file.
@@ -581,7 +581,7 @@ class TeamMemoryService {
     String? targetPath,
     String? heading,
   }) async {
-    final path = targetPath ?? '$_projectRoot/CLAUDE.md';
+    final path = targetPath ?? '$_projectRoot/NEOMCLAW.md';
     final sectionHeading = heading ?? _categoryHeading(memory.category);
 
     // Check if section exists.
@@ -723,18 +723,18 @@ class TeamMemoryService {
     final buffer = StringBuffer();
     final sorted = _files.values.toList()
       ..sort((a, b) {
-        // Order: project CLAUDE.md first, then parent dirs, then rules, then team, then local.
+        // Order: project NEOMCLAW.md first, then parent dirs, then rules, then team, then local.
         final typeOrder = {
-          MemoryFileType.claudeMd: 0,
+          MemoryFileType.neomClawMd: 0,
           MemoryFileType.ruleset: 1,
           MemoryFileType.teamMd: 2,
-          MemoryFileType.claudeLocalMd: 3,
+          MemoryFileType.neomClawLocalMd: 3,
         };
         return (typeOrder[a.type] ?? 99).compareTo(typeOrder[b.type] ?? 99);
       });
 
     for (final file in sorted) {
-      if (!includeLocal && file.type == MemoryFileType.claudeLocalMd) continue;
+      if (!includeLocal && file.type == MemoryFileType.neomClawLocalMd) continue;
       if (!includeTeam && file.type == MemoryFileType.teamMd) continue;
       if (!includeRules && file.type == MemoryFileType.ruleset) continue;
 
@@ -756,11 +756,11 @@ class TeamMemoryService {
 
   MemoryFileType _inferType(String path) {
     final name = path.split('/').last;
-    if (name == 'CLAUDE.local.md') return MemoryFileType.claudeLocalMd;
-    if (name == 'CLAUDE.md') return MemoryFileType.claudeMd;
+    if (name == 'NEOMCLAW.local.md') return MemoryFileType.neomClawLocalMd;
+    if (name == 'NEOMCLAW.md') return MemoryFileType.neomClawMd;
     if (name == 'TEAM.md') return MemoryFileType.teamMd;
-    if (path.contains('.claude/rules/')) return MemoryFileType.ruleset;
-    return MemoryFileType.claudeMd;
+    if (path.contains('.neomclaw/rules/')) return MemoryFileType.ruleset;
+    return MemoryFileType.neomClawMd;
   }
 
   String _categoryHeading(MemoryCategory category) {

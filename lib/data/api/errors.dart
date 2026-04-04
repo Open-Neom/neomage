@@ -1,4 +1,4 @@
-// API error classification — ported from OpenClaude src/services/api/errors.ts.
+// API error classification — ported from NeomClaw src/services/api/errors.ts.
 
 /// Classified API error types.
 enum ApiErrorType {

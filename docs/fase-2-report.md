@@ -1,7 +1,7 @@
 # Fase 2: Tool System + Query Engine — Reporte Completo
 
 **Proyecto:** flutter_claw (Open Neom)
-**Fuente:** OpenClaude (~517,610 LOC TypeScript, 1,921 archivos)
+**Fuente:** NeomClaw (~517,610 LOC TypeScript, 1,921 archivos)
 **Fecha de inicio:** Abril 2026
 **Fecha de cierre Fase 2:** Abril 2026
 **Estado:** COMPLETADA

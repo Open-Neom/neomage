@@ -1,4 +1,4 @@
-// PromptInput — port of openclaude/src/components/PromptInput/.
+// PromptInput — port of neom_claw/src/components/PromptInput/.
 // Main chat input widget with @-mentions, slash commands, file drop, autocomplete.
 
 import 'dart:async';
@@ -648,13 +648,19 @@ class InputToolbar extends StatelessWidget {
   });
 
   String get _modelShort {
-    final m = currentModel ?? 'claude-sonnet-4-20250514';
+    final m = currentModel ?? 'gemini-2.5-flash';
+    if (m.contains('gemini')) return 'Gemini';
+    if (m.contains('qwen')) return 'Qwen';
+    if (m.contains('deepseek')) return 'DeepSeek';
     if (m.contains('opus')) return 'Opus';
     if (m.contains('sonnet')) return 'Sonnet';
     if (m.contains('haiku')) return 'Haiku';
     if (m.contains('gpt-4o-mini')) return 'GPT-4o Mini';
     if (m.contains('gpt-4o')) return 'GPT-4o';
-    if (m.contains('gemini')) return 'Gemini';
+    if (m.contains('o1')) return 'o1';
+    if (m.contains('o3')) return 'o3';
+    if (m.contains('llama')) return 'Llama';
+    if (m.contains('mistral')) return 'Mistral';
     if (m.length > 20) return '${m.substring(0, 17)}...';
     return m;
   }

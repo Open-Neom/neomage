@@ -3,8 +3,11 @@ import '../../domain/models/tool_definition.dart';
 
 /// Supported API provider types.
 enum ApiProviderType {
-  anthropic,
+  gemini,
+  qwen,
   openai,
+  deepseek,
+  anthropic,
   ollama,
   bedrock,
   vertex,
@@ -52,6 +55,51 @@ class ApiConfig {
   }) =>
       ApiConfig(
         type: ApiProviderType.openai,
+        baseUrl: baseUrl,
+        apiKey: apiKey,
+        model: model,
+        maxTokens: maxTokens,
+      );
+
+  /// Google Gemini.
+  factory ApiConfig.gemini({
+    required String apiKey,
+    String baseUrl = 'https://generativelanguage.googleapis.com/v1beta',
+    String model = 'gemini-2.5-flash',
+    int maxTokens = 65536,
+  }) =>
+      ApiConfig(
+        type: ApiProviderType.gemini,
+        baseUrl: baseUrl,
+        apiKey: apiKey,
+        model: model,
+        maxTokens: maxTokens,
+      );
+
+  /// Alibaba Qwen (DashScope).
+  factory ApiConfig.qwen({
+    required String apiKey,
+    String baseUrl = 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    String model = 'qwen-plus',
+    int maxTokens = 32768,
+  }) =>
+      ApiConfig(
+        type: ApiProviderType.qwen,
+        baseUrl: baseUrl,
+        apiKey: apiKey,
+        model: model,
+        maxTokens: maxTokens,
+      );
+
+  /// DeepSeek.
+  factory ApiConfig.deepseek({
+    required String apiKey,
+    String baseUrl = 'https://api.deepseek.com/v1',
+    String model = 'deepseek-chat',
+    int maxTokens = 32768,
+  }) =>
+      ApiConfig(
+        type: ApiProviderType.deepseek,
         baseUrl: baseUrl,
         apiKey: apiKey,
         model: model,

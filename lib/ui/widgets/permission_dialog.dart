@@ -1,5 +1,5 @@
 // Permission dialog — Flutter UI for tool permission prompts.
-// Port of openclaude's permission system UI components.
+// Port of neom_claw's permission system UI components.
 
 import 'package:flutter/material.dart';
 

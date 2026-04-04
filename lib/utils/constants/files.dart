@@ -1,4 +1,4 @@
-// Binary file detection — ported from OpenClaude src/constants/files.ts.
+// Binary file detection — ported from NeomClaw src/constants/files.ts.
 
 import 'dart:typed_data';
 

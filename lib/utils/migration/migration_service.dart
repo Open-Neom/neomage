@@ -1,9 +1,9 @@
-// Migration service — port of openclaude/src/utils/migration/.
+// Migration service — port of neom_claw/src/utils/migration/.
 // Settings migration, session format upgrades, version checks.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -291,7 +291,7 @@ class VersionInfo {
       };
 
   @override
-  String toString() => 'Flutter Claw v$version ($platform)';
+  String toString() => 'Neom Claw v$version ($platform)';
 }
 
 /// Parse a semantic version string.
@@ -347,10 +347,10 @@ Future<({bool available, String? latestVersion, String? releaseNotes})>
   return (available: false, latestVersion: null, releaseNotes: null);
 }
 
-/// Import settings from an existing Claude Code (Node.js) installation.
-Future<Map<String, dynamic>?> importFromClaudeCode() async {
+/// Import settings from an existing NeomClaw (Node.js) installation.
+Future<Map<String, dynamic>?> importFromNeomClaw() async {
   final home = Platform.environment['HOME'] ?? '';
-  final configPath = '$home/.claude/settings.json';
+  final configPath = '$home/.neomclaw/settings.json';
   final file = File(configPath);
 
   if (!await file.exists()) return null;
@@ -358,7 +358,7 @@ Future<Map<String, dynamic>?> importFromClaudeCode() async {
   try {
     final content = await file.readAsString();
     final data = jsonDecode(content) as Map<String, dynamic>;
-    // Convert Node.js Claude Code settings to Flutter Claw format
+    // Convert Node.js NeomClaw settings to Neom Claw format
     return _convertNodeSettings(data);
   } catch (_) {
     return null;
@@ -378,17 +378,17 @@ Map<String, dynamic> _convertNodeSettings(Map<String, dynamic> nodeSettings) {
       'hooks': nodeSettings['hooks'],
     if (nodeSettings.containsKey('mcpServers'))
       'mcpServers': nodeSettings['mcpServers'],
-    'importedFrom': 'claude-code-node',
+    'importedFrom': 'neom-claw-node',
     'importedAt': DateTime.now().toIso8601String(),
   };
 }
 
-/// Export Flutter Claw settings for backup.
+/// Export Neom Claw settings for backup.
 Future<String> exportSettings() async {
   final home = Platform.environment['HOME'] ?? '';
   final paths = [
-    '$home/.claude/settings.json',
-    '$home/.claude/settings.local.json',
+    '$home/.neomclaw/settings.json',
+    '$home/.neomclaw/settings.local.json',
   ];
 
   final export = <String, dynamic>{
@@ -415,11 +415,11 @@ Future<void> importSettings(String exportJson) async {
   if (settings == null) return;
 
   final home = Platform.environment['HOME'] ?? '';
-  final configDir = Directory('$home/.claude');
+  final configDir = Directory('/.neomclaw');
   await configDir.create(recursive: true);
 
   for (final entry in settings.entries) {
-    final file = File('$home/.claude/${entry.key}');
+    final file = File('$home/.neomclaw/${entry.key}');
     await file.writeAsString(
         const JsonEncoder.withIndent('  ').convert(entry.value));
   }

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
@@ -74,7 +74,7 @@ const _protectedPaths = <String>[
   '/Library/System',
 ];
 
-/// Write file contents — full port of openclaude/src/tools/FileWriteTool.
+/// Write file contents — full port of neom_claw/src/tools/FileWriteTool.
 ///
 /// Features:
 /// - Create parent directories if they don't exist

@@ -1,11 +1,11 @@
-// Native bridge — port of openclaude/src/native-ts/.
+// Native bridge — port of neom_claw/src/native-ts/.
 // Platform-specific native bindings: file dialogs, clipboard, notifications,
 // hotkeys, and system info.  Provides a concrete DesktopNativeBridge for
 // macOS/Linux/Windows and a stub WebNativeBridge.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 // ── Enums ──────────────────────────────────────────────────────────────────
 

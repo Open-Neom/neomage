@@ -1,4 +1,4 @@
-// TaskOutput tool — port of openclaude/src/tools/TaskOutputTool.
+// TaskOutput tool — port of neom_claw/src/tools/TaskOutputTool.
 // Retrieves output from background tasks (agents, bash commands).
 
 import 'dart:async';

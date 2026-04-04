@@ -1,10 +1,10 @@
-// HistoryService — port of openclaude/src/services/SessionMemory/ +
+// HistoryService — port of neom_claw/src/services/SessionMemory/ +
 // src/assistant/sessionHistory.ts.
 // Manages conversation history, search, replay, and analytics.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 // ─── Types ───
 

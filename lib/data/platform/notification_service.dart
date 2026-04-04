@@ -1,4 +1,4 @@
-// Notification service — port of openclaude notification system.
+// Notification service — port of neom_claw notification system.
 // Platform-agnostic notifications with desktop/mobile/web support.
 
 import 'dart:async';

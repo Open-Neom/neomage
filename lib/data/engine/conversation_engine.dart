@@ -1,4 +1,4 @@
-// ConversationEngine — port of openclaude/src/services/conversation/.
+// ConversationEngine — port of neom_claw/src/services/conversation/.
 // Core agentic loop: message → API → tool use → result → repeat.
 
 import 'dart:async';
@@ -10,6 +10,7 @@ import '../tools/tool.dart';
 import '../tools/tool_registry.dart';
 import '../../domain/models/message.dart';
 import '../../domain/models/permissions.dart';
+import '../../domain/models/tool_definition.dart';
 
 // ─── Types ───
 
@@ -361,7 +362,7 @@ class ConversationEngine {
 
           try {
             final resolvedName = _config.toolAliases?[toolName] ?? toolName;
-            final tool = _toolRegistry.getTool(resolvedName);
+            final tool = _toolRegistry.get(resolvedName);
 
             String result;
             bool isError = false;
@@ -370,7 +371,7 @@ class ConversationEngine {
               final output = await tool
                   .execute(toolInput)
                   .timeout(_config.toolTimeout);
-              result = output is String ? output : jsonEncode(output);
+              result = output.content;
             } else {
               result = 'Tool "$toolName" not found.';
               isError = true;
@@ -520,12 +521,16 @@ class ConversationEngine {
 
   /// Get tool definitions for the API.
   List<Map<String, dynamic>> _getToolDefinitions() {
-    final tools = _toolRegistry.getAllTools();
+    final tools = _toolRegistry.all.toList();
     final allowed = _config.allowedTools;
 
     return tools
         .where((t) => allowed == null || allowed.contains(t.name))
-        .map((t) => t.toApiSchema())
+        .map((t) => ToolDefinition(
+              name: t.name,
+              description: t.description,
+              inputSchema: t.inputSchema,
+            ).toApiMap())
         .toList();
   }
 
@@ -537,7 +542,13 @@ class ConversationEngine {
     String? stopReason;
 
     // Use the provider's streaming capabilities
-    final stream = _provider.stream(request);
+    final messages = request['messages'] as List<dynamic>? ?? [];
+    final systemPrompt = request['system'] as String? ?? '';
+    final stream = _provider.createMessageStream(
+      messages: messages.cast(),
+      systemPrompt: systemPrompt,
+      maxTokens: request['max_tokens'] as int?,
+    );
 
     final textBuffer = StringBuffer();
     final thinkingBuffer = StringBuffer();
@@ -548,28 +559,36 @@ class ConversationEngine {
       if (_cancelled) break;
 
       if (event is MessageStartEvent) {
-        inputTokens = event.inputTokens;
+        // MessageStartEvent only has messageId and model.
+        // Token usage comes from MessageDeltaEvent.
       } else if (event is ContentBlockStartEvent) {
         blockIndex = event.index;
-        accumulators[blockIndex] = Map<String, dynamic>.from(event.block);
-      } else if (event is ContentDeltaEvent) {
+        // Convert ContentBlock to a mutable map for accumulation.
+        final block = event.block;
+        final Map<String, dynamic> blockMap;
+        switch (block) {
+          case TextBlock():
+            blockMap = {'type': 'text', 'text': ''};
+          case ToolUseBlock(:final id, :final name, :final input):
+            blockMap = {'type': 'tool_use', 'id': id, 'name': name, 'input': input};
+          case ToolResultBlock():
+            blockMap = {'type': 'tool_result'};
+          case ImageBlock():
+            blockMap = {'type': 'image'};
+        }
+        accumulators[blockIndex] = blockMap;
+      } else if (event is ContentBlockDeltaEvent) {
         final acc = accumulators[event.index];
         if (acc != null) {
           if (acc['type'] == 'text') {
-            final delta = event.delta['text'] as String? ?? '';
+            final delta = event.text;
             textBuffer.write(delta);
             acc['text'] = textBuffer.toString();
             _events.add(StreamingText(delta));
-          } else if (acc['type'] == 'thinking') {
-            final delta = event.delta['thinking'] as String? ?? '';
-            thinkingBuffer.write(delta);
-            acc['thinking'] = thinkingBuffer.toString();
-            _events.add(StreamingThinking(delta));
           } else if (acc['type'] == 'tool_use') {
-            final partialJson =
-                event.delta['partial_json'] as String? ?? '';
+            // For tool_use blocks, delta text is partial JSON.
             acc['_partial_json'] =
-                (acc['_partial_json'] as String? ?? '') + partialJson;
+                (acc['_partial_json'] as String? ?? '') + event.text;
           }
         }
       } else if (event is ContentBlockStopEvent) {
@@ -588,8 +607,15 @@ class ConversationEngine {
           contentBlocks.add(acc);
         }
       } else if (event is MessageDeltaEvent) {
-        stopReason = event.stopReason;
-        outputTokens = event.outputTokens;
+        stopReason = switch (event.stopReason) {
+          StopReason.endTurn => 'end_turn',
+          StopReason.maxTokens => 'max_tokens',
+          StopReason.toolUse => 'tool_use',
+          StopReason.stopSequence => 'stop_sequence',
+          null => null,
+        };
+        outputTokens = event.usage?.outputTokens ?? outputTokens;
+        inputTokens = event.usage?.inputTokens ?? inputTokens;
       }
     }
 
@@ -738,19 +764,18 @@ class _StreamResult {
 // ─── Tool execution helpers ───
 
 /// Execute a tool with timeout and error handling.
-Future<String> executeToolSafe(
-  ClawTool tool,
+Future<ToolResult> executeToolSafe(
+  Tool tool,
   Map<String, dynamic> input, {
   Duration timeout = const Duration(minutes: 2),
 }) async {
   try {
-    final result = await tool.execute(input).timeout(timeout);
-    if (result is String) return result;
-    return jsonEncode(result);
+    return await tool.execute(input).timeout(timeout);
   } on TimeoutException {
-    return 'Error: Tool execution timed out after ${timeout.inSeconds}s.';
+    return ToolResult.error(
+        'Tool execution timed out after ${timeout.inSeconds}s.');
   } catch (e) {
-    return 'Error: $e';
+    return ToolResult.error('$e');
   }
 }
 

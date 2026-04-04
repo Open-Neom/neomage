@@ -1,12 +1,12 @@
-// Permission rule system — port of openclaude/src/utils/permissions/.
+// Permission rule system — port of neom_claw/src/utils/permissions/.
 // Rule types, matching, evaluation, and filesystem safety checks.
 
 /// Where a permission rule was loaded from.
 enum PermissionRuleSource {
   policySettings,   // MDM/enterprise (highest priority)
-  projectSettings,  // .claude/settings.json (shared)
-  localSettings,    // .claude/settings.local.json (gitignored)
-  userSettings,     // ~/.claude/settings.json (global)
+  projectSettings,  // .neomclaw/settings.json (shared)
+  localSettings,    // .neomclaw/settings.local.json (gitignored)
+  userSettings,     // ~/.neomclaw/settings.json (global)
   cliArg,           // --allow/--deny flags
   command,          // /config command
   session,          // Current session only
@@ -427,13 +427,13 @@ String? validatePermissionRule(String rule) {
 /// Files that require extra permission to modify.
 const dangerousFiles = {
   '.gitconfig', '.gitmodules', '.bashrc', '.bash_profile', '.zshrc',
-  '.zprofile', '.profile', '.ripgreprc', '.mcp.json', '.claude.json',
+  '.zprofile', '.profile', '.ripgreprc', '.mcp.json', '.neomclaw.json',
   '.npmrc', '.yarnrc', '.env', '.env.local', '.env.production',
   '.ssh/config', '.ssh/authorized_keys', '.ssh/known_hosts',
 };
 
 /// Directories that require extra permission.
-const dangerousDirectories = {'.git', '.vscode', '.idea', '.claude'};
+const dangerousDirectories = {'.git', '.vscode', '.idea', '.neomclaw'};
 
 /// Check if a file path is dangerous.
 bool isDangerousPath(String path) {

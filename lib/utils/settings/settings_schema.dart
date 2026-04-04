@@ -1,15 +1,15 @@
-// Settings schema — port of openclaude/src/utils/settings/.
+// Settings schema — port of neom_claw/src/utils/settings/.
 // Hierarchical settings loading, validation, merging, and change detection.
 
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 /// Settings sources in priority order.
 enum SettingsSource {
   policy,   // MDM-managed (highest priority)
-  project,  // .claude/settings.json
-  local,    // .claude/settings.local.json (gitignored)
-  user,     // ~/.claude/settings.json
+  project,  // .neomclaw/settings.json
+  local,    // .neomclaw/settings.local.json (gitignored)
+  user,     // ~/.neomclaw/settings.json
 }
 
 /// Sandbox settings.
@@ -217,9 +217,9 @@ Future<SettingsJson> loadMergedSettings({
   // Load each source
   final policy = policyPath != null ? await loadSettingsFile(policyPath) : null;
   final project =
-      await loadSettingsFile('$projectDir/.claude/settings.json');
+      await loadSettingsFile('$projectDir/.neomclaw/settings.json');
   final local =
-      await loadSettingsFile('$projectDir/.claude/settings.local.json');
+      await loadSettingsFile('$projectDir/.neomclaw/settings.local.json');
   final user = await loadSettingsFile('$userConfigDir/settings.json');
 
   // Merge (later sources fill gaps, earlier sources take priority)
@@ -430,8 +430,8 @@ class SettingsPaths {
 
   const SettingsPaths({required this.projectDir, required this.configDir});
 
-  String get projectSettings => '$projectDir/.claude/settings.json';
-  String get localSettings => '$projectDir/.claude/settings.local.json';
+  String get projectSettings => '$projectDir/.neomclaw/settings.json';
+  String get localSettings => '$projectDir/.neomclaw/settings.local.json';
   String get userSettings => '$configDir/settings.json';
   String get mcpConfig => '$configDir/.mcp.json';
   String get projectMcpConfig => '$projectDir/.mcp.json';

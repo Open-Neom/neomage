@@ -1,4 +1,4 @@
-// Tool result size limits — ported from OpenClaude src/constants/toolLimits.ts.
+// Tool result size limits — ported from NeomClaw src/constants/toolLimits.ts.
 
 /// Default maximum size in characters for tool results before disk persistence.
 const int defaultMaxResultSizeChars = 50000;

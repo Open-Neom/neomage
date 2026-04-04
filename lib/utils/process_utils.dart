@@ -1,9 +1,9 @@
-// Process utilities — port of openclaude process management.
+// Process utilities — port of neom_claw process management.
 // Process spawning, output capture, timeout handling.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 /// Result of a process execution.
 class ProcessOutput {

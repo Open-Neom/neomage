@@ -1,7 +1,7 @@
-// CLI adapter — port of openclaude CLI entrypoint.
+// CLI adapter — port of neom_claw CLI entrypoint.
 // Argument parsing, headless mode, and CLI compatibility layer.
 
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 /// Parsed CLI arguments.
 class CliArgs {
@@ -179,7 +179,7 @@ String _nextArg(List<String> args, int i, String name) {
 /// Print help text.
 void printHelp() {
   stdout.writeln('''
-Flutter Claw — AI coding assistant
+Neom Claw — AI coding assistant
 
 Usage: claw [options] [prompt]
 

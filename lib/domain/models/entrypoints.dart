@@ -1,4 +1,4 @@
-// SDK entrypoint types — ported from OpenClaude src/entrypoints/.
+// SDK entrypoint types — ported from NeomClaw src/entrypoints/.
 
 /// Hook event types that can be registered.
 enum HookEvent {

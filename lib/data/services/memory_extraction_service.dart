@@ -1,4 +1,4 @@
-// Memory extraction service — port of openclaude/src/services/extractMemories/.
+// Memory extraction service — port of neom_claw/src/services/extractMemories/.
 // Extracts, classifies, deduplicates, and ranks memory candidates from
 // conversations, tool output, and code changes.
 
@@ -71,7 +71,7 @@ class ExtractionConfig {
   /// Which categories to extract.  Empty means all.
   final Set<MemoryCategory> categories;
 
-  /// Automatically add to CLAUDE.md if confidence >= this threshold.
+  /// Automatically add to NEOMCLAW.md if confidence >= this threshold.
   /// Set to `null` to disable auto-approval.
   final double? autoApproveThreshold;
 
@@ -170,7 +170,7 @@ final List<_PatternRule> _builtInPatterns = [
     label: 'known issue',
   ),
   _PatternRule(
-    pattern: RegExp(r'\b(breaks when|fails if|do not|don\'t|careful with|watch out)\b', caseSensitive: false),
+    pattern: RegExp(r"\b(breaks when|fails if|do not|don\'t|careful with|watch out)\b", caseSensitive: false),
     category: MemoryCategory.knownIssues,
     baseConfidence: 0.55,
     label: 'potential issue',
@@ -367,7 +367,7 @@ class MemoryExtractionService {
 
   // ── Formatting ────────────────────────────────────────────────────────
 
-  /// Format a candidate as a markdown bullet suitable for CLAUDE.md.
+  /// Format a candidate as a markdown bullet suitable for NEOMCLAW.md.
   String formatForStorage(MemoryCandidate candidate) {
     final prefix = candidate.relatedFile != null
         ? '(`${candidate.relatedFile}`) '
@@ -375,7 +375,7 @@ class MemoryExtractionService {
     return '- $prefix${candidate.content}';
   }
 
-  /// Suggest which CLAUDE.md section a candidate should go into.
+  /// Suggest which NEOMCLAW.md section a candidate should go into.
   String suggestSection(MemoryCandidate candidate) {
     return switch (candidate.category) {
       MemoryCategory.codingConventions => 'Coding Conventions',
@@ -434,8 +434,8 @@ class MemoryExtractionService {
         lower.startsWith('note:') ||
         lower.startsWith('please remember') ||
         lower.contains('add to memory') ||
-        lower.contains('save to claude.md') ||
-        lower.contains('add this to claude.md');
+        lower.contains('save to neomclaw.md') ||
+        lower.contains('add this to neomclaw.md');
   }
 
   String _cleanExplicitMemory(String text) {

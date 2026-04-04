@@ -1,9 +1,9 @@
-// ConversationService — port of openclaude/src/services/conversation/.
+// ConversationService — port of neom_claw/src/services/conversation/.
 // Higher-level conversation management: history, sessions, forking, export.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -140,7 +140,7 @@ class ConversationService {
 
   ConversationService({String? sessionsDir})
       : _sessionsDir = sessionsDir ??
-            '${Platform.environment['HOME'] ?? '.'}/.claude/sessions';
+            '${Platform.environment['HOME'] ?? '.'}/.neomclaw/sessions';
 
   /// List all conversations, newest first.
   Future<List<ConversationSummary>> listConversations({

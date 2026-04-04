@@ -1,6 +1,6 @@
-/// Token counting and estimation utilities ported from OpenClaude TypeScript.
+/// Token counting and estimation utilities ported from NeomClaw TypeScript.
 ///
-/// Provides approximate tokenization compatible with cl100k_base (Claude/GPT-4),
+/// Provides approximate tokenization compatible with cl100k_base (NeomClaw/GPT-4),
 /// token budgets, cost estimation, and context window management.
 library;
 
@@ -27,7 +27,7 @@ abstract class TokenEncoder {
 // ---------------------------------------------------------------------------
 
 /// Regex pattern used to split text into rough BPE-compatible chunks, modeled
-/// after the cl100k_base tokenizer used by Claude and GPT-4.
+/// after the cl100k_base tokenizer used by NeomClaw and GPT-4.
 final RegExp _cl100kSplitPattern = RegExp(
   r"'(?:[sdmt]|ll|ve|re)|"             // contractions
   r'[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}][\p{Ll}]+|'  // Title-case words
@@ -206,7 +206,7 @@ class ModelPricing {
 class ModelPricingTable {
   ModelPricingTable._();
 
-  static const claudeSonnet = ModelPricing(
+  static const neomClawSonnet = ModelPricing(
     name: 'claude-sonnet-4-20250514',
     inputPerMillion: 3.0,
     outputPerMillion: 15.0,
@@ -216,7 +216,7 @@ class ModelPricingTable {
     maxOutputTokens: 8192,
   );
 
-  static const claudeOpus = ModelPricing(
+  static const neomClawOpus = ModelPricing(
     name: 'claude-opus-4-20250514',
     inputPerMillion: 15.0,
     outputPerMillion: 75.0,
@@ -226,7 +226,7 @@ class ModelPricingTable {
     maxOutputTokens: 32000,
   );
 
-  static const claudeHaiku = ModelPricing(
+  static const neomClawHaiku = ModelPricing(
     name: 'claude-3-5-haiku-20241022',
     inputPerMillion: 0.80,
     outputPerMillion: 4.0,
@@ -252,14 +252,14 @@ class ModelPricingTable {
     maxOutputTokens: 16384,
   );
 
-  /// Look up pricing by model name. Falls back to [claudeSonnet].
+  /// Look up pricing by model name. Falls back to [neomClawSonnet].
   static ModelPricing forModel(String model) {
     final lower = model.toLowerCase();
-    if (lower.contains('opus')) return claudeOpus;
-    if (lower.contains('haiku')) return claudeHaiku;
+    if (lower.contains('opus')) return neomClawOpus;
+    if (lower.contains('haiku')) return neomClawHaiku;
     if (lower.contains('gpt-4o-mini')) return gpt4oMini;
     if (lower.contains('gpt-4o')) return gpt4o;
-    return claudeSonnet;
+    return neomClawSonnet;
   }
 }
 

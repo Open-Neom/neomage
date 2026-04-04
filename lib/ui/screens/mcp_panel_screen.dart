@@ -1,4 +1,4 @@
-// MCP Panel Screen — port of openclaude/src/components/McpPanel/.
+// MCP Panel Screen — port of neom_claw/src/components/McpPanel/.
 // Shows MCP server status, tools, resources, prompts.
 
 import 'dart:async';

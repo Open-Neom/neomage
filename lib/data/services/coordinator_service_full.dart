@@ -1,4 +1,4 @@
-// CoordinatorService — port of openclaude/src/coordinator/coordinatorMode.ts.
+// CoordinatorService — port of neom_claw/src/coordinator/coordinatorMode.ts.
 // Manages multi-agent orchestration, task distribution, result aggregation,
 // and coordinated workflows between the main agent and sub-agents.
 
@@ -323,7 +323,7 @@ class TaskDecomposer {
           dependencies: mode == CoordinatorMode.sequential && previousId != null
               ? [previousId]
               : [],
-          requiredCapabilities: _inferCapabilities(taskPrompt),
+          requiredCapabilities: _inferCapabilities(taskPrompt).toList(),
         ));
 
         previousId = taskId;
@@ -344,7 +344,7 @@ class TaskDecomposer {
           description: taskPrompt,
           prompt: taskPrompt,
           createdAt: now,
-          requiredCapabilities: _inferCapabilities(taskPrompt),
+          requiredCapabilities: _inferCapabilities(taskPrompt).toList(),
         ));
       }
       return tasks;
@@ -366,7 +366,7 @@ class TaskDecomposer {
           prompt: taskPrompt,
           createdAt: now,
           dependencies: previousId != null ? [previousId] : [],
-          requiredCapabilities: _inferCapabilities(taskPrompt),
+          requiredCapabilities: _inferCapabilities(taskPrompt).toList(),
         ));
 
         previousId = taskId;
@@ -381,7 +381,7 @@ class TaskDecomposer {
       description: prompt,
       prompt: prompt,
       createdAt: now,
-      requiredCapabilities: _inferCapabilities(prompt),
+      requiredCapabilities: _inferCapabilities(prompt).toList(),
     ));
 
     return tasks;
@@ -701,7 +701,7 @@ class CoordinatorServiceFull {
       dependencies: dependencies,
       timeout: timeout,
       createdAt: DateTime.now(),
-      requiredCapabilities: _decomposer._inferCapabilities(prompt),
+      requiredCapabilities: _decomposer._inferCapabilities(prompt).toList(),
     );
 
     _tasks[task.id] = task;

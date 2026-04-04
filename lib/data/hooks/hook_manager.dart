@@ -1,9 +1,9 @@
-// Hook manager — port of openclaude/src/hooks.
+// Hook manager — port of neom_claw/src/hooks.
 // Manages hook registration, matching, and execution lifecycle.
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter_claw/core/platform/claw_io.dart';
 
 /// Hook event types.
 enum HookEvent {
