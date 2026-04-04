@@ -21,6 +21,8 @@ export 'domain/models/hook_schemas.dart';
 export 'domain/models/permissions.dart';
 export 'domain/models/plugin.dart';
 export 'domain/models/tool_definition.dart';
+export 'domain/models/text_input_types.dart'
+    hide VimMode, PromptInputMode, QueuePriority, QueuedCommand, isValidImagePaste;
 
 // Data — API
 export 'data/api/api_provider.dart';
@@ -89,7 +91,12 @@ export 'data/tools/skill_tool.dart'
         SkillRegistry;
 
 // Data — Compact + Session + Memory
-export 'data/compact/compaction_service.dart';
+export 'data/compact/compaction_service.dart'
+    show
+        CompactionService,
+        CompactionStrategy,
+        CompactionException,
+        OnCompactProgress;
 export 'data/memdir/memory_types.dart';
 export 'data/memdir/memory_scan.dart';
 export 'data/memdir/memdir_paths.dart';
@@ -146,6 +153,16 @@ export 'data/skills/skill.dart';
 
 // Data — Plugins
 export 'data/plugins/plugin_loader.dart';
+
+// Data — Remote
+export 'data/remote/remote_session_manager.dart'
+    hide RemoteSessionManager;
+export 'data/remote/sessions_websocket.dart';
+export 'data/remote/remote_permission_bridge.dart';
+export 'data/remote/sdk_message_adapter.dart';
+
+// Data — Voice
+export 'data/voice/voice_service.dart' hide VoiceState, VoiceService;
 
 // Data — Server + Proxy
 export 'data/server/direct_server.dart';

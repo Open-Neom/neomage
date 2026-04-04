@@ -89,7 +89,12 @@ export 'data/tools/skill_tool.dart'
         SkillRegistry;
 
 // Data — Compact + Session + Memory
-export 'data/compact/compaction_service.dart';
+export 'data/compact/compaction_service.dart'
+    show
+        CompactionService,
+        CompactionStrategy,
+        CompactionException,
+        OnCompactProgress;
 export 'data/memdir/memory_types.dart';
 export 'data/memdir/memory_scan.dart';
 export 'data/memdir/memdir_paths.dart';
