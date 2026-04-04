@@ -2,7 +2,7 @@
 // Builds context for LLM: file contents, git state, project info, search results.
 
 import 'dart:async';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 

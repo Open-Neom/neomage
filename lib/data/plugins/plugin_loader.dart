@@ -2,7 +2,7 @@
 // Discovers, loads, and manages plugins.
 
 import 'dart:convert';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import '../../domain/models/plugin.dart';
 import '../mcp/mcp_types.dart';

@@ -6,7 +6,7 @@ import 'dart:math';
 
 // Re-use the canonical MemoryCategory from the team memory service.
 // If the import path differs in your tree, adjust accordingly.
-import 'package:flutter_claw/data/services/team_memory_service.dart'
+import 'package:neom_claw/data/services/team_memory_service.dart'
     show MemoryCategory;
 
 // ── Enums ──────────────────────────────────────────────────────────────────

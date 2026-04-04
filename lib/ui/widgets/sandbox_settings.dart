@@ -7,7 +7,7 @@
 //   - Obx(() => Widget) reactive wrappers
 //   - Sint.find<T>() / Sint.put()
 
-import 'package:flutter_claw/core/platform/claw_io.dart' show Platform;
+import 'package:neom_claw/core/platform/claw_io.dart' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';

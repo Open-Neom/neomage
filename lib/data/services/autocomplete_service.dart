@@ -3,7 +3,7 @@
 // and contextual auto-complete for the chat input.
 
 import 'dart:async';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math';
 
 // ─── Types ───

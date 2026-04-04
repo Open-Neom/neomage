@@ -3,7 +3,7 @@
 // and specialised copy operations for code, diffs, and tool output.
 
 import 'dart:async';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:flutter/services.dart';
 

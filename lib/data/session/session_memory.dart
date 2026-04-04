@@ -2,7 +2,7 @@
 // Periodic background extraction of conversation notes into structured
 // markdown, enabling context-aware compaction and session resume.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import '../../domain/models/message.dart';
 

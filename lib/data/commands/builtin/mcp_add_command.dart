@@ -8,7 +8,7 @@
 // warnings, and writes the server configuration to the appropriate config file.
 
 import 'dart:convert';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 

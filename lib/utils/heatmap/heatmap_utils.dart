@@ -8,7 +8,7 @@
 ///   - transcriptSearch.ts (202 LOC) -- searchable text extraction
 library;
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math';
 
 import 'package:sint/sint.dart';

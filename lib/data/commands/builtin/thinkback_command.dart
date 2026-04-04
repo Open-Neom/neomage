@@ -5,7 +5,7 @@
 // animation playback, skill directory resolution, menu actions (play, edit,
 // fix, regenerate), and the complete ThinkbackFlow state machine.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 import 'package:sint/sint.dart';

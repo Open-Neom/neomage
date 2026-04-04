@@ -14,7 +14,7 @@
 //   - consolidationPrompt.ts (prompt builder)
 
 import 'dart:async';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:sint/sint.dart';
 

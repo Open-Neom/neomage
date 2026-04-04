@@ -2,7 +2,7 @@
 // Centralises app metadata, file-system paths, numeric limits,
 // timeouts, network config, platform support, and file-pattern lists.
 
-import 'package:flutter_claw/core/platform/claw_io.dart' show Platform;
+import 'package:neom_claw/core/platform/claw_io.dart' show Platform;
 
 // ---------------------------------------------------------------------------
 // System prompt prefixes (preserved from original stub)

@@ -16,7 +16,7 @@
 // Covers: input validation, auth/authz, crypto, injection/code execution,
 // data exposure, with extensive false-positive filtering rules and precedents.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';

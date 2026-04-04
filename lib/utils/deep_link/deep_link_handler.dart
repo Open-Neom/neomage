@@ -12,7 +12,7 @@
 /// - Terminal preference capture for deep link handling
 
 import 'dart:async';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 import 'package:sint/sint.dart';

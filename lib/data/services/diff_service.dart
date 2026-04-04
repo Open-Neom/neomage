@@ -2,7 +2,7 @@
 // Provides Myers diff algorithm, patch application, three-way merge,
 // and various diff formatting utilities.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math' as math;
 
 // ---------------------------------------------------------------------------

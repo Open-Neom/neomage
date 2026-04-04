@@ -11,7 +11,7 @@
 /// - Path traversal security checks
 
 import 'dart:convert' show jsonDecode;
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 import 'package:path/path.dart' as path;
 
 // ---------------------------------------------------------------------------

@@ -6,7 +6,7 @@
 //   WebSearch.
 
 import 'dart:convert';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import '../../domain/models/tool_definition.dart';
 import 'tool.dart';

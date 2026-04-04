@@ -12,7 +12,7 @@
 //   and dream status.
 
 import 'dart:async';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

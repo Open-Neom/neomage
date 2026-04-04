@@ -1,7 +1,7 @@
 // CLI adapter — port of neom_claw CLI entrypoint.
 // Argument parsing, headless mode, and CLI compatibility layer.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 /// Parsed CLI arguments.
 class CliArgs {

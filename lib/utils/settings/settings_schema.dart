@@ -2,7 +2,7 @@
 // Hierarchical settings loading, validation, merging, and change detection.
 
 import 'dart:convert';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 /// Settings sources in priority order.
 enum SettingsSource {

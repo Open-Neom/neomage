@@ -1,7 +1,7 @@
 // Git utilities — port of neom_claw git helpers.
 // Git operations, branch info, diff generation, worktree management.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 /// Git operation result.
 class GitResult {

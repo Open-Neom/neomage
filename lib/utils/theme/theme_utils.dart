@@ -3,7 +3,7 @@
 // Theme detection, color palettes, logo layout, and display utilities
 // for the neom_claw package.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart' show Color;

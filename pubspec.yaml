@@ -1,4 +1,4 @@
-name: flutter_claw
+name: neom_claw
 description: >-
   AI coding assistant for Flutter — multi-provider, multi-platform.
   Supports Gemini, Qwen, OpenAI, DeepSeek, Anthropic, and local models via Ollama.

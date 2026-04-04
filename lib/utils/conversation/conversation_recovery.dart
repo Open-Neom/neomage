@@ -4,9 +4,9 @@
 
 import 'dart:async';
 
-import 'package:flutter_claw/utils/messages/message_utils.dart' hide Message;
-import 'package:flutter_claw/utils/session/session_storage.dart';
-import 'package:flutter_claw/domain/models/logs.dart' hide SerializedMessage, LogOption;
+import 'package:neom_claw/utils/messages/message_utils.dart' hide Message;
+import 'package:neom_claw/utils/session/session_storage.dart';
+import 'package:neom_claw/domain/models/logs.dart' hide SerializedMessage, LogOption;
 
 // ─── Local Type Stubs ────────────────────────────────────────────────────────
 //

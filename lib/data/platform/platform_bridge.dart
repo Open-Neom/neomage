@@ -1,7 +1,7 @@
 // Platform bridge — port of neom_claw platform-specific abstractions.
 // Provides unified API across desktop, mobile, web, and CLI.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 /// Supported platforms.
 enum ClawPlatform {

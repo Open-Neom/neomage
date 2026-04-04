@@ -6,7 +6,7 @@
 // generation, HTML report building, and the command definition itself.
 
 import 'dart:convert';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math';
 
 import 'package:path/path.dart' as p;

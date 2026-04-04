@@ -2,11 +2,11 @@
 // Covers all entry modes: CLI, SDK, MCP server, headless, embedded, piped, remote.
 
 import 'dart:async';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
-import 'package:flutter_claw/domain/models/message.dart';
-import 'package:flutter_claw/domain/models/permissions.dart';
-import 'package:flutter_claw/domain/models/tool_definition.dart';
+import 'package:neom_claw/domain/models/message.dart';
+import 'package:neom_claw/domain/models/permissions.dart';
+import 'package:neom_claw/domain/models/tool_definition.dart';
 
 // ---------------------------------------------------------------------------
 // Entry mode enumeration

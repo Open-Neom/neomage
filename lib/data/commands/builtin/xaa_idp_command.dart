@@ -12,7 +12,7 @@
 //   clear  — Clear the IdP connection config and cached id_token
 
 import 'dart:convert';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 

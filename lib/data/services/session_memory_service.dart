@@ -4,7 +4,7 @@
 // to extract key information without interrupting the main conversation flow.
 
 import 'dart:async';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math';
 
 import 'package:sint/sint.dart';

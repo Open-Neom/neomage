@@ -9,7 +9,7 @@
 // Supports head_limit / offset pagination, glob filtering, type filtering,
 // multiline mode, case-insensitive search, and VCS directory exclusion.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 

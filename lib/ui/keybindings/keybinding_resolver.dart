@@ -2,7 +2,7 @@
 // Stateful chord resolution, conflict detection, platform-specific bindings,
 // user config loading/validation, and shortcut display formatting.
 
-import 'package:flutter_claw/core/platform/claw_io.dart' show Platform;
+import 'package:neom_claw/core/platform/claw_io.dart' show Platform;
 
 import 'keybinding_types.dart';
 

@@ -1,7 +1,7 @@
 // Shell provider — port of neom_claw/src/utils/shell/.
 // Shell detection, environment setup, command building, read-only validation.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 /// Shell type.
 enum ShellType { bash, zsh, sh, fish, powershell, cmd }

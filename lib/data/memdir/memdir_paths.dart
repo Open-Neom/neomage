@@ -1,7 +1,7 @@
 // Memdir path resolution — port of neom_claw/src/memdir/paths.ts.
 // Resolves memory directory locations with security validation.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 

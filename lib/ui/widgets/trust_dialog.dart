@@ -8,7 +8,7 @@
 //
 // The user must accept or exit before proceeding.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

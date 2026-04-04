@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter_claw/core/platform/claw_io.dart' as io;
+import 'package:neom_claw/core/platform/claw_io.dart' as io;
 import 'dart:typed_data';
 
 import 'platform_interface.dart';

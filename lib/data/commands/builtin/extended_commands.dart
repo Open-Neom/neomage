@@ -1,7 +1,7 @@
 // Extended commands — port of remaining NeomClaw commands.
 // All commands not already ported as individual files are collected here.
 
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';

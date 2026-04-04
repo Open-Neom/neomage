@@ -6,7 +6,7 @@
 /// allows rewinding to previous snapshots, and computes diff statistics.
 
 import 'dart:convert';
-import 'package:flutter_claw/core/platform/claw_io.dart';
+import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:sint/sint.dart';
 
