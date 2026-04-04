@@ -14,7 +14,7 @@ void main() async {
   final messages = [
     Message(
       role: MessageRole.user,
-      content: [TextBlock(text: 'Explain what Flutter is in one sentence.')],
+      content: [TextBlock('Explain what Flutter is in one sentence.')],
     ),
   ];
 

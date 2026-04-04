@@ -6,8 +6,6 @@
 library;
 
 import 'dart:async';
-import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart' as io;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -252,8 +250,9 @@ class MockToolRegistry {
   /// Invoke a registered mock tool. Throws if not registered.
   Future<ToolResult> invoke(String name, Map<String, dynamic> input) async {
     final handler = _tools[name];
-    if (handler == null)
+    if (handler == null) {
       throw StateError('No mock tool registered for "$name"');
+    }
     return handler(input);
   }
 

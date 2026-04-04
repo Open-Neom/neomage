@@ -4,8 +4,7 @@
 *.pyc
 *.swp
 
-# Itzli model artifacts (too large for git)
-adapters/
+# Model artifacts
 *.gguf
 *.bin
 *.safetensors
