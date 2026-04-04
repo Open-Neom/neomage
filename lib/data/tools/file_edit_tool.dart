@@ -6,6 +6,8 @@
 //   - utils.ts: quote normalization, desanitization, patch generation,
 //     snippet extraction, edit equivalence checking
 
+import 'dart:convert';
+
 import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math';
 import 'dart:typed_data';
