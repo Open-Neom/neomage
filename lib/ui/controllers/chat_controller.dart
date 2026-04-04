@@ -1,12 +1,14 @@
 import 'dart:convert';
 
 import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:sint_sentinel/sint_sentinel.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:sint/sint.dart';
 
 import '../../data/api/anthropic_client.dart';
 import '../../data/api/api_provider.dart';
+import '../../data/api/gemini_client.dart';
 import '../../data/api/openai_shim.dart';
 import '../../data/auth/auth_service.dart';
 import '../../utils/config/settings.dart';
@@ -57,6 +59,7 @@ class ChatController extends SintController {
   // ── Initialization ──
 
   Future<bool> initialize() async {
+    SintSentinel.logger.i('ChatController.initialize() starting...');
     final config = await _authService.loadApiConfig();
     if (config == null) return false;
 
@@ -73,13 +76,18 @@ class ChatController extends SintController {
     );
 
     update();
+    SintSentinel.logger.i('ChatController.initialize() completed');
     return true;
   }
 
-  ApiProvider _createProvider(ApiConfig config) => switch (config.type) {
-    ApiProviderType.anthropic => AnthropicClient(config),
-    _ => OpenAiShim(config),
-  };
+  ApiProvider _createProvider(ApiConfig config) {
+    SintSentinel.logger.d('Creating provider for type: ${config.type.name}');
+    return switch (config.type) {
+      ApiProviderType.anthropic => AnthropicClient(config),
+      ApiProviderType.gemini => GeminiClient(config),
+      _ => OpenAiShim(config),
+    };
+  }
 
   ToolRegistry _createToolRegistry() {
     final registry = ToolRegistry();
@@ -106,6 +114,8 @@ class ChatController extends SintController {
   }) async {
     if (text.trim().isEmpty && attachments.isEmpty) return;
     if (_engine == null) return;
+
+    SintSentinel.logger.d('sendMessage: ${text.length} chars, ${attachments.length} attachments');
 
     error.value = null;
     isLoading.value = true;
@@ -149,9 +159,11 @@ class ChatController extends SintController {
           streamingText.value += delta;
         },
         onToolUse: (name, input) {
+          SintSentinel.logger.d('Tool use: $name');
           currentToolName.value = name;
         },
         onToolResult: (name, result) {
+          SintSentinel.logger.d('Tool result: $name');
           currentToolName.value = null;
         },
       );
@@ -161,6 +173,7 @@ class ChatController extends SintController {
       streamingText.value = '';
       isStreaming.value = false;
     } catch (e) {
+      SintSentinel.logger.e('sendMessage error', error: e);
       error.value = e.toString();
       isStreaming.value = false;
     }

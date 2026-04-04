@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
-/// Displays streaming text with a blinking cursor.
+import '../../domain/models/message.dart';
+import 'message_renderer.dart';
+
+/// Displays streaming text with a blinking cursor using the full MessageRenderer.
 class StreamingText extends StatelessWidget {
   final String text;
   final String? toolName;
@@ -10,61 +12,37 @@ class StreamingText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.85,
-        ),
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4, left: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Assistant',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  if (toolName != null) ...[
-                    const SizedBox(width: 8),
-                    _ToolIndicator(name: toolName!),
-                  ],
-                ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Assistant',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white38 : Colors.black38,
+                ),
               ),
-            ),
-            Card(
-              color: colorScheme.surfaceContainerHighest,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: text.isEmpty
-                    ? _ThinkingDots()
-                    : MarkdownBody(
-                        data: '$text\u258C', // Block cursor
-                        selectable: true,
-                        styleSheet: MarkdownStyleSheet(
-                          codeblockDecoration: BoxDecoration(
-                            color: Colors.black87,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          code: const TextStyle(
-                            fontFamily: 'JetBrains Mono',
-                            fontSize: 13,
-                            color: Colors.greenAccent,
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-          ],
-        ),
+              if (toolName != null) ...[
+                const SizedBox(width: 8),
+                _ToolIndicator(name: toolName!),
+              ],
+            ],
+          ),
+          const SizedBox(height: 4),
+          text.isEmpty
+              ? _ThinkingDots()
+              : MessageRenderer(
+                  block: TextBlock('$text\u258C'),
+                ),
+        ],
       ),
     );
   }

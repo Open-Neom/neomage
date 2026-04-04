@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:sint_sentinel/sint_sentinel.dart';
 
 import '../../domain/models/message.dart';
 import '../../domain/models/tool_definition.dart';
@@ -52,19 +53,26 @@ class AnthropicClient extends ApiProvider {
       stream: true,
     );
 
-    final request = http.Request(
-      'POST',
-      Uri.parse('${config.baseUrl}/v1/messages'),
-    );
+    final url = '${config.baseUrl}/v1/messages';
+    final maskedKey = '${config.apiKey!.substring(0, 4)}...${config.apiKey!.substring(config.apiKey!.length - 4)}';
+    SintSentinel.logger.d('AnthropicClient.createMessageStream: POST $url (key: $maskedKey)');
+
+    final request = http.Request('POST', Uri.parse(url));
     request.headers.addAll(_headers);
     request.body = jsonEncode(body);
 
     final client = http.Client();
-    final response = await client.send(request);
+    final response = await SintSentinel.guard(
+      () => client.send(request),
+      tag: 'AnthropicClient.createMessageStream',
+    );
+
+    SintSentinel.logger.d('AnthropicClient response status: ${response.statusCode}');
 
     if (response.statusCode != 200) {
       final errorBody = await response.stream.bytesToString();
       client.close();
+      SintSentinel.logger.e('AnthropicClient API error ${response.statusCode}: $errorBody');
       final classified = classifyApiError(
         statusCode: response.statusCode,
         body: errorBody,
@@ -97,13 +105,18 @@ class AnthropicClient extends ApiProvider {
           stream: false,
         );
 
-        final response = await http.post(
-          Uri.parse('${config.baseUrl}/v1/messages'),
-          headers: _headers,
-          body: jsonEncode(body),
+        final url = Uri.parse('${config.baseUrl}/v1/messages');
+        SintSentinel.logger.d('AnthropicClient.createMessage: POST $url (attempt: $attempt)');
+
+        final response = await SintSentinel.guard(
+          () => http.post(url, headers: _headers, body: jsonEncode(body)),
+          tag: 'AnthropicClient.createMessage',
         );
 
+        SintSentinel.logger.d('AnthropicClient.createMessage response: ${response.statusCode}');
+
         if (response.statusCode != 200) {
+          SintSentinel.logger.e('AnthropicClient API error ${response.statusCode}: ${response.body}');
           throw classifyApiError(
             statusCode: response.statusCode,
             body: response.body,

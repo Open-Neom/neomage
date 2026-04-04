@@ -2,6 +2,7 @@
 // Renders conversation messages with markdown, code blocks, and tool outputs.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../domain/models/message.dart';
 import 'diff_view.dart';
@@ -445,8 +446,8 @@ class _MarkdownView extends StatelessWidget {
   }
 }
 
-/// Code block with syntax highlighting and language label.
-class _CodeBlockWidget extends StatelessWidget {
+/// Code block with syntax highlighting, language label, and copy button.
+class _CodeBlockWidget extends StatefulWidget {
   final String code;
   final String? language;
   final bool isDark;
@@ -460,50 +461,113 @@ class _CodeBlockWidget extends StatelessWidget {
   });
 
   @override
+  State<_CodeBlockWidget> createState() => _CodeBlockWidgetState();
+}
+
+class _CodeBlockWidgetState extends State<_CodeBlockWidget> {
+  bool _copied = false;
+
+  void _copyCode() {
+    Clipboard.setData(ClipboardData(text: widget.code));
+    setState(() => _copied = true);
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _copied = false);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final lang = language != null ? detectLanguage(language!) : 'plaintext';
+    final lang = widget.language != null
+        ? detectLanguage(widget.language!)
+        : 'plaintext';
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E2E) : const Color(0xFFF6F8FA),
+        color: widget.isDark
+            ? const Color(0xFF1E1E2E)
+            : const Color(0xFFF6F8FA),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? const Color(0xFF333344) : const Color(0xFFE1E4E8),
+          color: widget.isDark
+              ? const Color(0xFF333344)
+              : const Color(0xFFE1E4E8),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (language != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF282840)
-                    : const Color(0xFFEAECF0),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(7),
-                  topRight: Radius.circular(7),
-                ),
-              ),
-              child: Text(
-                language!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isDark ? Colors.white38 : Colors.black38,
-                  fontFamily: 'monospace',
-                ),
+          // Header: language label + copy button
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: widget.isDark
+                  ? const Color(0xFF282840)
+                  : const Color(0xFFEAECF0),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(7),
+                topRight: Radius.circular(7),
               ),
             ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.language ?? 'code',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: widget.isDark ? Colors.white38 : Colors.black38,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                InkWell(
+                  onTap: _copyCode,
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _copied ? Icons.check : Icons.copy,
+                          size: 14,
+                          color: _copied
+                              ? Colors.greenAccent
+                              : (widget.isDark
+                                  ? Colors.white38
+                                  : Colors.black38),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _copied ? 'Copied' : 'Copy',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: _copied
+                                ? Colors.greenAccent
+                                : (widget.isDark
+                                    ? Colors.white38
+                                    : Colors.black38),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Code body
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.all(12),
             child: SyntaxHighlightView(
-              code: code,
+              code: widget.code,
               language: lang,
-              colors: syntaxColors,
-              showLineNumbers: code.split('\n').length > 3,
+              colors: widget.syntaxColors,
+              showLineNumbers: widget.code.split('\n').length > 3,
             ),
           ),
         ],

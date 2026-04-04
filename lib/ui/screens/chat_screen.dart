@@ -14,7 +14,7 @@ import '../../domain/models/message.dart';
 import '../../utils/config/settings.dart';
 import '../controllers/chat_controller.dart';
 import '../widgets/input_bar.dart';
-import '../widgets/message_bubble.dart';
+import '../widgets/message_renderer.dart';
 import '../widgets/streaming_text.dart';
 
 // ── Side Panel Tab Enum ──
@@ -455,7 +455,7 @@ class _ChatScreenState extends State<ChatScreen>
                                   colorScheme,
                                 );
                               }
-                              return MessageBubble(message: msgs[index]);
+                              return ConversationMessage(message: msgs[index]);
                             },
                           );
                         }),

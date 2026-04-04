@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sint_sentinel/sint_sentinel.dart';
 import 'package:sint/sint.dart';
 
 import '../../claw_routes.dart';
 import '../../data/api/anthropic_client.dart';
 import '../../data/api/api_provider.dart';
+import '../../data/api/gemini_client.dart';
 import '../../data/api/openai_shim.dart';
 import '../../data/auth/auth_service.dart';
 import '../../domain/models/message.dart';
@@ -176,6 +178,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // ── API test connection ──
 
   Future<void> _testConnection() async {
+    SintSentinel.logger.d('Testing connection for provider: ${_providerType.name}');
     setState(() {
       _testingConnection = true;
       _connectionTestResult = null;
@@ -208,9 +211,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         baseUrl: baseUrl,
       );
 
-      final provider = _providerType == ApiProviderType.anthropic
-          ? AnthropicClient(config)
-          : OpenAiShim(config);
+      final provider = switch (_providerType) {
+        ApiProviderType.anthropic => AnthropicClient(config),
+        ApiProviderType.gemini => GeminiClient(config),
+        _ => OpenAiShim(config),
+      };
 
       // Send a tiny completion to verify the key works.
       final stream = provider.createMessageStream(
@@ -227,11 +232,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       // We only need the first event — if we get one, the key is valid.
       await stream.first.timeout(const Duration(seconds: 10));
 
+      SintSentinel.logger.i('Connection test succeeded for ${_providerType.name}');
       setState(() {
         _testingConnection = false;
         _connectionTestResult = _ConnectionTestResult.success();
       });
     } catch (e) {
+      SintSentinel.logger.w('Connection test failed for ${_providerType.name}', error: e);
       final msg = e.toString();
       // Make common errors user-friendly.
       final friendlyMsg = msg.contains('401') || msg.contains('Unauthorized')
@@ -293,6 +300,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // ── Finish onboarding ──
 
   Future<void> _finish() async {
+    SintSentinel.logger.i('Finishing onboarding — persisting configuration...');
     setState(() => _finishing = true);
 
     try {
@@ -320,16 +328,20 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       // Workspace dir, git toggle, NEOMCLAW.md are handled by the engine.
 
       if (mounted) {
+        SintSentinel.logger.d('Initializing ChatController...');
         final chat = Sint.find<ChatController>();
         final ok = await chat.initialize();
         if (ok && mounted) {
+          SintSentinel.logger.i('Onboarding complete — navigating to chat');
           Sint.offAllNamed(ClawRouteConstants.chat);
         } else if (mounted) {
+          SintSentinel.logger.w('ChatController initialization failed');
           _showSnack('Initialization failed. Check your API key.');
           setState(() => _finishing = false);
         }
       }
     } catch (e) {
+      SintSentinel.logger.e('Onboarding finish error', error: e);
       if (mounted) {
         _showSnack('Error: $e');
         setState(() => _finishing = false);

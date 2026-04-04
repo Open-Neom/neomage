@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:sint_sentinel/sint_sentinel.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/models/message.dart';
@@ -172,17 +173,27 @@ class OpenAiShim extends ApiProvider {
       body['tools'] = tools.map((t) => t.toOpenAiMap()).toList();
     }
 
-    final request = http.Request(
-      'POST',
-      Uri.parse('${config.baseUrl}/chat/completions'),
-    );
+    final url = '${config.baseUrl}/chat/completions';
+    final maskedKey = config.apiKey != null
+        ? '${config.apiKey!.substring(0, 4)}...${config.apiKey!.substring(config.apiKey!.length - 4)}'
+        : 'none';
+    SintSentinel.logger.d('OpenAiShim.createMessageStream: POST $url (key: $maskedKey)');
+
+    final request = http.Request('POST', Uri.parse(url));
     request.headers.addAll(_headers);
     request.body = jsonEncode(body);
 
-    final response = await http.Client().send(request);
+    final client = http.Client();
+    final response = await SintSentinel.guard(
+      () => client.send(request),
+      tag: 'OpenAiShim.createMessageStream',
+    );
+
+    SintSentinel.logger.d('OpenAiShim response status: ${response.statusCode}');
 
     if (response.statusCode != 200) {
       final errorBody = await response.stream.bytesToString();
+      SintSentinel.logger.e('OpenAiShim API error ${response.statusCode}: $errorBody');
       yield ErrorEvent(
         message: 'OpenAI API error ${response.statusCode}: $errorBody',
         type: 'api_error',
@@ -317,13 +328,18 @@ class OpenAiShim extends ApiProvider {
       body['tools'] = tools.map((t) => t.toOpenAiMap()).toList();
     }
 
-    final response = await http.post(
-      Uri.parse('${config.baseUrl}/chat/completions'),
-      headers: _headers,
-      body: jsonEncode(body),
+    final url = Uri.parse('${config.baseUrl}/chat/completions');
+    SintSentinel.logger.d('OpenAiShim.createMessage: POST $url');
+
+    final response = await SintSentinel.guard(
+      () => http.post(url, headers: _headers, body: jsonEncode(body)),
+      tag: 'OpenAiShim.createMessage',
     );
 
+    SintSentinel.logger.d('OpenAiShim.createMessage response: ${response.statusCode}');
+
     if (response.statusCode != 200) {
+      SintSentinel.logger.e('OpenAiShim API error ${response.statusCode}: ${response.body}');
       throw Exception(
         'OpenAI API error ${response.statusCode}: ${response.body}',
       );

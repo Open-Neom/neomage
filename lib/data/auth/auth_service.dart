@@ -1,4 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:sint_sentinel/sint_sentinel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api_provider.dart';
@@ -104,6 +105,7 @@ class AuthService {
     if (baseUrl != null) {
       await prefs.setString(_baseUrlKey, baseUrl);
     }
+    SintSentinel.logger.i('Saved provider config: ${type.name}, model: $model');
   }
 
   /// Load the full [ApiConfig] from stored preferences and secure keys.
@@ -111,10 +113,15 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     final typeStr = prefs.getString(_providerTypeKey);
 
+    SintSentinel.logger.d('Loading API config for provider: $typeStr');
+
     if (typeStr == null) {
       // Try Gemini by default (NeomClaw default provider)
       final apiKey = await getGeminiApiKey();
-      if (apiKey == null) return null;
+      if (apiKey == null) {
+        SintSentinel.logger.w('No API key found for gemini (default)');
+        return null;
+      }
       return ApiConfig.gemini(apiKey: apiKey);
     }
 
@@ -129,17 +136,26 @@ class AuthService {
     switch (type) {
       case ApiProviderType.gemini:
         final apiKey = await getGeminiApiKey();
-        if (apiKey == null) return null;
+        if (apiKey == null) {
+          SintSentinel.logger.w('No API key found for $type');
+          return null;
+        }
         return ApiConfig.gemini(apiKey: apiKey, model: model);
 
       case ApiProviderType.qwen:
         final apiKey = await getQwenApiKey();
-        if (apiKey == null) return null;
+        if (apiKey == null) {
+          SintSentinel.logger.w('No API key found for $type');
+          return null;
+        }
         return ApiConfig.qwen(apiKey: apiKey, model: model);
 
       case ApiProviderType.anthropic:
         final apiKey = await getAnthropicApiKey();
-        if (apiKey == null) return null;
+        if (apiKey == null) {
+          SintSentinel.logger.w('No API key found for $type');
+          return null;
+        }
         return ApiConfig.anthropic(apiKey: apiKey, model: model);
 
       case ApiProviderType.openai:
@@ -152,7 +168,10 @@ class AuthService {
 
       case ApiProviderType.deepseek:
         final apiKey = await getDeepSeekApiKey();
-        if (apiKey == null) return null;
+        if (apiKey == null) {
+          SintSentinel.logger.w('No API key found for $type');
+          return null;
+        }
         return ApiConfig.deepseek(apiKey: apiKey, model: model);
 
       case ApiProviderType.ollama:
