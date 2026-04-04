@@ -2,10 +2,10 @@ name: neom_claw
 description: >-
   Multi-provider AI coding assistant for Flutter. Supports Gemini, OpenAI, Anthropic,
   DeepSeek, Qwen and Ollama with streaming, tool execution, and MCP client.
-version: 0.1.0
-homepage: https://github.com/Open-Neom/flutter_claw
-repository: https://github.com/Open-Neom/flutter_claw
-issue_tracker: https://github.com/Open-Neom/flutter_claw/issues
+version: 1.0.0
+homepage: https://github.com/Open-Neom/neom_claw
+repository: https://github.com/Open-Neom/neom_claw
+issue_tracker: https://github.com/Open-Neom/neom_claw/issues
 topics:
   - ai
   - coding-assistant
@@ -23,6 +23,8 @@ dependencies:
 
   # Sint framework (S.I.N.T. — State, Injection, Navigation, Translation)
   sint: ^1.3.0
+  # Circuit Breaker, Rate Limiter & Logger
+  sint_sentinel: ^1.1.0
 
   # HTTP + Streaming
   http: ^1.4.0
@@ -37,10 +39,6 @@ dependencies:
   flutter_markdown_plus: ^1.0.1
   google_fonts: ^8.0.2
 
-  # Circuit Breaker, Rate Limiter & Logger
-  sint_sentinel:
-    git:
-      url: git@github.com:Open-Neom/sint_sentinel.git
 
   # Utils
   characters: ^1.4.0
