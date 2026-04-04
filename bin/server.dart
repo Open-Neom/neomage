@@ -8,9 +8,12 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 
 const int _port = 3219;
+
+void _log(String message) => developer.log(message, name: 'neom_claw');
 
 // ---------------------------------------------------------------------------
 // Active processes — keyed by PID
@@ -23,8 +26,8 @@ final Map<int, Process> _activeProcesses = {};
 
 Future<void> main() async {
   final server = await HttpServer.bind('127.0.0.1', _port);
-  print('neom_claw local server running on http://localhost:$_port');
-  print('Press Ctrl+C to stop.\n');
+  _log('neom_claw local server running on http://localhost:$_port');
+  _log('Press Ctrl+C to stop.');
 
   await for (final request in server) {
     try {
@@ -276,7 +279,7 @@ Future<void> _fsTempFile(HttpRequest request) async {
   final prefix = body['prefix'] as String? ?? 'tmp_';
   final suffix = body['suffix'] as String? ?? '';
   final tempFile = await File(
-    '${Directory.systemTemp.path}/${prefix}${DateTime.now().millisecondsSinceEpoch}$suffix',
+    '${Directory.systemTemp.path}/$prefix${DateTime.now().millisecondsSinceEpoch}$suffix',
   ).create();
   _sendJson(request.response, {'path': tempFile.path});
 }
@@ -294,7 +297,7 @@ Future<void> _fsWatch(HttpRequest request) async {
   final recursive = request.uri.queryParameters['recursive'] != 'false';
 
   final ws = await WebSocketTransformer.upgrade(request);
-  print('[watch] Watching $path (recursive=$recursive)');
+  _log('[watch] Watching $path (recursive=$recursive)');
 
   final subscription = Directory(path).watch(recursive: recursive).listen((
     event,
@@ -307,7 +310,7 @@ Future<void> _fsWatch(HttpRequest request) async {
     (_) {},
     onDone: () {
       subscription.cancel();
-      print('[watch] Stopped watching $path');
+      _log('[watch] Stopped watching $path');
     },
   );
 }
@@ -342,7 +345,7 @@ Future<void> _processRun(HttpRequest request) async {
   final timeoutMs = body['timeoutMs'] as int?;
   final runInShell = body['runInShell'] as bool? ?? false;
 
-  print('[process] run: $executable ${arguments.join(' ')}');
+  _log('[process] run: $executable ${arguments.join(' ')}');
 
   final result =
       await Process.run(
@@ -373,7 +376,7 @@ Future<void> _processStart(HttpRequest request) async {
       : null;
   final runInShell = body['runInShell'] as bool? ?? false;
 
-  print('[process] start: $executable ${arguments.join(' ')}');
+  _log('[process] start: $executable ${arguments.join(' ')}');
 
   final process = await Process.start(
     executable,
@@ -388,7 +391,7 @@ Future<void> _processStart(HttpRequest request) async {
   // Auto-cleanup when process exits.
   process.exitCode.then((_) {
     _activeProcesses.remove(process.pid);
-    print('[process] pid=${process.pid} exited');
+    _log('[process] pid=${process.pid} exited');
   });
 
   _sendJson(request.response, {'pid': process.pid});
@@ -429,7 +432,7 @@ Future<void> _processStream(HttpRequest request) async {
   }
 
   final ws = await WebSocketTransformer.upgrade(request);
-  print('[process] streaming pid=$pid');
+  _log('[process] streaming pid=$pid');
 
   final stdoutSub = process.stdout
       .transform(utf8.decoder)
@@ -507,7 +510,7 @@ Future<void> _httpProxy(HttpRequest request) async {
   final reqBody = body['body'] as String?;
   final timeoutMs = body['timeoutMs'] as int?;
 
-  print('[http] $method $url');
+  _log('[http] $method $url');
 
   final client = HttpClient();
   if (timeoutMs != null) {
@@ -549,7 +552,7 @@ Future<void> _httpProxy(HttpRequest request) async {
 
 Future<void> _wsProxy(HttpRequest request) async {
   final targetUrl = _queryParam(request, 'url');
-  print('[ws] proxy to $targetUrl');
+  _log('[ws] proxy to $targetUrl');
 
   final clientWs = await WebSocketTransformer.upgrade(request);
   final targetWs = await WebSocket.connect(targetUrl);
