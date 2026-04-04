@@ -42,7 +42,8 @@ class CompactCommand extends LocalCommand {
       final saved = result.preCompactTokenCount - result.postCompactTokenCount;
       return CompactCommandResult(
         result.compactedMessages,
-        displayText: 'Conversation compacted. '
+        displayText:
+            'Conversation compacted. '
             'Reduced from ~${result.preCompactTokenCount} to '
             '~${result.postCompactTokenCount} tokens '
             '(saved ~$saved tokens).',

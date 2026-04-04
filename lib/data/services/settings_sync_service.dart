@@ -1,4 +1,4 @@
-// Settings sync service — port of openneomclaw/src/services/settingsSync/.
+// Settings sync service — port of neom_claw/src/services/settingsSync/.
 // Syncs user settings and memory files across NeomClaw environments.
 //
 // - Interactive CLI: Uploads local settings to remote (incremental, only changed entries)
@@ -63,12 +63,12 @@ class UserSyncData {
   }
 
   Map<String, dynamic> toJson() => {
-        'userId': userId,
-        'version': version,
-        'lastModified': lastModified,
-        'checksum': checksum,
-        'content': content.toJson(),
-      };
+    'userId': userId,
+    'version': version,
+    'lastModified': lastModified,
+    'checksum': checksum,
+    'content': content.toJson(),
+  };
 }
 
 /// Result from fetching user settings.
@@ -142,14 +142,27 @@ class ClassifiedError {
 /// Classify an HTTP error into a category.
 ClassifiedError classifyHttpError(Object error) {
   final msg = error.toString().toLowerCase();
-  if (msg.contains('401') || msg.contains('403') || msg.contains('unauthorized')) {
-    return ClassifiedError(kind: 'auth', message: 'Not authorized for settings sync');
+  if (msg.contains('401') ||
+      msg.contains('403') ||
+      msg.contains('unauthorized')) {
+    return ClassifiedError(
+      kind: 'auth',
+      message: 'Not authorized for settings sync',
+    );
   }
   if (msg.contains('timeout')) {
-    return ClassifiedError(kind: 'timeout', message: 'Settings sync request timeout');
+    return ClassifiedError(
+      kind: 'timeout',
+      message: 'Settings sync request timeout',
+    );
   }
-  if (msg.contains('socket') || msg.contains('connection') || msg.contains('network')) {
-    return ClassifiedError(kind: 'network', message: 'Cannot connect to server');
+  if (msg.contains('socket') ||
+      msg.contains('connection') ||
+      msg.contains('network')) {
+    return ClassifiedError(
+      kind: 'network',
+      message: 'Cannot connect to server',
+    );
   }
   return ClassifiedError(kind: 'other', message: error.toString());
 }
@@ -197,7 +210,8 @@ class SettingsSyncController extends SintController {
   final bool Function() isFirstPartyBaseUrl;
 
   /// Get OAuth tokens.
-  final ({String? accessToken, List<String>? scopes})? Function() getOAuthTokens;
+  final ({String? accessToken, List<String>? scopes})? Function()
+  getOAuthTokens;
 
   /// Check and refresh OAuth token if needed.
   final Future<void> Function() checkAndRefreshOAuthToken;
@@ -209,14 +223,16 @@ class SettingsSyncController extends SintController {
   final Future<({int statusCode, Map<String, dynamic>? data})> Function(
     String url,
     Map<String, String> headers,
-  ) httpGet;
+  )
+  httpGet;
 
   /// HTTP PUT.
   final Future<({int statusCode, Map<String, dynamic>? data})> Function(
     String url,
     Object body,
     Map<String, String> headers,
-  ) httpPut;
+  )
+  httpPut;
 
   /// Get user agent string.
   final String Function() getUserAgent;
@@ -255,7 +271,7 @@ class SettingsSyncController extends SintController {
 
   /// Diagnostics logger.
   final void Function(String level, String event, [Map<String, Object?>? data])
-      logDiagnostics;
+  logDiagnostics;
 
   /// Analytics event logger.
   final void Function(String eventName, Map<String, Object?> metadata) logEvent;
@@ -319,8 +335,9 @@ class SettingsSyncController extends SintController {
 
       final projectId = await getRepoRemoteHash();
       final localEntries = await _buildEntriesFromLocalFiles(projectId);
-      final remoteEntries =
-          result.isEmpty ? <String, String>{} : result.data!.content.entries;
+      final remoteEntries = result.isEmpty
+          ? <String, String>{}
+          : result.data!.content.entries;
 
       final changedEntries = <String, String>{};
       for (final entry in localEntries.entries) {
@@ -339,10 +356,14 @@ class SettingsSyncController extends SintController {
       final uploadResult = await _uploadUserSettings(changedEntries);
       if (uploadResult.success) {
         logDiagnostics('info', 'settings_sync_upload_success');
-        logEvent('tengu_settings_sync_upload_success', {'entryCount': entryCount});
+        logEvent('tengu_settings_sync_upload_success', {
+          'entryCount': entryCount,
+        });
       } else {
         logDiagnostics('warn', 'settings_sync_upload_failed');
-        logEvent('tengu_settings_sync_upload_failed', {'entryCount': entryCount});
+        logEvent('tengu_settings_sync_upload_failed', {
+          'entryCount': entryCount,
+        });
       }
     } catch (_) {
       logDiagnostics('error', 'settings_sync_unexpected_error');
@@ -517,11 +538,9 @@ class SettingsSyncController extends SintController {
         'Content-Type': 'application/json',
       };
 
-      final response = await httpPut(
-        _getEndpoint(),
-        {'entries': entries},
-        headers,
-      );
+      final response = await httpPut(_getEndpoint(), {
+        'entries': entries,
+      }, headers);
 
       logDiagnostics('info', 'settings_sync_uploaded', {
         'entryCount': entries.length,
@@ -534,10 +553,7 @@ class SettingsSyncController extends SintController {
       );
     } catch (error) {
       logDiagnostics('warn', 'settings_sync_upload_error');
-      return SettingsSyncUploadResult(
-        success: false,
-        error: error.toString(),
-      );
+      return SettingsSyncUploadResult(success: false, error: error.toString());
     }
   }
 

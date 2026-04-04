@@ -40,81 +40,78 @@ class ClawRouteConstants {
 
 class ClawRoutes {
   static List<SintPage> getAppRoutes() => [
-        // -- Main screens (fade transition) --------------------------------
-        SintPage(
-          name: ClawRouteConstants.splash,
-          page: () => const SplashScreen(),
-          transition: Transition.fadeIn,
-        ),
-        SintPage(
-          name: ClawRouteConstants.onboarding,
-          page: () => const OnboardingScreen(),
-          transition: Transition.fadeIn,
-        ),
-        SintPage(
-          name: ClawRouteConstants.chat,
-          page: () => const ChatScreen(),
-          transition: Transition.fadeIn,
-        ),
+    // -- Main screens (fade transition) --------------------------------
+    SintPage(
+      name: ClawRouteConstants.splash,
+      page: () => const SplashScreen(),
+      transition: Transition.fadeIn,
+    ),
+    SintPage(
+      name: ClawRouteConstants.onboarding,
+      page: () => const OnboardingScreen(),
+      transition: Transition.fadeIn,
+    ),
+    SintPage(
+      name: ClawRouteConstants.chat,
+      page: () => const ChatScreen(),
+      transition: Transition.fadeIn,
+    ),
 
-        // -- Secondary screens (slide transition) --------------------------
-        SintPage(
-          name: ClawRouteConstants.settings,
-          page: () => const SettingsScreen(),
-          transition: Transition.rightToLeft,
-        ),
-        SintPage(
-          name: ClawRouteConstants.sessionBrowser,
-          page: () => SessionBrowserScreen(
-            conversationService: ConversationService(),
-          ),
-          transition: Transition.rightToLeft,
-        ),
-        SintPage(
-          name: ClawRouteConstants.mcpPanel,
-          page: () => const McpPanelScreen(
-            servers: [],
-          ),
-          transition: Transition.rightToLeft,
-        ),
-        SintPage(
-          name: ClawRouteConstants.doctor,
-          page: () => const DoctorScreen(),
-          transition: Transition.rightToLeft,
-        ),
-        SintPage(
-          name: ClawRouteConstants.permissions,
-          page: () => const _PlaceholderScreen(title: 'Permissions'),
-          transition: Transition.rightToLeft,
-        ),
-        SintPage(
-          name: ClawRouteConstants.logs,
-          page: () => const _PlaceholderScreen(title: 'Logs'),
-          transition: Transition.rightToLeft,
-        ),
-        SintPage(
-          name: ClawRouteConstants.agents,
-          page: () => const _PlaceholderScreen(title: 'Agents'),
-          transition: Transition.rightToLeft,
-        ),
-        SintPage(
-          name: ClawRouteConstants.tasks,
-          page: () => const _PlaceholderScreen(title: 'Tasks'),
-          transition: Transition.rightToLeft,
-        ),
-        SintPage(
-          name: ClawRouteConstants.about,
-          page: () => const _PlaceholderScreen(title: 'About'),
-          transition: Transition.rightToLeft,
-        ),
-      ];
+    // -- Secondary screens (slide transition) --------------------------
+    SintPage(
+      name: ClawRouteConstants.settings,
+      page: () => const SettingsScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    SintPage(
+      name: ClawRouteConstants.sessionBrowser,
+      page: () =>
+          SessionBrowserScreen(conversationService: ConversationService()),
+      transition: Transition.rightToLeft,
+    ),
+    SintPage(
+      name: ClawRouteConstants.mcpPanel,
+      page: () => const McpPanelScreen(servers: []),
+      transition: Transition.rightToLeft,
+    ),
+    SintPage(
+      name: ClawRouteConstants.doctor,
+      page: () => const DoctorScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    SintPage(
+      name: ClawRouteConstants.permissions,
+      page: () => const _PlaceholderScreen(title: 'Permissions'),
+      transition: Transition.rightToLeft,
+    ),
+    SintPage(
+      name: ClawRouteConstants.logs,
+      page: () => const _PlaceholderScreen(title: 'Logs'),
+      transition: Transition.rightToLeft,
+    ),
+    SintPage(
+      name: ClawRouteConstants.agents,
+      page: () => const _PlaceholderScreen(title: 'Agents'),
+      transition: Transition.rightToLeft,
+    ),
+    SintPage(
+      name: ClawRouteConstants.tasks,
+      page: () => const _PlaceholderScreen(title: 'Tasks'),
+      transition: Transition.rightToLeft,
+    ),
+    SintPage(
+      name: ClawRouteConstants.about,
+      page: () => const _PlaceholderScreen(title: 'About'),
+      transition: Transition.rightToLeft,
+    ),
+  ];
 
   /// Unknown-route handler — returns a simple 404 page.
   static SintPage get unknownRoute => SintPage(
-        name: '/not-found',
-        page: () => const _NotFoundScreen(),
-        transition: Transition.fadeIn,
-      );
+    name: '/not-found',
+    page: () => const _NotFoundScreen(),
+    transition: Transition.fadeIn,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -176,10 +173,7 @@ class _NotFoundScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              '404',
-              style: Theme.of(context).textTheme.displayLarge,
-            ),
+            Text('404', style: Theme.of(context).textTheme.displayLarge),
             const SizedBox(height: 16),
             Text(
               'The page you are looking for does not exist.',

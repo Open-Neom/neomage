@@ -1,4 +1,4 @@
-// Doctor diagnostic — port of openneomclaw doctorDiagnostic.ts +
+// Doctor diagnostic — port of neom_claw doctorDiagnostic.ts +
 // doctorContextWarnings.ts + diagLogs.ts + debug.ts + debugFilter.ts.
 // Installation diagnostics, context warnings, debug logging with
 // buffered writer, and debug message filtering.
@@ -39,11 +39,11 @@ class DiagnosticLogEntry {
   final Map<String, dynamic> data;
 
   Map<String, dynamic> toJson() => {
-        'timestamp': timestamp,
-        'level': level.name,
-        'event': event,
-        'data': data,
-      };
+    'timestamp': timestamp,
+    'level': level.name,
+    'event': event,
+    'data': data,
+  };
 }
 
 /// Returns the diagnostic log file path from the environment, or `null` if
@@ -111,7 +111,9 @@ Future<T> withDiagnosticsTiming<T>(
 
   try {
     final result = await fn();
-    final additionalData = getData != null ? getData(result) : <String, dynamic>{};
+    final additionalData = getData != null
+        ? getData(result)
+        : <String, dynamic>{};
     logForDiagnosticsNoPII(
       DiagnosticLogLevel.info,
       '${event}_completed',
@@ -125,9 +127,7 @@ Future<T> withDiagnosticsTiming<T>(
     logForDiagnosticsNoPII(
       DiagnosticLogLevel.error,
       '${event}_failed',
-      data: {
-        'duration_ms': DateTime.now().millisecondsSinceEpoch - startTime,
-      },
+      data: {'duration_ms': DateTime.now().millisecondsSinceEpoch - startTime},
     );
     rethrow;
   }
@@ -173,8 +173,9 @@ DebugLogLevel? _cachedMinDebugLogLevel;
 /// diagnostics that would otherwise drown out useful debug output.
 DebugLogLevel getMinDebugLogLevel() {
   if (_cachedMinDebugLogLevel != null) return _cachedMinDebugLogLevel!;
-  final raw =
-      Platform.environment['NEOMCLAW_DEBUG_LOG_LEVEL']?.toLowerCase().trim();
+  final raw = Platform.environment['NEOMCLAW_DEBUG_LOG_LEVEL']
+      ?.toLowerCase()
+      .trim();
   if (raw != null && _debugLogLevelByName.containsKey(raw)) {
     _cachedMinDebugLogLevel = _debugLogLevelByName[raw]!;
   } else {
@@ -197,7 +198,8 @@ bool isDebugMode() {
   final args = _getProcessArgs();
   final env = Platform.environment;
 
-  _cachedIsDebugMode = _runtimeDebugEnabled ||
+  _cachedIsDebugMode =
+      _runtimeDebugEnabled ||
       _isEnvTruthy(env['DEBUG']) ||
       _isEnvTruthy(env['DEBUG_SDK']) ||
       args.contains('--debug') ||
@@ -212,8 +214,7 @@ bool isDebugMode() {
 /// write debug logs by default, so this lets them start capturing without
 /// restarting with --debug. Returns `true` if logging was already active.
 bool enableDebugLogging() {
-  final wasActive =
-      isDebugMode() || Platform.environment['USER_TYPE'] == 'ant';
+  final wasActive = isDebugMode() || Platform.environment['USER_TYPE'] == 'ant';
   _runtimeDebugEnabled = true;
   _cachedIsDebugMode = null; // Clear cache.
   return wasActive;
@@ -230,9 +231,9 @@ DebugFilter? getDebugFilter() {
 
   final args = _getProcessArgs();
   final debugArg = args.cast<String?>().firstWhere(
-        (arg) => arg != null && arg.startsWith('--debug='),
-        orElse: () => null,
-      );
+    (arg) => arg != null && arg.startsWith('--debug='),
+    orElse: () => null,
+  );
   if (debugArg == null) {
     _cachedDebugFilter = null;
     return null;
@@ -313,9 +314,9 @@ bool getHasFormattedOutput() => _hasFormattedOutput;
 class _BufferedDebugWriter {
   _BufferedDebugWriter({
     required this.writeFn,
+    this.immediateMode = false,
     this.flushIntervalMs = 1000,
     this.maxBufferSize = 100,
-    this.immediateMode = false,
   }) {
     if (!immediateMode) {
       _flushTimer = Timer.periodic(
@@ -585,8 +586,11 @@ class DebugFilter {
 DebugFilter? parseDebugFilter(String? filterString) {
   if (filterString == null || filterString.trim().isEmpty) return null;
 
-  final filters =
-      filterString.split(',').map((f) => f.trim()).where((f) => f.isNotEmpty).toList();
+  final filters = filterString
+      .split(',')
+      .map((f) => f.trim())
+      .where((f) => f.isNotEmpty)
+      .toList();
 
   if (filters.isEmpty) return null;
 
@@ -615,8 +619,9 @@ DebugFilter? parseDebugFilter(String? filterString) {
 final RegExp _mcpPattern = RegExp(r'^MCP server ["\x27]([^"\x27]+)["\x27]');
 final RegExp _prefixPattern = RegExp(r'^([^:\[]+):');
 final RegExp _bracketPattern = RegExp(r'^\[([^\]]+)\]');
-final RegExp _secondaryPattern =
-    RegExp(r':\s*([^:]+?)(?:\s+(?:type|mode|status|event))?:');
+final RegExp _secondaryPattern = RegExp(
+  r':\s*([^:]+?)(?:\s+(?:type|mode|status|event))?:',
+);
 
 /// Extract debug categories from a log message.
 ///
@@ -670,10 +675,7 @@ List<String> extractDebugCategories(String message) {
 }
 
 /// Check if debug message categories should be shown based on [filter].
-bool shouldShowDebugCategories(
-  List<String> categories,
-  DebugFilter? filter,
-) {
+bool shouldShowDebugCategories(List<String> categories, DebugFilter? filter) {
   // No filter means show everything.
   if (filter == null) return true;
 
@@ -767,10 +769,10 @@ class RipgrepStatus {
   final String? systemPath;
 
   Map<String, dynamic> toJson() => {
-        'working': working,
-        'mode': mode,
-        'systemPath': systemPath,
-      };
+    'working': working,
+    'mode': mode,
+    'systemPath': systemPath,
+  };
 }
 
 /// Full diagnostic information gathered by the doctor command.
@@ -804,23 +806,25 @@ class DiagnosticInfo {
   final RipgrepStatus ripgrepStatus;
 
   Map<String, dynamic> toJson() => {
-        'installationType': installationType.label,
-        'version': version,
-        'installationPath': installationPath,
-        'invokedBinary': invokedBinary,
-        'configInstallMethod': configInstallMethod,
-        'autoUpdates': autoUpdates,
-        'hasUpdatePermissions': hasUpdatePermissions,
-        'multipleInstallations':
-            multipleInstallations.map((i) => i.toJson()).toList(),
-        'warnings': warnings.map((w) => w.toJson()).toList(),
-        if (recommendation != null) 'recommendation': recommendation,
-        if (packageManager != null) 'packageManager': packageManager,
-        'ripgrepStatus': ripgrepStatus.toJson(),
-      };
+    'installationType': installationType.label,
+    'version': version,
+    'installationPath': installationPath,
+    'invokedBinary': invokedBinary,
+    'configInstallMethod': configInstallMethod,
+    'autoUpdates': autoUpdates,
+    'hasUpdatePermissions': hasUpdatePermissions,
+    'multipleInstallations': multipleInstallations
+        .map((i) => i.toJson())
+        .toList(),
+    'warnings': warnings.map((w) => w.toJson()).toList(),
+    if (recommendation != null) 'recommendation': recommendation,
+    if (packageManager != null) 'packageManager': packageManager,
+    'ripgrepStatus': ripgrepStatus.toJson(),
+  };
 
   @override
-  String toString() => 'DiagnosticInfo(type: ${installationType.label}, '
+  String toString() =>
+      'DiagnosticInfo(type: ${installationType.label}, '
       'version: $version, warnings: ${warnings.length})';
 }
 
@@ -833,10 +837,7 @@ List<String> _getNormalizedPaths() {
   final execPath = Platform.executable;
 
   if (Platform.isWindows) {
-    return [
-      invokedPath.replaceAll('\\', '/'),
-      execPath.replaceAll('\\', '/'),
-    ];
+    return [invokedPath.replaceAll('\\', '/'), execPath.replaceAll('\\', '/')];
   }
   return [invokedPath, execPath];
 }
@@ -853,8 +854,7 @@ Future<InstallationType> getCurrentInstallationType({
   Future<bool> Function()? detectPackageManager,
 }) async {
   final env = Platform.environment;
-  if (env['NODE_ENV'] == 'development' ||
-      env['FLUTTER_ENV'] == 'development') {
+  if (env['NODE_ENV'] == 'development' || env['FLUTTER_ENV'] == 'development') {
     return InstallationType.development;
   }
 
@@ -910,12 +910,9 @@ Future<InstallationType> getCurrentInstallationType({
 
 /// Returns the installation path by probing the filesystem and process
 /// metadata.
-Future<String> getInstallationPath({
-  bool Function()? isInBundledMode,
-}) async {
+Future<String> getInstallationPath({bool Function()? isInBundledMode}) async {
   final env = Platform.environment;
-  if (env['NODE_ENV'] == 'development' ||
-      env['FLUTTER_ENV'] == 'development') {
+  if (env['NODE_ENV'] == 'development' || env['FLUTTER_ENV'] == 'development') {
     return Directory.current.path;
   }
 
@@ -949,9 +946,7 @@ Future<String> getInstallationPath({
 }
 
 /// Returns the binary path that was used to invoke the program.
-String getInvokedBinary({
-  bool Function()? isInBundledMode,
-}) {
+String getInvokedBinary({bool Function()? isInBundledMode}) {
   try {
     if (isInBundledMode != null && isInBundledMode()) {
       return Platform.resolvedExecutable;
@@ -972,14 +967,17 @@ Future<List<DetectedInstallation>> detectMultipleInstallations({
   // Check for local installation.
   final localPath = p.join(home, '.neomclaw', 'local');
   if (localInstallationExists != null && await localInstallationExists()) {
-    installations
-        .add(DetectedInstallation(type: 'npm-local', path: localPath));
+    installations.add(DetectedInstallation(type: 'npm-local', path: localPath));
   }
 
   // Check for global npm installation.
   try {
-    final npmResult =
-        await Process.run('npm', ['-g', 'config', 'get', 'prefix']);
+    final npmResult = await Process.run('npm', [
+      '-g',
+      'config',
+      'get',
+      'prefix',
+    ]);
     if (npmResult.exitCode == 0) {
       final npmPrefix = (npmResult.stdout as String).trim();
       if (npmPrefix.isNotEmpty) {
@@ -1000,10 +998,12 @@ Future<List<DetectedInstallation>> detectMultipleInstallations({
                 ? p.join(npmPrefix, 'node_modules', packageName)
                 : p.join(npmPrefix, 'lib', 'node_modules', packageName);
             if (await Directory(globalPackagePath).exists()) {
-              installations.add(DetectedInstallation(
-                type: 'npm-global-orphan',
-                path: globalPackagePath,
-              ));
+              installations.add(
+                DetectedInstallation(
+                  type: 'npm-global-orphan',
+                  path: globalPackagePath,
+                ),
+              );
             }
           }
         }
@@ -1016,16 +1016,18 @@ Future<List<DetectedInstallation>> detectMultipleInstallations({
   // Check for native installation.
   final nativeBinPath = p.join(home, '.local', 'bin', 'neomclaw');
   if (await File(nativeBinPath).exists()) {
-    installations
-        .add(DetectedInstallation(type: 'native', path: nativeBinPath));
+    installations.add(
+      DetectedInstallation(type: 'native', path: nativeBinPath),
+    );
   }
 
   // Also check if config indicates native installation.
   final nativeDataPath = p.join(home, '.local', 'share', 'neomclaw');
   if (await Directory(nativeDataPath).exists()) {
     if (!installations.any((i) => i.type == 'native')) {
-      installations
-          .add(DetectedInstallation(type: 'native', path: nativeDataPath));
+      installations.add(
+        DetectedInstallation(type: 'native', path: nativeDataPath),
+      );
     }
   }
 
@@ -1072,56 +1074,67 @@ Future<List<DiagnosticWarning>> detectConfigurationIssues(
     if (!localBinInPath) {
       if (platform == 'windows') {
         final windowsLocalBinPath = localBinPath.replaceAll('/', '\\');
-        warnings.add(DiagnosticWarning(
-          issue:
-              'Native installation exists but $windowsLocalBinPath is not in your PATH',
-          fix:
-              'Add it by opening: System Properties > Environment Variables > Edit User PATH > New > Add the path above. Then restart your terminal.',
-        ));
+        warnings.add(
+          DiagnosticWarning(
+            issue:
+                'Native installation exists but $windowsLocalBinPath is not in your PATH',
+            fix:
+                'Add it by opening: System Properties > Environment Variables > Edit User PATH > New > Add the path above. Then restart your terminal.',
+          ),
+        );
       } else {
-        warnings.add(DiagnosticWarning(
-          issue:
-              'Native installation exists but ~/.local/bin is not in your PATH',
-          fix:
-              'Run: echo \'export PATH="\$HOME/.local/bin:\$PATH"\' >> your shell config file then open a new terminal.',
-        ));
+        warnings.add(
+          DiagnosticWarning(
+            issue:
+                'Native installation exists but ~/.local/bin is not in your PATH',
+            fix:
+                'Run: echo \'export PATH="\$HOME/.local/bin:\$PATH"\' >> your shell config file then open a new terminal.',
+          ),
+        );
       }
     }
   }
 
   // Check for configuration mismatches.
-  final disableChecks =
-      _isEnvTruthy(Platform.environment['DISABLE_INSTALLATION_CHECKS']);
+  final disableChecks = _isEnvTruthy(
+    Platform.environment['DISABLE_INSTALLATION_CHECKS'],
+  );
 
   if (!disableChecks) {
     if (type == InstallationType.npmLocal &&
         configInstallMethod != null &&
         configInstallMethod != 'local') {
-      warnings.add(DiagnosticWarning(
-        issue:
-            "Running from local installation but config install method is '$configInstallMethod'",
-        fix: 'Consider using native installation: neomclaw install',
-      ));
+      warnings.add(
+        DiagnosticWarning(
+          issue:
+              "Running from local installation but config install method is '$configInstallMethod'",
+          fix: 'Consider using native installation: neomclaw install',
+        ),
+      );
     }
 
     if (type == InstallationType.native &&
         configInstallMethod != null &&
         configInstallMethod != 'native') {
-      warnings.add(DiagnosticWarning(
-        issue:
-            "Running native installation but config install method is '$configInstallMethod'",
-        fix: 'Run neomclaw install to update configuration',
-      ));
+      warnings.add(
+        DiagnosticWarning(
+          issue:
+              "Running native installation but config install method is '$configInstallMethod'",
+          fix: 'Run neomclaw install to update configuration',
+        ),
+      );
     }
   }
 
   if (type == InstallationType.npmGlobal &&
       localInstallationExists != null &&
       await localInstallationExists()) {
-    warnings.add(DiagnosticWarning(
-      issue: 'Local installation exists but not being used',
-      fix: 'Consider using native installation: neomclaw install',
-    ));
+    warnings.add(
+      DiagnosticWarning(
+        issue: 'Local installation exists but not being used',
+        fix: 'Consider using native installation: neomclaw install',
+      ),
+    );
   }
 
   return warnings;
@@ -1184,9 +1197,7 @@ Future<DiagnosticInfo> getDoctorDiagnostic({
     isInBundledMode: isInBundledMode,
   );
 
-  final invokedBinary = getInvokedBinary(
-    isInBundledMode: isInBundledMode,
-  );
+  final invokedBinary = getInvokedBinary(isInBundledMode: isInBundledMode);
 
   final multipleInstallations = await detectMultipleInstallations(
     localInstallationExists: localInstallationExistsFn,
@@ -1200,9 +1211,11 @@ Future<DiagnosticInfo> getDoctorDiagnostic({
 
   // Add glob pattern warnings for Linux sandboxing.
   if (getLinuxGlobPatternWarnings != null) {
-    warnings.addAll(detectLinuxGlobPatternWarnings(
-      globPatterns: getLinuxGlobPatternWarnings(),
-    ));
+    warnings.addAll(
+      detectLinuxGlobPatternWarnings(
+        globPatterns: getLinuxGlobPatternWarnings(),
+      ),
+    );
   }
 
   // Add warnings for leftover npm installations when running native.
@@ -1216,24 +1229,30 @@ Future<DiagnosticInfo> getDoctorDiagnostic({
 
     for (final install in npmInstalls) {
       if (install.type == 'npm-global') {
-        warnings.add(DiagnosticWarning(
-          issue: 'Leftover npm global installation at ${install.path}',
-          fix: 'Run: npm -g uninstall @anthropic-ai/neom-claw',
-        ));
+        warnings.add(
+          DiagnosticWarning(
+            issue: 'Leftover npm global installation at ${install.path}',
+            fix: 'Run: npm -g uninstall @anthropic-ai/neom-claw',
+          ),
+        );
       } else if (install.type == 'npm-global-orphan') {
-        warnings.add(DiagnosticWarning(
-          issue: 'Orphaned npm global package at ${install.path}',
-          fix: Platform.isWindows
-              ? 'Run: rmdir /s /q "${install.path}"'
-              : 'Run: rm -rf ${install.path}',
-        ));
+        warnings.add(
+          DiagnosticWarning(
+            issue: 'Orphaned npm global package at ${install.path}',
+            fix: Platform.isWindows
+                ? 'Run: rmdir /s /q "${install.path}"'
+                : 'Run: rm -rf ${install.path}',
+          ),
+        );
       } else if (install.type == 'npm-local') {
-        warnings.add(DiagnosticWarning(
-          issue: 'Leftover npm local installation at ${install.path}',
-          fix: Platform.isWindows
-              ? 'Run: rmdir /s /q "${install.path}"'
-              : 'Run: rm -rf ${install.path}',
-        ));
+        warnings.add(
+          DiagnosticWarning(
+            issue: 'Leftover npm local installation at ${install.path}',
+            fix: Platform.isWindows
+                ? 'Run: rmdir /s /q "${install.path}"'
+                : 'Run: rm -rf ${install.path}',
+          ),
+        );
       }
     }
   }
@@ -1246,27 +1265,27 @@ Future<DiagnosticInfo> getDoctorDiagnostic({
       checkUpdatePermissions != null) {
     hasUpdatePermissions = await checkUpdatePermissions();
     if (hasUpdatePermissions == false) {
-      warnings.add(DiagnosticWarning(
-        issue: 'Insufficient permissions for auto-updates',
-        fix:
-            'Do one of: (1) Re-install node without sudo, or (2) Use `neomclaw install` for native installation',
-      ));
+      warnings.add(
+        DiagnosticWarning(
+          issue: 'Insufficient permissions for auto-updates',
+          fix:
+              'Do one of: (1) Re-install node without sudo, or (2) Use `neomclaw install` for native installation',
+        ),
+      );
     }
   }
 
   // Get ripgrep status.
-  final ripgrepStatus = getRipgrepStatusFn?.call() ??
-      const RipgrepStatus(
-        working: true,
-        mode: 'builtin',
-      );
+  final ripgrepStatus =
+      getRipgrepStatusFn?.call() ??
+      const RipgrepStatus(working: true, mode: 'builtin');
 
   // Get package manager info.
   final packageManager =
       installationType == InstallationType.packageManager &&
-              getPackageManagerFn != null
-          ? await getPackageManagerFn()
-          : null;
+          getPackageManagerFn != null
+      ? await getPackageManagerFn()
+      : null;
 
   final autoUpdates = getAutoUpdatesStatus?.call() ?? 'unknown';
 
@@ -1348,13 +1367,13 @@ class ContextWarning {
   final int threshold;
 
   Map<String, dynamic> toJson() => {
-        'type': type.label,
-        'severity': severity.name,
-        'message': message,
-        'details': details,
-        'currentValue': currentValue,
-        'threshold': threshold,
-      };
+    'type': type.label,
+    'severity': severity.name,
+    'message': message,
+    'details': details,
+    'currentValue': currentValue,
+    'threshold': threshold,
+  };
 
   @override
   String toString() => 'ContextWarning(${type.label}: $message)';
@@ -1383,15 +1402,14 @@ class ContextWarnings {
 
   /// Returns all non-null warnings as a flat list.
   List<ContextWarning> get all => [
-        if (neomClawMdWarning != null) neomClawMdWarning!,
-        if (agentWarning != null) agentWarning!,
-        if (mcpWarning != null) mcpWarning!,
-        if (unreachableRulesWarning != null) unreachableRulesWarning!,
-      ];
+    ?neomClawMdWarning,
+    ?agentWarning,
+    ?mcpWarning,
+    ?unreachableRulesWarning,
+  ];
 
   @override
-  String toString() =>
-      'ContextWarnings(${all.length} warning(s))';
+  String toString() => 'ContextWarnings(${all.length} warning(s))';
 }
 
 /// Represents a memory file with its path and content.
@@ -1411,15 +1429,17 @@ ContextWarning? checkNeomClawMdFiles(
   int maxCharacterCount = maxMemoryCharacterCount,
 }) {
   // Filter for files exceeding the threshold.
-  final largeFiles =
-      memoryFiles.where((f) => f.content.length > maxCharacterCount).toList();
+  final largeFiles = memoryFiles
+      .where((f) => f.content.length > maxCharacterCount)
+      .toList();
 
   if (largeFiles.isEmpty) return null;
 
   largeFiles.sort((a, b) => b.content.length.compareTo(a.content.length));
 
-  final details =
-      largeFiles.map((f) => '${f.path}: ${f.content.length} chars').toList();
+  final details = largeFiles
+      .map((f) => '${f.path}: ${f.content.length} chars')
+      .toList();
 
   final message = largeFiles.length == 1
       ? 'Large NEOMCLAW.md file detected (${largeFiles[0].content.length} chars > $maxCharacterCount)'
@@ -1478,8 +1498,7 @@ ContextWarning? checkAgentDescriptions(
       name: agent.agentType,
       tokens: _roughTokenCountEstimation(description),
     );
-  }).toList()
-    ..sort((a, b) => b.tokens.compareTo(a.tokens));
+  }).toList()..sort((a, b) => b.tokens.compareTo(a.tokens));
 
   final details = agentTokens
       .take(5)
@@ -1538,7 +1557,8 @@ ContextWarning? checkMcpTools(
   if (mcpTools.isEmpty) return null;
 
   // Use provided token count or estimate.
-  final totalTokens = mcpToolTokens ??
+  final totalTokens =
+      mcpToolTokens ??
       mcpTools.fold<int>(0, (sum, tool) {
         final chars = tool.name.length + tool.description.length;
         return sum + _roughTokenCountEstimation(chars.toString());
@@ -1567,7 +1587,9 @@ ContextWarning? checkMcpTools(
 
     details = sortedServers
         .take(5)
-        .map((e) => '${e.key}: ${e.value.count} tools (~${e.value.tokens} tokens)')
+        .map(
+          (e) => '${e.key}: ${e.value.count} tools (~${e.value.tokens} tokens)',
+        )
         .toList();
 
     if (sortedServers.length > 5) {
@@ -1603,16 +1625,11 @@ class UnreachableRule {
 /// Check for unreachable permission rules.
 ///
 /// [unreachableRules] Pre-detected unreachable rules from shadow analysis.
-ContextWarning? checkUnreachableRules(
-  List<UnreachableRule> unreachableRules,
-) {
+ContextWarning? checkUnreachableRules(List<UnreachableRule> unreachableRules) {
   if (unreachableRules.isEmpty) return null;
 
   final details = unreachableRules
-      .expand((r) => [
-            '${r.ruleDescription}: ${r.reason}',
-            '  Fix: ${r.fix}',
-          ])
+      .expand((r) => ['${r.ruleDescription}: ${r.reason}', '  Fix: ${r.fix}'])
       .toList();
 
   final count = unreachableRules.length;

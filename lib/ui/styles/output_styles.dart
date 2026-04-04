@@ -9,13 +9,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 /// Supported output formats.
-enum OutputFormat {
-  plain,
-  rich,
-  json,
-  markdown,
-  minimal,
-}
+enum OutputFormat { plain, rich, json, markdown, minimal }
 
 /// Color palette for themed output rendering.
 ///
@@ -188,8 +182,7 @@ class OutputFormatter {
       }
     }
 
-    final aligns = alignment ??
-        List.filled(colCount, ColumnAlignment.left);
+    final aligns = alignment ?? List.filled(colCount, ColumnAlignment.left);
 
     final buf = StringBuffer();
     final separator = border
@@ -335,4 +328,3 @@ class OutputFormatter {
 
   String _pad2(int n) => n.toString().padLeft(2, '0');
 }
-

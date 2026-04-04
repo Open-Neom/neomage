@@ -1,5 +1,5 @@
 // /ultraplan command — advanced multi-agent planning via NeomClaw on the web.
-// Faithful port of openneomclaw/src/commands/ultraplan.tsx (470 TS LOC).
+// Faithful port of neom_claw/src/commands/ultraplan.tsx (470 TS LOC).
 //
 // Covers: eligibility checking, remote session creation (teleport), detached
 // polling for plan approval, exit-plan-mode scanning, session lifecycle
@@ -10,7 +10,6 @@ import 'dart:async';
 
 import 'package:sint/sint.dart';
 
-import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';
 import '../command.dart';
 
@@ -32,7 +31,8 @@ const String diamondOpen = '\u25C7';
 ///
 /// In the TS original, this is loaded from a bundled prompt.txt file. In the
 /// Dart port, we embed the core instruction inline.
-const String _defaultInstructions = '''You are running in plan mode. Your job is to create a detailed, high-quality plan for the user's request.
+const String _defaultInstructions =
+    '''You are running in plan mode. Your job is to create a detailed, high-quality plan for the user's request.
 
 Guidelines:
 1. Analyze the codebase to understand the relevant architecture
@@ -77,11 +77,7 @@ class RemoteSession {
   final String? title;
   final String? url;
 
-  const RemoteSession({
-    required this.id,
-    this.title,
-    this.url,
-  });
+  const RemoteSession({required this.id, this.title, this.url});
 }
 
 /// Result of polling for an approved exit-plan-mode.
@@ -121,16 +117,15 @@ class UltraplanTaskState {
     String? status,
     UltraplanPhase? ultraplanPhase,
     int? endTime,
-  }) =>
-      UltraplanTaskState(
-        taskId: taskId,
-        sessionId: sessionId,
-        sessionUrl: sessionUrl,
-        status: status ?? this.status,
-        ultraplanPhase: ultraplanPhase ?? this.ultraplanPhase,
-        startTime: startTime,
-        endTime: endTime ?? this.endTime,
-      );
+  }) => UltraplanTaskState(
+    taskId: taskId,
+    sessionId: sessionId,
+    sessionUrl: sessionUrl,
+    status: status ?? this.status,
+    ultraplanPhase: ultraplanPhase ?? this.ultraplanPhase,
+    startTime: startTime,
+    endTime: endTime ?? this.endTime,
+  );
 }
 
 /// Precondition error from eligibility check.
@@ -138,10 +133,7 @@ class PreconditionError {
   final String type;
   final String message;
 
-  const PreconditionError({
-    required this.type,
-    required this.message,
-  });
+  const PreconditionError({required this.type, required this.message});
 }
 
 /// Result of checking remote agent eligibility.
@@ -149,14 +141,9 @@ class EligibilityResult {
   final bool eligible;
   final List<PreconditionError> errors;
 
-  const EligibilityResult({
-    required this.eligible,
-    this.errors = const [],
-  });
+  const EligibilityResult({required this.eligible, this.errors = const []});
 
-  const EligibilityResult.eligible()
-      : eligible = true,
-        errors = const [];
+  const EligibilityResult.eligible() : eligible = true, errors = const [];
 }
 
 /// Error thrown during ultraplan polling.
@@ -208,12 +195,7 @@ String buildUltraplanPrompt(String blurb, {String? seedPlan}) {
   final parts = <String>[];
 
   if (seedPlan != null) {
-    parts.addAll([
-      'Here is a draft plan to refine:',
-      '',
-      seedPlan,
-      '',
-    ]);
+    parts.addAll(['Here is a draft plan to refine:', '', seedPlan, '']);
   }
 
   parts.add(_defaultInstructions);
@@ -231,8 +213,7 @@ String buildUltraplanPrompt(String blurb, {String? seedPlan}) {
 
 /// Build the launch message shown immediately while teleport runs.
 String buildLaunchMessage({bool disconnectedBridge = false}) {
-  final prefix =
-      disconnectedBridge ? '$remoteControlDisconnectedMsg ' : '';
+  final prefix = disconnectedBridge ? '$remoteControlDisconnectedMsg ' : '';
   return '$diamondOpen ultraplan\n${prefix}Starting NeomClaw on the web...';
 }
 
@@ -345,10 +326,7 @@ class UltraplanController extends SintController {
     isLaunching.value = true;
 
     // Launch detached — don't await the full flow.
-    _launchDetached(
-      blurb: blurb,
-      seedPlan: seedPlan,
-    );
+    _launchDetached(blurb: blurb, seedPlan: seedPlan);
 
     return buildLaunchMessage(disconnectedBridge: disconnectedBridge);
   }
@@ -363,7 +341,7 @@ class UltraplanController extends SintController {
       // Check eligibility.
       final eligibility = await checkRemoteAgentEligibility();
       if (!eligibility.eligible) {
-        final reasons = eligibility.errors
+        final _reasons = eligibility.errors
             .map(formatPreconditionError)
             .join('\n');
         // In production, this enqueues a pending notification.
@@ -372,7 +350,7 @@ class UltraplanController extends SintController {
       }
 
       // Build the prompt.
-      final prompt = buildUltraplanPrompt(blurb, seedPlan: seedPlan);
+      final _prompt = buildUltraplanPrompt(blurb, seedPlan: seedPlan);
 
       // In the full implementation, this calls teleportToRemote() which:
       // 1. Bundles the current workspace context
@@ -414,12 +392,8 @@ class UltraplanController extends SintController {
   /// Runs detached — polls the remote session until the plan is approved,
   /// then either sets pendingChoice (for local execution) or completes
   /// the task (for remote execution).
-  void _startDetachedPoll(
-    String taskId,
-    String sessionId,
-    String url,
-  ) {
-    final started = DateTime.now().millisecondsSinceEpoch;
+  void _startDetachedPoll(String taskId, String sessionId, String url) {
+    final _started = DateTime.now().millisecondsSinceEpoch;
     bool failed = false;
 
     () async {
@@ -486,7 +460,7 @@ class UltraplanController extends SintController {
     pendingChoice.value = null;
     launchPending.value = null;
 
-    final url = getRemoteSessionUrl(sessionId);
+    final _url = getRemoteSessionUrl(sessionId);
 
     // In production, this also:
     // 1. Archives the remote session via API
@@ -495,8 +469,7 @@ class UltraplanController extends SintController {
   }
 
   /// Whether an ultraplan session is currently active.
-  bool get isActive =>
-      sessionUrl.value != null || isLaunching.value;
+  bool get isActive => sessionUrl.value != null || isLaunching.value;
 }
 
 // ============================================================================
@@ -529,32 +502,35 @@ class UltraplanCommand extends LocalUiCommand {
 
     // Bare /ultraplan (no args) just shows usage.
     if (blurb.isEmpty) {
-      return TextCommandResult([
-        'Usage: /ultraplan <prompt>, or include "ultraplan" anywhere',
-        'in your prompt',
-        '',
-        'Advanced multi-agent plan mode with our most powerful model',
-        '(Opus). Runs in NeomClaw on the web. When the plan is ready,',
-        'you can execute it in the web session or send it back here.',
-        'Terminal stays free while the remote plans.',
-        'Requires /login.',
-        '',
-        'Terms: $ccrTermsUrl',
-      ].join('\n'));
+      return TextCommandResult(
+        [
+          'Usage: /ultraplan <prompt>, or include "ultraplan" anywhere',
+          'in your prompt',
+          '',
+          'Advanced multi-agent plan mode with our most powerful model',
+          '(Opus). Runs in NeomClaw on the web. When the plan is ready,',
+          'you can execute it in the web session or send it back here.',
+          'Terminal stays free while the remote plans.',
+          'Requires /login.',
+          '',
+          'Terms: $ccrTermsUrl',
+        ].join('\n'),
+      );
     }
 
     // Check eligibility.
     final eligibility = await checkRemoteAgentEligibility();
     if (!eligibility.eligible) {
-      final reasons =
-          eligibility.errors.map(formatPreconditionError).join('\n');
+      final reasons = eligibility.errors
+          .map(formatPreconditionError)
+          .join('\n');
       return TextCommandResult(
         'ultraplan: cannot launch remote session --\n$reasons',
       );
     }
 
     // Build the prompt.
-    final prompt = buildUltraplanPrompt(blurb);
+    final _prompt = buildUltraplanPrompt(blurb);
 
     // In the full implementation, this would:
     // 1. Set ultraplanLaunchPending in app state (shows pre-launch dialog)

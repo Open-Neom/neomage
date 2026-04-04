@@ -1,6 +1,6 @@
 /// Hook Manager
 ///
-/// Ported from openneomclaw/src/utils/hooks/:
+/// Ported from neom_claw/src/utils/hooks/:
 ///   - sessionHooks.ts    — session-scoped hook lifecycle
 ///   - hooksConfigManager.ts — hook event metadata and grouping
 ///   - hooksSettings.ts   — hook settings, sources, equality, display
@@ -11,6 +11,7 @@
 /// Provides the full hook lifecycle for the Sint-based Flutter port:
 ///   session hooks, function hooks, event metadata, config grouping,
 ///   hook emission, async hook registry, and SSRF protection.
+library;
 
 import 'dart:async';
 
@@ -91,11 +92,7 @@ class PromptHook implements HookCommand {
   @override
   final String? ifCondition;
 
-  const PromptHook({
-    required this.prompt,
-    this.timeout,
-    this.ifCondition,
-  });
+  const PromptHook({required this.prompt, this.timeout, this.ifCondition});
 }
 
 /// Agent hook (multi-turn LLM agent).
@@ -127,11 +124,7 @@ class HttpHook implements HookCommand {
   @override
   final String? ifCondition;
 
-  const HttpHook({
-    required this.url,
-    this.timeout,
-    this.ifCondition,
-  });
+  const HttpHook({required this.url, this.timeout, this.ifCondition});
 }
 
 /// Function hook (in-memory callback, session-scoped only).
@@ -143,7 +136,8 @@ class FunctionHook implements HookCommand {
   final int? timeout;
   @override
   final String? ifCondition = null;
-  final Future<bool> Function(List<dynamic> messages, {Object? signal}) callback;
+  final Future<bool> Function(List<dynamic> messages, {Object? signal})
+  callback;
   final String errorMessage;
   final String? statusMessage;
 
@@ -317,12 +311,9 @@ class SessionHookMatcher {
 class SessionHookEntry {
   final HookCommand hook;
   final void Function(HookCommand hook, AggregatedHookResult result)?
-      onHookSuccess;
+  onHookSuccess;
 
-  const SessionHookEntry({
-    required this.hook,
-    this.onHookSuccess,
-  });
+  const SessionHookEntry({required this.hook, this.onHookSuccess});
 }
 
 /// Aggregated result from hook execution.
@@ -343,7 +334,7 @@ class SessionStore {
   final Map<HookEvent, List<SessionHookMatcher>> hooks;
 
   SessionStore({Map<HookEvent, List<SessionHookMatcher>>? hooks})
-      : hooks = hooks ?? {};
+    : hooks = hooks ?? {};
 }
 
 /// Derived hook matcher (without function hooks).
@@ -393,7 +384,8 @@ class SessionHooksManager {
     int? timeout,
     String? id,
   }) {
-    final hookId = id ??
+    final hookId =
+        id ??
         'function-hook-${DateTime.now().millisecondsSinceEpoch}-'
             '${(DateTime.now().microsecond / 1000).toStringAsFixed(3)}';
     final hook = FunctionHook(
@@ -430,11 +422,13 @@ class SessionHooksManager {
         return true;
       }).toList();
       if (updatedHooks.isNotEmpty) {
-        updatedMatchers.add(SessionHookMatcher(
-          matcher: m.matcher,
-          skillRoot: m.skillRoot,
-          hooks: updatedHooks,
-        ));
+        updatedMatchers.add(
+          SessionHookMatcher(
+            matcher: m.matcher,
+            skillRoot: m.skillRoot,
+            hooks: updatedHooks,
+          ),
+        );
       }
     }
 
@@ -457,14 +451,17 @@ class SessionHooksManager {
     final eventMatchers = store.hooks[event] ?? [];
     final updatedMatchers = <SessionHookMatcher>[];
     for (final m in eventMatchers) {
-      final updatedHooks =
-          m.hooks.where((h) => !isHookEqual(h.hook, hook)).toList();
+      final updatedHooks = m.hooks
+          .where((h) => !isHookEqual(h.hook, hook))
+          .toList();
       if (updatedHooks.isNotEmpty) {
-        updatedMatchers.add(SessionHookMatcher(
-          matcher: m.matcher,
-          skillRoot: m.skillRoot,
-          hooks: updatedHooks,
-        ));
+        updatedMatchers.add(
+          SessionHookMatcher(
+            matcher: m.matcher,
+            skillRoot: m.skillRoot,
+            hooks: updatedHooks,
+          ),
+        );
       }
     }
 
@@ -486,7 +483,8 @@ class SessionHooksManager {
     final result = <HookEvent, List<SessionDerivedHookMatcher>>{};
 
     List<SessionDerivedHookMatcher> convertMatchers(
-        List<SessionHookMatcher> matchers) {
+      List<SessionHookMatcher> matchers,
+    ) {
       return matchers.map((sm) {
         final nonFunctionHooks = sm.hooks
             .map((h) => h.hook)
@@ -528,15 +526,15 @@ class SessionHooksManager {
     final result = <HookEvent, List<FunctionHookMatcher>>{};
 
     List<FunctionHookMatcher> extractFunctionHooks(
-        List<SessionHookMatcher> matchers) {
+      List<SessionHookMatcher> matchers,
+    ) {
       return matchers
           .map((sm) {
             final funcHooks = sm.hooks
                 .map((h) => h.hook)
                 .whereType<FunctionHook>()
                 .toList();
-            return FunctionHookMatcher(
-                matcher: sm.matcher, hooks: funcHooks);
+            return FunctionHookMatcher(matcher: sm.matcher, hooks: funcHooks);
           })
           .where((m) => m.hooks.isNotEmpty)
           .toList();
@@ -608,18 +606,21 @@ class SessionHooksManager {
     final eventMatchers = store.hooks[event] ?? [];
 
     final existingIdx = eventMatchers.indexWhere(
-        (m) => m.matcher == matcher && m.skillRoot == skillRoot);
+      (m) => m.matcher == matcher && m.skillRoot == skillRoot,
+    );
 
     if (existingIdx >= 0) {
       eventMatchers[existingIdx].hooks.add(
         SessionHookEntry(hook: hook, onHookSuccess: onHookSuccess),
       );
     } else {
-      eventMatchers.add(SessionHookMatcher(
-        matcher: matcher,
-        skillRoot: skillRoot,
-        hooks: [SessionHookEntry(hook: hook, onHookSuccess: onHookSuccess)],
-      ));
+      eventMatchers.add(
+        SessionHookMatcher(
+          matcher: matcher,
+          skillRoot: skillRoot,
+          hooks: [SessionHookEntry(hook: hook, onHookSuccess: onHookSuccess)],
+        ),
+      );
     }
 
     store.hooks[event] = eventMatchers;
@@ -631,10 +632,7 @@ class FunctionHookMatcher {
   final String matcher;
   final List<FunctionHook> hooks;
 
-  const FunctionHookMatcher({
-    required this.matcher,
-    required this.hooks,
-  });
+  const FunctionHookMatcher({required this.matcher, required this.hooks});
 }
 
 // ---------------------------------------------------------------------------
@@ -646,10 +644,7 @@ class MatcherMetadata {
   final String fieldToMatch;
   final List<String> values;
 
-  const MatcherMetadata({
-    required this.fieldToMatch,
-    required this.values,
-  });
+  const MatcherMetadata({required this.fieldToMatch, required this.values});
 }
 
 /// Metadata for a hook event.
@@ -666,8 +661,7 @@ class HookEventMetadata {
 }
 
 /// Get metadata for all hook events.
-Map<HookEvent, HookEventMetadata> getHookEventMetadata(
-    List<String> toolNames) {
+Map<HookEvent, HookEventMetadata> getHookEventMetadata(List<String> toolNames) {
   return {
     'PreToolUse': HookEventMetadata(
       summary: 'Before tool execution',
@@ -715,7 +709,8 @@ Map<HookEvent, HookEventMetadata> getHookEventMetadata(
     ),
     'Notification': HookEventMetadata(
       summary: 'When notifications are sent',
-      description: 'Input to command is JSON with notification message and type.',
+      description:
+          'Input to command is JSON with notification message and type.',
       matcherMetadata: MatcherMetadata(
         fieldToMatch: 'notification_type',
         values: [
@@ -806,7 +801,8 @@ Map<HookEvent, HookEventMetadata> getHookEventMetadata(
     ),
     'Setup': HookEventMetadata(
       summary: 'Repo setup hooks for init and maintenance',
-      description: 'Input to command is JSON with trigger (init or maintenance).',
+      description:
+          'Input to command is JSON with trigger (init or maintenance).',
       matcherMetadata: MatcherMetadata(
         fieldToMatch: 'trigger',
         values: ['init', 'maintenance'],
@@ -826,15 +822,20 @@ Map<HookEvent, HookEventMetadata> getHookEventMetadata(
     ),
     'Elicitation': const HookEventMetadata(
       summary: 'When an MCP server requests user input',
-      description: 'Input includes mcp_server_name, message, and requested_schema.',
-      matcherMetadata:
-          MatcherMetadata(fieldToMatch: 'mcp_server_name', values: []),
+      description:
+          'Input includes mcp_server_name, message, and requested_schema.',
+      matcherMetadata: MatcherMetadata(
+        fieldToMatch: 'mcp_server_name',
+        values: [],
+      ),
     ),
     'ElicitationResult': const HookEventMetadata(
       summary: 'After a user responds to an MCP elicitation',
       description: 'Input includes mcp_server_name, action, content.',
-      matcherMetadata:
-          MatcherMetadata(fieldToMatch: 'mcp_server_name', values: []),
+      matcherMetadata: MatcherMetadata(
+        fieldToMatch: 'mcp_server_name',
+        values: [],
+      ),
     ),
     'ConfigChange': HookEventMetadata(
       summary: 'When configuration files change during a session',
@@ -1009,8 +1010,13 @@ class HookEventEmitter {
 
   void emitHookStarted(String hookId, String hookName, String hookEvent) {
     if (!_shouldEmit(hookEvent)) return;
-    _emit(HookStartedEvent(
-        hookId: hookId, hookName: hookName, hookEvent: hookEvent));
+    _emit(
+      HookStartedEvent(
+        hookId: hookId,
+        hookName: hookName,
+        hookEvent: hookEvent,
+      ),
+    );
   }
 
   void emitHookProgress({
@@ -1022,14 +1028,16 @@ class HookEventEmitter {
     required String output,
   }) {
     if (!_shouldEmit(hookEvent)) return;
-    _emit(HookProgressEvent(
-      hookId: hookId,
-      hookName: hookName,
-      hookEvent: hookEvent,
-      stdout: stdout,
-      stderr: stderr,
-      output: output,
-    ));
+    _emit(
+      HookProgressEvent(
+        hookId: hookId,
+        hookName: hookName,
+        hookEvent: hookEvent,
+        stdout: stdout,
+        stderr: stderr,
+        output: output,
+      ),
+    );
   }
 
   void emitHookResponse({
@@ -1043,16 +1051,18 @@ class HookEventEmitter {
     required String outcome,
   }) {
     if (!_shouldEmit(hookEvent)) return;
-    _emit(HookResponseEvent(
-      hookId: hookId,
-      hookName: hookName,
-      hookEvent: hookEvent,
-      output: output,
-      stdout: stdout,
-      stderr: stderr,
-      exitCode: exitCode,
-      outcome: outcome,
-    ));
+    _emit(
+      HookResponseEvent(
+        hookId: hookId,
+        hookName: hookName,
+        hookEvent: hookEvent,
+        output: output,
+        stdout: stdout,
+        stderr: stderr,
+        exitCode: exitCode,
+        outcome: outcome,
+      ),
+    );
   }
 
   void setAllHookEventsEnabled(bool enabled) {

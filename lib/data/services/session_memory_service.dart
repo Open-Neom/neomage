@@ -1,11 +1,9 @@
-// Session memory service — port of openneomclaw/src/services/SessionMemory/.
+// Session memory service — port of neom_claw/src/services/SessionMemory/.
 // Automatically maintains a markdown file with notes about the current
 // conversation. Runs periodically in the background using a forked subagent
 // to extract key information without interrupting the main conversation flow.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
-import 'dart:math';
 
 import 'package:sint/sint.dart';
 
@@ -35,15 +33,14 @@ class SessionMemoryConfig {
     int? minimumMessageTokensToInit,
     int? minimumTokensBetweenUpdate,
     int? toolCallsBetweenUpdates,
-  }) =>
-      SessionMemoryConfig(
-        minimumMessageTokensToInit:
-            minimumMessageTokensToInit ?? this.minimumMessageTokensToInit,
-        minimumTokensBetweenUpdate:
-            minimumTokensBetweenUpdate ?? this.minimumTokensBetweenUpdate,
-        toolCallsBetweenUpdates:
-            toolCallsBetweenUpdates ?? this.toolCallsBetweenUpdates,
-      );
+  }) => SessionMemoryConfig(
+    minimumMessageTokensToInit:
+        minimumMessageTokensToInit ?? this.minimumMessageTokensToInit,
+    minimumTokensBetweenUpdate:
+        minimumTokensBetweenUpdate ?? this.minimumTokensBetweenUpdate,
+    toolCallsBetweenUpdates:
+        toolCallsBetweenUpdates ?? this.toolCallsBetweenUpdates,
+  );
 
   factory SessionMemoryConfig.fromRemote(Map<String, dynamic> json) {
     return SessionMemoryConfig(
@@ -51,8 +48,7 @@ class SessionMemoryConfig {
           (json['minimumMessageTokensToInit'] as int?) ?? 10000,
       minimumTokensBetweenUpdate:
           (json['minimumTokensBetweenUpdate'] as int?) ?? 5000,
-      toolCallsBetweenUpdates:
-          (json['toolCallsBetweenUpdates'] as int?) ?? 3,
+      toolCallsBetweenUpdates: (json['toolCallsBetweenUpdates'] as int?) ?? 3,
     );
   }
 }
@@ -137,11 +133,7 @@ class SessionMessageBlock {
   final String? text;
   final String? toolName;
 
-  const SessionMessageBlock({
-    required this.type,
-    this.text,
-    this.toolName,
-  });
+  const SessionMessageBlock({required this.type, this.text, this.toolName});
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -208,14 +200,18 @@ Map<String, int> analyzeSectionSizes(String content) {
 }
 
 /// Generate reminders for sections that are too long.
-String generateSectionReminders(Map<String, int> sectionSizes, int totalTokens) {
+String generateSectionReminders(
+  Map<String, int> sectionSizes,
+  int totalTokens,
+) {
   final overBudget = totalTokens > _maxTotalSessionMemoryTokens;
-  final oversizedSections = sectionSizes.entries
-      .where((e) => e.value > _maxSectionLength)
-      .toList()
-    ..sort((a, b) => b.value.compareTo(a.value));
+  final oversizedSections =
+      sectionSizes.entries.where((e) => e.value > _maxSectionLength).toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
   final oversizedLines = oversizedSections
-      .map((e) => '- "${e.key}" is ~${e.value} tokens (limit: $_maxSectionLength)')
+      .map(
+        (e) => '- "${e.key}" is ~${e.value} tokens (limit: $_maxSectionLength)',
+      )
       .toList();
 
   if (oversizedLines.isEmpty && !overBudget) return '';
@@ -242,13 +238,10 @@ String generateSectionReminders(Map<String, int> sectionSizes, int totalTokens) 
 
 /// Substitute variables in a prompt template using {{variable}} syntax.
 String substituteVariables(String template, Map<String, String> variables) {
-  return template.replaceAllMapped(
-    RegExp(r'\{\{(\w+)\}\}'),
-    (match) {
-      final key = match.group(1)!;
-      return variables.containsKey(key) ? variables[key]! : match.group(0)!;
-    },
-  );
+  return template.replaceAllMapped(RegExp(r'\{\{(\w+)\}\}'), (match) {
+    final key = match.group(1)!;
+    return variables.containsKey(key) ? variables[key]! : match.group(0)!;
+  });
 }
 
 /// Check if the session memory content is essentially empty (matches template).
@@ -316,10 +309,7 @@ Future<String> buildSessionMemoryUpdatePrompt(
   final totalTokens = roughTokenCountEstimation(currentNotes);
   final sectionReminders = generateSectionReminders(sectionSizes, totalTokens);
 
-  final variables = {
-    'currentNotes': currentNotes,
-    'notesPath': notesPath,
-  };
+  final variables = {'currentNotes': currentNotes, 'notesPath': notesPath};
 
   final basePrompt = substituteVariables(promptTemplate, variables);
   return basePrompt + sectionReminders;
@@ -491,7 +481,9 @@ class SessionMemoryState {
       final age = DateTime.now().difference(_extractionStartedAt!);
       if (age.inMilliseconds > _extractionStaleThresholdMs) return;
       if (DateTime.now().difference(startTime).inMilliseconds >
-          _extractionWaitTimeoutMs) return;
+          _extractionWaitTimeoutMs) {
+        return;
+      }
       await Future<void>.delayed(const Duration(seconds: 1));
     }
   }
@@ -522,7 +514,9 @@ int countToolCallsSince(List<SessionMessage> messages, String? sinceUuid) {
       continue;
     }
     if (message.type == 'assistant') {
-      toolCallCount += message.content.where((b) => b.type == 'tool_use').length;
+      toolCallCount += message.content
+          .where((b) => b.type == 'tool_use')
+          .length;
     }
   }
   return toolCallCount;
@@ -576,7 +570,8 @@ class SessionMemoryController extends SintController {
     required String prompt,
     required String memoryPath,
     required List<SessionMessage> contextMessages,
-  }) runExtractionAgent;
+  })
+  runExtractionAgent;
 
   SessionMemoryController({
     required this.isGateEnabled,
@@ -606,11 +601,15 @@ class SessionMemoryController extends SintController {
     }
 
     final hasMetTokenThreshold = s.hasMetUpdateThreshold(currentTokenCount);
-    final toolCallsSince = countToolCallsSince(messages, _lastMemoryMessageUuid);
+    final toolCallsSince = countToolCallsSince(
+      messages,
+      _lastMemoryMessageUuid,
+    );
     final hasMetToolCallThreshold = toolCallsSince >= s.toolCallsBetweenUpdates;
     final hasToolCallsInLast = hasToolCallsInLastAssistantTurn(messages);
 
-    final shouldExtract = (hasMetTokenThreshold && hasMetToolCallThreshold) ||
+    final shouldExtract =
+        (hasMetTokenThreshold && hasMetToolCallThreshold) ||
         (hasMetTokenThreshold && !hasToolCallsInLast);
 
     if (shouldExtract) {
@@ -634,12 +633,15 @@ class SessionMemoryController extends SintController {
     final toolCalls = remoteConfig['toolCallsBetweenUpdates'] as int?;
 
     state.value.config = SessionMemoryConfig(
-      minimumMessageTokensToInit:
-          (minimumInit != null && minimumInit > 0) ? minimumInit : 10000,
-      minimumTokensBetweenUpdate:
-          (minimumUpdate != null && minimumUpdate > 0) ? minimumUpdate : 5000,
-      toolCallsBetweenUpdates:
-          (toolCalls != null && toolCalls > 0) ? toolCalls : 3,
+      minimumMessageTokensToInit: (minimumInit != null && minimumInit > 0)
+          ? minimumInit
+          : 10000,
+      minimumTokensBetweenUpdate: (minimumUpdate != null && minimumUpdate > 0)
+          ? minimumUpdate
+          : 5000,
+      toolCallsBetweenUpdates: (toolCalls != null && toolCalls > 0)
+          ? toolCalls
+          : 3,
     );
   }
 
@@ -763,10 +765,7 @@ class SessionMemoryController extends SintController {
         memoryPath: setup.memoryPath,
       );
     } catch (e) {
-      return ManualExtractionResult(
-        success: false,
-        error: e.toString(),
-      );
+      return ManualExtractionResult(success: false, error: e.toString());
     } finally {
       state.value.markExtractionCompleted();
     }
@@ -785,7 +784,9 @@ class SessionMemoryController extends SintController {
       final path = getSessionMemoryPath();
       if (!await fileExists(path)) return null;
       final content = await readFile(path);
-      logEvent('tengu_session_memory_loaded', {'content_length': content.length});
+      logEvent('tengu_session_memory_loaded', {
+        'content_length': content.length,
+      });
       return content;
     } catch (_) {
       return null;

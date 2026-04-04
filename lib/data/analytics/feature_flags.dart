@@ -9,7 +9,7 @@ class FeatureFlag<T> {
   bool _overridden = false;
 
   FeatureFlag({required this.key, required this.defaultValue})
-      : _value = defaultValue;
+    : _value = defaultValue;
 
   /// Current value.
   T get value => _value;

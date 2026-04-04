@@ -94,7 +94,9 @@ class StatusBar extends StatelessWidget {
 
   String _modelShort(String model) {
     if (model.contains('opus')) return 'Opus';
-    if (model.contains('sonnet-4-5') || model.contains('sonnet-4.5')) return 'Sonnet 4.5';
+    if (model.contains('sonnet-4-5') || model.contains('sonnet-4.5')) {
+      return 'Sonnet 4.5';
+    }
     if (model.contains('sonnet')) return 'Sonnet';
     if (model.contains('haiku')) return 'Haiku';
     if (model.contains('gpt-4o-mini')) return '4o-mini';
@@ -160,8 +162,7 @@ class StatusBar extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.smart_toy_outlined,
-                    size: 12, color: muted),
+                Icon(Icons.smart_toy_outlined, size: 12, color: muted),
                 const SizedBox(width: 3),
                 Text(_modelShort(data.model), style: textStyle),
               ],
@@ -186,7 +187,9 @@ class StatusBar extends StatelessWidget {
                   Text(
                     ' (${_formatTokens(data.cacheReadTokens)} cached)',
                     style: textStyle.copyWith(
-                      color: isDark ? Colors.green.shade700 : Colors.green.shade300,
+                      color: isDark
+                          ? Colors.green.shade700
+                          : Colors.green.shade300,
                     ),
                   ),
                 ],
@@ -214,9 +217,10 @@ class StatusBar extends StatelessWidget {
                   const SizedBox(width: 3),
                   Text(data.gitBranch!, style: textStyle),
                   if (data.gitStatus == 'dirty')
-                    Text(' *',
-                        style: textStyle.copyWith(
-                            color: Colors.orange.shade300)),
+                    Text(
+                      ' *',
+                      style: textStyle.copyWith(color: Colors.orange.shade300),
+                    ),
                 ],
               ),
             ),
@@ -253,9 +257,10 @@ class StatusBar extends StatelessWidget {
                   const SizedBox(width: 3),
                   Text('${data.activeAgents}', style: textStyle),
                   if (data.pendingTasks > 0)
-                    Text(' +${data.pendingTasks}',
-                        style: textStyle.copyWith(
-                            color: Colors.amber.shade300)),
+                    Text(
+                      ' +${data.pendingTasks}',
+                      style: textStyle.copyWith(color: Colors.amber.shade300),
+                    ),
                 ],
               ),
             ),
@@ -276,8 +281,8 @@ class StatusBar extends StatelessWidget {
                     data.permissionMode == 'full-auto'
                         ? Icons.flash_on
                         : data.permissionMode == 'plan'
-                            ? Icons.architecture
-                            : Icons.security,
+                        ? Icons.architecture
+                        : Icons.security,
                     size: 12,
                     color: data.permissionMode == 'full-auto'
                         ? Colors.red.shade300
@@ -294,12 +299,9 @@ class StatusBar extends StatelessWidget {
           // Vim mode
           if (data.vimMode) ...[
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.green.shade900
-                    : Colors.green.shade100,
+                color: isDark ? Colors.green.shade900 : Colors.green.shade100,
                 borderRadius: BorderRadius.circular(2),
               ),
               child: Text(
@@ -307,9 +309,7 @@ class StatusBar extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
-                  color: isDark
-                      ? Colors.green.shade300
-                      : Colors.green.shade800,
+                  color: isDark ? Colors.green.shade300 : Colors.green.shade800,
                 ),
               ),
             ),
@@ -318,10 +318,7 @@ class StatusBar extends StatelessWidget {
 
           // Session duration
           if (data.sessionDuration != null)
-            Text(
-              _formatDuration(data.sessionDuration!),
-              style: textStyle,
-            ),
+            Text(_formatDuration(data.sessionDuration!), style: textStyle),
 
           const SizedBox(width: 8),
         ],
@@ -494,19 +491,23 @@ class _ToastWidgetState extends State<_ToastWidget>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Positioned(
-      right: widget.position == ToastPosition.topRight ||
+      right:
+          widget.position == ToastPosition.topRight ||
               widget.position == ToastPosition.bottomRight
           ? 16
           : null,
-      left: widget.position == ToastPosition.top ||
+      left:
+          widget.position == ToastPosition.top ||
               widget.position == ToastPosition.bottom
           ? 16
           : null,
-      top: widget.position == ToastPosition.top ||
+      top:
+          widget.position == ToastPosition.top ||
               widget.position == ToastPosition.topRight
           ? 16
           : null,
-      bottom: widget.position == ToastPosition.bottom ||
+      bottom:
+          widget.position == ToastPosition.bottom ||
               widget.position == ToastPosition.bottomRight
           ? 40
           : null,
@@ -524,17 +525,13 @@ class _ToastWidgetState extends State<_ToastWidget>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 border: Border(
-                  left: BorderSide(
-                    width: 4,
-                    color: _severityColor(),
-                  ),
+                  left: BorderSide(width: 4, color: _severityColor()),
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(_severityIcon(),
-                      size: 18, color: _severityColor()),
+                  Icon(_severityIcon(), size: 18, color: _severityColor()),
                   const SizedBox(width: 10),
                   Flexible(
                     child: Column(
@@ -546,9 +543,7 @@ class _ToastWidgetState extends State<_ToastWidget>
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: isDark
-                                ? Colors.white
-                                : Colors.black87,
+                            color: isDark ? Colors.white : Colors.black87,
                           ),
                         ),
                         if (widget.detail != null) ...[
@@ -557,9 +552,7 @@ class _ToastWidgetState extends State<_ToastWidget>
                             widget.detail!,
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark
-                                  ? Colors.white54
-                                  : Colors.black45,
+                              color: isDark ? Colors.white54 : Colors.black45,
                             ),
                           ),
                         ],
@@ -575,15 +568,14 @@ class _ToastWidgetState extends State<_ToastWidget>
                       },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         minimumSize: Size.zero,
                       ),
                       child: Text(
                         widget.actionLabel ?? 'Action',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _severityColor(),
-                        ),
+                        style: TextStyle(fontSize: 12, color: _severityColor()),
                       ),
                     ),
                   ],

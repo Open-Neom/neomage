@@ -122,19 +122,19 @@ class _ToolOutputWidgetState extends State<ToolOutputWidget> {
   }
 
   IconData _toolIcon(String name) => switch (name) {
-        'Read' => Icons.description_outlined,
-        'Write' => Icons.edit_document,
-        'Edit' => Icons.edit,
-        'Bash' => Icons.terminal,
-        'Grep' => Icons.search,
-        'Glob' => Icons.folder_open,
-        'Agent' => Icons.smart_toy,
-        'WebSearch' => Icons.travel_explore,
-        'WebFetch' => Icons.cloud_download,
-        'TodoWrite' => Icons.checklist,
-        'ToolSearch' => Icons.extension_outlined,
-        _ => Icons.build,
-      };
+    'Read' => Icons.description_outlined,
+    'Write' => Icons.edit_document,
+    'Edit' => Icons.edit,
+    'Bash' => Icons.terminal,
+    'Grep' => Icons.search,
+    'Glob' => Icons.folder_open,
+    'Agent' => Icons.smart_toy,
+    'WebSearch' => Icons.travel_explore,
+    'WebFetch' => Icons.cloud_download,
+    'TodoWrite' => Icons.checklist,
+    'ToolSearch' => Icons.extension_outlined,
+    _ => Icons.build,
+  };
 
   String _inputSummary(String toolName, Map<String, dynamic> input) {
     return switch (toolName) {

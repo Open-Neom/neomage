@@ -32,9 +32,7 @@ class SessionCommand extends LocalCommand {
       case '':
         return _list();
       case 'current':
-        return TextCommandResult(
-          'Current session: ${getCurrentSessionId()}',
-        );
+        return TextCommandResult('Current session: ${getCurrentSessionId()}');
       case 'delete':
         if (parts.length < 2) {
           return const TextCommandResult('Usage: /session delete <id>');

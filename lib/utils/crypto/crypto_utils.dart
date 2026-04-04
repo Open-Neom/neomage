@@ -18,20 +18,24 @@ import 'dart:typed_data';
 /// Uses the `shasum` command on macOS/Linux for simplicity without
 /// requiring a crypto package.
 Future<String> sha256(String text) async {
-  final result = await Process.run('shasum', ['-a', '256'],
-      stdoutEncoding: utf8,
-      stderrEncoding: utf8,
-      environment: Platform.environment);
+  final result = await Process.run(
+    'shasum',
+    ['-a', '256'],
+    stdoutEncoding: utf8,
+    stderrEncoding: utf8,
+    environment: Platform.environment,
+  );
   // Fallback: use openssl
   if (result.exitCode != 0) {
     return _hashViaOpenssl('sha256', text);
   }
   // Use printf + shasum via shell
-  final proc = await Process.run(
-    'sh',
-    ['-c', 'printf "%s" \${1} | shasum -a 256', '--', text],
-    stdoutEncoding: utf8,
-  );
+  final proc = await Process.run('sh', [
+    '-c',
+    'printf "%s" \${1} | shasum -a 256',
+    '--',
+    text,
+  ], stdoutEncoding: utf8);
   if (proc.exitCode == 0) {
     return (proc.stdout as String).split(' ').first.trim();
   }
@@ -40,20 +44,22 @@ Future<String> sha256(String text) async {
 
 /// Compute SHA-256 synchronously using Process.runSync.
 String sha256Sync(String text) {
-  final result = Process.runSync(
-    'sh',
-    ['-c', 'printf "%s" "\$1" | shasum -a 256', '--', text],
-    stdoutEncoding: utf8,
-  );
+  final result = Process.runSync('sh', [
+    '-c',
+    'printf "%s" "\$1" | shasum -a 256',
+    '--',
+    text,
+  ], stdoutEncoding: utf8);
   if (result.exitCode == 0) {
     return (result.stdout as String).split(' ').first.trim();
   }
   // Fallback to openssl
-  final r2 = Process.runSync(
-    'sh',
-    ['-c', 'printf "%s" "\$1" | openssl dgst -sha256 -hex', '--', text],
-    stdoutEncoding: utf8,
-  );
+  final r2 = Process.runSync('sh', [
+    '-c',
+    'printf "%s" "\$1" | openssl dgst -sha256 -hex',
+    '--',
+    text,
+  ], stdoutEncoding: utf8);
   final output = (r2.stdout as String).trim();
   // openssl may prefix with "(stdin)= "
   final idx = output.indexOf('= ');
@@ -65,17 +71,20 @@ Future<String> md5(String text) async {
   // Try md5sum first (Linux), then md5 (macOS)
   for (final cmd in ['md5sum', 'md5']) {
     try {
-      final proc = await Process.run(
-        'sh',
-        ['-c', 'printf "%s" "\$1" | $cmd', '--', text],
-        stdoutEncoding: utf8,
-      );
+      final proc = await Process.run('sh', [
+        '-c',
+        'printf "%s" "\$1" | $cmd',
+        '--',
+        text,
+      ], stdoutEncoding: utf8);
       if (proc.exitCode == 0) {
         final out = (proc.stdout as String).trim();
         if (cmd == 'md5sum') return out.split(' ').first;
         // macOS md5 outputs "MD5 (...) = <hash>" or just the hash
         final eqIdx = out.indexOf('= ');
-        return eqIdx >= 0 ? out.substring(eqIdx + 2).trim() : out.split(' ').last;
+        return eqIdx >= 0
+            ? out.substring(eqIdx + 2).trim()
+            : out.split(' ').last;
       }
     } catch (_) {}
   }
@@ -84,22 +93,25 @@ Future<String> md5(String text) async {
 
 /// Compute HMAC-SHA256 of [text] with [key].
 Future<String> hmacSha256(String key, String text) async {
-  final proc = await Process.run(
-    'sh',
-    ['-c', 'printf "%s" "\$1" | openssl dgst -sha256 -hmac "\$2" -hex', '--', text, key],
-    stdoutEncoding: utf8,
-  );
+  final proc = await Process.run('sh', [
+    '-c',
+    'printf "%s" "\$1" | openssl dgst -sha256 -hmac "\$2" -hex',
+    '--',
+    text,
+    key,
+  ], stdoutEncoding: utf8);
   final output = (proc.stdout as String).trim();
   final idx = output.indexOf('= ');
   return idx >= 0 ? output.substring(idx + 2).trim() : output;
 }
 
 Future<String> _hashViaOpenssl(String algo, String text) async {
-  final proc = await Process.run(
-    'sh',
-    ['-c', 'printf "%s" "\$1" | openssl dgst -$algo -hex', '--', text],
-    stdoutEncoding: utf8,
-  );
+  final proc = await Process.run('sh', [
+    '-c',
+    'printf "%s" "\$1" | openssl dgst -$algo -hex',
+    '--',
+    text,
+  ], stdoutEncoding: utf8);
   final output = (proc.stdout as String).trim();
   final idx = output.indexOf('= ');
   return idx >= 0 ? output.substring(idx + 2).trim() : output;
@@ -189,16 +201,21 @@ String generateToken(int length) {
 
 /// Compute SHA-256 hash of a file at [path].
 Future<String> hashFile(String path) async {
-  final proc = await Process.run('shasum', ['-a', '256', path],
-      stdoutEncoding: utf8);
+  final proc = await Process.run('shasum', [
+    '-a',
+    '256',
+    path,
+  ], stdoutEncoding: utf8);
   if (proc.exitCode == 0) {
     return (proc.stdout as String).split(' ').first.trim();
   }
   // Fallback
-  final proc2 = await Process.run(
-    'openssl', ['dgst', '-sha256', '-hex', path],
-    stdoutEncoding: utf8,
-  );
+  final proc2 = await Process.run('openssl', [
+    'dgst',
+    '-sha256',
+    '-hex',
+    path,
+  ], stdoutEncoding: utf8);
   final output = (proc2.stdout as String).trim();
   final idx = output.indexOf('= ');
   return idx >= 0 ? output.substring(idx + 2).trim() : output;
@@ -209,19 +226,26 @@ Future<String> hashFile(String path) async {
 /// Files are sorted by path for deterministic output.
 Future<String> hashDirectory(String path) async {
   // Find all files, sort, hash each, then hash the combined hashes
-  final findResult = await Process.run(
-    'find', [path, '-type', 'f'],
-    stdoutEncoding: utf8,
-  );
+  final findResult = await Process.run('find', [
+    path,
+    '-type',
+    'f',
+  ], stdoutEncoding: utf8);
   if (findResult.exitCode != 0) {
-    throw ProcessException('find', [path], 'Failed to list directory', findResult.exitCode);
+    throw ProcessException(
+      'find',
+      [path],
+      'Failed to list directory',
+      findResult.exitCode,
+    );
   }
 
-  final files = (findResult.stdout as String)
-      .split('\n')
-      .where((f) => f.isNotEmpty)
-      .toList()
-    ..sort();
+  final files =
+      (findResult.stdout as String)
+          .split('\n')
+          .where((f) => f.isNotEmpty)
+          .toList()
+        ..sort();
 
   final hashes = <String>[];
   for (final file in files) {
@@ -333,18 +357,24 @@ class SecureStorage {
     } else if (Platform.isLinux) {
       final result = await Process.run('secret-tool', [
         'store',
-        '--label', '$serviceName:$key',
-        'service', serviceName,
-        'account', key,
+        '--label',
+        '$serviceName:$key',
+        'service',
+        serviceName,
+        'account',
+        key,
       ], environment: Platform.environment);
       // secret-tool reads the secret from stdin
       if (result.exitCode != 0) {
         // Try with stdin
         final proc = await Process.start('secret-tool', [
           'store',
-          '--label', '$serviceName:$key',
-          'service', serviceName,
-          'account', key,
+          '--label',
+          '$serviceName:$key',
+          'service',
+          serviceName,
+          'account',
+          key,
         ]);
         proc.stdin.writeln(value);
         await proc.stdin.close();
@@ -361,8 +391,10 @@ class SecureStorage {
     if (Platform.isMacOS) {
       final result = await Process.run('security', [
         'find-generic-password',
-        '-a', key,
-        '-s', serviceName,
+        '-a',
+        key,
+        '-s',
+        serviceName,
         '-w',
       ], stdoutEncoding: utf8);
       if (result.exitCode == 0) {
@@ -372,8 +404,10 @@ class SecureStorage {
     } else if (Platform.isLinux) {
       final result = await Process.run('secret-tool', [
         'lookup',
-        'service', serviceName,
-        'account', key,
+        'service',
+        serviceName,
+        'account',
+        key,
       ], stdoutEncoding: utf8);
       if (result.exitCode == 0) {
         return (result.stdout as String).trim();
@@ -388,15 +422,19 @@ class SecureStorage {
     if (Platform.isMacOS) {
       final result = await Process.run('security', [
         'delete-generic-password',
-        '-a', key,
-        '-s', serviceName,
+        '-a',
+        key,
+        '-s',
+        serviceName,
       ]);
       return result.exitCode == 0;
     } else if (Platform.isLinux) {
       final result = await Process.run('secret-tool', [
         'clear',
-        'service', serviceName,
-        'account', key,
+        'service',
+        serviceName,
+        'account',
+        key,
       ]);
       return result.exitCode == 0;
     }

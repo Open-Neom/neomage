@@ -1,7 +1,4 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 // ---------------------------------------------------------------------------
 // Data models
@@ -70,8 +67,8 @@ class PlanStep {
     this.status = PlanStepStatus.pending,
     List<PlanStep>? substeps,
     List<String>? dependencies,
-  })  : substeps = substeps ?? [],
-        dependencies = dependencies ?? [];
+  }) : substeps = substeps ?? [],
+       dependencies = dependencies ?? [];
 
   final String id;
   final String title;
@@ -88,10 +85,7 @@ class PlanStep {
 
 /// A phase groups related steps.
 class PlanPhase {
-  PlanPhase({
-    required this.name,
-    required this.steps,
-  });
+  PlanPhase({required this.name, required this.steps});
 
   final String name;
   final List<PlanStep> steps;
@@ -150,7 +144,8 @@ class Plan {
     if (estimatedDuration == null) return null;
     final remaining = 1.0 - overallProgress;
     return Duration(
-        milliseconds: (estimatedDuration!.inMilliseconds * remaining).round());
+      milliseconds: (estimatedDuration!.inMilliseconds * remaining).round(),
+    );
   }
 
   static int _countSubsteps(PlanStep step) {
@@ -176,8 +171,8 @@ class Plan {
 // ---------------------------------------------------------------------------
 
 typedef PlanStepCallback = void Function(PlanStep step);
-typedef PlanStepReorderCallback = void Function(
-    PlanPhase phase, int oldIndex, int newIndex);
+typedef PlanStepReorderCallback =
+    void Function(PlanPhase phase, int oldIndex, int newIndex);
 
 // ---------------------------------------------------------------------------
 // PlanModeView widget
@@ -291,7 +286,11 @@ class _PlanModeViewState extends State<PlanModeView>
         children: [
           Row(
             children: [
-              const Icon(Icons.map_outlined, color: Colors.cyanAccent, size: 20),
+              const Icon(
+                Icons.map_outlined,
+                color: Colors.cyanAccent,
+                size: 20,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -410,8 +409,9 @@ class _PlanModeViewState extends State<PlanModeView>
                         value: phase.progress,
                         minHeight: 4,
                         backgroundColor: Colors.grey.shade700,
-                        valueColor:
-                            const AlwaysStoppedAnimation(Colors.cyanAccent),
+                        valueColor: const AlwaysStoppedAnimation(
+                          Colors.cyanAccent,
+                        ),
                       ),
                     ),
                   ),
@@ -484,8 +484,11 @@ class _PlanModeViewState extends State<PlanModeView>
               padding: const EdgeInsets.only(left: 32, bottom: 2),
               child: Row(
                 children: [
-                  const Icon(Icons.subdirectory_arrow_right,
-                      size: 14, color: Colors.white30),
+                  const Icon(
+                    Icons.subdirectory_arrow_right,
+                    size: 14,
+                    color: Colors.white30,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     'depends on: ${step.dependencies.join(", ")}',
@@ -510,8 +513,9 @@ class _PlanModeViewState extends State<PlanModeView>
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
                     color: isActive
-                        ? Colors.cyanAccent
-                            .withOpacity(0.3 + _pulseAnimation.value * 0.5)
+                        ? Colors.cyanAccent.withOpacity(
+                            0.3 + _pulseAnimation.value * 0.5,
+                          )
                         : Colors.grey.shade700,
                     width: isActive ? 1.5 : 0.5,
                   ),
@@ -528,8 +532,11 @@ class _PlanModeViewState extends State<PlanModeView>
                     if (depth == 0)
                       ReorderableDragStartListener(
                         index: index,
-                        child: const Icon(Icons.drag_indicator,
-                            size: 16, color: Colors.white30),
+                        child: const Icon(
+                          Icons.drag_indicator,
+                          size: 16,
+                          color: Colors.white30,
+                        ),
                       ),
                     if (depth == 0) const SizedBox(width: 4),
                     // Tree line for substeps
@@ -547,10 +554,13 @@ class _PlanModeViewState extends State<PlanModeView>
                       child: Text(
                         step.title,
                         style: TextStyle(
-                          color: step.isTerminal ? Colors.white54 : Colors.white,
+                          color: step.isTerminal
+                              ? Colors.white54
+                              : Colors.white,
                           fontSize: 13,
-                          fontWeight:
-                              isActive ? FontWeight.bold : FontWeight.normal,
+                          fontWeight: isActive
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                           decoration: step.status == PlanStepStatus.skipped
                               ? TextDecoration.lineThrough
                               : null,
@@ -638,10 +648,7 @@ class _PlanModeViewState extends State<PlanModeView>
                 children: [
                   Icon(s.icon, size: 14, color: s.color),
                   const SizedBox(width: 4),
-                  Text(
-                    s.label,
-                    style: TextStyle(color: s.color, fontSize: 11),
-                  ),
+                  Text(s.label, style: TextStyle(color: s.color, fontSize: 11)),
                 ],
               );
             }).toList(),

@@ -119,7 +119,8 @@ class ConfigValidation {
   final List<String> errors;
 
   @override
-  String toString() => 'ConfigValidation(valid=$isValid, errors=${errors.length})';
+  String toString() =>
+      'ConfigValidation(valid=$isValid, errors=${errors.length})';
 }
 
 // ---------------------------------------------------------------------------
@@ -330,7 +331,11 @@ class ConfigService {
     }
 
     // Walk scopes from narrowest to broadest.
-    for (final s in [ConfigScope.session, ConfigScope.project, ConfigScope.global]) {
+    for (final s in [
+      ConfigScope.session,
+      ConfigScope.project,
+      ConfigScope.global,
+    ]) {
       final map = _store[s]!;
       if (map.containsKey(key)) return map[key] as T;
     }
@@ -382,7 +387,10 @@ class ConfigService {
   }
 
   /// Merge [overrides] into the given [scope].
-  void merge(Map<String, dynamic> overrides, {ConfigScope scope = ConfigScope.session}) {
+  void merge(
+    Map<String, dynamic> overrides, {
+    ConfigScope scope = ConfigScope.session,
+  }) {
     for (final entry in overrides.entries) {
       set(entry.key, entry.value, scope: scope);
     }
@@ -437,7 +445,8 @@ class ConfigService {
     final all = getAll();
 
     // Required non-empty string checks.
-    if (all[ConfigKeys.apiKey] == null || (all[ConfigKeys.apiKey] as String).isEmpty) {
+    if (all[ConfigKeys.apiKey] == null ||
+        (all[ConfigKeys.apiKey] as String).isEmpty) {
       errors.add('${ConfigKeys.apiKey}: API key is required');
     }
 
@@ -460,8 +469,11 @@ class ConfigService {
 
     // Log level.
     final ll = all[ConfigKeys.logLevel];
-    if (ll is String && !{'debug', 'info', 'warn', 'error', 'silent'}.contains(ll)) {
-      errors.add('${ConfigKeys.logLevel}: must be debug, info, warn, error, or silent');
+    if (ll is String &&
+        !{'debug', 'info', 'warn', 'error', 'silent'}.contains(ll)) {
+      errors.add(
+        '${ConfigKeys.logLevel}: must be debug, info, warn, error, or silent',
+      );
     }
 
     return ConfigValidation(isValid: errors.isEmpty, errors: errors);
@@ -474,7 +486,10 @@ class ConfigService {
   /// Load configuration from a JSON file at [path] into the given [scope].
   ///
   /// Returns `false` if the file does not exist or cannot be parsed.
-  Future<bool> loadFromFile(String path, {ConfigScope scope = ConfigScope.global}) async {
+  Future<bool> loadFromFile(
+    String path, {
+    ConfigScope scope = ConfigScope.global,
+  }) async {
     final file = File(path);
     if (!await file.exists()) return false;
     try {
@@ -491,7 +506,10 @@ class ConfigService {
   }
 
   /// Save configuration for [scope] to a JSON file at [path].
-  Future<void> saveToFile(String path, {ConfigScope scope = ConfigScope.global}) async {
+  Future<void> saveToFile(
+    String path, {
+    ConfigScope scope = ConfigScope.global,
+  }) async {
     final file = File(path);
     await file.parent.create(recursive: true);
     final data = _store[scope]!;
@@ -532,10 +550,16 @@ class ConfigService {
   /// - [ConfigScope.project]: `.claw/config.json` (relative to cwd or
   ///   [projectRoot])
   /// - [ConfigScope.session]: in-memory only, returns empty string.
-  String getConfigPath({ConfigScope scope = ConfigScope.global, String? projectRoot}) {
+  String getConfigPath({
+    ConfigScope scope = ConfigScope.global,
+    String? projectRoot,
+  }) {
     switch (scope) {
       case ConfigScope.global:
-        final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '.';
+        final home =
+            Platform.environment['HOME'] ??
+            Platform.environment['USERPROFILE'] ??
+            '.';
         return '$home/.claw/config.json';
       case ConfigScope.project:
         final root = projectRoot ?? Directory.current.path;
@@ -560,7 +584,9 @@ class ConfigService {
       final v1 = map1[key];
       final v2 = map2[key];
       if (v1 != v2) {
-        diffs.add(ConfigDiff(key: key, oldValue: v1, newValue: v2, scope: scope1));
+        diffs.add(
+          ConfigDiff(key: key, oldValue: v1, newValue: v2, scope: scope1),
+        );
       }
     }
     return diffs;
@@ -576,7 +602,8 @@ class ConfigService {
   /// This reads `~/.neomclaw/settings.json` (if present) and maps known keys
   /// into the Claw configuration format.
   Future<bool> importFromNeomClaw() async {
-    final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+    final home =
+        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
     if (home == null) return false;
     final settingsFile = File('$home/.neomclaw/settings.json');
     if (!await settingsFile.exists()) return false;
@@ -613,10 +640,7 @@ class ConfigService {
   /// Export configuration to a JSON or YAML string.
   ///
   /// Only JSON is implemented; YAML support is a future extension.
-  String exportConfig({
-    ConfigScope? scope,
-    String format = 'json',
-  }) {
+  String exportConfig({ConfigScope? scope, String format = 'json'}) {
     final data = scope != null ? _store[scope]! : getAll();
     // Strip sensitive keys.
     final safe = Map<String, dynamic>.from(data);
@@ -634,7 +658,10 @@ class ConfigService {
   // -----------------------------------------------------------------------
 
   /// Return the [ConfigSource] for a specific key within a scope.
-  ConfigSource? getSource(String key, {ConfigScope scope = ConfigScope.global}) {
+  ConfigSource? getSource(
+    String key, {
+    ConfigScope scope = ConfigScope.global,
+  }) {
     return _sources[scope]?[key];
   }
 
@@ -657,21 +684,32 @@ class ConfigService {
   // -----------------------------------------------------------------------
 
   ConfigScope? _resolveScope(String key) {
-    for (final s in [ConfigScope.session, ConfigScope.project, ConfigScope.global]) {
+    for (final s in [
+      ConfigScope.session,
+      ConfigScope.project,
+      ConfigScope.global,
+    ]) {
       if (_store[s]!.containsKey(key)) return s;
     }
     return null;
   }
 
-  void _emitChange(String key, dynamic oldValue, dynamic newValue, ConfigScope scope) {
+  void _emitChange(
+    String key,
+    dynamic oldValue,
+    dynamic newValue,
+    ConfigScope scope,
+  ) {
     if (oldValue == newValue) return;
-    _changeController.add(ConfigChangeEvent(
-      key: key,
-      oldValue: oldValue,
-      newValue: newValue,
-      scope: scope,
-      timestamp: DateTime.now(),
-    ));
+    _changeController.add(
+      ConfigChangeEvent(
+        key: key,
+        oldValue: oldValue,
+        newValue: newValue,
+        scope: scope,
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   /// Release resources.

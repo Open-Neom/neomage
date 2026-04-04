@@ -36,13 +36,13 @@ class Message {
   final DateTime? timestamp;
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'role': role,
-        'content': content,
-        if (toolUse != null) 'toolUse': toolUse!.toMap(),
-        if (toolResult != null) 'toolResult': toolResult!.toMap(),
-        'timestamp': (timestamp ?? DateTime.now()).toIso8601String(),
-      };
+    'id': id,
+    'role': role,
+    'content': content,
+    if (toolUse != null) 'toolUse': toolUse!.toMap(),
+    if (toolResult != null) 'toolResult': toolResult!.toMap(),
+    'timestamp': (timestamp ?? DateTime.now()).toIso8601String(),
+  };
 }
 
 /// A request to invoke a tool.
@@ -56,11 +56,19 @@ class ToolUse {
 
 /// The result returned from a tool invocation.
 class ToolResult {
-  const ToolResult({required this.toolUseId, required this.output, this.isError = false});
+  const ToolResult({
+    required this.toolUseId,
+    required this.output,
+    this.isError = false,
+  });
   final String toolUseId;
   final String output;
   final bool isError;
-  Map<String, dynamic> toMap() => {'toolUseId': toolUseId, 'output': output, 'isError': isError};
+  Map<String, dynamic> toMap() => {
+    'toolUseId': toolUseId,
+    'output': output,
+    'isError': isError,
+  };
 }
 
 /// A streaming event emitted by the conversation engine.
@@ -71,16 +79,20 @@ class StreamUpdate {
   final ToolUse? toolUse;
   final Map<String, int>? usage;
   Map<String, dynamic> toMap() => {
-        'type': type,
-        if (text != null) 'text': text,
-        if (toolUse != null) 'toolUse': toolUse!.toMap(),
-        if (usage != null) 'usage': usage,
-      };
+    'type': type,
+    if (text != null) 'text': text,
+    if (toolUse != null) 'toolUse': toolUse!.toMap(),
+    if (usage != null) 'usage': usage,
+  };
 }
 
 /// Permission request metadata.
 class PermissionRequest {
-  const PermissionRequest({required this.tool, required this.input, this.riskLevel = 'low'});
+  const PermissionRequest({
+    required this.tool,
+    required this.input,
+    this.riskLevel = 'low',
+  });
   final String tool;
   final Map<String, dynamic> input;
   final String riskLevel;
@@ -88,7 +100,11 @@ class PermissionRequest {
 
 /// Basic MCP server descriptor.
 class McpServer {
-  const McpServer({required this.name, required this.url, this.tools = const []});
+  const McpServer({
+    required this.name,
+    required this.url,
+    this.tools = const [],
+  });
   final String name;
   final String url;
   final List<String> tools;
@@ -153,8 +169,14 @@ class MockApiProvider {
 
   /// Simulate a non-streaming completion. Returns the next queued response or
   /// a default assistant message.
-  Future<Message> complete(List<Message> messages, {Map<String, dynamic>? params}) async {
-    _requests.add({'messages': messages.map((m) => m.toMap()).toList(), ...?params});
+  Future<Message> complete(
+    List<Message> messages, {
+    Map<String, dynamic>? params,
+  }) async {
+    _requests.add({
+      'messages': messages.map((m) => m.toMap()).toList(),
+      ...?params,
+    });
     if (_responseQueue.isNotEmpty) return _responseQueue.removeAt(0);
     return Message(
       id: 'mock-${DateTime.now().millisecondsSinceEpoch}',
@@ -166,16 +188,28 @@ class MockApiProvider {
 
   /// Simulate a streaming completion. Yields queued [StreamUpdate]s or a
   /// single text delta followed by a stop event.
-  Stream<StreamUpdate> stream(List<Message> messages, {Map<String, dynamic>? params}) async* {
-    _requests.add({'messages': messages.map((m) => m.toMap()).toList(), ...?params});
+  Stream<StreamUpdate> stream(
+    List<Message> messages, {
+    Map<String, dynamic>? params,
+  }) async* {
+    _requests.add({
+      'messages': messages.map((m) => m.toMap()).toList(),
+      ...?params,
+    });
     if (_streamQueue.isNotEmpty) {
       for (final event in _streamQueue.removeAt(0)) {
         yield event;
       }
       return;
     }
-    yield const StreamUpdate(type: 'text_delta', text: 'Mock streamed response');
-    yield const StreamUpdate(type: 'message_stop', usage: {'input_tokens': 10, 'output_tokens': 5});
+    yield const StreamUpdate(
+      type: 'text_delta',
+      text: 'Mock streamed response',
+    );
+    yield const StreamUpdate(
+      type: 'message_stop',
+      usage: {'input_tokens': 10, 'output_tokens': 5},
+    );
   }
 
   /// Clear queues and request history.
@@ -192,27 +226,34 @@ class MockApiProvider {
 
 /// Holds mock tool implementations keyed by tool name.
 class MockToolRegistry {
-  final Map<String, Future<ToolResult> Function(Map<String, dynamic> input)> _tools = {};
+  final Map<String, Future<ToolResult> Function(Map<String, dynamic> input)>
+  _tools = {};
 
   /// Register a mock tool handler.
-  void register(String name, Future<ToolResult> Function(Map<String, dynamic> input) handler) {
+  void register(
+    String name,
+    Future<ToolResult> Function(Map<String, dynamic> input) handler,
+  ) {
     _tools[name] = handler;
   }
 
   /// Register a tool that always returns a fixed output.
   void registerFixed(String name, String output) {
-    _tools[name] = (_) async => ToolResult(toolUseId: 'tu-$name', output: output);
+    _tools[name] = (_) async =>
+        ToolResult(toolUseId: 'tu-$name', output: output);
   }
 
   /// Register a tool that always fails with [error].
   void registerFailing(String name, String error) {
-    _tools[name] = (_) async => ToolResult(toolUseId: 'tu-$name', output: error, isError: true);
+    _tools[name] = (_) async =>
+        ToolResult(toolUseId: 'tu-$name', output: error, isError: true);
   }
 
   /// Invoke a registered mock tool. Throws if not registered.
   Future<ToolResult> invoke(String name, Map<String, dynamic> input) async {
     final handler = _tools[name];
-    if (handler == null) throw StateError('No mock tool registered for "$name"');
+    if (handler == null)
+      throw StateError('No mock tool registered for "$name"');
     return handler(input);
   }
 
@@ -233,7 +274,7 @@ class MockToolRegistry {
 /// assistant responses.
 class MockConversationEngine {
   MockConversationEngine({List<Message>? replayMessages})
-      : _replay = replayMessages ?? [];
+    : _replay = replayMessages ?? [];
 
   final List<Message> _replay;
   final List<Message> _history = [];
@@ -273,7 +314,10 @@ class MockConversationEngine {
     for (var i = 0; i < response.content.length; i++) {
       yield StreamUpdate(type: 'text_delta', text: response.content[i]);
     }
-    yield const StreamUpdate(type: 'message_stop', usage: {'input_tokens': 10, 'output_tokens': 5});
+    yield const StreamUpdate(
+      type: 'message_stop',
+      usage: {'input_tokens': 10, 'output_tokens': 5},
+    );
   }
 
   void reset() {
@@ -354,7 +398,8 @@ class MockGitService {
   Future<bool> isGitRepository() async => isRepo;
 
   /// Simulate a commit — just returns a fake hash.
-  Future<String> commit(String message) async => 'aaa${DateTime.now().millisecondsSinceEpoch.toRadixString(16)}';
+  Future<String> commit(String message) async =>
+      'aaa${DateTime.now().millisecondsSinceEpoch.toRadixString(16)}';
 
   void reset() {
     statusOutput = 'On branch main\nnothing to commit, working tree clean';
@@ -409,7 +454,10 @@ class MockFileSystem {
   List<String> listDirectory(String directory) {
     final prefix = directory.endsWith('/') ? directory : '$directory/';
     return _files.keys
-        .where((p) => p.startsWith(prefix) && !p.substring(prefix.length).contains('/'))
+        .where(
+          (p) =>
+              p.startsWith(prefix) && !p.substring(prefix.length).contains('/'),
+        )
         .toList();
   }
 
@@ -482,18 +530,22 @@ class TestFixtures {
   static List<Message> sampleConversation({int turns = 3}) {
     final messages = <Message>[];
     for (var i = 0; i < turns; i++) {
-      messages.add(Message(
-        id: _nextId('user'),
-        role: 'user',
-        content: 'User message $i',
-        timestamp: DateTime(2026, 1, 15, 10, i),
-      ));
-      messages.add(Message(
-        id: _nextId('asst'),
-        role: 'assistant',
-        content: 'Assistant response to message $i',
-        timestamp: DateTime(2026, 1, 15, 10, i, 30),
-      ));
+      messages.add(
+        Message(
+          id: _nextId('user'),
+          role: 'user',
+          content: 'User message $i',
+          timestamp: DateTime(2026, 1, 15, 10, i),
+        ),
+      );
+      messages.add(
+        Message(
+          id: _nextId('asst'),
+          role: 'assistant',
+          content: 'Assistant response to message $i',
+          timestamp: DateTime(2026, 1, 15, 10, i, 30),
+        ),
+      );
     }
     return messages;
   }
@@ -506,17 +558,26 @@ class TestFixtures {
   }) {
     return ToolResult(
       toolUseId: 'tu-$toolName',
-      output: output ?? (success ? 'Tool $toolName completed successfully' : 'Error in $toolName'),
+      output:
+          output ??
+          (success
+              ? 'Tool $toolName completed successfully'
+              : 'Error in $toolName'),
       isError: !success,
     );
   }
 
   /// A typical sequence of stream events for a text response.
-  static List<StreamUpdate> sampleStreamEvents({String text = 'Hello from streaming!'}) {
+  static List<StreamUpdate> sampleStreamEvents({
+    String text = 'Hello from streaming!',
+  }) {
     return [
       const StreamUpdate(type: 'message_start'),
       StreamUpdate(type: 'text_delta', text: text),
-      const StreamUpdate(type: 'message_stop', usage: {'input_tokens': 12, 'output_tokens': 8}),
+      const StreamUpdate(
+        type: 'message_stop',
+        usage: {'input_tokens': 12, 'output_tokens': 8},
+      ),
     ];
   }
 
@@ -593,16 +654,22 @@ class TestFixtures {
         id: 'g-2',
         role: 'assistant',
         content: '',
-        toolUse: const ToolUse(id: 'tu-g-2', name: 'bash', input: {'command': 'ls -la'}),
+        toolUse: const ToolUse(
+          id: 'tu-g-2',
+          name: 'bash',
+          input: {'command': 'ls -la'},
+        ),
         timestamp: DateTime(2026, 1, 15, 9, 0, 2),
       ),
       Message(
         id: 'g-3',
         role: 'assistant',
-        content: 'Here are the files:\n- main.dart\n- pubspec.yaml\n- README.md',
+        content:
+            'Here are the files:\n- main.dart\n- pubspec.yaml\n- README.md',
         toolResult: const ToolResult(
           toolUseId: 'tu-g-2',
-          output: 'total 3\n-rw-r--r-- main.dart\n-rw-r--r-- pubspec.yaml\n-rw-r--r-- README.md',
+          output:
+              'total 3\n-rw-r--r-- main.dart\n-rw-r--r-- pubspec.yaml\n-rw-r--r-- README.md',
         ),
         timestamp: DateTime(2026, 1, 15, 9, 0, 4),
       ),
@@ -616,7 +683,11 @@ class TestFixtures {
         id: 'g-5',
         role: 'assistant',
         content: '',
-        toolUse: const ToolUse(id: 'tu-g-5', name: 'read_file', input: {'path': 'main.dart'}),
+        toolUse: const ToolUse(
+          id: 'tu-g-5',
+          name: 'read_file',
+          input: {'path': 'main.dart'},
+        ),
         timestamp: DateTime(2026, 1, 15, 9, 1, 1),
       ),
       Message(
@@ -625,7 +696,8 @@ class TestFixtures {
         content: 'The file contains a simple Flutter app entry point.',
         toolResult: const ToolResult(
           toolUseId: 'tu-g-5',
-          output: "import 'package:flutter/material.dart';\nvoid main() => runApp(MyApp());",
+          output:
+              "import 'package:flutter/material.dart';\nvoid main() => runApp(MyApp());",
         ),
         timestamp: DateTime(2026, 1, 15, 9, 1, 3),
       ),
@@ -638,7 +710,8 @@ class TestFixtures {
       Message(
         id: 'g-8',
         role: 'assistant',
-        content: 'Done. I updated `runApp(MyApp())` to `runApp(const MyApp())`.',
+        content:
+            'Done. I updated `runApp(MyApp())` to `runApp(const MyApp())`.',
         toolUse: const ToolUse(
           id: 'tu-g-8',
           name: 'edit_file',
@@ -728,11 +801,15 @@ class _HasTokenCount extends Matcher {
   @override
   bool matches(dynamic item, Map matchState) {
     if (item is StreamUpdate && item.usage != null) {
-      final total = (item.usage!['input_tokens'] ?? 0) + (item.usage!['output_tokens'] ?? 0);
+      final total =
+          (item.usage!['input_tokens'] ?? 0) +
+          (item.usage!['output_tokens'] ?? 0);
       return total >= min && total <= max;
     }
     if (item is Map) {
-      final total = ((item['input_tokens'] as int?) ?? 0) + ((item['output_tokens'] as int?) ?? 0);
+      final total =
+          ((item['input_tokens'] as int?) ?? 0) +
+          ((item['output_tokens'] as int?) ?? 0);
       return total >= min && total <= max;
     }
     return false;
@@ -799,7 +876,8 @@ class _TestServiceScope extends InheritedWidget {
 
   /// Retrieve a service override by key.
   static T? of<T>(BuildContext context, String key) {
-    final scope = context.dependOnInheritedWidgetOfExactType<_TestServiceScope>();
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<_TestServiceScope>();
     return scope?.services[key] as T?;
   }
 
@@ -819,7 +897,8 @@ class FakeProcessRunner {
   final List<FakeProcessInvocation> _invocations = [];
 
   /// All invocations recorded so far.
-  List<FakeProcessInvocation> get invocations => List.unmodifiable(_invocations);
+  List<FakeProcessInvocation> get invocations =>
+      List.unmodifiable(_invocations);
 
   /// Register a result for a given [executable] (or full command string).
   void register(
@@ -843,13 +922,18 @@ class FakeProcessRunner {
     String? workingDirectory,
     Map<String, String>? environment,
   }) async {
-    _invocations.add(FakeProcessInvocation(
-      executable: executable,
-      arguments: arguments,
-      workingDirectory: workingDirectory,
-    ));
-    final key = _results.containsKey(executable) ? executable : '$executable ${arguments.join(' ')}';
-    return _results[key] ?? const FakeProcessResult(exitCode: 0, stdout: '', stderr: '');
+    _invocations.add(
+      FakeProcessInvocation(
+        executable: executable,
+        arguments: arguments,
+        workingDirectory: workingDirectory,
+      ),
+    );
+    final key = _results.containsKey(executable)
+        ? executable
+        : '$executable ${arguments.join(' ')}';
+    return _results[key] ??
+        const FakeProcessResult(exitCode: 0, stdout: '', stderr: '');
   }
 
   void reset() {
@@ -894,7 +978,7 @@ class FakeProcessInvocation {
 /// advances when explicitly told to via [advance] or [set].
 class TestClock {
   TestClock({DateTime? initialTime})
-      : _now = initialTime ?? DateTime.utc(2026, 1, 15, 10, 0);
+    : _now = initialTime ?? DateTime.utc(2026, 1, 15, 10, 0);
 
   DateTime _now;
   final _controller = StreamController<DateTime>.broadcast();

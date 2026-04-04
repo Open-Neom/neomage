@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -32,14 +31,10 @@ enum AttachmentKind { image, file, pdf }
 
 class InputBar extends StatefulWidget {
   final void Function(String text, {List<InputAttachment> attachments})
-      onSubmit;
+  onSubmit;
   final bool isLoading;
 
-  const InputBar({
-    super.key,
-    required this.onSubmit,
-    required this.isLoading,
-  });
+  const InputBar({super.key, required this.onSubmit, required this.isLoading});
 
   @override
   State<InputBar> createState() => _InputBarState();
@@ -79,15 +74,17 @@ class _InputBarState extends State<InputBar> {
         final kind = mime.startsWith('image/')
             ? AttachmentKind.image
             : mime == 'application/pdf'
-                ? AttachmentKind.pdf
-                : AttachmentKind.file;
+            ? AttachmentKind.pdf
+            : AttachmentKind.file;
         setState(() {
-          _attachments.add(InputAttachment(
-            name: file.name,
-            mimeType: mime,
-            bytes: file.bytes!,
-            kind: kind,
-          ));
+          _attachments.add(
+            InputAttachment(
+              name: file.name,
+              mimeType: mime,
+              bytes: file.bytes!,
+              kind: kind,
+            ),
+          );
         });
       }
     } catch (e) {
@@ -110,12 +107,14 @@ class _InputBarState extends State<InputBar> {
       final bytes = await xFile.readAsBytes();
       final mime = _guessMime(xFile.name);
       setState(() {
-        _attachments.add(InputAttachment(
-          name: xFile.name,
-          mimeType: mime,
-          bytes: bytes,
-          kind: AttachmentKind.image,
-        ));
+        _attachments.add(
+          InputAttachment(
+            name: xFile.name,
+            mimeType: mime,
+            bytes: bytes,
+            kind: AttachmentKind.image,
+          ),
+        );
       });
     } catch (e) {
       _showError('Failed to pick image: $e');
@@ -141,7 +140,7 @@ class _InputBarState extends State<InputBar> {
 
   void _showAttachMenu() {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final _isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
@@ -204,12 +203,14 @@ class _InputBarState extends State<InputBar> {
                   );
                   if (result != null && result.files.first.bytes != null) {
                     setState(() {
-                      _attachments.add(InputAttachment(
-                        name: result.files.first.name,
-                        mimeType: 'application/pdf',
-                        bytes: result.files.first.bytes!,
-                        kind: AttachmentKind.pdf,
-                      ));
+                      _attachments.add(
+                        InputAttachment(
+                          name: result.files.first.name,
+                          mimeType: 'application/pdf',
+                          bytes: result.files.first.bytes!,
+                          kind: AttachmentKind.pdf,
+                        ),
+                      );
                     });
                   }
                 } catch (e) {
@@ -277,14 +278,12 @@ class _InputBarState extends State<InputBar> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final _isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
         color: cs.surface,
-        border: Border(
-          top: BorderSide(color: cs.outlineVariant, width: 0.5),
-        ),
+        border: Border(top: BorderSide(color: cs.outlineVariant, width: 0.5)),
       ),
       child: SafeArea(
         top: false,
@@ -301,11 +300,10 @@ class _InputBarState extends State<InputBar> {
                     scrollDirection: Axis.horizontal,
                     itemCount: _attachments.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (_, i) =>
-                        _AttachmentChip(
-                          attachment: _attachments[i],
-                          onRemove: () => _removeAttachment(i),
-                        ),
+                    itemBuilder: (_, i) => _AttachmentChip(
+                      attachment: _attachments[i],
+                      onRemove: () => _removeAttachment(i),
+                    ),
                   ),
                 ),
               ),
@@ -378,8 +376,7 @@ class _InputBarState extends State<InputBar> {
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child:
-                                CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.send),
                     style: IconButton.styleFrom(
@@ -404,10 +401,7 @@ class _AttachmentChip extends StatelessWidget {
   final InputAttachment attachment;
   final VoidCallback onRemove;
 
-  const _AttachmentChip({
-    required this.attachment,
-    required this.onRemove,
-  });
+  const _AttachmentChip({required this.attachment, required this.onRemove});
 
   @override
   Widget build(BuildContext context) {
@@ -417,9 +411,7 @@ class _AttachmentChip extends StatelessWidget {
     return Container(
       width: 140,
       decoration: BoxDecoration(
-        color: isDark
-            ? cs.surfaceContainerHighest
-            : cs.surfaceContainerLow,
+        color: isDark ? cs.surfaceContainerHighest : cs.surfaceContainerLow,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
       ),
@@ -546,8 +538,10 @@ class _AttachOption extends StatelessWidget {
         child: Icon(icon, color: cs.primary, size: 22),
       ),
       title: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle,
-          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+      ),
       onTap: onTap,
     );
   }

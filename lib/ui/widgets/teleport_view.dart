@@ -1,5 +1,5 @@
-// Teleport view — comprehensive port of openneomclaw/src/utils/teleport.tsx
-// and openneomclaw/src/utils/teleport/*.ts.
+// Teleport view — comprehensive port of neom_claw/src/utils/teleport.tsx
+// and neom_claw/src/utils/teleport/*.ts.
 // Remote session / teleport UI with Flutter widgets and Sint reactive state.
 
 import 'dart:async';
@@ -72,11 +72,11 @@ class EnvironmentResource {
 }
 
 EnvironmentKind _parseEnvironmentKind(String kind) => switch (kind) {
-      'anthropic_cloud' => EnvironmentKind.anthropicCloud,
-      'byoc' => EnvironmentKind.byoc,
-      'bridge' => EnvironmentKind.bridge,
-      _ => EnvironmentKind.anthropicCloud,
-    };
+  'anthropic_cloud' => EnvironmentKind.anthropicCloud,
+  'byoc' => EnvironmentKind.byoc,
+  'bridge' => EnvironmentKind.bridge,
+  _ => EnvironmentKind.anthropicCloud,
+};
 
 /// Session context sources.
 sealed class SessionContextSource {
@@ -209,8 +209,9 @@ class SessionResource {
       environmentId: json['environment_id'] as String,
       createdAt: json['created_at'] as String,
       updatedAt: json['updated_at'] as String,
-      sessionContext:
-          SessionContext.fromJson(json['session_context'] as Map<String, dynamic>),
+      sessionContext: SessionContext.fromJson(
+        json['session_context'] as Map<String, dynamic>,
+      ),
     );
   }
 
@@ -220,17 +221,19 @@ class SessionResource {
       (_) => true,
       orElse: () => const GitRepositoryOutcome(repo: '', branches: []),
     );
-    return (gitOutcome?.branches.isNotEmpty ?? false) ? gitOutcome!.branches.first : null;
+    return (gitOutcome?.branches.isNotEmpty ?? false)
+        ? gitOutcome!.branches.first
+        : null;
   }
 }
 
 SessionStatus _parseSessionStatus(String status) => switch (status) {
-      'requires_action' => SessionStatus.requiresAction,
-      'running' => SessionStatus.running,
-      'idle' => SessionStatus.idle,
-      'archived' => SessionStatus.archived,
-      _ => SessionStatus.idle,
-    };
+  'requires_action' => SessionStatus.requiresAction,
+  'running' => SessionStatus.running,
+  'idle' => SessionStatus.idle,
+  'archived' => SessionStatus.archived,
+  _ => SessionStatus.idle,
+};
 
 /// A code session (simplified view for lists).
 class CodeSession {
@@ -429,7 +432,10 @@ class TeleportController extends SintController {
   }
 
   /// Start polling for remote session events.
-  void startPolling(String sessionId, {Duration interval = const Duration(seconds: 3)}) {
+  void startPolling(
+    String sessionId, {
+    Duration interval = const Duration(seconds: 3),
+  }) {
     _pollTimer?.cancel();
     isPolling.value = true;
     selectedSessionId.value = sessionId;
@@ -468,15 +474,15 @@ class TeleportController extends SintController {
 
   /// Format a progress step for display.
   String get progressLabel => switch (progressStep.value) {
-        TeleportProgressStep.validating => 'Validating...',
-        TeleportProgressStep.fetchingLogs => 'Fetching session logs...',
-        TeleportProgressStep.fetchingBranch => 'Fetching branch...',
-        TeleportProgressStep.checkingOut => 'Checking out branch...',
-        TeleportProgressStep.creatingSession => 'Creating remote session...',
-        TeleportProgressStep.uploadingBundle => 'Uploading git bundle...',
-        TeleportProgressStep.done => 'Done',
-        null => '',
-      };
+    TeleportProgressStep.validating => 'Validating...',
+    TeleportProgressStep.fetchingLogs => 'Fetching session logs...',
+    TeleportProgressStep.fetchingBranch => 'Fetching branch...',
+    TeleportProgressStep.checkingOut => 'Checking out branch...',
+    TeleportProgressStep.creatingSession => 'Creating remote session...',
+    TeleportProgressStep.uploadingBundle => 'Uploading git bundle...',
+    TeleportProgressStep.done => 'Done',
+    null => '',
+  };
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -490,7 +496,7 @@ class TeleportView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Sint.find<TeleportController>();
-    final theme = Theme.of(context);
+    final _theme = Theme.of(context);
 
     return Obx(() {
       // Show error state.
@@ -565,7 +571,9 @@ class _TeleportErrorView extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.colorScheme.errorContainer.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: theme.colorScheme.error.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: theme.colorScheme.error.withValues(alpha: 0.3),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -573,34 +581,46 @@ class _TeleportErrorView extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.error_outline, color: theme.colorScheme.error, size: 20),
+                Icon(
+                  Icons.error_outline,
+                  color: theme.colorScheme.error,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
-                Text('Teleport Error',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.error,
-                        fontWeight: FontWeight.w600)),
+                Text(
+                  'Teleport Error',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Text(message, style: theme.textTheme.bodyMedium),
             if (localErrors.isNotEmpty) ...[
               const SizedBox(height: 12),
-              ...localErrors.map((e) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      children: [
-                        Icon(Icons.warning_amber, size: 16,
-                            color: theme.colorScheme.error.withValues(alpha: 0.7)),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            _localErrorMessage(e),
-                            style: theme.textTheme.bodySmall,
-                          ),
+              ...localErrors.map(
+                (e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.warning_amber,
+                        size: 16,
+                        color: theme.colorScheme.error.withValues(alpha: 0.7),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _localErrorMessage(e),
+                          style: theme.textTheme.bodySmall,
                         ),
-                      ],
-                    ),
-                  )),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
             const SizedBox(height: 16),
             Row(
@@ -618,15 +638,15 @@ class _TeleportErrorView extends StatelessWidget {
   }
 
   String _localErrorMessage(TeleportLocalErrorType type) => switch (type) {
-        TeleportLocalErrorType.needsLogin =>
-          'Authentication required. Run /login to authenticate.',
-        TeleportLocalErrorType.needsGitStash =>
-          'Git working directory is not clean. Commit or stash changes.',
-        TeleportLocalErrorType.needsGitRepo =>
-          'Not in a git repository. Navigate to a repo first.',
-        TeleportLocalErrorType.needsGithubApp =>
-          'GitHub app not installed for this repository.',
-      };
+    TeleportLocalErrorType.needsLogin =>
+      'Authentication required. Run /login to authenticate.',
+    TeleportLocalErrorType.needsGitStash =>
+      'Git working directory is not clean. Commit or stash changes.',
+    TeleportLocalErrorType.needsGitRepo =>
+      'Not in a git repository. Navigate to a repo first.',
+    TeleportLocalErrorType.needsGithubApp =>
+      'GitHub app not installed for this repository.',
+  };
 }
 
 /// Progress view showing teleport operation status.
@@ -660,14 +680,20 @@ class _TeleportProgressView extends StatelessWidget {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
-            Text(label,
-                style: theme.textTheme.titleSmall
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             if (message.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text(message,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                message,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
             const SizedBox(height: 16),
             // Step indicators.
@@ -682,15 +708,16 @@ class _TeleportProgressView extends StatelessWidget {
                       isDone
                           ? Icons.check_circle
                           : isCurrent
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_unchecked,
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
                       size: 16,
                       color: isDone
                           ? theme.colorScheme.primary
                           : isCurrent
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.4),
+                          ? theme.colorScheme.primary
+                          : theme.colorScheme.onSurfaceVariant.withValues(
+                              alpha: 0.4,
+                            ),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -713,14 +740,14 @@ class _TeleportProgressView extends StatelessWidget {
   }
 
   String _stepLabel(TeleportProgressStep step) => switch (step) {
-        TeleportProgressStep.validating => 'Validate prerequisites',
-        TeleportProgressStep.fetchingLogs => 'Fetch session logs',
-        TeleportProgressStep.fetchingBranch => 'Fetch branch info',
-        TeleportProgressStep.checkingOut => 'Check out branch',
-        TeleportProgressStep.creatingSession => 'Create remote session',
-        TeleportProgressStep.uploadingBundle => 'Upload git bundle',
-        TeleportProgressStep.done => 'Complete',
-      };
+    TeleportProgressStep.validating => 'Validate prerequisites',
+    TeleportProgressStep.fetchingLogs => 'Fetch session logs',
+    TeleportProgressStep.fetchingBranch => 'Fetch branch info',
+    TeleportProgressStep.checkingOut => 'Check out branch',
+    TeleportProgressStep.creatingSession => 'Create remote session',
+    TeleportProgressStep.uploadingBundle => 'Upload git bundle',
+    TeleportProgressStep.done => 'Complete',
+  };
 }
 
 /// Polling view for monitoring active remote sessions.
@@ -761,9 +788,12 @@ class _TeleportPollingView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text('Remote Session Active',
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  'Remote Session Active',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -783,11 +813,11 @@ class _TeleportPollingView extends StatelessWidget {
   }
 
   String _statusLabel(SessionStatus status) => switch (status) {
-        SessionStatus.requiresAction => 'Requires Action',
-        SessionStatus.running => 'Running',
-        SessionStatus.idle => 'Idle',
-        SessionStatus.archived => 'Archived',
-      };
+    SessionStatus.requiresAction => 'Requires Action',
+    SessionStatus.running => 'Running',
+    SessionStatus.idle => 'Idle',
+    SessionStatus.archived => 'Archived',
+  };
 }
 
 /// Session list view for selecting / creating remote sessions.
@@ -819,12 +849,18 @@ class _TeleportSessionListView extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Icon(Icons.cloud_outlined,
-                  color: theme.colorScheme.primary, size: 20),
+              Icon(
+                Icons.cloud_outlined,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
               const SizedBox(width: 8),
-              Text('Remote Sessions',
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
+              Text(
+                'Remote Sessions',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
         ),
@@ -841,15 +877,19 @@ class _TeleportSessionListView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.warning_amber,
-                    size: 16, color: theme.colorScheme.error),
+                Icon(
+                  Icons.warning_amber,
+                  size: 16,
+                  color: theme.colorScheme.error,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Repository mismatch: session is for ${repoValidation!.sessionRepo}, '
                     'but current repo is ${repoValidation!.currentRepo}.',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.error),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
                   ),
                 ),
               ],
@@ -876,14 +916,20 @@ class _TeleportSessionListView extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.cloud_off,
-                          size: 48,
-                          color: theme.colorScheme.onSurfaceVariant
-                              .withValues(alpha: 0.3)),
+                      Icon(
+                        Icons.cloud_off,
+                        size: 48,
+                        color: theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.3,
+                        ),
+                      ),
                       const SizedBox(height: 12),
-                      Text('No remote sessions',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant)),
+                      Text(
+                        'No remote sessions',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 )
@@ -924,14 +970,20 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 80,
-            child: Text(label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           Expanded(
-            child: Text(value,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontFamily: 'monospace')),
+            child: Text(
+              value,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontFamily: 'monospace',
+              ),
+            ),
           ),
         ],
       ),
@@ -980,16 +1032,18 @@ class _SessionTile extends StatelessWidget {
                   Expanded(
                     child: Text(
                       session.title,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w500),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Text(
                     _formatDate(session.updatedAt),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
@@ -1042,16 +1096,20 @@ class _EnvironmentSelector extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Text('Environment:',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        Text(
+          'Environment:',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(width: 8),
         Expanded(
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               isDense: true,
               isExpanded: true,
-              value: selected?.environmentId ?? environments.first.environmentId,
+              value:
+                  selected?.environmentId ?? environments.first.environmentId,
               style: theme.textTheme.bodySmall,
               items: environments.map((env) {
                 final kindLabel = switch (env.kind) {

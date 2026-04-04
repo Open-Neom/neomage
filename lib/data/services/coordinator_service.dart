@@ -39,12 +39,7 @@ class CoordinatorTask {
 }
 
 /// Status of a coordinator task.
-enum CoordinatorTaskStatus {
-  pending,
-  running,
-  completed,
-  failed,
-}
+enum CoordinatorTaskStatus { pending, running, completed, failed }
 
 /// Coordinator service — orchestrates multiple agents.
 class CoordinatorService {

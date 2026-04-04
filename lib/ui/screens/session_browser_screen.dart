@@ -34,7 +34,7 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
   String _searchQuery = '';
   _SortMode _sortMode = _SortMode.lastActive;
   bool _sortAscending = false;
-  Set<String> _selectedSessions = {};
+  final Set<String> _selectedSessions = {};
   bool _multiSelectMode = false;
   ConversationStats? _stats;
 
@@ -46,8 +46,9 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final sessions = await widget.conversationService
-        .listConversations(searchQuery: _searchQuery);
+    final sessions = await widget.conversationService.listConversations(
+      searchQuery: _searchQuery,
+    );
     final stats = await widget.conversationService.getStats();
 
     if (!mounted) return;
@@ -76,8 +77,9 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
           cmp = a.totalCost.compareTo(b.totalCost);
           break;
         case _SortMode.tokens:
-          cmp = (a.totalInputTokens + a.totalOutputTokens)
-              .compareTo(b.totalInputTokens + b.totalOutputTokens);
+          cmp = (a.totalInputTokens + a.totalOutputTokens).compareTo(
+            b.totalInputTokens + b.totalOutputTokens,
+          );
           break;
       }
       return _sortAscending ? cmp : -cmp;
@@ -117,7 +119,8 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Sessions'),
         content: Text(
-            'Delete ${_selectedSessions.length} sessions? This cannot be undone.'),
+          'Delete ${_selectedSessions.length} sessions? This cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -192,9 +195,7 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
                 _selectedSessions.clear();
               });
             },
-            icon: Icon(_multiSelectMode
-                ? Icons.close
-                : Icons.checklist),
+            icon: Icon(_multiSelectMode ? Icons.close : Icons.checklist),
             tooltip: _multiSelectMode ? 'Cancel selection' : 'Select multiple',
           ),
           PopupMenuButton<_SortMode>(
@@ -226,8 +227,7 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
           // Stats bar
           if (_stats != null)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: isDark
                     ? const Color(0xFF1A1A30)
@@ -236,15 +236,17 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
+                  _statChip('${_stats!.totalSessions}', 'sessions', Icons.chat),
                   _statChip(
-                      '${_stats!.totalSessions}', 'sessions', Icons.chat),
+                    _formatTokens(_stats!.totalTokens),
+                    'tokens',
+                    Icons.token,
+                  ),
                   _statChip(
-                      _formatTokens(
-                          _stats!.totalTokens),
-                      'tokens',
-                      Icons.token),
-                  _statChip(
-                      _formatCost(_stats!.totalCost), 'total', Icons.attach_money),
+                    _formatCost(_stats!.totalCost),
+                    'total',
+                    Icons.attach_money,
+                  ),
                 ],
               ),
             ),
@@ -263,8 +265,10 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 isDense: true,
               ),
             ),
@@ -275,65 +279,64 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
                 : _sessions.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.history,
-                                size: 64, color: Colors.grey.shade400),
-                            const SizedBox(height: 12),
-                            Text(
-                              _searchQuery.isNotEmpty
-                                  ? 'No sessions matching "$_searchQuery"'
-                                  : 'No sessions yet',
-                              style: TextStyle(
-                                  color: Colors.grey.shade500),
-                            ),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.history,
+                          size: 64,
+                          color: Colors.grey.shade400,
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        itemCount: _sessions.length,
-                        itemBuilder: (context, index) {
-                          final session = _sessions[index];
-                          return _SessionCard(
-                            session: session,
-                            isDark: isDark,
-                            isSelected:
-                                _selectedSessions.contains(session.sessionId),
-                            multiSelectMode: _multiSelectMode,
-                            onTap: () {
-                              if (_multiSelectMode) {
-                                setState(() {
-                                  if (_selectedSessions
-                                      .contains(session.sessionId)) {
-                                    _selectedSessions
-                                        .remove(session.sessionId);
-                                  } else {
-                                    _selectedSessions
-                                        .add(session.sessionId);
-                                  }
-                                });
+                        const SizedBox(height: 12),
+                        Text(
+                          _searchQuery.isNotEmpty
+                              ? 'No sessions matching "$_searchQuery"'
+                              : 'No sessions yet',
+                          style: TextStyle(color: Colors.grey.shade500),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: _sessions.length,
+                    itemBuilder: (context, index) {
+                      final session = _sessions[index];
+                      return _SessionCard(
+                        session: session,
+                        isDark: isDark,
+                        isSelected: _selectedSessions.contains(
+                          session.sessionId,
+                        ),
+                        multiSelectMode: _multiSelectMode,
+                        onTap: () {
+                          if (_multiSelectMode) {
+                            setState(() {
+                              if (_selectedSessions.contains(
+                                session.sessionId,
+                              )) {
+                                _selectedSessions.remove(session.sessionId);
                               } else {
-                                widget.onResume
-                                    ?.call(session.sessionId);
+                                _selectedSessions.add(session.sessionId);
                               }
-                            },
-                            onResume: () =>
-                                widget.onResume?.call(session.sessionId),
-                            onFork: () =>
-                                widget.onFork?.call(session.sessionId),
-                            onExport: () =>
-                                widget.onExport?.call(session.sessionId),
-                            onDelete: () =>
-                                _deleteSession(session.sessionId),
-                            formatDate: _formatDate,
-                            formatCost: _formatCost,
-                            formatTokens: _formatTokens,
-                          );
+                            });
+                          } else {
+                            widget.onResume?.call(session.sessionId);
+                          }
                         },
-                      ),
+                        onResume: () =>
+                            widget.onResume?.call(session.sessionId),
+                        onFork: () => widget.onFork?.call(session.sessionId),
+                        onExport: () =>
+                            widget.onExport?.call(session.sessionId),
+                        onDelete: () => _deleteSession(session.sessionId),
+                        formatDate: _formatDate,
+                        formatCost: _formatCost,
+                        formatTokens: _formatTokens,
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -363,9 +366,7 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon,
-            size: 14,
-            color: isDark ? Colors.white38 : Colors.black38),
+        Icon(icon, size: 14, color: isDark ? Colors.white38 : Colors.black38),
         const SizedBox(width: 4),
         Text(
           value,
@@ -427,8 +428,8 @@ class _SessionCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       color: isSelected
           ? (isDark
-              ? Colors.blue.shade900.withValues(alpha: 0.3)
-              : Colors.blue.shade50)
+                ? Colors.blue.shade900.withValues(alpha: 0.3)
+                : Colors.blue.shade50)
           : (isDark ? const Color(0xFF1E1E36) : Colors.white),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
@@ -455,9 +456,7 @@ class _SessionCard extends StatelessWidget {
                             ? Icons.check_box
                             : Icons.check_box_outline_blank,
                         size: 20,
-                        color: isSelected
-                            ? Colors.blue
-                            : Colors.grey,
+                        color: isSelected ? Colors.blue : Colors.grey,
                       ),
                     ),
                   Expanded(
@@ -501,17 +500,18 @@ class _SessionCard extends StatelessWidget {
               // Stats row
               Row(
                 children: [
-                  _badge(Icons.chat_outlined,
-                      '${session.messageCount} msgs'),
+                  _badge(Icons.chat_outlined, '${session.messageCount} msgs'),
                   const SizedBox(width: 8),
                   _badge(Icons.smart_toy_outlined, session.model),
                   const SizedBox(width: 8),
-                  _badge(Icons.token, formatTokens(
-                      session.totalInputTokens +
-                          session.totalOutputTokens)),
+                  _badge(
+                    Icons.token,
+                    formatTokens(
+                      session.totalInputTokens + session.totalOutputTokens,
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  _badge(Icons.attach_money,
-                      formatCost(session.totalCost)),
+                  _badge(Icons.attach_money, formatCost(session.totalCost)),
                   const Spacer(),
 
                   // Actions
@@ -533,10 +533,11 @@ class _SessionCard extends StatelessWidget {
                             break;
                         }
                       },
-                      icon: Icon(Icons.more_horiz,
-                          size: 16,
-                          color:
-                              isDark ? Colors.white38 : Colors.black38),
+                      icon: Icon(
+                        Icons.more_horiz,
+                        size: 16,
+                        color: isDark ? Colors.white38 : Colors.black38,
+                      ),
                       padding: EdgeInsets.zero,
                       itemBuilder: (_) => const [
                         PopupMenuItem(
@@ -574,11 +575,16 @@ class _SessionCard extends StatelessWidget {
                           value: 'delete',
                           child: Row(
                             children: [
-                              Icon(Icons.delete_outline,
-                                  size: 16, color: Colors.red),
+                              Icon(
+                                Icons.delete_outline,
+                                size: 16,
+                                color: Colors.red,
+                              ),
                               SizedBox(width: 8),
-                              Text('Delete',
-                                  style: TextStyle(color: Colors.red)),
+                              Text(
+                                'Delete',
+                                style: TextStyle(color: Colors.red),
+                              ),
                             ],
                           ),
                         ),
@@ -596,7 +602,9 @@ class _SessionCard extends StatelessWidget {
                   children: session.toolsUsed.take(5).map((tool) {
                     return Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 4, vertical: 1),
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
                       decoration: BoxDecoration(
                         color: isDark
                             ? Colors.white.withValues(alpha: 0.06)
@@ -608,8 +616,7 @@ class _SessionCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 9,
                           fontFamily: 'monospace',
-                          color:
-                              isDark ? Colors.white30 : Colors.black26,
+                          color: isDark ? Colors.white30 : Colors.black26,
                         ),
                       ),
                     );
@@ -627,9 +634,7 @@ class _SessionCard extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon,
-            size: 12,
-            color: isDark ? Colors.white30 : Colors.black26),
+        Icon(icon, size: 12, color: isDark ? Colors.white30 : Colors.black26),
         const SizedBox(width: 2),
         Text(
           text,

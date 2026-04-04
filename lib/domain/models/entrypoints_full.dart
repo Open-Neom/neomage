@@ -40,16 +40,16 @@ enum EntryMode {
 
   /// Parse an entry mode from a string identifier.
   static EntryMode fromString(String s) => switch (s.toLowerCase()) {
-        'interactive' => interactive,
-        'cli' => cli,
-        'sdk' => sdk,
-        'mcp' || 'mcp-server' || 'mcpserver' => mcpServer,
-        'headless' => headless,
-        'embedded' => embedded,
-        'remote' => remote,
-        'piped' || 'pipe' => piped,
-        _ => throw ArgumentError('Unknown entry mode: $s'),
-      };
+    'interactive' => interactive,
+    'cli' => cli,
+    'sdk' => sdk,
+    'mcp' || 'mcp-server' || 'mcpserver' => mcpServer,
+    'headless' => headless,
+    'embedded' => embedded,
+    'remote' => remote,
+    'piped' || 'pipe' => piped,
+    _ => throw ArgumentError('Unknown entry mode: $s'),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -170,34 +170,34 @@ class CliConfig {
 
   /// Merge with another config, preferring non-null values from [other].
   CliConfig merge(CliConfig other) => CliConfig(
-        command: other.command ?? command,
-        positionalArgs: other.positionalArgs.isNotEmpty
-            ? other.positionalArgs
-            : positionalArgs,
-        flags: {...flags, ...other.flags},
-        options: {...options, ...other.options},
-        verbose: other.verbose || verbose,
-        quiet: other.quiet || quiet,
-        jsonOutput: other.jsonOutput || jsonOutput,
-        model: other.model ?? model,
-        apiKey: other.apiKey ?? apiKey,
-        maxTokens: other.maxTokens ?? maxTokens,
-        systemPrompt: other.systemPrompt ?? systemPrompt,
-        allowedTools: other.allowedTools.isNotEmpty
-            ? other.allowedTools
-            : allowedTools,
-        permissionMode: other.permissionMode ?? permissionMode,
-        workDir: other.workDir ?? workDir,
-        sessionId: other.sessionId ?? sessionId,
-        continueSession: other.continueSession || continueSession,
-        printOnly: other.printOnly || printOnly,
-        dangerouslySkipPermissions:
-            other.dangerouslySkipPermissions || dangerouslySkipPermissions,
-        mcpServers: other.mcpServers.isNotEmpty ? other.mcpServers : mcpServers,
-        listen: other.listen || listen,
-        listenPort: other.listenPort ?? listenPort,
-        outputFormat: other.outputFormat ?? outputFormat,
-      );
+    command: other.command ?? command,
+    positionalArgs: other.positionalArgs.isNotEmpty
+        ? other.positionalArgs
+        : positionalArgs,
+    flags: {...flags, ...other.flags},
+    options: {...options, ...other.options},
+    verbose: other.verbose || verbose,
+    quiet: other.quiet || quiet,
+    jsonOutput: other.jsonOutput || jsonOutput,
+    model: other.model ?? model,
+    apiKey: other.apiKey ?? apiKey,
+    maxTokens: other.maxTokens ?? maxTokens,
+    systemPrompt: other.systemPrompt ?? systemPrompt,
+    allowedTools: other.allowedTools.isNotEmpty
+        ? other.allowedTools
+        : allowedTools,
+    permissionMode: other.permissionMode ?? permissionMode,
+    workDir: other.workDir ?? workDir,
+    sessionId: other.sessionId ?? sessionId,
+    continueSession: other.continueSession || continueSession,
+    printOnly: other.printOnly || printOnly,
+    dangerouslySkipPermissions:
+        other.dangerouslySkipPermissions || dangerouslySkipPermissions,
+    mcpServers: other.mcpServers.isNotEmpty ? other.mcpServers : mcpServers,
+    listen: other.listen || listen,
+    listenPort: other.listenPort ?? listenPort,
+    outputFormat: other.outputFormat ?? outputFormat,
+  );
 }
 
 /// All supported CLI flag definitions.
@@ -253,10 +253,7 @@ class CliFlags {
       short: 'c',
       description: 'Continue the most recent session',
     ),
-    CliFlagDef(
-      long: 'json',
-      description: 'Output in JSON format',
-    ),
+    CliFlagDef(long: 'json', description: 'Output in JSON format'),
     CliFlagDef(
       long: 'verbose',
       short: 'v',
@@ -267,10 +264,7 @@ class CliFlags {
       short: 'q',
       description: 'Suppress non-essential output',
     ),
-    CliFlagDef(
-      long: 'print',
-      description: 'Print the system prompt and exit',
-    ),
+    CliFlagDef(long: 'print', description: 'Print the system prompt and exit'),
     CliFlagDef(
       long: 'dangerous-skip-permissions',
       description: 'Skip all permission checks (use with caution)',
@@ -281,11 +275,7 @@ class CliFlags {
       short: 'V',
       description: 'Print version information and exit',
     ),
-    CliFlagDef(
-      long: 'help',
-      short: 'h',
-      description: 'Show this help message',
-    ),
+    CliFlagDef(long: 'help', short: 'h', description: 'Show this help message'),
     CliFlagDef(
       long: 'mcp',
       description: 'MCP server config (name:command format), repeatable',
@@ -482,8 +472,7 @@ class CliEntrypoint {
 
     if (config.outputFormat != null &&
         !const ['text', 'json', 'markdown'].contains(config.outputFormat)) {
-      errors.add(
-          '--output-format must be one of: text, json, markdown');
+      errors.add('--output-format must be one of: text, json, markdown');
     }
 
     if (config.permissionMode == PermissionMode.bypassPermissions &&
@@ -503,8 +492,7 @@ class CliEntrypoint {
     buffer.writeln();
     buffer.writeln('Options:');
 
-    final visibleFlags =
-        CliFlags.all.where((f) => !f.isHidden).toList();
+    final visibleFlags = CliFlags.all.where((f) => !f.isHidden).toList();
 
     // Calculate max flag width for alignment.
     int maxWidth = 0;
@@ -541,8 +529,8 @@ class CliEntrypoint {
       switch (value.toLowerCase()) {
         'default' => PermissionMode.defaultMode,
         'accept-edits' || 'acceptedits' => PermissionMode.acceptEdits,
-        'bypass-permissions' || 'bypasspermissions' =>
-          PermissionMode.bypassPermissions,
+        'bypass-permissions' ||
+        'bypasspermissions' => PermissionMode.bypassPermissions,
         'plan' => PermissionMode.plan,
         'dont-ask' || 'dontask' => PermissionMode.dontAsk,
         _ => throw ArgumentError('Unknown permission mode: $value'),
@@ -560,15 +548,19 @@ class CliEntrypoint {
 typedef OnMessageCallback = void Function(Message message);
 
 /// Callback type for handling tool use events.
-typedef OnToolUseCallback = void Function(
-    String toolName, Map<String, dynamic> input);
+typedef OnToolUseCallback =
+    void Function(String toolName, Map<String, dynamic> input);
 
 /// Callback type for handling errors.
 typedef OnErrorCallback = void Function(Object error, StackTrace? stackTrace);
 
 /// Callback type for permission handling in SDK mode.
-typedef PermissionHandler = Future<bool> Function(
-    String toolName, Map<String, dynamic> input, String description);
+typedef PermissionHandler =
+    Future<bool> Function(
+      String toolName,
+      Map<String, dynamic> input,
+      String description,
+    );
 
 /// Configuration for SDK entrypoint.
 class SdkConfig {
@@ -726,12 +718,12 @@ class McpCapabilities {
   });
 
   Map<String, dynamic> toJson() => {
-        if (supportsTools) 'tools': {'listChanged': true},
-        if (supportsResources) 'resources': {'subscribe': true},
-        if (supportsPrompts) 'prompts': {'listChanged': true},
-        if (supportsLogging) 'logging': {},
-        if (supportsSampling) 'sampling': {},
-      };
+    if (supportsTools) 'tools': {'listChanged': true},
+    if (supportsResources) 'resources': {'subscribe': true},
+    if (supportsPrompts) 'prompts': {'listChanged': true},
+    if (supportsLogging) 'logging': {},
+    if (supportsSampling) 'sampling': {},
+  };
 }
 
 /// MCP server-side tool definition (includes handler).
@@ -740,7 +732,7 @@ class McpServerTool {
   final String description;
   final Map<String, dynamic> inputSchema;
   final Future<Map<String, dynamic>> Function(Map<String, dynamic> input)
-      handler;
+  handler;
 
   const McpServerTool({
     required this.name,
@@ -853,13 +845,10 @@ class McpServerEntrypoint {
       'prompts/get' => await _handlePromptsGet(id, params, config),
       'ping' => {'jsonrpc': '2.0', 'id': id, 'result': {}},
       _ => {
-          'jsonrpc': '2.0',
-          'id': id,
-          'error': {
-            'code': -32601,
-            'message': 'Method not found: $method',
-          },
-        },
+        'jsonrpc': '2.0',
+        'id': id,
+        'error': {'code': -32601, 'message': 'Method not found: $method'},
+      },
     };
   }
 
@@ -872,37 +861,34 @@ class McpServerEntrypoint {
     dynamic id,
     Map<String, dynamic> params,
     McpEntrypointConfig config,
-  ) =>
-      {
-        'jsonrpc': '2.0',
-        'id': id,
-        'result': {
-          'protocolVersion': '2024-11-05',
-          'capabilities': config.capabilities.toJson(),
-          'serverInfo': {
-            'name': config.name,
-            'version': config.version,
-          },
-        },
-      };
+  ) => {
+    'jsonrpc': '2.0',
+    'id': id,
+    'result': {
+      'protocolVersion': '2024-11-05',
+      'capabilities': config.capabilities.toJson(),
+      'serverInfo': {'name': config.name, 'version': config.version},
+    },
+  };
 
   Map<String, dynamic> _handleToolsList(
     dynamic id,
     McpEntrypointConfig config,
-  ) =>
-      {
-        'jsonrpc': '2.0',
-        'id': id,
-        'result': {
-          'tools': config.tools
-              .map((t) => {
-                    'name': t.name,
-                    'description': t.description,
-                    'inputSchema': t.inputSchema,
-                  })
-              .toList(),
-        },
-      };
+  ) => {
+    'jsonrpc': '2.0',
+    'id': id,
+    'result': {
+      'tools': config.tools
+          .map(
+            (t) => {
+              'name': t.name,
+              'description': t.description,
+              'inputSchema': t.inputSchema,
+            },
+          )
+          .toList(),
+    },
+  };
 
   Future<Map<String, dynamic>> _handleToolsCall(
     dynamic id,
@@ -917,10 +903,7 @@ class McpServerEntrypoint {
       return {
         'jsonrpc': '2.0',
         'id': id,
-        'error': {
-          'code': -32602,
-          'message': 'Unknown tool: $toolName',
-        },
+        'error': {'code': -32602, 'message': 'Unknown tool: $toolName'},
       };
     }
 
@@ -952,21 +935,22 @@ class McpServerEntrypoint {
   Map<String, dynamic> _handleResourcesList(
     dynamic id,
     McpEntrypointConfig config,
-  ) =>
-      {
-        'jsonrpc': '2.0',
-        'id': id,
-        'result': {
-          'resources': config.resources
-              .map((r) => {
-                    'uri': r.uri,
-                    'name': r.name,
-                    if (r.description != null) 'description': r.description,
-                    if (r.mimeType != null) 'mimeType': r.mimeType,
-                  })
-              .toList(),
-        },
-      };
+  ) => {
+    'jsonrpc': '2.0',
+    'id': id,
+    'result': {
+      'resources': config.resources
+          .map(
+            (r) => {
+              'uri': r.uri,
+              'name': r.name,
+              if (r.description != null) 'description': r.description,
+              if (r.mimeType != null) 'mimeType': r.mimeType,
+            },
+          )
+          .toList(),
+    },
+  };
 
   Future<Map<String, dynamic>> _handleResourcesRead(
     dynamic id,
@@ -1003,27 +987,29 @@ class McpServerEntrypoint {
   Map<String, dynamic> _handlePromptsList(
     dynamic id,
     McpEntrypointConfig config,
-  ) =>
-      {
-        'jsonrpc': '2.0',
-        'id': id,
-        'result': {
-          'prompts': config.prompts
-              .map((p) => {
-                    'name': p.name,
-                    if (p.description != null) 'description': p.description,
-                    'arguments': p.arguments
-                        .map((a) => {
-                              'name': a.name,
-                              if (a.description != null)
-                                'description': a.description,
-                              'required': a.required,
-                            })
-                        .toList(),
-                  })
-              .toList(),
-        },
-      };
+  ) => {
+    'jsonrpc': '2.0',
+    'id': id,
+    'result': {
+      'prompts': config.prompts
+          .map(
+            (p) => {
+              'name': p.name,
+              if (p.description != null) 'description': p.description,
+              'arguments': p.arguments
+                  .map(
+                    (a) => {
+                      'name': a.name,
+                      if (a.description != null) 'description': a.description,
+                      'required': a.required,
+                    },
+                  )
+                  .toList(),
+            },
+          )
+          .toList(),
+    },
+  };
 
   Future<Map<String, dynamic>> _handlePromptsGet(
     dynamic id,
@@ -1032,10 +1018,12 @@ class McpServerEntrypoint {
   ) async {
     final promptName = params['name'] as String?;
     final promptArgs =
-        (params['arguments'] as Map<String, dynamic>?)?.cast<String, String>()
-            ?? {};
-    final prompt =
-        config.prompts.where((p) => p.name == promptName).firstOrNull;
+        (params['arguments'] as Map<String, dynamic>?)
+            ?.cast<String, String>() ??
+        {};
+    final prompt = config.prompts
+        .where((p) => p.name == promptName)
+        .firstOrNull;
 
     if (prompt == null) {
       return {
@@ -1173,10 +1161,7 @@ class HeadlessEntrypoint {
     // and collects the response.
     stopwatch.stop();
 
-    return HeadlessResult(
-      output: '',
-      duration: stopwatch.elapsed,
-    );
+    return HeadlessResult(output: '', duration: stopwatch.elapsed);
   }
 
   Future<String> _readStdin() async {
@@ -1391,7 +1376,8 @@ class EntryRouter {
     }
 
     // Check for listen subcommand.
-    if (args.contains('--listen') || (args.isNotEmpty && args.first == 'listen')) {
+    if (args.contains('--listen') ||
+        (args.isNotEmpty && args.first == 'listen')) {
       return EntryMode.remote;
     }
 

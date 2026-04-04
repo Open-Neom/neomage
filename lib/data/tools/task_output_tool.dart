@@ -18,11 +18,7 @@ enum TaskStatus {
 }
 
 /// Type of tracked task.
-enum TaskType {
-  localBash,
-  localAgent,
-  remoteAgent,
-}
+enum TaskType { localBash, localAgent, remoteAgent }
 
 /// A tracked background task.
 class TrackedTask {
@@ -60,14 +56,14 @@ class TrackedTask {
   }
 
   Map<String, dynamic> toJson() => {
-        'task_id': id,
-        'task_type': type.name,
-        'status': status.name,
-        'description': description,
-        if (output != null) 'output': output,
-        if (error != null) 'error': error,
-        if (exitCode != null) 'exitCode': exitCode,
-      };
+    'task_id': id,
+    'task_type': type.name,
+    'status': status.name,
+    'description': description,
+    if (output != null) 'output': output,
+    if (error != null) 'error': error,
+    if (exitCode != null) 'exitCode': exitCode,
+  };
 }
 
 /// TaskOutput tool — retrieves results from background tasks.
@@ -93,23 +89,23 @@ class TaskOutputTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'task_id': {
-            'type': 'string',
-            'description': 'Task ID to retrieve output from',
-          },
-          'block': {
-            'type': 'boolean',
-            'description': 'Wait for completion (default: true)',
-          },
-          'timeout': {
-            'type': 'number',
-            'description': 'Max wait time in ms (default: 30000, max: 600000)',
-          },
-        },
-        'required': ['task_id'],
-      };
+    'type': 'object',
+    'properties': {
+      'task_id': {
+        'type': 'string',
+        'description': 'Task ID to retrieve output from',
+      },
+      'block': {
+        'type': 'boolean',
+        'description': 'Wait for completion (default: true)',
+      },
+      'timeout': {
+        'type': 'number',
+        'description': 'Max wait time in ms (default: 30000, max: 600000)',
+      },
+    },
+    'required': ['task_id'],
+  };
 
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
@@ -170,10 +166,7 @@ class TaskOutputTool extends Tool {
 
     return ToolResult.success(
       buffer.toString(),
-      metadata: {
-        'retrieval_status': 'success',
-        'task': task.toJson(),
-      },
+      metadata: {'retrieval_status': 'success', 'task': task.toJson()},
     );
   }
 }

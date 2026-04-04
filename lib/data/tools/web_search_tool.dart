@@ -16,16 +16,16 @@ class WebSearchInput {
   });
 
   factory WebSearchInput.fromJson(Map<String, dynamic> json) => WebSearchInput(
-        query: json['query'] as String,
-        allowedDomains: (json['allowed_domains'] as List?)?.cast<String>(),
-        blockedDomains: (json['blocked_domains'] as List?)?.cast<String>(),
-      );
+    query: json['query'] as String,
+    allowedDomains: (json['allowed_domains'] as List?)?.cast<String>(),
+    blockedDomains: (json['blocked_domains'] as List?)?.cast<String>(),
+  );
 
   Map<String, dynamic> toJson() => {
-        'query': query,
-        if (allowedDomains != null) 'allowed_domains': allowedDomains,
-        if (blockedDomains != null) 'blocked_domains': blockedDomains,
-      };
+    'query': query,
+    if (allowedDomains != null) 'allowed_domains': allowedDomains,
+    if (blockedDomains != null) 'blocked_domains': blockedDomains,
+  };
 }
 
 /// A single search result.
@@ -43,24 +43,25 @@ class SearchResult {
   });
 
   factory SearchResult.fromJson(Map<String, dynamic> json) => SearchResult(
-        title: json['title'] as String? ?? '',
-        url: json['url'] as String? ?? '',
-        displayUrl: json['display_url'] as String?,
-        snippet: json['snippet'] as String?,
-      );
+    title: json['title'] as String? ?? '',
+    url: json['url'] as String? ?? '',
+    displayUrl: json['display_url'] as String?,
+    snippet: json['snippet'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'url': url,
-        if (displayUrl != null) 'display_url': displayUrl,
-        if (snippet != null) 'snippet': snippet,
-      };
+    'title': title,
+    'url': url,
+    if (displayUrl != null) 'display_url': displayUrl,
+    if (snippet != null) 'snippet': snippet,
+  };
 }
 
 /// Web search output.
 class WebSearchOutput {
   final String query;
-  final List<dynamic> results; // Mix of SearchResult and String (text summaries)
+  final List<dynamic>
+  results; // Mix of SearchResult and String (text summaries)
   final double durationSeconds;
   final int searchCount;
 
@@ -122,14 +123,13 @@ String? validateSearchInput(WebSearchInput input) {
 Map<String, dynamic> makeSearchToolSchema({
   List<String>? allowedDomains,
   List<String>? blockedDomains,
-}) =>
-    {
-      'type': 'web_search_20250305',
-      'name': 'web_search',
-      'max_uses': maxSearchesPerQuery,
-      if (allowedDomains != null) 'allowed_domains': allowedDomains,
-      if (blockedDomains != null) 'blocked_domains': blockedDomains,
-    };
+}) => {
+  'type': 'web_search_20250305',
+  'name': 'web_search',
+  'max_uses': maxSearchesPerQuery,
+  'allowed_domains': ?allowedDomains,
+  'blocked_domains': ?blockedDomains,
+};
 
 /// Search progress event.
 sealed class SearchProgress {
@@ -230,8 +230,18 @@ bool isWebSearchEnabled(ApiProviderType provider, String modelName) {
 String webSearchSystemPrompt() {
   final now = DateTime.now();
   final months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
   ];
   final currentMonth = months[now.month - 1];
   final currentYear = now.year;

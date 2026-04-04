@@ -15,11 +15,7 @@ class McpToolResult {
   final bool isError;
   final Map<String, dynamic>? meta;
 
-  const McpToolResult({
-    required this.content,
-    this.isError = false,
-    this.meta,
-  });
+  const McpToolResult({required this.content, this.isError = false, this.meta});
 }
 
 /// MCP client — manages server connections and tool proxying.
@@ -35,9 +31,8 @@ class McpClient {
       Map.unmodifiable(_connections);
 
   /// Connected servers only.
-  List<ConnectedMcpServer> get connectedServers => _connections.values
-      .whereType<ConnectedMcpServer>()
-      .toList();
+  List<ConnectedMcpServer> get connectedServers =>
+      _connections.values.whereType<ConnectedMcpServer>().toList();
 
   /// Connect to an MCP server.
   Future<McpServerConnection> connect(McpServerConfig config) async {
@@ -47,10 +42,7 @@ class McpClient {
     final existing = _connections[name];
     if (existing is ConnectedMcpServer) return existing;
 
-    _connections[name] = PendingMcpServer(
-      serverName: name,
-      config: config,
-    );
+    _connections[name] = PendingMcpServer(serverName: name, config: config);
 
     try {
       final connection = await _connectTransport(config);
@@ -117,10 +109,7 @@ class McpClient {
         'jsonrpc': '2.0',
         'id': DateTime.now().millisecondsSinceEpoch,
         'method': 'tools/call',
-        'params': {
-          'name': toolName,
-          'arguments': input,
-        },
+        'params': {'name': toolName, 'arguments': input},
       };
 
       final response = await _sendRequest(serverName, request, timeout);
@@ -155,10 +144,7 @@ class McpClient {
         meta: result['_meta'] as Map<String, dynamic>?,
       );
     } catch (e) {
-      return McpToolResult(
-        content: 'MCP tool call error: $e',
-        isError: true,
-      );
+      return McpToolResult(content: 'MCP tool call error: $e', isError: true);
     }
   }
 
@@ -196,7 +182,8 @@ class McpClient {
         return FailedMcpServer(
           serverName: config.name,
           config: config,
-          error: 'Network MCP transports not yet implemented. '
+          error:
+              'Network MCP transports not yet implemented. '
               'Use stdio transport.',
         );
       case McpSdkConfig():
@@ -321,10 +308,7 @@ class McpClient {
 
   void _registerMcpTools(ConnectedMcpServer server) {
     for (final toolInfo in server.tools) {
-      final tool = _McpProxyTool(
-        info: toolInfo,
-        client: this,
-      );
+      final tool = _McpProxyTool(info: toolInfo, client: this);
       toolRegistry.register(tool);
     }
   }
@@ -343,10 +327,12 @@ class McpClient {
   String _extractContent(Map<String, dynamic> result) {
     final content = result['content'];
     if (content is List) {
-      return content.map((c) {
-        if (c is Map && c['type'] == 'text') return c['text'];
-        return c.toString();
-      }).join('\n');
+      return content
+          .map((c) {
+            if (c is Map && c['type'] == 'text') return c['text'];
+            return c.toString();
+          })
+          .join('\n');
     }
     if (content is String) return content;
     return jsonEncode(result);
@@ -388,9 +374,9 @@ class _McpProxyTool extends Tool {
 
   @override
   Map<String, dynamic>? get mcpInfo => {
-        'serverName': info.serverName,
-        'toolName': info.name,
-      };
+    'serverName': info.serverName,
+    'toolName': info.name,
+  };
 
   @override
   String get userFacingName => info.name;

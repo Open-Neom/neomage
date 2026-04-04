@@ -113,11 +113,7 @@ class DirectoryContext extends ContextItem {
   final List<String> entries;
   final int depth;
 
-  DirectoryContext({
-    required this.path,
-    required this.entries,
-    this.depth = 2,
-  });
+  DirectoryContext({required this.path, required this.entries, this.depth = 2});
 
   @override
   String get label => 'Directory: ${p.basename(path)}';
@@ -171,8 +167,7 @@ class MemoryContext extends ContextItem {
   String get label => 'Memory ($source)';
 
   @override
-  String get content =>
-      '<memory source="$source">\n$memoryContent\n</memory>';
+  String get content => '<memory source="$source">\n$memoryContent\n</memory>';
 
   @override
   int get estimatedTokens => memoryContent.length ~/ 4;
@@ -228,11 +223,13 @@ class ContextBuilder {
         ? '${lines.take(maxLines).join('\n')}\n[... ${lines.length - maxLines} more lines]'
         : content;
 
-    return add(FileContext(
-      path: path,
-      fileContent: truncated,
-      language: _detectLanguage(path),
-    ));
+    return add(
+      FileContext(
+        path: path,
+        fileContent: truncated,
+        language: _detectLanguage(path),
+      ),
+    );
   }
 
   /// Add git diff to context.
@@ -241,22 +238,23 @@ class ContextBuilder {
       final args = staged
           ? ['diff', '--staged']
           : ref != null
-              ? ['diff', ref]
-              : ['diff'];
+          ? ['diff', ref]
+          : ['diff'];
 
-      final result =
-          await Process.run('git', args);
+      final result = await Process.run('git', args);
       if (result.exitCode == 0) {
         final diff = (result.stdout as String).trim();
         if (diff.isNotEmpty) {
-          return add(GitDiffContext(
-            diff: diff,
-            description: staged
-                ? 'staged changes'
-                : ref != null
-                    ? 'diff vs $ref'
-                    : 'unstaged changes',
-          ));
+          return add(
+            GitDiffContext(
+              diff: diff,
+              description: staged
+                  ? 'staged changes'
+                  : ref != null
+                  ? 'diff vs $ref'
+                  : 'unstaged changes',
+            ),
+          );
         }
       }
     } catch (_) {}
@@ -271,8 +269,13 @@ class ContextBuilder {
     return add(DirectoryContext(path: path, entries: entries, depth: depth));
   }
 
-  Future<void> _listDir(String dirPath, List<String> entries, int maxDepth,
-      int currentDepth, String prefix) async {
+  Future<void> _listDir(
+    String dirPath,
+    List<String> entries,
+    int maxDepth,
+    int currentDepth,
+    String prefix,
+  ) async {
     if (currentDepth >= maxDepth) return;
 
     final dir = Directory(dirPath);
@@ -293,12 +296,19 @@ class ContextBuilder {
         if (name.startsWith('.') ||
             name == 'node_modules' ||
             name == '__pycache__' ||
-            name == '.dart_tool') continue;
+            name == '.dart_tool') {
+          continue;
+        }
 
         if (item is Directory) {
           entries.add('$prefix$name/');
           await _listDir(
-              item.path, entries, maxDepth, currentDepth + 1, '$prefix  ');
+            item.path,
+            entries,
+            maxDepth,
+            currentDepth + 1,
+            '$prefix  ',
+          );
         } else {
           entries.add('$prefix$name');
         }
@@ -397,9 +407,7 @@ Future<String> gatherAutoContext({
 
   // 1. Add explicitly mentioned files (highest priority)
   for (final file in mentionedFiles) {
-    final resolved = p.isAbsolute(file)
-        ? file
-        : p.join(workingDirectory, file);
+    final resolved = p.isAbsolute(file) ? file : p.join(workingDirectory, file);
     await builder.addFile(resolved, maxLines: 500);
   }
 
@@ -416,7 +424,13 @@ Future<String> gatherAutoContext({
   }
 
   // 4. Add directory listing if relevant
-  if (_queryRelatesTo(query, ['file', 'directory', 'structure', 'project', 'where'])) {
+  if (_queryRelatesTo(query, [
+    'file',
+    'directory',
+    'structure',
+    'project',
+    'where',
+  ])) {
     await builder.addDirectoryListing(workingDirectory);
   }
 
@@ -435,7 +449,10 @@ Future<Map<String, dynamic>> _detectProjectInfo(String dir) async {
   // Detect package manager and language
   final checks = {
     'pubspec.yaml': {'language': 'dart', 'framework': 'flutter'},
-    'package.json': {'language': 'javascript/typescript', 'packageManager': 'npm'},
+    'package.json': {
+      'language': 'javascript/typescript',
+      'packageManager': 'npm',
+    },
     'Cargo.toml': {'language': 'rust', 'packageManager': 'cargo'},
     'go.mod': {'language': 'go', 'packageManager': 'go mod'},
     'requirements.txt': {'language': 'python', 'packageManager': 'pip'},
@@ -453,13 +470,16 @@ Future<Map<String, dynamic>> _detectProjectInfo(String dir) async {
 
   // Check git
   try {
-    final gitResult = await Process.run('git', ['rev-parse', '--show-toplevel'],
-        workingDirectory: dir);
+    final gitResult = await Process.run('git', [
+      'rev-parse',
+      '--show-toplevel',
+    ], workingDirectory: dir);
     if (gitResult.exitCode == 0) {
       info['gitRoot'] = (gitResult.stdout as String).trim();
-      final branchResult =
-          await Process.run('git', ['branch', '--show-current'],
-              workingDirectory: dir);
+      final branchResult = await Process.run('git', [
+        'branch',
+        '--show-current',
+      ], workingDirectory: dir);
       if (branchResult.exitCode == 0) {
         info['gitBranch'] = (branchResult.stdout as String).trim();
       }

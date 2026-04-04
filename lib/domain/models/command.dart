@@ -11,7 +11,10 @@ sealed class LocalCommandResult {
 class TextCommandResult extends LocalCommandResult {
   final String text;
   final CommandResultDisplay display;
-  const TextCommandResult(this.text, {this.display = CommandResultDisplay.user});
+  const TextCommandResult(
+    this.text, {
+    this.display = CommandResultDisplay.user,
+  });
 }
 
 class CompactCommandResult extends LocalCommandResult {
@@ -97,11 +100,7 @@ class Command {
   final CommandType type;
   final PromptCommand? promptCommand;
 
-  const Command({
-    required this.base,
-    required this.type,
-    this.promptCommand,
-  });
+  const Command({required this.base, required this.type, this.promptCommand});
 
   String get name => base.name;
   String get description => base.description;

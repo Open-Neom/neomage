@@ -47,9 +47,7 @@ class RetryContext {
   int consecutive529s;
   DateTime? lastRetry;
 
-  RetryContext()
-      : attempt = 0,
-        consecutive529s = 0;
+  RetryContext() : attempt = 0, consecutive529s = 0;
 }
 
 /// Calculate delay for the next retry attempt.

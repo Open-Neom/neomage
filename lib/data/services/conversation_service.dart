@@ -7,7 +7,6 @@ import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 
-import '../../domain/models/message.dart';
 import '../engine/conversation_engine.dart';
 
 // ─── Types ───
@@ -45,20 +44,20 @@ class ConversationSummary {
   });
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'title': title,
-        'startedAt': startedAt.toIso8601String(),
-        'lastActiveAt': lastActiveAt.toIso8601String(),
-        'messageCount': messageCount,
-        'turnCount': turnCount,
-        'model': model,
-        'totalInputTokens': totalInputTokens,
-        'totalOutputTokens': totalOutputTokens,
-        'totalCost': totalCost,
-        'toolsUsed': toolsUsed,
-        'lastUserMessage': lastUserMessage,
-        'lastAssistantMessage': lastAssistantMessage,
-      };
+    'sessionId': sessionId,
+    'title': title,
+    'startedAt': startedAt.toIso8601String(),
+    'lastActiveAt': lastActiveAt.toIso8601String(),
+    'messageCount': messageCount,
+    'turnCount': turnCount,
+    'model': model,
+    'totalInputTokens': totalInputTokens,
+    'totalOutputTokens': totalOutputTokens,
+    'totalCost': totalCost,
+    'toolsUsed': toolsUsed,
+    'lastUserMessage': lastUserMessage,
+    'lastAssistantMessage': lastAssistantMessage,
+  };
 
   factory ConversationSummary.fromJson(Map<String, dynamic> json) {
     return ConversationSummary(
@@ -96,12 +95,12 @@ class ForkPoint {
   });
 
   Map<String, dynamic> toJson() => {
-        'parentSessionId': parentSessionId,
-        'messageIndex': messageIndex,
-        'forkSessionId': forkSessionId,
-        'forkedAt': forkedAt.toIso8601String(),
-        'reason': reason,
-      };
+    'parentSessionId': parentSessionId,
+    'messageIndex': messageIndex,
+    'forkSessionId': forkSessionId,
+    'forkedAt': forkedAt.toIso8601String(),
+    'reason': reason,
+  };
 }
 
 /// Export format options.
@@ -139,8 +138,9 @@ class ConversationService {
   final String _sessionsDir;
 
   ConversationService({String? sessionsDir})
-      : _sessionsDir = sessionsDir ??
-            '${Platform.environment['HOME'] ?? '.'}/.neomclaw/sessions';
+    : _sessionsDir =
+          sessionsDir ??
+          '${Platform.environment['HOME'] ?? '.'}/.neomclaw/sessions';
 
   /// List all conversations, newest first.
   Future<List<ConversationSummary>> listConversations({
@@ -181,8 +181,7 @@ class ConversationService {
     }
 
     // Sort by last active time, newest first
-    summaries
-        .sort((a, b) => b.lastActiveAt.compareTo(a.lastActiveAt));
+    summaries.sort((a, b) => b.lastActiveAt.compareTo(a.lastActiveAt));
 
     // Apply pagination
     final start = offset.clamp(0, summaries.length);
@@ -218,16 +217,15 @@ class ConversationService {
       title: title ?? _generateTitle(messages),
       startedAt: turns.isNotEmpty
           ? DateTime.now().subtract(
-              turns.fold(Duration.zero, (sum, t) => sum + t.duration))
+              turns.fold(Duration.zero, (sum, t) => sum + t.duration),
+            )
           : DateTime.now(),
       lastActiveAt: DateTime.now(),
       messageCount: messages.length,
       turnCount: turns.length,
       model: model,
-      totalInputTokens:
-          turns.fold(0, (sum, t) => sum + t.inputTokens),
-      totalOutputTokens:
-          turns.fold(0, (sum, t) => sum + t.outputTokens),
+      totalInputTokens: turns.fold(0, (sum, t) => sum + t.inputTokens),
+      totalOutputTokens: turns.fold(0, (sum, t) => sum + t.outputTokens),
       totalCost: turns.fold(0.0, (sum, t) => sum + t.cost),
       toolsUsed: turns
           .expand((t) => t.toolExecutions.map((e) => e.toolName))
@@ -239,14 +237,15 @@ class ConversationService {
 
     final summaryFile = File(p.join(sessionDir.path, 'summary.json'));
     await summaryFile.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(summary.toJson()));
+      const JsonEncoder.withIndent('  ').convert(summary.toJson()),
+    );
   }
 
   /// Load a conversation by session ID.
-  Future<List<Map<String, dynamic>>?> loadConversation(
-      String sessionId) async {
-    final messagesFile =
-        File(p.join(_sessionsDir, sessionId, 'messages.jsonl'));
+  Future<List<Map<String, dynamic>>?> loadConversation(String sessionId) async {
+    final messagesFile = File(
+      p.join(_sessionsDir, sessionId, 'messages.jsonl'),
+    );
     if (!await messagesFile.exists()) return null;
 
     final messages = <Map<String, dynamic>>[];
@@ -281,8 +280,7 @@ class ConversationService {
     }
 
     // Create new session with messages up to the fork point
-    final forkId =
-        'fork-${DateTime.now().millisecondsSinceEpoch}';
+    final forkId = 'fork-${DateTime.now().millisecondsSinceEpoch}';
     final forkedMessages = messages.sublist(0, atMessageIndex + 1);
 
     await saveConversation(
@@ -303,7 +301,8 @@ class ConversationService {
     );
     final forkFile = File(p.join(_sessionsDir, forkId, 'fork.json'));
     await forkFile.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(forkPoint.toJson()));
+      const JsonEncoder.withIndent('  ').convert(forkPoint.toJson()),
+    );
 
     return forkId;
   }
@@ -342,23 +341,29 @@ class ConversationService {
       modelCounts[conv.model] = (modelCounts[conv.model] ?? 0) + 1;
     }
 
-    final totalMessages =
-        conversations.fold(0, (sum, c) => sum + c.messageCount);
-    final totalCost =
-        conversations.fold(0.0, (sum, c) => sum + c.totalCost);
+    final totalMessages = conversations.fold(
+      0,
+      (sum, c) => sum + c.messageCount,
+    );
+    final totalCost = conversations.fold(0.0, (sum, c) => sum + c.totalCost);
 
     return ConversationStats(
       totalSessions: conversations.length,
       totalMessages: totalMessages,
       totalTokens: conversations.fold(
-          0, (sum, c) => sum + c.totalInputTokens + c.totalOutputTokens),
+        0,
+        (sum, c) => sum + c.totalInputTokens + c.totalOutputTokens,
+      ),
       totalCost: totalCost,
-      totalDuration: conversations.fold(Duration.zero,
-          (sum, c) => sum + c.lastActiveAt.difference(c.startedAt)),
+      totalDuration: conversations.fold(
+        Duration.zero,
+        (sum, c) => sum + c.lastActiveAt.difference(c.startedAt),
+      ),
       toolUsageCounts: toolCounts,
       modelUsageCounts: modelCounts,
-      averageMessagesPerSession:
-          conversations.isEmpty ? 0 : totalMessages ~/ conversations.length,
+      averageMessagesPerSession: conversations.isEmpty
+          ? 0
+          : totalMessages ~/ conversations.length,
       averageCostPerSession: conversations.isEmpty
           ? 0.0
           : totalCost / conversations.length,
@@ -410,8 +415,7 @@ class ConversationService {
     return null;
   }
 
-  String? _extractLastAssistantMessage(
-      List<Map<String, dynamic>> messages) {
+  String? _extractLastAssistantMessage(List<Map<String, dynamic>> messages) {
     for (final msg in messages.reversed) {
       if (msg['role'] == 'assistant') {
         final content = msg['content'];
@@ -430,7 +434,9 @@ class ConversationService {
   }
 
   String _exportAsMarkdown(
-      List<Map<String, dynamic>> messages, String sessionId) {
+    List<Map<String, dynamic>> messages,
+    String sessionId,
+  ) {
     final buffer = StringBuffer();
     buffer.writeln('# Conversation $sessionId');
     buffer.writeln();
@@ -457,10 +463,12 @@ class ConversationService {
                 break;
               case 'tool_use':
                 buffer.writeln(
-                    '**Tool call**: `${block['name']}` (${block['id']})');
+                  '**Tool call**: `${block['name']}` (${block['id']})',
+                );
                 buffer.writeln('```json');
-                buffer.writeln(const JsonEncoder.withIndent('  ')
-                    .convert(block['input']));
+                buffer.writeln(
+                  const JsonEncoder.withIndent('  ').convert(block['input']),
+                );
                 buffer.writeln('```');
                 break;
               case 'tool_result':
@@ -481,26 +489,33 @@ class ConversationService {
     return buffer.toString();
   }
 
-  String _exportAsHtml(
-      List<Map<String, dynamic>> messages, String sessionId) {
+  String _exportAsHtml(List<Map<String, dynamic>> messages, String sessionId) {
     final buffer = StringBuffer();
     buffer.writeln('<!DOCTYPE html>');
     buffer.writeln('<html><head><meta charset="utf-8">');
     buffer.writeln('<title>Conversation $sessionId</title>');
     buffer.writeln('<style>');
-    buffer.writeln('body { font-family: system-ui; max-width: 800px; margin: auto; padding: 20px; }');
-    buffer.writeln('.message { margin: 16px 0; padding: 12px; border-radius: 8px; }');
+    buffer.writeln(
+      'body { font-family: system-ui; max-width: 800px; margin: auto; padding: 20px; }',
+    );
+    buffer.writeln(
+      '.message { margin: 16px 0; padding: 12px; border-radius: 8px; }',
+    );
     buffer.writeln('.user { background: #e3f2fd; }');
     buffer.writeln('.assistant { background: #f3e5f5; }');
     buffer.writeln('.role { font-weight: bold; margin-bottom: 8px; }');
-    buffer.writeln('pre { background: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto; }');
+    buffer.writeln(
+      'pre { background: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto; }',
+    );
     buffer.writeln('</style></head><body>');
     buffer.writeln('<h1>Conversation $sessionId</h1>');
 
     for (final msg in messages) {
       final role = msg['role'] as String? ?? 'unknown';
       buffer.writeln('<div class="message $role">');
-      buffer.writeln('<div class="role">${role == 'user' ? 'Human' : 'Assistant'}</div>');
+      buffer.writeln(
+        '<div class="role">${role == 'user' ? 'Human' : 'Assistant'}</div>',
+      );
 
       final content = msg['content'];
       if (content is String) {
@@ -508,7 +523,9 @@ class ConversationService {
       } else if (content is List) {
         for (final block in content) {
           if (block is Map<String, dynamic> && block['type'] == 'text') {
-            buffer.writeln('<p>${_escapeHtml(block['text'] as String? ?? '')}</p>');
+            buffer.writeln(
+              '<p>${_escapeHtml(block['text'] as String? ?? '')}</p>',
+            );
           }
         }
       }

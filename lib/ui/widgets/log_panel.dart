@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -85,7 +84,7 @@ class LogEntry {
     final meta = metadata.entries.map((e) => '${e.key}=${e.value}').join(', ');
     final metaStr = meta.isEmpty ? '' : ' [$meta]';
     final stStr = stackTrace != null ? '\n$stackTrace' : '';
-    return '${formattedTime} [${level.label}] ($source) $message$metaStr$stStr';
+    return '$formattedTime [${level.label}] ($source) $message$metaStr$stStr';
   }
 }
 
@@ -96,8 +95,8 @@ class LogFilter {
     Set<String>? sources,
     this.searchPattern,
     this.timeRange,
-  })  : levels = levels ?? LogLevel.values.toSet(),
-        sources = sources ?? {};
+  }) : levels = levels ?? LogLevel.values.toSet(),
+       sources = sources ?? {};
 
   final Set<LogLevel> levels;
   final Set<String> sources;
@@ -110,8 +109,7 @@ class LogFilter {
     if (searchPattern != null && searchPattern!.isNotEmpty) {
       try {
         final regex = RegExp(searchPattern!, caseSensitive: false);
-        if (!regex.hasMatch(entry.message) &&
-            !regex.hasMatch(entry.source)) {
+        if (!regex.hasMatch(entry.message) && !regex.hasMatch(entry.source)) {
           return false;
         }
       } catch (_) {
@@ -195,14 +193,16 @@ class LogService {
     String? stackTrace,
     Map<String, String>? metadata,
   }) {
-    _buffer.add(LogEntry(
-      timestamp: DateTime.now(),
-      level: level,
-      source: source,
-      message: message,
-      stackTrace: stackTrace,
-      metadata: metadata,
-    ));
+    _buffer.add(
+      LogEntry(
+        timestamp: DateTime.now(),
+        level: level,
+        source: source,
+        message: message,
+        stackTrace: stackTrace,
+        metadata: metadata,
+      ),
+    );
   }
 
   void clearLogs() => _buffer.clear();
@@ -238,11 +238,7 @@ class LogService {
 /// Full-featured log viewer panel with filtering, virtual scrolling, tail
 /// following, keyboard shortcuts, and expandable entries.
 class LogPanel extends StatefulWidget {
-  const LogPanel({
-    super.key,
-    this.logService,
-    this.initialFilter,
-  });
+  const LogPanel({super.key, this.logService, this.initialFilter});
 
   /// If null, uses [LogService.instance].
   final LogService? logService;
@@ -266,7 +262,9 @@ class _LogPanelState extends State<LogPanel> {
   bool _showSearch = false;
   String? _selectedSource;
 
+  // ignore: unused_field
   static const double _itemExtent = 32.0;
+  // ignore: unused_field
   static const double _expandedExtra = 200.0;
 
   @override
@@ -275,7 +273,9 @@ class _LogPanelState extends State<LogPanel> {
     _service = widget.logService ?? LogService.instance;
     _filter = widget.initialFilter ?? LogFilter();
     _scrollController = ScrollController();
-    _searchController = TextEditingController(text: _filter.searchPattern ?? '');
+    _searchController = TextEditingController(
+      text: _filter.searchPattern ?? '',
+    );
     _panelFocus = FocusNode();
 
     _scrollController.addListener(_onScroll);
@@ -302,8 +302,7 @@ class _LogPanelState extends State<LogPanel> {
 
   void _refilter() {
     setState(() {
-      _filtered =
-          _service.entries.where((e) => _filter.matches(e)).toList();
+      _filtered = _service.entries.where((e) => _filter.matches(e)).toList();
     });
   }
 
@@ -358,9 +357,9 @@ class _LogPanelState extends State<LogPanel> {
     final data = _service.exportLogs();
     Clipboard.setData(ClipboardData(text: data));
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logs copied to clipboard')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Logs copied to clipboard')));
     }
   }
 
@@ -378,7 +377,8 @@ class _LogPanelState extends State<LogPanel> {
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
-    final ctrl = HardwareKeyboard.instance.isControlPressed ||
+    final ctrl =
+        HardwareKeyboard.instance.isControlPressed ||
         HardwareKeyboard.instance.isMetaPressed;
 
     if (ctrl && event.logicalKey == LogicalKeyboardKey.keyF) {
@@ -477,7 +477,11 @@ class _LogPanelState extends State<LogPanel> {
           Tooltip(
             message: 'Clear logs (Ctrl+L)',
             child: IconButton(
-              icon: const Icon(Icons.delete_sweep, color: Colors.white54, size: 18),
+              icon: const Icon(
+                Icons.delete_sweep,
+                color: Colors.white54,
+                size: 18,
+              ),
               onPressed: _clearLogs,
               iconSize: 18,
               splashRadius: 16,
@@ -559,10 +563,10 @@ class _LogPanelState extends State<LogPanel> {
                       value: null,
                       child: Text('All sources'),
                     ),
-                    ...sources.map((s) => DropdownMenuItem<String?>(
-                          value: s,
-                          child: Text(s),
-                        )),
+                    ...sources.map(
+                      (s) =>
+                          DropdownMenuItem<String?>(value: s, child: Text(s)),
+                    ),
                   ],
                   onChanged: _setSource,
                 ),
@@ -749,7 +753,10 @@ class _LogEntryTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 1,
+                  ),
                   decoration: BoxDecoration(
                     color: entry.level.color.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(3),
@@ -858,17 +865,19 @@ class _LogEntryTile extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      ...entry.metadata.entries.map((e) => Padding(
-                            padding: const EdgeInsets.only(left: 8),
-                            child: Text(
-                              '${e.key}: ${e.value}',
-                              style: const TextStyle(
-                                fontFamily: 'monospace',
-                                fontSize: 11,
-                                color: Colors.white70,
-                              ),
+                      ...entry.metadata.entries.map(
+                        (e) => Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Text(
+                            '${e.key}: ${e.value}',
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 11,
+                              color: Colors.white70,
                             ),
-                          )),
+                          ),
+                        ),
+                      ),
                     ],
                   ],
                 ),

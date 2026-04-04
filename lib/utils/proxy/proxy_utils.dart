@@ -1,11 +1,10 @@
-// Port of openneomclaw proxy.ts + http.ts + mtls.ts + caCerts.ts +
+// Port of neom_claw proxy.ts + http.ts + mtls.ts + caCerts.ts +
 // caCertsConfig.ts
 //
 // Proxy configuration, HTTP utilities, mTLS certificate handling,
 // and CA certificate management for the neom_claw package.
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 
 // ---------------------------------------------------------------------------
@@ -32,8 +31,8 @@ List<String>? getCACertificates() {
   if (_caCertsCacheInitialized) return _caCertsCache;
   _caCertsCacheInitialized = true;
 
-  final useSystemCA = _hasNodeOption('--use-system-ca') ||
-      _hasNodeOption('--use-openssl-ca');
+  final useSystemCA =
+      _hasNodeOption('--use-system-ca') || _hasNodeOption('--use-openssl-ca');
   final extraCertsPath = Platform.environment['NODE_EXTRA_CA_CERTS'];
 
   // If neither is set, return null (use runtime defaults)
@@ -114,7 +113,8 @@ String? _getExtraCertsPathFromConfig({
     final settingsEnv = getUserSettingsEnv();
 
     // Settings override global config
-    final path = settingsEnv?['NODE_EXTRA_CA_CERTS'] ??
+    final path =
+        settingsEnv?['NODE_EXTRA_CA_CERTS'] ??
         globalEnv?['NODE_EXTRA_CA_CERTS'];
     return path;
   } catch (error) {
@@ -129,11 +129,7 @@ String? _getExtraCertsPathFromConfig({
 
 /// Mutual TLS configuration.
 class MTLSConfig {
-  const MTLSConfig({
-    this.cert,
-    this.key,
-    this.passphrase,
-  });
+  const MTLSConfig({this.cert, this.key, this.passphrase});
 
   final String? cert;
   final String? key;
@@ -145,19 +141,15 @@ class MTLSConfig {
 
 /// TLS configuration (mTLS + CA certs).
 class TLSConfig {
-  const TLSConfig({
-    this.cert,
-    this.key,
-    this.passphrase,
-    this.ca,
-  });
+  const TLSConfig({this.cert, this.key, this.passphrase, this.ca});
 
   final String? cert;
   final String? key;
   final String? passphrase;
   final List<String>? ca;
 
-  bool get isEmpty => cert == null && key == null && passphrase == null && ca == null;
+  bool get isEmpty =>
+      cert == null && key == null && passphrase == null && ca == null;
   bool get isNotEmpty => !isEmpty;
 }
 
@@ -195,8 +187,7 @@ MTLSConfig? getMTLSConfig() {
   }
 
   // Key passphrase
-  final passphraseVal =
-      Platform.environment['NEOMCLAW_CLIENT_KEY_PASSPHRASE'];
+  final passphraseVal = Platform.environment['NEOMCLAW_CLIENT_KEY_PASSPHRASE'];
   if (passphraseVal != null && passphraseVal.isNotEmpty) {
     passphrase = passphraseVal;
   }
@@ -206,11 +197,7 @@ MTLSConfig? getMTLSConfig() {
     return null;
   }
 
-  _mtlsConfigCache = MTLSConfig(
-    cert: cert,
-    key: key,
-    passphrase: passphrase,
-  );
+  _mtlsConfigCache = MTLSConfig(cert: cert, key: key, passphrase: passphrase);
   return _mtlsConfigCache;
 }
 
@@ -485,10 +472,7 @@ ProxyFetchOptions getProxyFetchOptions({bool forAnthropicAPI = false}) {
   if (forAnthropicAPI) {
     final unixSocket = Platform.environment['ANTHROPIC_UNIX_SOCKET'];
     if (unixSocket != null && unixSocket.isNotEmpty) {
-      return ProxyFetchOptions(
-        unixSocket: unixSocket,
-        keepAlive: keepAlive,
-      );
+      return ProxyFetchOptions(unixSocket: unixSocket, keepAlive: keepAlive);
     }
   }
 
@@ -502,10 +486,7 @@ ProxyFetchOptions getProxyFetchOptions({bool forAnthropicAPI = false}) {
     );
   }
 
-  return ProxyFetchOptions(
-    tlsConfig: getTLSConfig(),
-    keepAlive: keepAlive,
-  );
+  return ProxyFetchOptions(tlsConfig: getTLSConfig(), keepAlive: keepAlive);
 }
 
 /// Configure global HTTP agents for proxy and mTLS.
@@ -578,10 +559,7 @@ String getWebFetchUserAgent({required String clawUserAgent}) {
 
 /// Authentication headers result.
 class AuthHeaders {
-  const AuthHeaders({
-    required this.headers,
-    this.error,
-  });
+  const AuthHeaders({required this.headers, this.error});
 
   final Map<String, String> headers;
   final String? error;
@@ -604,10 +582,7 @@ AuthHeaders getAuthHeaders({
   if (isSubscriber) {
     final accessToken = getOAuthAccessToken?.call();
     if (accessToken == null || accessToken.isEmpty) {
-      return const AuthHeaders(
-        headers: {},
-        error: 'No OAuth token available',
-      );
+      return const AuthHeaders(headers: {}, error: 'No OAuth token available');
     }
     return AuthHeaders(
       headers: {
@@ -619,14 +594,9 @@ AuthHeaders getAuthHeaders({
 
   final apiKey = getApiKey?.call();
   if (apiKey == null || apiKey.isEmpty) {
-    return const AuthHeaders(
-      headers: {},
-      error: 'No API key available',
-    );
+    return const AuthHeaders(headers: {}, error: 'No API key available');
   }
-  return AuthHeaders(
-    headers: {'x-api-key': apiKey},
-  );
+  return AuthHeaders(headers: {'x-api-key': apiKey});
 }
 
 /// Wrapper that handles OAuth 401 errors by retrying once.
@@ -643,7 +613,8 @@ Future<T> withOAuth401Retry<T>({
     return await request();
   } on HttpException catch (e) {
     final statusCode = _extractStatusCode(e);
-    final isAuthError = statusCode == 401 ||
+    final isAuthError =
+        statusCode == 401 ||
         (also403Revoked &&
             statusCode == 403 &&
             e.message.contains('OAuth token has been revoked'));
@@ -674,10 +645,7 @@ Future<Map<String, dynamic>> getAWSClientProxyConfig() async {
   final proxyUrl = getProxyUrl();
   if (proxyUrl == null) return {};
 
-  return {
-    'proxyUrl': proxyUrl,
-    'useProxy': true,
-  };
+  return {'proxyUrl': proxyUrl, 'useProxy': true};
 }
 
 // ---------------------------------------------------------------------------
@@ -737,9 +705,7 @@ class ProxyConfiguration {
       noProxy: e['no_proxy'] ?? e['NO_PROXY'],
       mtlsConfig: getMTLSConfig(),
       caCertificates: getCACertificates(),
-      proxyResolvesHosts: _isEnvTruthy(
-        e['NEOMCLAW_PROXY_RESOLVES_HOSTS'],
-      ),
+      proxyResolvesHosts: _isEnvTruthy(e['NEOMCLAW_PROXY_RESOLVES_HOSTS']),
     );
   }
 
@@ -813,7 +779,9 @@ class ProxyConfiguration {
     if (hasMTLS) parts.add('mTLS=enabled');
     if (hasCustomCA) parts.add('customCA=${caCertificates!.length} cert(s)');
     if (proxyResolvesHosts) parts.add('proxyResolvesHosts=true');
-    return parts.isEmpty ? 'ProxyConfiguration(none)' : 'ProxyConfiguration(${parts.join(", ")})';
+    return parts.isEmpty
+        ? 'ProxyConfiguration(none)'
+        : 'ProxyConfiguration(${parts.join(", ")})';
   }
 }
 
@@ -855,8 +823,9 @@ class ParsedProxyUrl {
   String get urlWithCredentials {
     if (!requiresAuth) return urlWithoutCredentials;
     final encodedUser = Uri.encodeComponent(username!);
-    final encodedPass =
-        password != null ? ':${Uri.encodeComponent(password!)}' : '';
+    final encodedPass = password != null
+        ? ':${Uri.encodeComponent(password!)}'
+        : '';
     return '$scheme://$encodedUser$encodedPass@$host:$port';
   }
 }
@@ -869,11 +838,12 @@ ParsedProxyUrl? parseProxyUrl(String url) {
     return ParsedProxyUrl(
       scheme: uri.scheme,
       host: uri.host,
-      port: uri.port != 0
-          ? uri.port
-          : (uri.scheme == 'https' ? 443 : 80),
-      username:
-          uri.userInfo.contains(':') ? uri.userInfo.split(':').first : uri.userInfo.isNotEmpty ? uri.userInfo : null,
+      port: uri.port != 0 ? uri.port : (uri.scheme == 'https' ? 443 : 80),
+      username: uri.userInfo.contains(':')
+          ? uri.userInfo.split(':').first
+          : uri.userInfo.isNotEmpty
+          ? uri.userInfo
+          : null,
       password: uri.userInfo.contains(':')
           ? uri.userInfo.split(':').sublist(1).join(':')
           : null,

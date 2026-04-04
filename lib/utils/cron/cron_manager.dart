@@ -1,4 +1,4 @@
-// Cron manager — port of openneomclaw/src/utils/cron.ts, cronScheduler.ts,
+// Cron manager — port of neom_claw/src/utils/cron.ts, cronScheduler.ts,
 // cronTasks.ts, cronTasksLock.ts, cronJitterConfig.ts.
 // Cron expression parsing, scheduling, task management, locking, jitter config.
 
@@ -42,7 +42,7 @@ const List<_FieldRange> _fieldRanges = [
   _FieldRange(0, 23), // hour
   _FieldRange(1, 31), // dayOfMonth
   _FieldRange(1, 12), // month
-  _FieldRange(0, 6),  // dayOfWeek (0=Sunday; 7 accepted as Sunday alias)
+  _FieldRange(0, 6), // dayOfWeek (0=Sunday; 7 accepted as Sunday alias)
 ];
 
 /// Parse a single cron field into a sorted list of matching values.
@@ -145,8 +145,13 @@ DateTime? computeNextCronRun(CronFields fields, DateTime from) {
   final dowWild = fields.dayOfWeek.length == 7;
 
   // Round up to the next whole minute (strictly after `from`).
-  var t = DateTime(from.year, from.month, from.day, from.hour, from.minute)
-      .add(const Duration(minutes: 1));
+  var t = DateTime(
+    from.year,
+    from.month,
+    from.day,
+    from.hour,
+    from.minute,
+  ).add(const Duration(minutes: 1));
 
   const maxIter = 366 * 24 * 60;
   for (int i = 0; i < maxIter; i++) {
@@ -166,10 +171,10 @@ DateTime? computeNextCronRun(CronFields fields, DateTime from) {
     final dayMatches = domWild && dowWild
         ? true
         : domWild
-            ? dowSet.contains(dow)
-            : dowWild
-                ? domSet.contains(dom)
-                : domSet.contains(dom) || dowSet.contains(dow);
+        ? dowSet.contains(dow)
+        : dowWild
+        ? domSet.contains(dom)
+        : domSet.contains(dom) || dowSet.contains(dow);
 
     if (!dayMatches) {
       // Jump to start of next day.
@@ -280,8 +285,7 @@ String cronToHuman(String cron, {bool utc = false}) {
   }
 
   // Remaining cases reference hour+minute.
-  if (!RegExp(r'^\d+$').hasMatch(minute) ||
-      !RegExp(r'^\d+$').hasMatch(hour)) {
+  if (!RegExp(r'^\d+$').hasMatch(minute) || !RegExp(r'^\d+$').hasMatch(hour)) {
     return cron;
   }
   final m = int.parse(minute);
@@ -294,7 +298,9 @@ String cronToHuman(String cron, {bool utc = false}) {
   }
 
   // Specific day of week: M H * * D
-  if (dayOfMonth == '*' && month == '*' && RegExp(r'^\d$').hasMatch(dayOfWeek)) {
+  if (dayOfMonth == '*' &&
+      month == '*' &&
+      RegExp(r'^\d$').hasMatch(dayOfWeek)) {
     final dayIndex = int.parse(dayOfWeek) % 7;
     String? dayName;
     if (utc) {
@@ -312,7 +318,7 @@ String cronToHuman(String cron, {bool utc = false}) {
     } else {
       dayName = _dayNames[dayIndex];
     }
-    if (dayName != null) return 'Every $dayName at ${fmtTime(m, h)}';
+    return 'Every $dayName at ${fmtTime(m, h)}';
   }
 
   // Weekdays: M H * * 1-5
@@ -370,25 +376,25 @@ class CronTask {
   });
 
   factory CronTask.fromJson(Map<String, dynamic> json) => CronTask(
-        id: json['id'] as String,
-        cron: json['cron'] as String,
-        prompt: json['prompt'] as String,
-        createdAt: json['createdAt'] as int,
-        lastFiredAt: json['lastFiredAt'] as int?,
-        recurring: json['recurring'] as bool? ?? false,
-        permanent: json['permanent'] as bool? ?? false,
-      );
+    id: json['id'] as String,
+    cron: json['cron'] as String,
+    prompt: json['prompt'] as String,
+    createdAt: json['createdAt'] as int,
+    lastFiredAt: json['lastFiredAt'] as int?,
+    recurring: json['recurring'] as bool? ?? false,
+    permanent: json['permanent'] as bool? ?? false,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'cron': cron,
-        'prompt': prompt,
-        'createdAt': createdAt,
-        if (lastFiredAt != null) 'lastFiredAt': lastFiredAt,
-        if (recurring) 'recurring': true,
-        if (permanent) 'permanent': true,
-        // durable and agentId are runtime-only, not persisted.
-      };
+    'id': id,
+    'cron': cron,
+    'prompt': prompt,
+    'createdAt': createdAt,
+    if (lastFiredAt != null) 'lastFiredAt': lastFiredAt,
+    if (recurring) 'recurring': true,
+    if (permanent) 'permanent': true,
+    // durable and agentId are runtime-only, not persisted.
+  };
 
   CronTask copyWith({
     String? id,
@@ -400,18 +406,17 @@ class CronTask {
     bool? permanent,
     bool? durable,
     String? agentId,
-  }) =>
-      CronTask(
-        id: id ?? this.id,
-        cron: cron ?? this.cron,
-        prompt: prompt ?? this.prompt,
-        createdAt: createdAt ?? this.createdAt,
-        lastFiredAt: lastFiredAt ?? this.lastFiredAt,
-        recurring: recurring ?? this.recurring,
-        permanent: permanent ?? this.permanent,
-        durable: durable ?? this.durable,
-        agentId: agentId ?? this.agentId,
-      );
+  }) => CronTask(
+    id: id ?? this.id,
+    cron: cron ?? this.cron,
+    prompt: prompt ?? this.prompt,
+    createdAt: createdAt ?? this.createdAt,
+    lastFiredAt: lastFiredAt ?? this.lastFiredAt,
+    recurring: recurring ?? this.recurring,
+    permanent: permanent ?? this.permanent,
+    durable: durable ?? this.durable,
+    agentId: agentId ?? this.agentId,
+  );
 }
 
 /// Cron file JSON shape.
@@ -500,11 +505,10 @@ Future<void> writeCronTasks(List<CronTask> tasks, {String? dir}) async {
   if (!neomClawDir.existsSync()) {
     await neomClawDir.create(recursive: true);
   }
-  final body = {
-    'tasks': tasks.map((t) => t.toJson()).toList(),
-  };
-  await File(getCronFilePath(dir: root))
-      .writeAsString('${const JsonEncoder.withIndent('  ').convert(body)}\n');
+  final body = {'tasks': tasks.map((t) => t.toJson()).toList()};
+  await File(
+    getCronFilePath(dir: root),
+  ).writeAsString('${const JsonEncoder.withIndent('  ').convert(body)}\n');
 }
 
 /// Append a task. Returns the generated id.
@@ -521,8 +525,10 @@ Future<String> addCronTask({
 }) async {
   // Short ID -- 8 hex chars.
   final random = Random.secure();
-  final id = List.generate(8, (_) => random.nextInt(16).toRadixString(16))
-      .join();
+  final id = List.generate(
+    8,
+    (_) => random.nextInt(16).toRadixString(16),
+  ).join();
 
   final task = CronTask(
     id: id,
@@ -557,8 +563,7 @@ Future<void> removeCronTasks(
   // Sweep session store first.
   if (dir == null && sessionTasks != null) {
     final idSet = ids.toSet();
-    final removedCount =
-        sessionTasks.where((t) => idSet.contains(t.id)).length;
+    final removedCount = sessionTasks.where((t) => idSet.contains(t.id)).length;
     sessionTasks.removeWhere((t) => idSet.contains(t.id));
     if (removedCount == ids.length) return;
   }
@@ -663,8 +668,8 @@ class CronJitterConfig {
 /// Default jitter config.
 const CronJitterConfig kDefaultCronJitterConfig = CronJitterConfig(
   recurringFrac: 0.1,
-  recurringCapMs: 15 * 60 * 1000,          // 15 minutes
-  oneShotMaxMs: 90 * 1000,                  // 90 seconds
+  recurringCapMs: 15 * 60 * 1000, // 15 minutes
+  oneShotMaxMs: 90 * 1000, // 90 seconds
   oneShotFloorMs: 0,
   oneShotMinuteMod: 30,
   recurringMaxAgeMs: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -716,7 +721,8 @@ int? oneShotJitteredNextCronRunMs(
   if (t1 == null) return null;
   final dt = DateTime.fromMillisecondsSinceEpoch(t1);
   if (dt.minute % cfg.oneShotMinuteMod != 0) return t1;
-  final lead = cfg.oneShotFloorMs +
+  final lead =
+      cfg.oneShotFloorMs +
       _jitterFrac(taskId) * (cfg.oneShotMaxMs - cfg.oneShotFloorMs);
   return max(t1 - lead.round(), fromMs);
 }
@@ -740,16 +746,16 @@ class SchedulerLock {
   });
 
   factory SchedulerLock.fromJson(Map<String, dynamic> json) => SchedulerLock(
-        sessionId: json['sessionId'] as String,
-        pid: json['pid'] as int,
-        acquiredAt: json['acquiredAt'] as int,
-      );
+    sessionId: json['sessionId'] as String,
+    pid: json['pid'] as int,
+    acquiredAt: json['acquiredAt'] as int,
+  );
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'pid': pid,
-        'acquiredAt': acquiredAt,
-      };
+    'sessionId': sessionId,
+    'pid': pid,
+    'acquiredAt': acquiredAt,
+  };
 }
 
 /// Options for out-of-REPL callers that don't have bootstrap state.
@@ -787,10 +793,7 @@ Future<SchedulerLock?> _readLock({String? dir}) async {
 }
 
 /// Try to create the lock file exclusively (atomic test-and-set).
-Future<bool> _tryCreateExclusive(
-  SchedulerLock lock, {
-  String? dir,
-}) async {
+Future<bool> _tryCreateExclusive(SchedulerLock lock, {String? dir}) async {
   final path = _getLockPath(dir: dir);
   final file = File(path);
   final body = jsonEncode(lock.toJson());
@@ -863,8 +866,9 @@ Future<bool> tryAcquireSchedulerLock({
   // Already ours (idempotent).
   if (existing?.sessionId == identity) {
     if (existing!.pid != pid) {
-      await File(_getLockPath(dir: dir))
-          .writeAsString(jsonEncode(lock.toJson()));
+      await File(
+        _getLockPath(dir: dir),
+      ).writeAsString(jsonEncode(lock.toJson()));
     }
     return true;
   }
@@ -1170,10 +1174,12 @@ class CronScheduler {
 
     final now = DateTime.now().millisecondsSinceEpoch;
     final missed = findMissedTasks(next, now)
-        .where((t) =>
-            !t.recurring &&
-            !_missedAsked.contains(t.id) &&
-            (_options.filter == null || _options.filter!(t)))
+        .where(
+          (t) =>
+              !t.recurring &&
+              !_missedAsked.contains(t.id) &&
+              (_options.filter == null || _options.filter!(t)),
+        )
         .toList();
 
     if (missed.isNotEmpty) {
@@ -1214,11 +1220,19 @@ class CronScheduler {
       if (next == null) {
         next = t.recurring
             ? (jitteredNextCronRunMs(
-                    t.cron, t.lastFiredAt ?? t.createdAt, t.id, jitterCfg) ??
-                (-1 >>> 1))
+                    t.cron,
+                    t.lastFiredAt ?? t.createdAt,
+                    t.id,
+                    jitterCfg,
+                  ) ??
+                  (-1 >>> 1))
             : (oneShotJitteredNextCronRunMs(
-                    t.cron, t.createdAt, t.id, jitterCfg) ??
-                (-1 >>> 1));
+                    t.cron,
+                    t.createdAt,
+                    t.id,
+                    jitterCfg,
+                  ) ??
+                  (-1 >>> 1));
         _nextFireAt[t.id] = next;
       }
 
@@ -1235,8 +1249,7 @@ class CronScheduler {
 
       if (t.recurring && !aged) {
         final newNext =
-            jitteredNextCronRunMs(t.cron, now, t.id, jitterCfg) ??
-                (-1 >>> 1);
+            jitteredNextCronRunMs(t.cron, now, t.id, jitterCfg) ?? (-1 >>> 1);
         _nextFireAt[t.id] = newNext;
         if (!isSession) firedFileRecurring.add(t.id);
       } else if (isSession) {
@@ -1244,8 +1257,7 @@ class CronScheduler {
         _nextFireAt.remove(t.id);
       } else {
         _inFlight.add(t.id);
-        removeCronTasks([t.id], dir: _options.dir).catchError((_) {}).then(
-            (_) {
+        removeCronTasks([t.id], dir: _options.dir).catchError((_) {}).then((_) {
           _inFlight.remove(t.id);
         });
         _nextFireAt.remove(t.id);
@@ -1261,9 +1273,11 @@ class CronScheduler {
         for (final id in firedFileRecurring) {
           _inFlight.add(id);
         }
-        markCronTasksFired(firedFileRecurring, now, dir: _options.dir)
-            .catchError((_) {})
-            .then((_) {
+        markCronTasksFired(
+          firedFileRecurring,
+          now,
+          dir: _options.dir,
+        ).catchError((_) {}).then((_) {
           for (final id in firedFileRecurring) {
             _inFlight.remove(id);
           }

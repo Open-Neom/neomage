@@ -38,7 +38,8 @@ class BuiltInAgents {
   static const generalPurpose = AgentDefinition(
     agentType: 'general-purpose',
     name: 'General Purpose',
-    description: 'General-purpose agent for researching complex questions, '
+    description:
+        'General-purpose agent for researching complex questions, '
         'searching for code, and executing multi-step tasks.',
     background: false,
   );
@@ -46,7 +47,8 @@ class BuiltInAgents {
   static const explore = AgentDefinition(
     agentType: 'Explore',
     name: 'Explore',
-    description: 'Fast agent specialized for exploring codebases. '
+    description:
+        'Fast agent specialized for exploring codebases. '
         'Use for finding files, searching code, or answering codebase questions.',
     tools: {'Read', 'Glob', 'Grep', 'Bash', 'WebSearch', 'WebFetch'},
     disallowedTools: {'Agent', 'Edit', 'Write', 'NotebookEdit'},
@@ -143,32 +145,32 @@ class AgentTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'prompt': {
-            'type': 'string',
-            'description': 'The task for the agent to perform',
-          },
-          'description': {
-            'type': 'string',
-            'description': 'A short (3-5 word) description of the task',
-          },
-          'subagent_type': {
-            'type': 'string',
-            'description': 'The type of specialized agent to use',
-          },
-          'model': {
-            'type': 'string',
-            'enum': ['sonnet', 'opus', 'haiku'],
-            'description': 'Optional model override for this agent',
-          },
-          'run_in_background': {
-            'type': 'boolean',
-            'description': 'Run agent in background (default: false)',
-          },
-        },
-        'required': ['description', 'prompt'],
-      };
+    'type': 'object',
+    'properties': {
+      'prompt': {
+        'type': 'string',
+        'description': 'The task for the agent to perform',
+      },
+      'description': {
+        'type': 'string',
+        'description': 'A short (3-5 word) description of the task',
+      },
+      'subagent_type': {
+        'type': 'string',
+        'description': 'The type of specialized agent to use',
+      },
+      'model': {
+        'type': 'string',
+        'enum': ['sonnet', 'opus', 'haiku'],
+        'description': 'Optional model override for this agent',
+      },
+      'run_in_background': {
+        'type': 'boolean',
+        'description': 'Run agent in background (default: false)',
+      },
+    },
+    'required': ['description', 'prompt'],
+  };
 
   /// Register a custom agent definition.
   void registerAgent(AgentDefinition agent) {
@@ -225,10 +227,7 @@ class AgentTool extends Tool {
         'Agent ID: $agentId\n'
         'Type: ${agentDef.agentType}\n'
         'Description: $description',
-        metadata: {
-          'status': 'async_launched',
-          'agentId': agentId,
-        },
+        metadata: {'status': 'async_launched', 'agentId': agentId},
       );
     }
 
@@ -243,8 +242,7 @@ class AgentTool extends Tool {
         model: model,
       );
 
-      final duration =
-          DateTime.now().difference(startTime).inMilliseconds;
+      final duration = DateTime.now().difference(startTime).inMilliseconds;
 
       return ToolResult.success(
         result.content,
@@ -347,8 +345,7 @@ class AgentTool extends Tool {
 
         // Check if agent is done (no tool use)
         final toolUses = response.toolUses;
-        if (toolUses.isEmpty ||
-            response.stopReason == StopReason.endTurn) {
+        if (toolUses.isEmpty || response.stopReason == StopReason.endTurn) {
           break;
         }
 
@@ -358,13 +355,15 @@ class AgentTool extends Tool {
           totalToolUses++;
 
           // Report progress
-          onProgress?.call(AgentProgress(
-            agentId: agentId,
-            description: description,
-            totalTokens: totalInputTokens + totalOutputTokens,
-            toolUses: totalToolUses,
-            lastToolName: toolUse.name,
-          ));
+          onProgress?.call(
+            AgentProgress(
+              agentId: agentId,
+              description: description,
+              totalTokens: totalInputTokens + totalOutputTokens,
+              toolUses: totalToolUses,
+              lastToolName: toolUse.name,
+            ),
+          );
 
           // Find and execute tool
           final tool = tools.firstWhere(
@@ -373,18 +372,17 @@ class AgentTool extends Tool {
           );
 
           final result = await tool.execute(toolUse.input);
-          resultBlocks.add(ToolResultBlock(
-            toolUseId: toolUse.id,
-            content: result.content,
-            isError: result.isError,
-          ));
+          resultBlocks.add(
+            ToolResultBlock(
+              toolUseId: toolUse.id,
+              content: result.content,
+              isError: result.isError,
+            ),
+          );
         }
 
         // Add tool results as user message
-        messages.add(Message(
-          role: MessageRole.user,
-          content: resultBlocks,
-        ));
+        messages.add(Message(role: MessageRole.user, content: resultBlocks));
       }
 
       // Extract final text content
@@ -418,23 +416,28 @@ class AgentTool extends Tool {
     String? model,
   }) {
     // Fire and forget — run in background
-    unawaited(_runAgent(
-      agentId: agentId,
-      prompt: prompt,
-      description: description,
-      agentDef: agentDef,
-      tools: tools,
-      model: model,
-    ).then((_) {
-      // Agent completed
-    }).catchError((_) {
-      // Agent errored — tracked via _activeAgents removal
-    }));
+    unawaited(
+      _runAgent(
+            agentId: agentId,
+            prompt: prompt,
+            description: description,
+            agentDef: agentDef,
+            tools: tools,
+            model: model,
+          )
+          .then((_) {
+            // Agent completed
+          })
+          .catchError((_) {
+            // Agent errored — tracked via _activeAgents removal
+          }),
+    );
   }
 
   /// Get info about an active agent by ID. Returns null if not active.
   ({String id, String description, DateTime startTime})? getActiveAgent(
-      String agentId) {
+    String agentId,
+  ) {
     final agent = _activeAgents[agentId];
     if (agent == null) return null;
     return (

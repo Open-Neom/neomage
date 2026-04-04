@@ -1,6 +1,6 @@
 /// Native Installer Implementation
 ///
-/// Faithful port of openneomclaw/src/utils/nativeInstaller/*.ts
+/// Faithful port of neom_claw/src/utils/nativeInstaller/*.ts
 /// Covers: installer.ts, download.ts, pidLock.ts, packageManagers.ts
 ///
 /// Provides:
@@ -9,11 +9,11 @@
 /// - Multi-process safety with PID-based and mtime-based locking
 /// - Binary download with checksum verification, stall detection, retry
 /// - Package manager detection (homebrew, winget, pacman, deb, rpm, apk, mise, asdf)
+library;
 
 import 'dart:async';
 import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
@@ -109,9 +109,14 @@ Future<OsReleaseInfo?> getOsRelease() async {
   _osReleaseRead = true;
   try {
     final content = await File('/etc/os-release').readAsString();
-    final idMatch = RegExp(r'^ID="?(\S+?)"?\s*$', multiLine: true).firstMatch(content);
-    final idLikeMatch =
-        RegExp(r'^ID_LIKE="?(.+?)"?\s*$', multiLine: true).firstMatch(content);
+    final idMatch = RegExp(
+      r'^ID="?(\S+?)"?\s*$',
+      multiLine: true,
+    ).firstMatch(content);
+    final idLikeMatch = RegExp(
+      r'^ID_LIKE="?(.+?)"?\s*$',
+      multiLine: true,
+    ).firstMatch(content);
     _cachedOsRelease = OsReleaseInfo(
       id: idMatch?.group(1) ?? '',
       idLike: idLikeMatch?.group(1)?.split(' ') ?? [],
@@ -132,16 +137,20 @@ bool isDistroFamily(OsReleaseInfo osRelease, List<String> families) {
 /// mise installs to: ~/.local/share/mise/installs/<tool>/<version>/
 bool detectMise() {
   final execPath = Platform.resolvedExecutable;
-  return RegExp(r'[/\\]mise[/\\]installs[/\\]', caseSensitive: false)
-      .hasMatch(execPath);
+  return RegExp(
+    r'[/\\]mise[/\\]installs[/\\]',
+    caseSensitive: false,
+  ).hasMatch(execPath);
 }
 
 /// Detects if the currently running instance was installed via asdf.
 /// asdf installs to: ~/.asdf/installs/<tool>/<version>/
 bool detectAsdf() {
   final execPath = Platform.resolvedExecutable;
-  return RegExp(r'[/\\]\.?asdf[/\\]installs[/\\]', caseSensitive: false)
-      .hasMatch(execPath);
+  return RegExp(
+    r'[/\\]\.?asdf[/\\]installs[/\\]',
+    caseSensitive: false,
+  ).hasMatch(execPath);
 }
 
 /// Detects if the currently running instance was installed via Homebrew.
@@ -199,7 +208,9 @@ Future<bool> detectRpm() async {
   if (!Platform.isLinux) return false;
   final osRelease = await getOsRelease();
   if (osRelease != null &&
-      !isDistroFamily(osRelease, ['fedora', 'rhel', 'suse'])) return false;
+      !isDistroFamily(osRelease, ['fedora', 'rhel', 'suse'])) {
+    return false;
+  }
   final execPath = Platform.resolvedExecutable;
   try {
     final result = await Process.run('rpm', ['-qf', execPath]);
@@ -256,11 +267,11 @@ class VersionLockContent {
   });
 
   Map<String, dynamic> toJson() => {
-        'pid': pid,
-        'version': version,
-        'execPath': execPath,
-        'acquiredAt': acquiredAt,
-      };
+    'pid': pid,
+    'version': version,
+    'execPath': execPath,
+    'acquiredAt': acquiredAt,
+  };
 
   static VersionLockContent? fromJson(Map<String, dynamic> json) {
     if (json['pid'] is! int ||
@@ -314,8 +325,7 @@ bool isPidBasedLockingEnabled() {
 bool isProcessRunning(int pid) {
   if (pid <= 1) return false;
   try {
-    return Process.killPid(pid, ProcessSignal.sigusr1) ||
-        _checkPidExists(pid);
+    return Process.killPid(pid, ProcessSignal.sigusr1) || _checkPidExists(pid);
   } catch (_) {
     return false;
   }
@@ -374,7 +384,9 @@ bool isLockActive(String lockFilePath) {
   // Fallback: if the lock is very old (> 2 hours), double-check
   try {
     final stat = File(lockFilePath).statSync();
-    final age = DateTime.now().millisecondsSinceEpoch - stat.modified.millisecondsSinceEpoch;
+    final age =
+        DateTime.now().millisecondsSinceEpoch -
+        stat.modified.millisecondsSinceEpoch;
     if (age > fallbackStaleMs) {
       if (!isProcessRunning(content.pid)) return false;
     }
@@ -387,7 +399,8 @@ bool isLockActive(String lockFilePath) {
 
 /// Write lock content to a file atomically.
 void writeLockFile(String lockFilePath, VersionLockContent content) {
-  final tempPath = '$lockFilePath.tmp.${pid}.${DateTime.now().millisecondsSinceEpoch}';
+  final tempPath =
+      '$lockFilePath.tmp.$pid.${DateTime.now().millisecondsSinceEpoch}';
   try {
     File(tempPath).writeAsStringSync(
       const JsonEncoder.withIndent('  ').convert(content.toJson()),
@@ -405,12 +418,16 @@ void writeLockFile(String lockFilePath, VersionLockContent content) {
 /// Try to acquire a lock on a version file.
 /// Returns a release function if successful, null if already held.
 Future<void Function()?> tryAcquireLock(
-    String versionPath, String lockFilePath) async {
+  String versionPath,
+  String lockFilePath,
+) async {
   final versionName = p.basename(versionPath);
 
   if (isLockActive(lockFilePath)) {
     final existing = readLockContent(lockFilePath);
-    _logDebug('Cannot acquire lock for $versionName - held by PID ${existing?.pid}');
+    _logDebug(
+      'Cannot acquire lock for $versionName - held by PID ${existing?.pid}',
+    );
     return null;
   }
 
@@ -447,7 +464,9 @@ Future<void Function()?> tryAcquireLock(
 
 /// Acquire a lock and hold it for the lifetime of the process.
 Future<bool> acquireProcessLifetimeLock(
-    String versionPath, String lockFilePath) async {
+  String versionPath,
+  String lockFilePath,
+) async {
   final release = await tryAcquireLock(versionPath, lockFilePath);
   if (release == null) return false;
 
@@ -489,22 +508,23 @@ List<LockInfo> getAllLockInfo(String locksDir) {
     final dir = Directory(locksDir);
     if (!dir.existsSync()) return lockInfos;
 
-    final lockFiles = dir
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.lock'));
+    final lockFiles = dir.listSync().whereType<File>().where(
+      (f) => f.path.endsWith('.lock'),
+    );
 
     for (final lockFile in lockFiles) {
       final content = readLockContent(lockFile.path);
       if (content != null) {
-        lockInfos.add(LockInfo(
-          version: content.version,
-          pid: content.pid,
-          isProcessRunning: isProcessRunning(content.pid),
-          execPath: content.execPath,
-          acquiredAt: DateTime.fromMillisecondsSinceEpoch(content.acquiredAt),
-          lockFilePath: lockFile.path,
-        ));
+        lockInfos.add(
+          LockInfo(
+            version: content.version,
+            pid: content.pid,
+            isProcessRunning: isProcessRunning(content.pid),
+            execPath: content.execPath,
+            acquiredAt: DateTime.fromMillisecondsSinceEpoch(content.acquiredAt),
+            lockFilePath: lockFile.path,
+          ),
+        );
       }
     }
   } catch (_) {}
@@ -520,9 +540,7 @@ int cleanupStaleLocks(String locksDir) {
     final dir = Directory(locksDir);
     if (!dir.existsSync()) return 0;
 
-    final lockEntries = dir
-        .listSync()
-        .where((e) => e.path.endsWith('.lock'));
+    final lockEntries = dir.listSync().where((e) => e.path.endsWith('.lock'));
 
     for (final entry in lockEntries) {
       try {
@@ -531,7 +549,9 @@ int cleanupStaleLocks(String locksDir) {
           // Legacy proper-lockfile directory lock
           Directory(entry.path).deleteSync(recursive: true);
           cleanedCount++;
-          _logDebug('Cleaned up legacy directory lock: ${p.basename(entry.path)}');
+          _logDebug(
+            'Cleaned up legacy directory lock: ${p.basename(entry.path)}',
+          );
         } else if (!isLockActive(entry.path)) {
           File(entry.path).deleteSync();
           cleanedCount++;
@@ -664,7 +684,9 @@ Future<void> downloadAndVerifyBinary({
         );
       }
 
-      final response = await request.close().timeout(const Duration(minutes: 5));
+      final response = await request.close().timeout(
+        const Duration(minutes: 5),
+      );
       final chunks = <List<int>>[];
       int totalBytes = 0;
 
@@ -712,12 +734,14 @@ Future<void> downloadAndVerifyBinary({
 
       // Only retry on stall timeouts
       if (aborted && attempt < maxDownloadRetries) {
-        _logDebug('Download stalled on attempt $attempt/$maxDownloadRetries, retrying...');
+        _logDebug(
+          'Download stalled on attempt $attempt/$maxDownloadRetries, retrying...',
+        );
         await Future.delayed(const Duration(seconds: 1));
         continue;
       }
 
-      throw lastError!;
+      throw lastError;
     } finally {
       client.close();
     }
@@ -770,7 +794,9 @@ Future<void> downloadVersionFromBinaryRepo({
   final platforms = manifest['platforms'] as Map<String, dynamic>?;
   final platformInfo = platforms?[platform] as Map<String, dynamic>?;
   if (platformInfo == null) {
-    throw Exception('Platform $platform not found in manifest for version $version');
+    throw Exception(
+      'Platform $platform not found in manifest for version $version',
+    );
   }
 
   final expectedChecksum = platformInfo['checksum'] as String;
@@ -878,8 +904,7 @@ String _getXDGDataHome() {
 }
 
 String _getXDGCacheHome() {
-  return Platform.environment['XDG_CACHE_HOME'] ??
-      p.join(_homeDir(), '.cache');
+  return Platform.environment['XDG_CACHE_HOME'] ?? p.join(_homeDir(), '.cache');
 }
 
 String _getXDGStateHome() {
@@ -890,7 +915,8 @@ String _getXDGStateHome() {
 String _getUserBinDir() {
   if (Platform.isWindows) {
     return p.join(
-      Platform.environment['LOCALAPPDATA'] ?? p.join(_homeDir(), 'AppData', 'Local'),
+      Platform.environment['LOCALAPPDATA'] ??
+          p.join(_homeDir(), 'AppData', 'Local'),
       'Programs',
       'neomclaw',
     );
@@ -898,7 +924,10 @@ String _getUserBinDir() {
   return p.join(_homeDir(), '.local', 'bin');
 }
 
-String _homeDir() => Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '/tmp';
+String _homeDir() =>
+    Platform.environment['HOME'] ??
+    Platform.environment['USERPROFILE'] ??
+    '/tmp';
 
 /// Base directory structure for the native installer.
 class _BaseDirectories {
@@ -947,7 +976,9 @@ Future<bool> _isPossibleNeomClawBinary(String filePath) async {
 
 /// Atomically move a staged binary to the install path.
 Future<void> _atomicMoveToInstallPath(
-    String stagedBinaryPath, String installPath) async {
+  String stagedBinaryPath,
+  String installPath,
+) async {
   final installDir = p.dirname(installPath);
   await Directory(installDir).create(recursive: true);
 
@@ -970,7 +1001,9 @@ Future<void> _atomicMoveToInstallPath(
 
 /// Install a version from a direct binary download in staging.
 Future<void> _installVersionFromBinary(
-    String stagingPath, String installPath) async {
+  String stagingPath,
+  String installPath,
+) async {
   final platform = getPlatform();
   final binaryName = getBinaryName(platform);
   final stagedBinaryPath = p.join(stagingPath, binaryName);
@@ -993,7 +1026,8 @@ Future<void> _installVersionFromBinary(
 /// Manages the native installer lifecycle using Sint state management.
 class NativeInstallerController extends SintController {
   /// Current installation state.
-  final installState = ''.obs; // 'idle', 'checking', 'downloading', 'installing', 'done', 'error'
+  final installState = ''
+      .obs; // 'idle', 'checking', 'downloading', 'installing', 'done', 'error'
 
   /// Current version being installed.
   final currentVersion = ''.obs;
@@ -1106,13 +1140,18 @@ class NativeInstallerController extends SintController {
             if (existingStat.size == targetStat.size) return; // Same file
           }
           // Rename old, copy new, clean up
-          final oldPath = '$symlinkPath.old.${DateTime.now().millisecondsSinceEpoch}';
+          final oldPath =
+              '$symlinkPath.old.${DateTime.now().millisecondsSinceEpoch}';
           await existing.rename(oldPath);
           try {
             await File(targetPath).copy(symlinkPath);
-            try { await File(oldPath).delete(); } catch (_) {}
+            try {
+              await File(oldPath).delete();
+            } catch (_) {}
           } catch (e) {
-            try { await File(oldPath).rename(symlinkPath); } catch (_) {}
+            try {
+              await File(oldPath).rename(symlinkPath);
+            } catch (_) {}
             rethrow;
           }
         } else {

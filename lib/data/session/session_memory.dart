@@ -82,8 +82,7 @@ class SessionMemoryService {
   });
 
   /// Path to the session memory file.
-  String get summaryPath =>
-      '$projectDir/$sessionId/session-memory/summary.md';
+  String get summaryPath => '$projectDir/$sessionId/session-memory/summary.md';
 
   /// Whether extraction should be triggered based on current state.
   bool shouldExtract() {
@@ -101,13 +100,14 @@ class SessionMemoryService {
   void trackMessage(Message message) {
     // Rough token estimate
     final tokens = message.content.fold<int>(0, (sum, block) {
-      return sum + switch (block) {
-        TextBlock(text: final t) => (t.length / 4).ceil(),
-        ToolUseBlock(name: final n, input: final i) =>
-          (n.length / 4).ceil() + (i.toString().length / 4).ceil(),
-        ToolResultBlock(content: final c) => (c.length / 4).ceil(),
-        ImageBlock() => 2000,
-      };
+      return sum +
+          switch (block) {
+            TextBlock(text: final t) => (t.length / 4).ceil(),
+            ToolUseBlock(name: final n, input: final i) =>
+              (n.length / 4).ceil() + (i.toString().length / 4).ceil(),
+            ToolResultBlock(content: final c) => (c.length / 4).ceil(),
+            ImageBlock() => 2000,
+          };
     });
 
     _state.tokensSinceLastExtraction += tokens;
@@ -175,14 +175,15 @@ class SessionMemoryService {
     int toolCallsSinceLast,
     int extractionCount,
     String? lastSummarizedId,
-  }) get state => (
-        initialized: _state.initialized,
-        inProgress: _state.extractionInProgress,
-        tokensSinceLast: _state.tokensSinceLastExtraction,
-        toolCallsSinceLast: _state.toolCallsSinceLastExtraction,
-        extractionCount: _state.extractionCount,
-        lastSummarizedId: _state.lastSummarizedMessageId,
-      );
+  })
+  get state => (
+    initialized: _state.initialized,
+    inProgress: _state.extractionInProgress,
+    tokensSinceLast: _state.tokensSinceLastExtraction,
+    toolCallsSinceLast: _state.toolCallsSinceLastExtraction,
+    extractionCount: _state.extractionCount,
+    lastSummarizedId: _state.lastSummarizedMessageId,
+  );
 
   // ── Private ──
 

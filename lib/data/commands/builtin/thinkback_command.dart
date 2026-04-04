@@ -1,5 +1,5 @@
 // /think-back command — year-in-review animation using thinkback plugin.
-// Faithful port of openneomclaw/src/commands/thinkback/thinkback.tsx (553 TS LOC).
+// Faithful port of neom_claw/src/commands/thinkback/thinkback.tsx (553 TS LOC).
 //
 // Covers: plugin installation check, marketplace management, plugin enabling,
 // animation playback, skill directory resolution, menu actions (play, edit,
@@ -10,7 +10,6 @@ import 'package:neom_claw/core/platform/claw_io.dart';
 import 'package:path/path.dart' as p;
 import 'package:sint/sint.dart';
 
-import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';
 import '../command.dart';
 
@@ -84,21 +83,15 @@ class InstallState {
     InstallPhase? phase,
     String? errorMessage,
     String? progressMessage,
-  }) =>
-      InstallState(
-        phase: phase ?? this.phase,
-        errorMessage: errorMessage ?? this.errorMessage,
-        progressMessage: progressMessage ?? this.progressMessage,
-      );
+  }) => InstallState(
+    phase: phase ?? this.phase,
+    errorMessage: errorMessage ?? this.errorMessage,
+    progressMessage: progressMessage ?? this.progressMessage,
+  );
 }
 
 /// Menu action for the thinkback command.
-enum ThinkbackMenuAction {
-  play,
-  edit,
-  fix,
-  regenerate,
-}
+enum ThinkbackMenuAction { play, edit, fix, regenerate }
 
 /// Menu option displayed to the user.
 class ThinkbackMenuOption {
@@ -120,13 +113,17 @@ class ThinkbackMenuOption {
 /// Get the marketplace name based on user type.
 String getMarketplaceName() {
   final userType = Platform.environment['USER_TYPE'];
-  return userType == 'ant' ? _internalMarketplaceName : _officialMarketplaceName;
+  return userType == 'ant'
+      ? _internalMarketplaceName
+      : _officialMarketplaceName;
 }
 
 /// Get the marketplace repo based on user type.
 String getMarketplaceRepo() {
   final userType = Platform.environment['USER_TYPE'];
-  return userType == 'ant' ? _internalMarketplaceRepo : _officialMarketplaceRepo;
+  return userType == 'ant'
+      ? _internalMarketplaceRepo
+      : _officialMarketplaceRepo;
 }
 
 /// Get the full plugin ID including marketplace.
@@ -148,8 +145,14 @@ Future<String?> getThinkbackSkillDir() async {
     p.join(home, '.neomclaw', 'plugins', _skillName, 'skills', _skillName),
     p.join(home, '.neomclaw', 'plugins', getPluginId(), 'skills', _skillName),
     p.join(
-        home, '.neomclaw', 'marketplace', getMarketplaceName(), _skillName,
-        'skills', _skillName),
+      home,
+      '.neomclaw',
+      'marketplace',
+      getMarketplaceName(),
+      _skillName,
+      'skills',
+      _skillName,
+    ),
   ];
 
   for (final path in candidatePaths) {
@@ -175,8 +178,7 @@ Future<bool> _pathExists(String path) async {
 /// Requires the year_in_review.js and player.js files to exist in the skill
 /// directory. Launches the Node.js player in the terminal's alternate screen,
 /// then opens the HTML file in the browser for video download.
-Future<({bool success, String message})> playAnimation(
-    String skillDir) async {
+Future<({bool success, String message})> playAnimation(String skillDir) async {
   final dataPath = p.join(skillDir, 'year_in_review.js');
   final playerPath = p.join(skillDir, 'player.js');
 
@@ -200,11 +202,9 @@ Future<({bool success, String message})> playAnimation(
 
   // Run the player script.
   try {
-    final result = await Process.run(
-      'node',
-      [playerPath],
-      workingDirectory: skillDir,
-    );
+    final result = await Process.run('node', [
+      playerPath,
+    ], workingDirectory: skillDir);
 
     if (result.exitCode != 0) {
       // Animation may have been interrupted (e.g., Ctrl+C).
@@ -219,8 +219,8 @@ Future<({bool success, String message})> playAnimation(
     final openCmd = Platform.isMacOS
         ? 'open'
         : Platform.isWindows
-            ? 'start'
-            : 'xdg-open';
+        ? 'start'
+        : 'xdg-open';
     try {
       await Process.start(openCmd, [htmlPath]);
     } catch (_) {
@@ -228,10 +228,7 @@ Future<({bool success, String message})> playAnimation(
     }
   }
 
-  return (
-    success: true,
-    message: 'Year in review animation complete!',
-  );
+  return (success: true, message: 'Year in review animation complete!');
 }
 
 // ============================================================================

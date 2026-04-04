@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
-import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 
@@ -11,10 +9,7 @@ class FileWriteInput {
   final String filePath;
   final String content;
 
-  const FileWriteInput({
-    required this.filePath,
-    required this.content,
-  });
+  const FileWriteInput({required this.filePath, required this.content});
 
   factory FileWriteInput.fromMap(Map<String, dynamic> map) {
     return FileWriteInput(
@@ -52,11 +47,11 @@ class FileWriteOutput {
   });
 
   Map<String, dynamic> toMetadata() => {
-        'success': success,
-        'bytesWritten': bytesWritten,
-        'created': created,
-        if (backupPath != null) 'backupPath': backupPath,
-      };
+    'success': success,
+    'bytesWritten': bytesWritten,
+    'created': created,
+    if (backupPath != null) 'backupPath': backupPath,
+  };
 }
 
 /// Paths that should not be written to for safety.
@@ -115,20 +110,21 @@ class FileWriteTool extends Tool with FileWriteToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'file_path': {
-            'type': 'string',
-            'description': 'The absolute path to the file to write '
-                '(must be absolute, not relative)',
-          },
-          'content': {
-            'type': 'string',
-            'description': 'The content to write to the file',
-          },
-        },
-        'required': ['file_path', 'content'],
-      };
+    'type': 'object',
+    'properties': {
+      'file_path': {
+        'type': 'string',
+        'description':
+            'The absolute path to the file to write '
+            '(must be absolute, not relative)',
+      },
+      'content': {
+        'type': 'string',
+        'description': 'The content to write to the file',
+      },
+    },
+    'required': ['file_path', 'content'],
+  };
 
   @override
   bool get isAvailable =>
@@ -216,7 +212,7 @@ class FileWriteTool extends Tool with FileWriteToolMixin {
       }
 
       // Atomic write: write to temp file, then rename
-      final tempFile = File('${resolvedPath}.tmp.${_timestamp()}');
+      final tempFile = File('$resolvedPath.tmp.${_timestamp()}');
       try {
         await tempFile.writeAsString(content, encoding: utf8, flush: true);
 
@@ -282,8 +278,7 @@ class FileWriteTool extends Tool with FileWriteToolMixin {
   String? _checkProtectedPath(String filePath) {
     final normalized = p.normalize(filePath);
     for (final protected in _protectedPaths) {
-      if (normalized.startsWith(protected) ||
-          normalized == protected) {
+      if (normalized.startsWith(protected) || normalized == protected) {
         return 'Cannot write to protected system path: $protected';
       }
     }

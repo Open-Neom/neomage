@@ -2,14 +2,15 @@
 /// background bash, and teammate shutdown operations.
 ///
 /// Ported from:
-///   - openneomclaw/src/utils/collapseReadSearch.ts (1109 LOC)
-///   - openneomclaw/src/utils/collapseBackgroundBashNotifications.ts (84 LOC)
-///   - openneomclaw/src/utils/collapseHookSummaries.ts (59 LOC)
-///   - openneomclaw/src/utils/collapseTeammateShutdowns.ts (55 LOC)
+///   - neom_claw/src/utils/collapseReadSearch.ts (1109 LOC)
+///   - neom_claw/src/utils/collapseBackgroundBashNotifications.ts (84 LOC)
+///   - neom_claw/src/utils/collapseHookSummaries.ts (59 LOC)
+///   - neom_claw/src/utils/collapseTeammateShutdowns.ts (55 LOC)
 ///
 /// Provides functions to collapse consecutive search/read/bash tool uses
 /// into summary groups, collapse hook summaries, background bash notifications,
 /// and teammate shutdown messages.
+library;
 
 import 'dart:math';
 
@@ -120,11 +121,7 @@ class DetectedPr {
 
 /// Information about a hook that was stopped.
 class StopHookInfo {
-  const StopHookInfo({
-    required this.hookName,
-    this.durationMs,
-    this.output,
-  });
+  const StopHookInfo({required this.hookName, this.durationMs, this.output});
 
   final String hookName;
   final int? durationMs;
@@ -157,7 +154,8 @@ class RenderableMessage {
     this.displayMessage,
   });
 
-  final String type; // 'user', 'assistant', 'system', 'attachment', 'grouped_tool_use', 'collapsed_read_search'
+  final String
+  type; // 'user', 'assistant', 'system', 'attachment', 'grouped_tool_use', 'collapsed_read_search'
   final String uuid;
   final DateTime? timestamp;
 
@@ -391,10 +389,7 @@ class CollapseUtils extends SintController {
 
     // Memory file writes/edits are collapsible.
     if (_isMemoryWriteOrEdit(toolName, toolInput)) {
-      return const SearchOrReadResult(
-        isCollapsible: true,
-        isMemoryWrite: true,
-      );
+      return const SearchOrReadResult(isCollapsible: true, isMemoryWrite: true);
     }
 
     // Meta-operations absorbed silently.
@@ -418,10 +413,7 @@ class CollapseUtils extends SintController {
 
     // Under fullscreen mode, non-search/read Bash commands are also collapsible.
     if (fullscreenEnabled && toolName == bashToolName) {
-      return const SearchOrReadResult(
-        isCollapsible: true,
-        isBash: true,
-      );
+      return const SearchOrReadResult(isCollapsible: true, isBash: true);
     }
 
     return const SearchOrReadResult();
@@ -433,8 +425,10 @@ class CollapseUtils extends SintController {
   ) {
     if (content == null) return null;
     if (content['type'] == 'tool_use' && content['name'] != null) {
-      final info =
-          getToolSearchOrReadInfo(content['name'] as String, content['input']);
+      final info = getToolSearchOrReadInfo(
+        content['name'] as String,
+        content['input'],
+      );
       if (info.isCollapsible || info.isREPL) return info;
     }
     return null;
@@ -474,7 +468,8 @@ class CollapseUtils extends SintController {
 
   /// Format a bash command for the hint display.
   static String commandAsHint(String command) {
-    final cleaned = '\$ ${command.split('\n').map((l) => l.replaceAll(RegExp(r'\s+'), ' ').trim()).where((l) => l.isNotEmpty).join('\n')}';
+    final cleaned =
+        '\$ ${command.split('\n').map((l) => l.replaceAll(RegExp(r'\s+'), ' ').trim()).where((l) => l.isNotEmpty).join('\n')}';
     return cleaned.length > _maxHintChars
         ? '${cleaned.substring(0, _maxHintChars - 1)}...'
         : cleaned;
@@ -563,8 +558,9 @@ class CollapseUtils extends SintController {
     CollapsedReadSearchGroup message,
     Set<String> inProgressToolUseIDs,
   ) {
-    return getToolUseIdsFromCollapsedGroup(message)
-        .any((id) => inProgressToolUseIDs.contains(id));
+    return getToolUseIdsFromCollapsedGroup(
+      message,
+    ).any((id) => inProgressToolUseIDs.contains(id));
   }
 
   /// Count the number of tool uses in a message.
@@ -593,8 +589,7 @@ class CollapseUtils extends SintController {
         if (content != null && content.isNotEmpty) {
           final first = content.first;
           if (first['type'] == 'tool_use') {
-            final filePath =
-                (first['input'] as Map?)?['file_path'] as String?;
+            final filePath = (first['input'] as Map?)?['file_path'] as String?;
             if (filePath != null) paths.add(filePath);
           }
         }
@@ -616,25 +611,30 @@ class CollapseUtils extends SintController {
     final memoryReadCount =
         toolMemoryReadCount + (group.relevantMemories?.length ?? 0);
     final nonMemReadFilePaths = group.readFilePaths
-        .where((p) =>
-            !group.memoryReadFilePaths.contains(p) &&
-            !group.teamMemoryReadFilePaths.contains(p))
+        .where(
+          (p) =>
+              !group.memoryReadFilePaths.contains(p) &&
+              !group.teamMemoryReadFilePaths.contains(p),
+        )
         .toList();
 
-    final teamMemSearchCount =
-        teamMemEnabled ? group.teamMemorySearchCount : 0;
-    final teamMemReadCount =
-        teamMemEnabled ? group.teamMemoryReadFilePaths.length : 0;
-    final teamMemWriteCount =
-        teamMemEnabled ? group.teamMemoryWriteCount : 0;
+    final teamMemSearchCount = teamMemEnabled ? group.teamMemorySearchCount : 0;
+    final teamMemReadCount = teamMemEnabled
+        ? group.teamMemoryReadFilePaths.length
+        : 0;
+    final teamMemWriteCount = teamMemEnabled ? group.teamMemoryWriteCount : 0;
 
     return CollapsedReadSearchGroup(
       uuid: 'collapsed-${firstMsg.uuid}',
       timestamp: firstMsg.timestamp,
       searchCount: max(
-          0, group.searchCount - group.memorySearchCount - teamMemSearchCount),
-      readCount:
-          max(0, totalReadCount - toolMemoryReadCount - teamMemReadCount),
+        0,
+        group.searchCount - group.memorySearchCount - teamMemSearchCount,
+      ),
+      readCount: max(
+        0,
+        totalReadCount - toolMemoryReadCount - teamMemReadCount,
+      ),
       listCount: group.listCount,
       replCount: 0,
       memorySearchCount: group.memorySearchCount,
@@ -649,10 +649,12 @@ class CollapseUtils extends SintController {
       messages: group.messages,
       displayMessage: firstMsg,
       mcpCallCount: group.mcpCallCount > 0 ? group.mcpCallCount : null,
-      mcpServerNames:
-          group.mcpServerNames.isNotEmpty ? group.mcpServerNames.toList() : null,
-      bashCount:
-          fullscreenEnabled && group.bashCount > 0 ? group.bashCount : null,
+      mcpServerNames: group.mcpServerNames.isNotEmpty
+          ? group.mcpServerNames.toList()
+          : null,
+      bashCount: fullscreenEnabled && group.bashCount > 0
+          ? group.bashCount
+          : null,
       gitOpBashCount: fullscreenEnabled && group.gitOpBashCount > 0
           ? group.gitOpBashCount
           : null,
@@ -663,8 +665,8 @@ class CollapseUtils extends SintController {
       hookTotalMs: group.hookCount > 0 ? group.hookTotalMs : null,
       hookCount: group.hookCount > 0 ? group.hookCount : null,
       hookInfos: group.hookCount > 0 ? group.hookInfos : null,
-      relevantMemories: group.relevantMemories != null &&
-              group.relevantMemories!.isNotEmpty
+      relevantMemories:
+          group.relevantMemories != null && group.relevantMemories!.isNotEmpty
           ? group.relevantMemories
           : null,
     );
@@ -675,9 +677,7 @@ class CollapseUtils extends SintController {
   // -------------------------------------------------------------------------
 
   /// Collapse consecutive Read/Search operations into summary groups.
-  List<dynamic> collapseReadSearchGroups(
-    List<RenderableMessage> messages,
-  ) {
+  List<dynamic> collapseReadSearchGroups(List<RenderableMessage> messages) {
     final result = <dynamic>[];
     var currentGroup = _GroupAccumulator();
     var deferredSkippable = <RenderableMessage>[];
@@ -763,15 +763,15 @@ class CollapseUtils extends SintController {
       } else if (currentGroup.messages.isNotEmpty &&
           isPreToolHookSummary(msg)) {
         currentGroup.hookCount += msg.hookCount;
-        currentGroup.hookTotalMs += msg.totalDurationMs ??
+        currentGroup.hookTotalMs +=
+            msg.totalDurationMs ??
             msg.hookInfos.fold<int>(0, (s, h) => s + (h.durationMs ?? 0));
         currentGroup.hookInfos.addAll(msg.hookInfos);
       } else if (currentGroup.messages.isNotEmpty &&
           msg.type == 'attachment' &&
           msg.attachment?.type == 'relevant_memories') {
         currentGroup.relevantMemories ??= [];
-        currentGroup.relevantMemories!
-            .addAll(msg.attachment?.memories ?? []);
+        currentGroup.relevantMemories!.addAll(msg.attachment?.memories ?? []);
       } else if (shouldSkipMessage(msg)) {
         if (currentGroup.messages.isNotEmpty &&
             !(msg.type == 'attachment' &&
@@ -805,7 +805,9 @@ class CollapseUtils extends SintController {
         final first = content.first;
         if (first['type'] == 'tool_use' && first['name'] != null) {
           final info = getToolSearchOrReadInfo(
-              first['name'] as String, first['input']);
+            first['name'] as String,
+            first['input'],
+          );
           if (info.isCollapsible) return info;
         }
       }
@@ -816,7 +818,9 @@ class CollapseUtils extends SintController {
       final firstContent = msg.messages!.first.message?.content;
       if (firstContent != null && firstContent.isNotEmpty) {
         final info = getToolSearchOrReadInfo(
-            msg.toolName ?? '', firstContent.first['input']);
+          msg.toolName ?? '',
+          firstContent.first['input'],
+        );
         if (info.isCollapsible) return info;
       }
     }
@@ -852,7 +856,8 @@ class CollapseUtils extends SintController {
         .toList();
     return toolResults.isNotEmpty &&
         toolResults.every(
-            (r) => collapsibleToolUseIds.contains(r['tool_use_id']));
+          (r) => collapsibleToolUseIds.contains(r['tool_use_id']),
+        );
   }
 
   // -------------------------------------------------------------------------
@@ -881,7 +886,8 @@ class CollapseUtils extends SintController {
           ? (parts.isEmpty ? 'Recalling' : 'recalling')
           : (parts.isEmpty ? 'Recalled' : 'recalled');
       parts.add(
-          '$verb $memoryReadCount ${memoryReadCount == 1 ? 'memory' : 'memories'}');
+        '$verb $memoryReadCount ${memoryReadCount == 1 ? 'memory' : 'memories'}',
+      );
     }
     if (memorySearchCount > 0) {
       final verb = isActive
@@ -894,7 +900,8 @@ class CollapseUtils extends SintController {
           ? (parts.isEmpty ? 'Writing' : 'writing')
           : (parts.isEmpty ? 'Wrote' : 'wrote');
       parts.add(
-          '$verb $memoryWriteCount ${memoryWriteCount == 1 ? 'memory' : 'memories'}');
+        '$verb $memoryWriteCount ${memoryWriteCount == 1 ? 'memory' : 'memories'}',
+      );
     }
 
     if (searchCount > 0) {
@@ -902,7 +909,8 @@ class CollapseUtils extends SintController {
           ? (parts.isEmpty ? 'Searching for' : 'searching for')
           : (parts.isEmpty ? 'Searched for' : 'searched for');
       parts.add(
-          '$verb $searchCount ${searchCount == 1 ? 'pattern' : 'patterns'}');
+        '$verb $searchCount ${searchCount == 1 ? 'pattern' : 'patterns'}',
+      );
     }
 
     if (readCount > 0) {
@@ -917,7 +925,8 @@ class CollapseUtils extends SintController {
           ? (parts.isEmpty ? 'Listing' : 'listing')
           : (parts.isEmpty ? 'Listed' : 'listed');
       parts.add(
-          '$verb $listCount ${listCount == 1 ? 'directory' : 'directories'}');
+        '$verb $listCount ${listCount == 1 ? 'directory' : 'directories'}',
+      );
     }
 
     if (replCount > 0) {
@@ -986,29 +995,30 @@ class CollapseUtils extends SintController {
       final msg = messages[i];
       if (_isCompletedBackgroundBash(msg)) {
         var count = 0;
-        while (i < messages.length &&
-            _isCompletedBackgroundBash(messages[i])) {
+        while (i < messages.length && _isCompletedBackgroundBash(messages[i])) {
           count++;
           i++;
         }
         if (count == 1) {
           result.add(msg);
         } else {
-          result.add(RenderableMessage(
-            type: msg.type,
-            uuid: msg.uuid,
-            timestamp: msg.timestamp,
-            message: MessageData(
-              role: 'user',
-              content: [
-                {
-                  'type': 'text',
-                  'text':
-                      '<$taskNotificationTag><$statusTag>completed</$statusTag><$summaryTag>$count background commands completed</$summaryTag></$taskNotificationTag>',
-                },
-              ],
+          result.add(
+            RenderableMessage(
+              type: msg.type,
+              uuid: msg.uuid,
+              timestamp: msg.timestamp,
+              message: MessageData(
+                role: 'user',
+                content: [
+                  {
+                    'type': 'text',
+                    'text':
+                        '<$taskNotificationTag><$statusTag>completed</$statusTag><$summaryTag>$count background commands completed</$summaryTag></$taskNotificationTag>',
+                  },
+                ],
+              ),
             ),
-          ));
+          );
         }
       } else {
         result.add(msg);
@@ -1028,8 +1038,9 @@ class CollapseUtils extends SintController {
     final text = first['text'] as String? ?? '';
     if (!text.contains('<$taskNotificationTag')) return false;
     if (!text.contains('<$statusTag>completed</$statusTag>')) return false;
-    final summaryMatch =
-        RegExp('<$summaryTag>(.*?)</$summaryTag>').firstMatch(text);
+    final summaryMatch = RegExp(
+      '<$summaryTag>(.*?)</$summaryTag>',
+    ).firstMatch(text);
     if (summaryMatch == null) return false;
     return summaryMatch.group(1)?.startsWith(backgroundBashSummaryPrefix) ??
         false;
@@ -1061,22 +1072,23 @@ class CollapseUtils extends SintController {
         if (group.length == 1) {
           result.add(msg);
         } else {
-          result.add(RenderableMessage(
-            type: msg.type,
-            uuid: msg.uuid,
-            timestamp: msg.timestamp,
-            subtype: msg.subtype,
-            hookLabel: msg.hookLabel,
-            hookCount: group.fold<int>(0, (s, m) => s + m.hookCount),
-            hookInfos: group.expand((m) => m.hookInfos).toList(),
-            hookErrors: group.expand((m) => m.hookErrors).toList(),
-            preventedContinuation:
-                group.any((m) => m.preventedContinuation),
-            hasOutput: group.any((m) => m.hasOutput),
-            totalDurationMs: group
-                .map((m) => m.totalDurationMs ?? 0)
-                .reduce((a, b) => max(a, b)),
-          ));
+          result.add(
+            RenderableMessage(
+              type: msg.type,
+              uuid: msg.uuid,
+              timestamp: msg.timestamp,
+              subtype: msg.subtype,
+              hookLabel: msg.hookLabel,
+              hookCount: group.fold<int>(0, (s, m) => s + m.hookCount),
+              hookInfos: group.expand((m) => m.hookInfos).toList(),
+              hookErrors: group.expand((m) => m.hookErrors).toList(),
+              preventedContinuation: group.any((m) => m.preventedContinuation),
+              hasOutput: group.any((m) => m.hasOutput),
+              totalDurationMs: group
+                  .map((m) => m.totalDurationMs ?? 0)
+                  .reduce((a, b) => max(a, b)),
+            ),
+          );
         }
       } else {
         result.add(msg);
@@ -1117,15 +1129,17 @@ class CollapseUtils extends SintController {
         if (count == 1) {
           result.add(msg);
         } else {
-          result.add(RenderableMessage(
-            type: 'attachment',
-            uuid: msg.uuid,
-            timestamp: msg.timestamp,
-            attachment: AttachmentData(
-              type: 'teammate_shutdown_batch',
-              count: count,
+          result.add(
+            RenderableMessage(
+              type: 'attachment',
+              uuid: msg.uuid,
+              timestamp: msg.timestamp,
+              attachment: AttachmentData(
+                type: 'teammate_shutdown_batch',
+                count: count,
+              ),
             ),
-          ));
+          );
         }
       } else {
         result.add(msg);

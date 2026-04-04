@@ -1,4 +1,4 @@
-// SkillTool — port of openneomclaw/src/tools/SkillTool/.
+// SkillTool — port of neom_claw/src/tools/SkillTool/.
 // Executes skills (slash commands) in the conversation, supporting inline and
 // forked execution modes, permission rules, budget-aware description truncation,
 // and remote canonical skill loading.
@@ -81,53 +81,51 @@ class SkillCommand {
   });
 
   factory SkillCommand.fromJson(Map<String, dynamic> json) => SkillCommand(
-        name: json['name'] as String,
-        description: json['description'] as String? ?? '',
-        whenToUse: json['whenToUse'] as String?,
-        type: json['type'] as String? ?? 'prompt',
-        source: json['source'] as String? ?? 'local',
-        loadedFrom: json['loadedFrom'] as String?,
-        kind: json['kind'] as String?,
-        context: json['context'] as String?,
-        disableModelInvocation:
-            json['disableModelInvocation'] as bool? ?? false,
-        aliases: (json['aliases'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList() ??
-            const [],
-        model: json['model'] as String?,
-        effort: json['effort'] as String?,
-        allowedTools: (json['allowedTools'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList(),
-        pluginInfo: json['pluginInfo'] != null
-            ? PluginInfo.fromJson(json['pluginInfo'] as Map<String, dynamic>)
-            : null,
-        userFacingName: json['userFacingName'] as String?,
-        isEnabled: json['isEnabled'] as bool? ?? true,
-        isHidden: json['isHidden'] as bool? ?? false,
-        contentLength: json['contentLength'] as int?,
-        progressMessage: json['progressMessage'] as String?,
-        skillRoot: json['skillRoot'] as String?,
-        agent: json['agent'] as String?,
-      );
+    name: json['name'] as String,
+    description: json['description'] as String? ?? '',
+    whenToUse: json['whenToUse'] as String?,
+    type: json['type'] as String? ?? 'prompt',
+    source: json['source'] as String? ?? 'local',
+    loadedFrom: json['loadedFrom'] as String?,
+    kind: json['kind'] as String?,
+    context: json['context'] as String?,
+    disableModelInvocation: json['disableModelInvocation'] as bool? ?? false,
+    aliases:
+        (json['aliases'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+        const [],
+    model: json['model'] as String?,
+    effort: json['effort'] as String?,
+    allowedTools: (json['allowedTools'] as List<dynamic>?)
+        ?.map((e) => e as String)
+        .toList(),
+    pluginInfo: json['pluginInfo'] != null
+        ? PluginInfo.fromJson(json['pluginInfo'] as Map<String, dynamic>)
+        : null,
+    userFacingName: json['userFacingName'] as String?,
+    isEnabled: json['isEnabled'] as bool? ?? true,
+    isHidden: json['isHidden'] as bool? ?? false,
+    contentLength: json['contentLength'] as int?,
+    progressMessage: json['progressMessage'] as String?,
+    skillRoot: json['skillRoot'] as String?,
+    agent: json['agent'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'description': description,
-        if (whenToUse != null) 'whenToUse': whenToUse,
-        'type': type,
-        'source': source,
-        if (loadedFrom != null) 'loadedFrom': loadedFrom,
-        if (kind != null) 'kind': kind,
-        if (context != null) 'context': context,
-        if (disableModelInvocation) 'disableModelInvocation': true,
-        if (aliases.isNotEmpty) 'aliases': aliases,
-        if (model != null) 'model': model,
-        if (effort != null) 'effort': effort,
-        if (allowedTools != null) 'allowedTools': allowedTools,
-        if (pluginInfo != null) 'pluginInfo': pluginInfo!.toJson(),
-      };
+    'name': name,
+    'description': description,
+    if (whenToUse != null) 'whenToUse': whenToUse,
+    'type': type,
+    'source': source,
+    if (loadedFrom != null) 'loadedFrom': loadedFrom,
+    if (kind != null) 'kind': kind,
+    if (context != null) 'context': context,
+    if (disableModelInvocation) 'disableModelInvocation': true,
+    if (aliases.isNotEmpty) 'aliases': aliases,
+    if (model != null) 'model': model,
+    if (effort != null) 'effort': effort,
+    if (allowedTools != null) 'allowedTools': allowedTools,
+    if (pluginInfo != null) 'pluginInfo': pluginInfo!.toJson(),
+  };
 }
 
 /// Plugin info for marketplace skills.
@@ -138,15 +136,16 @@ class PluginInfo {
   const PluginInfo({required this.repository, required this.pluginManifest});
 
   factory PluginInfo.fromJson(Map<String, dynamic> json) => PluginInfo(
-        repository: json['repository'] as String,
-        pluginManifest: PluginManifest.fromJson(
-            json['pluginManifest'] as Map<String, dynamic>),
-      );
+    repository: json['repository'] as String,
+    pluginManifest: PluginManifest.fromJson(
+      json['pluginManifest'] as Map<String, dynamic>,
+    ),
+  );
 
   Map<String, dynamic> toJson() => {
-        'repository': repository,
-        'pluginManifest': pluginManifest.toJson(),
-      };
+    'repository': repository,
+    'pluginManifest': pluginManifest.toJson(),
+  };
 }
 
 /// Plugin manifest data.
@@ -156,16 +155,15 @@ class PluginManifest {
 
   const PluginManifest({required this.name, this.version});
 
-  factory PluginManifest.fromJson(Map<String, dynamic> json) =>
-      PluginManifest(
-        name: json['name'] as String,
-        version: json['version'] as String?,
-      );
+  factory PluginManifest.fromJson(Map<String, dynamic> json) => PluginManifest(
+    name: json['name'] as String,
+    version: json['version'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        if (version != null) 'version': version,
-      };
+    'name': name,
+    if (version != null) 'version': version,
+  };
 }
 
 // ─── Skill Tool Input / Output ───────────────────────────────────────────────
@@ -178,9 +176,9 @@ class SkillToolInput {
   const SkillToolInput({required this.skill, this.args});
 
   factory SkillToolInput.fromJson(Map<String, dynamic> json) => SkillToolInput(
-        skill: json['skill'] as String,
-        args: json['args'] as String?,
-      );
+    skill: json['skill'] as String,
+    args: json['args'] as String?,
+  );
 }
 
 /// Output for inline skill execution.
@@ -200,13 +198,13 @@ class SkillToolInlineOutput {
   });
 
   Map<String, dynamic> toJson() => {
-        'success': success,
-        'commandName': commandName,
-        if (allowedTools != null && allowedTools!.isNotEmpty)
-          'allowedTools': allowedTools,
-        if (model != null) 'model': model,
-        'status': status,
-      };
+    'success': success,
+    'commandName': commandName,
+    if (allowedTools != null && allowedTools!.isNotEmpty)
+      'allowedTools': allowedTools,
+    if (model != null) 'model': model,
+    'status': status,
+  };
 }
 
 /// Output for forked skill execution.
@@ -226,12 +224,12 @@ class SkillToolForkedOutput {
   });
 
   Map<String, dynamic> toJson() => {
-        'success': success,
-        'commandName': commandName,
-        'status': status,
-        'agentId': agentId,
-        'result': result,
-      };
+    'success': success,
+    'commandName': commandName,
+    'status': status,
+    'agentId': agentId,
+    'result': result,
+  };
 }
 
 // ─── Budget-Aware Description Formatting ─────────────────────────────────────
@@ -261,7 +259,7 @@ String _getCommandDescription(SkillCommand cmd) {
 
 /// Format a single command for the listing.
 String _formatCommandDescription(SkillCommand cmd) {
-  final displayName = cmd.userFacingName ?? cmd.name;
+  final _displayName = cmd.userFacingName ?? cmd.name;
   return '- ${cmd.name}: ${_getCommandDescription(cmd)}';
 }
 
@@ -289,7 +287,7 @@ String formatCommandsWithinBudget(
 
   final fullTotal =
       fullEntries.fold<int>(0, (sum, e) => sum + e.length) +
-          (fullEntries.length - 1); // newlines
+      (fullEntries.length - 1); // newlines
 
   if (fullTotal <= budget) {
     return fullEntries.join('\n');
@@ -321,30 +319,38 @@ String formatCommandsWithinBudget(
   }
 
   // Calculate max description length for non-bundled commands.
-  final restNameOverhead = restCommands.fold<int>(
-          0, (sum, cmd) => sum + cmd.name.length + 4) +
+  final restNameOverhead =
+      restCommands.fold<int>(0, (sum, cmd) => sum + cmd.name.length + 4) +
       (restCommands.length - 1);
   final availableForDescs = remainingBudget - restNameOverhead;
   final maxDescLen = (availableForDescs / restCommands.length).floor();
 
   if (maxDescLen < minDescLength) {
     // Non-bundled go names-only, bundled keep descriptions.
-    return commands.asMap().entries.map((entry) {
-      if (bundledIndices.contains(entry.key)) {
-        return fullEntries[entry.key];
-      }
-      return '- ${entry.value.name}';
-    }).join('\n');
+    return commands
+        .asMap()
+        .entries
+        .map((entry) {
+          if (bundledIndices.contains(entry.key)) {
+            return fullEntries[entry.key];
+          }
+          return '- ${entry.value.name}';
+        })
+        .join('\n');
   }
 
   // Truncate non-bundled descriptions to fit within budget.
-  return commands.asMap().entries.map((entry) {
-    if (bundledIndices.contains(entry.key)) {
-      return fullEntries[entry.key];
-    }
-    final description = _getCommandDescription(entry.value);
-    return '- ${entry.value.name}: ${_truncate(description, maxDescLen)}';
-  }).join('\n');
+  return commands
+      .asMap()
+      .entries
+      .map((entry) {
+        if (bundledIndices.contains(entry.key)) {
+          return fullEntries[entry.key];
+        }
+        final description = _getCommandDescription(entry.value);
+        return '- ${entry.value.name}: ${_truncate(description, maxDescLen)}';
+      })
+      .join('\n');
 }
 
 // ─── Safe Property Check ─────────────────────────────────────────────────────
@@ -419,8 +425,10 @@ class SkillRegistry {
   bool isBuiltIn(String name) => _builtInNames.contains(name);
 
   /// Get skill info for analytics / system prompt.
-  SkillInfo getSkillInfo() =>
-      SkillInfo(totalSkills: _commands.length, includedSkills: _commands.length);
+  SkillInfo getSkillInfo() => SkillInfo(
+    totalSkills: _commands.length,
+    includedSkills: _commands.length,
+  );
 
   /// Clear all registered commands.
   void clear() {
@@ -439,18 +447,15 @@ class SkillInfo {
   const SkillInfo({required this.totalSkills, required this.includedSkills});
 
   Map<String, dynamic> toJson() => {
-        'totalSkills': totalSkills,
-        'includedSkills': includedSkills,
-      };
+    'totalSkills': totalSkills,
+    'includedSkills': includedSkills,
+  };
 }
 
 // ─── Official Marketplace Check ──────────────────────────────────────────────
 
 /// Known official marketplace identifiers.
-const Set<String> _officialMarketplaceNames = {
-  'anthropic',
-  'neomclaw',
-};
+const Set<String> _officialMarketplaceNames = {'anthropic', 'neomclaw'};
 
 /// Check if a marketplace name is official.
 bool isOfficialMarketplaceName(String? marketplace) {
@@ -461,7 +466,8 @@ bool isOfficialMarketplaceName(String? marketplace) {
 /// Parse a plugin identifier into its components.
 /// Format: "marketplace/owner/repo" or "owner/repo" or just "repo".
 ({String? marketplace, String owner, String repo}) parsePluginIdentifier(
-    String repository) {
+  String repository,
+) {
   final parts = repository.split('/');
   if (parts.length >= 3) {
     return (
@@ -499,7 +505,8 @@ String extractUrlScheme(String url) {
 /// Parse YAML frontmatter from skill content.
 /// Returns the body content without frontmatter.
 ({String content, Map<String, String> frontmatter}) parseFrontmatter(
-    String content) {
+  String content,
+) {
   final trimmed = content.trimLeft();
   if (!trimmed.startsWith('---')) {
     return (content: content, frontmatter: const {});
@@ -534,7 +541,7 @@ class SkillTool extends Tool {
   final Set<String> _invokedSkills = {};
 
   SkillTool({SkillRegistry? registry})
-      : _registry = registry ?? SkillRegistry();
+    : _registry = registry ?? SkillRegistry();
 
   @override
   String get name => skillToolName;
@@ -556,21 +563,20 @@ class SkillTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'skill': {
-            'type': 'string',
-            'description':
-                'The skill name. E.g., "commit", "review-pr", or "pdf"',
-          },
-          'args': {
-            'type': 'string',
-            'description': 'Optional arguments for the skill',
-          },
-        },
-        'required': ['skill'],
-        'additionalProperties': false,
-      };
+    'type': 'object',
+    'properties': {
+      'skill': {
+        'type': 'string',
+        'description': 'The skill name. E.g., "commit", "review-pr", or "pdf"',
+      },
+      'args': {
+        'type': 'string',
+        'description': 'Optional arguments for the skill',
+      },
+    },
+    'required': ['skill'],
+    'additionalProperties': false,
+  };
 
   /// The skill registry used by this tool.
   SkillRegistry get registry => _registry;
@@ -592,8 +598,9 @@ class SkillTool extends Tool {
     }
 
     final trimmed = skill.trim();
-    final normalizedName =
-        trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
+    final normalizedName = trimmed.startsWith('/')
+        ? trimmed.substring(1)
+        : trimmed;
 
     // Check if command exists.
     final command = _registry.findCommand(normalizedName);
@@ -625,8 +632,7 @@ class SkillTool extends Tool {
     ToolPermissionContext permContext,
   ) async {
     final skill = (input['skill'] as String).trim();
-    final commandName =
-        skill.startsWith('/') ? skill.substring(1) : skill;
+    final commandName = skill.startsWith('/') ? skill.substring(1) : skill;
 
     // Check deny rules from permission context.
     for (final rules in permContext.rulesBySource.values) {
@@ -635,7 +641,9 @@ class SkillTool extends Tool {
           final ruleStr = rule.value.ruleContent ?? '';
           if (_ruleMatches(ruleStr, commandName)) {
             return DenyDecision(
-              PermissionDenyDecision(reason: 'Skill execution blocked by permission rules'),
+              PermissionDenyDecision(
+                reason: 'Skill execution blocked by permission rules',
+              ),
             );
           }
         }
@@ -648,9 +656,7 @@ class SkillTool extends Tool {
         if (rule.behavior == PermissionBehavior.allow) {
           final ruleStr = rule.value.ruleContent ?? '';
           if (_ruleMatches(ruleStr, commandName)) {
-            return AllowDecision(
-              PermissionAllowDecision(matchedRule: rule),
-            );
+            return AllowDecision(PermissionAllowDecision(matchedRule: rule));
           }
         }
       }
@@ -675,8 +681,9 @@ class SkillTool extends Tool {
   Future<ToolResult> execute(Map<String, dynamic> input) async {
     final parsed = SkillToolInput.fromJson(input);
     final trimmed = parsed.skill.trim();
-    final commandName =
-        trimmed.startsWith('/') ? trimmed.substring(1) : trimmed;
+    final commandName = trimmed.startsWith('/')
+        ? trimmed.substring(1)
+        : trimmed;
 
     final command = _registry.findCommand(commandName);
     if (command == null) {
@@ -718,8 +725,7 @@ class SkillTool extends Tool {
       // In a full implementation this would run a sub-agent with the skill
       // content. For the port, we simulate the forked execution pattern.
       final resultText = 'Skill execution completed';
-      final durationMs =
-          DateTime.now().difference(startTime).inMilliseconds;
+      final _durationMs = DateTime.now().difference(startTime).inMilliseconds;
 
       return ToolResult.success(
         'Skill "$commandName" completed (forked execution).\n\n'
@@ -819,11 +825,11 @@ class PermissionSuggestion {
   });
 
   Map<String, dynamic> toJson() => {
-        'toolName': toolName,
-        'ruleContent': ruleContent,
-        'behavior': behavior,
-        'destination': destination,
-      };
+    'toolName': toolName,
+    'ruleContent': ruleContent,
+    'behavior': behavior,
+    'destination': destination,
+  };
 }
 
 // DenyDecision and AskDecision are from permissions.dart.

@@ -115,7 +115,13 @@ List<BashToken> tokenizeBash(String input) {
         i++;
       }
       tokens.add(
-          BashToken(BashTokenType.comment, input.substring(start, i), start, i - start));
+        BashToken(
+          BashTokenType.comment,
+          input.substring(start, i),
+          start,
+          i - start,
+        ),
+      );
       continue;
     }
 
@@ -181,7 +187,9 @@ List<BashToken> tokenizeBash(String input) {
     }
 
     // Redirections: >, >>, <, <<, <<-, 2>, 2>>, >&
-    if (ch == '>' || ch == '<' || (ch == '2' && i + 1 < len && input[i + 1] == '>')) {
+    if (ch == '>' ||
+        ch == '<' ||
+        (ch == '2' && i + 1 < len && input[i + 1] == '>')) {
       final start = i;
       if (ch == '2' && i + 1 < len && input[i + 1] == '>') {
         if (i + 2 < len && input[i + 2] == '>') {
@@ -240,7 +248,9 @@ List<BashToken> tokenizeBash(String input) {
         i++;
       }
       if (i < len) i++; // skip closing quote
-      tokens.add(BashToken(BashTokenType.singleQuote, buf.toString(), start, i - start));
+      tokens.add(
+        BashToken(BashTokenType.singleQuote, buf.toString(), start, i - start),
+      );
       continue;
     }
 
@@ -252,7 +262,11 @@ List<BashToken> tokenizeBash(String input) {
       while (i < len && input[i] != '"') {
         if (input[i] == '\\' && i + 1 < len) {
           final next = input[i + 1];
-          if (next == '"' || next == '\\' || next == '\$' || next == '`' || next == '\n') {
+          if (next == '"' ||
+              next == '\\' ||
+              next == '\$' ||
+              next == '`' ||
+              next == '\n') {
             buf.write(next);
             i += 2;
             continue;
@@ -262,7 +276,9 @@ List<BashToken> tokenizeBash(String input) {
         i++;
       }
       if (i < len) i++; // skip closing quote
-      tokens.add(BashToken(BashTokenType.doubleQuote, buf.toString(), start, i - start));
+      tokens.add(
+        BashToken(BashTokenType.doubleQuote, buf.toString(), start, i - start),
+      );
       continue;
     }
 
@@ -281,7 +297,9 @@ List<BashToken> tokenizeBash(String input) {
         i++;
       }
       if (i < len) i++; // skip closing backtick
-      tokens.add(BashToken(BashTokenType.backtick, buf.toString(), start, i - start));
+      tokens.add(
+        BashToken(BashTokenType.backtick, buf.toString(), start, i - start),
+      );
       continue;
     }
 
@@ -299,7 +317,9 @@ List<BashToken> tokenizeBash(String input) {
           if (depth > 0) buf.write(input[i]);
           i++;
         }
-        tokens.add(BashToken(BashTokenType.subshell, buf.toString(), start, i - start));
+        tokens.add(
+          BashToken(BashTokenType.subshell, buf.toString(), start, i - start),
+        );
         continue;
       }
       if (i + 1 < len && input[i + 1] == '{') {
@@ -311,8 +331,14 @@ List<BashToken> tokenizeBash(String input) {
           i++;
         }
         if (i < len) i++; // skip }
-        tokens
-            .add(BashToken(BashTokenType.variable, '\${${buf.toString()}}', start, i - start));
+        tokens.add(
+          BashToken(
+            BashTokenType.variable,
+            '\${${buf.toString()}}',
+            start,
+            i - start,
+          ),
+        );
         continue;
       }
       if (i + 1 < len && input[i + 1] == "'") {
@@ -364,7 +390,14 @@ List<BashToken> tokenizeBash(String input) {
           i++;
         }
         if (i < len) i++; // skip closing '
-        tokens.add(BashToken(BashTokenType.singleQuote, buf.toString(), start, i - start));
+        tokens.add(
+          BashToken(
+            BashTokenType.singleQuote,
+            buf.toString(),
+            start,
+            i - start,
+          ),
+        );
         continue;
       }
       if (i + 1 < len && _isVarStartChar(input[i + 1])) {
@@ -376,18 +409,37 @@ List<BashToken> tokenizeBash(String input) {
           i++;
         }
         tokens.add(
-            BashToken(BashTokenType.variable, '\$${buf.toString()}', start, i - start));
+          BashToken(
+            BashTokenType.variable,
+            '\$${buf.toString()}',
+            start,
+            i - start,
+          ),
+        );
         continue;
       }
-      if (i + 1 < len && (input[i + 1] == '?' || input[i + 1] == '!' || input[i + 1] == '#' || input[i + 1] == '@' || input[i + 1] == '*' || input[i + 1] == '-' || input[i + 1] == '\$')) {
+      if (i + 1 < len &&
+          (input[i + 1] == '?' ||
+              input[i + 1] == '!' ||
+              input[i + 1] == '#' ||
+              input[i + 1] == '@' ||
+              input[i + 1] == '*' ||
+              input[i + 1] == '-' ||
+              input[i + 1] == '\$')) {
         // Special variables: $?, $!, $#, $@, $*, $-, $$
-        tokens.add(BashToken(BashTokenType.variable, '\$${input[i + 1]}', start, 2));
+        tokens.add(
+          BashToken(BashTokenType.variable, '\$${input[i + 1]}', start, 2),
+        );
         i += 2;
         continue;
       }
-      if (i + 1 < len && input[i + 1].codeUnitAt(0) >= 0x30 && input[i + 1].codeUnitAt(0) <= 0x39) {
+      if (i + 1 < len &&
+          input[i + 1].codeUnitAt(0) >= 0x30 &&
+          input[i + 1].codeUnitAt(0) <= 0x39) {
         // Positional: $0..$9
-        tokens.add(BashToken(BashTokenType.variable, '\$${input[i + 1]}', start, 2));
+        tokens.add(
+          BashToken(BashTokenType.variable, '\$${input[i + 1]}', start, 2),
+        );
         i += 2;
         continue;
       }
@@ -410,7 +462,14 @@ List<BashToken> tokenizeBash(String input) {
         i++;
       }
       if (i < len) i++; // skip ]
-      tokens.add(BashToken(BashTokenType.glob, input.substring(start, i), start, i - start));
+      tokens.add(
+        BashToken(
+          BashTokenType.glob,
+          input.substring(start, i),
+          start,
+          i - start,
+        ),
+      );
       continue;
     }
 
@@ -422,7 +481,11 @@ List<BashToken> tokenizeBash(String input) {
       var equalsPos = -1;
       while (i < len) {
         final c = input[i];
-        if (isWhitespace(c) || c == '\n' || isOperatorChar(c) || c == '>' || c == '<') {
+        if (isWhitespace(c) ||
+            c == '\n' ||
+            isOperatorChar(c) ||
+            c == '>' ||
+            c == '<') {
           break;
         }
         if (c == '#' && buf.isNotEmpty) break; // inline comment start
@@ -451,7 +514,9 @@ List<BashToken> tokenizeBash(String input) {
       if (sawEquals && equalsPos > 0) {
         final name = word.substring(0, equalsPos);
         if (_isValidVarName(name)) {
-          tokens.add(BashToken(BashTokenType.assignment, word, start, i - start));
+          tokens.add(
+            BashToken(BashTokenType.assignment, word, start, i - start),
+          );
           continue;
         }
       }
@@ -585,7 +650,10 @@ CommandList parseCommand(String input) {
 
   // Filter out comments and newlines for simpler parsing.
   final filtered = tokens
-      .where((t) => t.type != BashTokenType.comment && t.type != BashTokenType.newline)
+      .where(
+        (t) =>
+            t.type != BashTokenType.comment && t.type != BashTokenType.newline,
+      )
       .toList();
 
   if (filtered.isEmpty) {
@@ -601,7 +669,8 @@ CommandList parseCommand(String input) {
     final words = <String>[];
 
     // Leading assignments.
-    while (i < filtered.length && filtered[i].type == BashTokenType.assignment) {
+    while (i < filtered.length &&
+        filtered[i].type == BashTokenType.assignment) {
       final parsed = parseAssignment(filtered[i].value);
       if (parsed != null) {
         assignments[parsed.name] = parsed.value;
@@ -625,7 +694,8 @@ CommandList parseCommand(String input) {
       }
 
       // Redirections.
-      if (t.type == BashTokenType.redirect || t.type == BashTokenType.heredocMarker) {
+      if (t.type == BashTokenType.redirect ||
+          t.type == BashTokenType.heredocMarker) {
         final rType = _redirectTypeFromToken(t.value);
         i++;
         String target = '';
@@ -633,7 +703,9 @@ CommandList parseCommand(String input) {
           target = _tokenTextValue(filtered[i]);
           i++;
         }
-        redirects.add(Redirect(type: rType, fd: _fdFromRedirect(t.value), target: target));
+        redirects.add(
+          Redirect(type: rType, fd: _fdFromRedirect(t.value), target: target),
+        );
         continue;
       }
 
@@ -740,7 +812,13 @@ RedirectType _redirectTypeFromToken(String tok) {
 int? _fdFromRedirect(String tok) {
   if (tok.startsWith('2')) return 2;
   if (tok == '>' || tok == '>>' || tok == '>&') return 1;
-  if (tok == '<' || tok == '<<' || tok == '<<-' || tok == '<<<' || tok == '<>') return 0;
+  if (tok == '<' ||
+      tok == '<<' ||
+      tok == '<<-' ||
+      tok == '<<<' ||
+      tok == '<>') {
+    return 0;
+  }
   return null;
 }
 
@@ -821,19 +899,23 @@ List<HeredocInfo> extractHeredocs(String input) {
       var j = i + 1;
       while (j < lines.length) {
         final contentLine = lines[j];
-        final trimmed = stripTabs ? contentLine.replaceAll(RegExp(r'^\t+'), '') : contentLine;
+        final trimmed = stripTabs
+            ? contentLine.replaceAll(RegExp(r'^\t+'), '')
+            : contentLine;
         if (trimmed == delimiter) break;
         if (content.isNotEmpty) content.write('\n');
         content.write(stripTabs ? trimmed : contentLine);
         j++;
       }
 
-      results.add(HeredocInfo(
-        delimiter: delimiter,
-        content: content.toString(),
-        stripTabs: stripTabs,
-        quoted: quoted,
-      ));
+      results.add(
+        HeredocInfo(
+          delimiter: delimiter,
+          content: content.toString(),
+          stripTabs: stripTabs,
+          quoted: quoted,
+        ),
+      );
 
       // Advance past the closing delimiter.
       if (j < lines.length) i = j;
@@ -860,10 +942,7 @@ List<_HeredocMarker> _findHeredocMarkers(String line) {
     final quotedDelim = match.group(3);
     final unquotedDelim = match.group(4);
     final delim = quotedDelim ?? unquotedDelim ?? '';
-    results.add(_HeredocMarker(
-      delim,
-      strip,
-    ));
+    results.add(_HeredocMarker(delim, strip));
   }
   return results;
 }
@@ -884,8 +963,7 @@ bool isHeredocSafe(HeredocInfo heredoc) {
   // Check for dangerous variable patterns.
   // Simple $VAR is generally okay; ${VAR:-cmd} or ${VAR:+cmd} can be
   // dangerous if they contain command substitution.
-  final dangerousVarPattern =
-      RegExp(r'\$\{[^}]*[`$].*\}', dotAll: true);
+  final dangerousVarPattern = RegExp(r'\$\{[^}]*[`$].*\}', dotAll: true);
   if (dangerousVarPattern.hasMatch(content)) {
     return false;
   }
@@ -1250,8 +1328,20 @@ String? extractExecutable(String input) {
 
   // Skip through env-prefix commands.
   const prefixCommands = {
-    'env', 'sudo', 'nice', 'nohup', 'time', 'timeout', 'strace', 'ltrace',
-    'ionice', 'chrt', 'taskset', 'numactl', 'command', 'builtin',
+    'env',
+    'sudo',
+    'nice',
+    'nohup',
+    'time',
+    'timeout',
+    'strace',
+    'ltrace',
+    'ionice',
+    'chrt',
+    'taskset',
+    'numactl',
+    'command',
+    'builtin',
   };
 
   if (prefixCommands.contains(exe)) {
@@ -1343,18 +1433,52 @@ enum SecurityRiskLevel {
 }
 
 const _networkExecutables = {
-  'curl', 'wget', 'ssh', 'scp', 'sftp', 'ftp', 'nc', 'netcat', 'ncat',
-  'ping', 'telnet', 'nmap', 'socat', 'openssl', 'rsync',
+  'curl',
+  'wget',
+  'ssh',
+  'scp',
+  'sftp',
+  'ftp',
+  'nc',
+  'netcat',
+  'ncat',
+  'ping',
+  'telnet',
+  'nmap',
+  'socat',
+  'openssl',
+  'rsync',
 };
 
 const _writeCommands = {
-  'tee', 'dd', 'install', 'cp', 'mv', 'mkdir', 'touch', 'ln',
-  'tar', 'unzip', 'gunzip', 'patch',
+  'tee',
+  'dd',
+  'install',
+  'cp',
+  'mv',
+  'mkdir',
+  'touch',
+  'ln',
+  'tar',
+  'unzip',
+  'gunzip',
+  'patch',
 };
 
 const _readCommands = {
-  'cat', 'head', 'tail', 'less', 'more', 'file', 'stat', 'wc',
-  'md5sum', 'sha256sum', 'xxd', 'hexdump', 'strings',
+  'cat',
+  'head',
+  'tail',
+  'less',
+  'more',
+  'file',
+  'stat',
+  'wc',
+  'md5sum',
+  'sha256sum',
+  'xxd',
+  'hexdump',
+  'strings',
 };
 
 /// Analyze a command for security risks.
@@ -1467,7 +1591,8 @@ CommandSecurityAnalysis analyzeCommandSecurity(String input) {
           writtenPaths.add(redir.target);
         }
       }
-      if (redir.type == RedirectType.input || redir.type == RedirectType.inputOutput) {
+      if (redir.type == RedirectType.input ||
+          redir.type == RedirectType.inputOutput) {
         if (redir.target.isNotEmpty && !redir.target.startsWith('\$')) {
           readPaths.add(redir.target);
         }
@@ -1522,7 +1647,8 @@ SecurityRiskLevel computeRiskLevel(CommandSecurityAnalysis a) {
   if (a.hasEval) return SecurityRiskLevel.high;
   if (a.hasExec) return SecurityRiskLevel.high;
   if (a.hasRemove && a.hasGlobbing) return SecurityRiskLevel.high;
-  if (a.hasRemove && a.writtenPaths.any((p) => p == '/' || p == '~' || p.startsWith('/'))) {
+  if (a.hasRemove &&
+      a.writtenPaths.any((p) => p == '/' || p == '~' || p.startsWith('/'))) {
     return SecurityRiskLevel.high;
   }
 
@@ -1638,7 +1764,8 @@ List<String> detectDangerousPatterns(String command) {
   }
 
   // Infinite loops writing to disk.
-  if (RegExp(r'while\s+(true|1|:)').hasMatch(command) && command.contains('>')) {
+  if (RegExp(r'while\s+(true|1|:)').hasMatch(command) &&
+      command.contains('>')) {
     patterns.add('Potential infinite loop with disk write');
   }
 
@@ -1653,7 +1780,9 @@ List<String> detectDangerousPatterns(String command) {
   }
 
   // rm -rf / or rm -rf ~.
-  if (RegExp(r'rm\s+(-[a-zA-Z]*r[a-zA-Z]*f|(-[a-zA-Z]*f[a-zA-Z]*r))\s+[/~]').hasMatch(command)) {
+  if (RegExp(
+    r'rm\s+(-[a-zA-Z]*r[a-zA-Z]*f|(-[a-zA-Z]*f[a-zA-Z]*r))\s+[/~]',
+  ).hasMatch(command)) {
     patterns.add('Recursive force removal of root or home');
   }
 
@@ -1683,8 +1812,9 @@ List<String> detectDangerousPatterns(String command) {
   }
 
   // Disabling firewall.
-  if (RegExp(r'(ufw\s+disable|iptables\s+-F|firewall-cmd\s+--panic-off)')
-      .hasMatch(command)) {
+  if (RegExp(
+    r'(ufw\s+disable|iptables\s+-F|firewall-cmd\s+--panic-off)',
+  ).hasMatch(command)) {
     patterns.add('Firewall disable command');
   }
 
@@ -1731,7 +1861,10 @@ String stripAnsiCodes(String input) {
   // ESC] ... ST (OSC), and other common escape sequences.
   return input
       .replaceAll(RegExp(r'\x1B\[[0-9;]*[A-Za-z]'), '') // CSI sequences
-      .replaceAll(RegExp(r'\x1B\][^\x07\x1B]*(\x07|\x1B\\)'), '') // OSC sequences
+      .replaceAll(
+        RegExp(r'\x1B\][^\x07\x1B]*(\x07|\x1B\\)'),
+        '',
+      ) // OSC sequences
       .replaceAll(RegExp(r'\x1B[()][AB012]'), '') // Character set selection
       .replaceAll(RegExp(r'\x1B[>=<]'), '') // Keypad mode
       .replaceAll(RegExp(r'\x1B\[[\?]?[0-9;]*[hlsr]'), '') // Mode set/reset
@@ -1816,7 +1949,9 @@ String interpretExitCode(int exitCode, String command) {
       break;
     case 'diff':
       if (exitCode == 1) return 'Files differ';
-      if (exitCode == 2) return 'Trouble (missing file, permission denied, etc.)';
+      if (exitCode == 2) {
+        return 'Trouble (missing file, permission denied, etc.)';
+      }
       break;
     case 'test':
     case '[':
@@ -1840,7 +1975,9 @@ String interpretExitCode(int exitCode, String command) {
       if (exitCode == 255) return 'SSH connection failure';
       break;
     case 'git':
-      if (exitCode == 1) return 'Git operation failed (check output for details)';
+      if (exitCode == 1) {
+        return 'Git operation failed (check output for details)';
+      }
       if (exitCode == 128) return 'Fatal git error';
       break;
     case 'make':
@@ -1871,7 +2008,9 @@ String interpretExitCode(int exitCode, String command) {
     case 'docker':
       if (exitCode == 1) return 'Docker command failed';
       if (exitCode == 125) return 'Docker daemon error';
-      if (exitCode == 126) return 'Command cannot be invoked (permission issue)';
+      if (exitCode == 126) {
+        return 'Command cannot be invoked (permission issue)';
+      }
       if (exitCode == 127) return 'Command not found in container';
       break;
   }

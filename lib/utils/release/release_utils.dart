@@ -127,8 +127,7 @@ class SemVer implements Comparable<SemVer> {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is SemVer && compareTo(other) == 0;
+      identical(this, other) || other is SemVer && compareTo(other) == 0;
 
   @override
   int get hashCode => Object.hash(major, minor, patch, preRelease);
@@ -261,7 +260,7 @@ class ReleaseNotesController extends SintController {
     try {
       String? content;
       if (_httpGet != null) {
-        content = await _httpGet!(_rawChangelogUrl);
+        content = await _httpGet(_rawChangelogUrl);
       } else {
         final client = HttpClient();
         try {
@@ -281,10 +280,9 @@ class ReleaseNotesController extends SintController {
       if (content == changelogCache.value) return;
 
       final cachePath = _changelogCachePath;
-      final cacheDir = Directory(cachePath.substring(
-        0,
-        cachePath.lastIndexOf('/'),
-      ));
+      final cacheDir = Directory(
+        cachePath.substring(0, cachePath.lastIndexOf('/')),
+      );
       if (!cacheDir.existsSync()) {
         cacheDir.createSync(recursive: true);
       }
@@ -324,8 +322,9 @@ class ReleaseNotesController extends SintController {
 
       // Split by heading lines (## X.X.X)
       final sections = content.split(RegExp(r'^## ', multiLine: true));
-      final relevantSections =
-          sections.length > 1 ? sections.sublist(1) : <String>[];
+      final relevantSections = sections.length > 1
+          ? sections.sublist(1)
+          : <String>[];
 
       for (final section in relevantSections) {
         final lines = section.trim().split('\n');
@@ -369,18 +368,22 @@ class ReleaseNotesController extends SintController {
       final releaseNotes = parseChangelog(content);
 
       final baseCurrentVersion = semverCoerce(currentVersion);
-      final basePreviousVersion =
-          previousVersion != null ? semverCoerce(previousVersion) : null;
+      final basePreviousVersion = previousVersion != null
+          ? semverCoerce(previousVersion)
+          : null;
 
       if (basePreviousVersion == null ||
           (baseCurrentVersion != null &&
               semverGt(baseCurrentVersion, basePreviousVersion))) {
-        final sortedEntries = releaseNotes.entries
-            .where((entry) =>
-                basePreviousVersion == null ||
-                semverGt(entry.key, basePreviousVersion))
-            .toList()
-          ..sort((a, b) => semverGt(a.key, b.key) ? -1 : 1);
+        final sortedEntries =
+            releaseNotes.entries
+                .where(
+                  (entry) =>
+                      basePreviousVersion == null ||
+                      semverGt(entry.key, basePreviousVersion),
+                )
+                .toList()
+              ..sort((a, b) => semverGt(a.key, b.key) ? -1 : 1);
         return sortedEntries
             .map((entry) => entry.value)
             .expand((notes) => notes)
@@ -396,9 +399,7 @@ class ReleaseNotesController extends SintController {
 
   /// Gets all release notes as a list of (version, notes) pairs.
   /// Versions are sorted with oldest first.
-  List<(String, List<String>)> getAllReleaseNotes({
-    String? changelogContent,
-  }) {
+  List<(String, List<String>)> getAllReleaseNotes({String? changelogContent}) {
     try {
       final content = changelogContent ?? getStoredChangelogFromMemory();
       final releaseNotes = parseChangelog(content);
@@ -446,9 +447,7 @@ class ReleaseNotesController extends SintController {
   }
 
   /// Synchronous variant of checkForReleaseNotes for UI render paths.
-  ReleaseNotesResult checkForReleaseNotesSync({
-    String? lastSeenVersion,
-  }) {
+  ReleaseNotesResult checkForReleaseNotesSync({String? lastSeenVersion}) {
     final releaseNotes = getRecentReleaseNotes(
       currentVersion: appVersion,
       previousVersion: lastSeenVersion,
@@ -501,20 +500,14 @@ class MaxVersionConfig {
 }
 
 /// Release channel for version management.
-enum ReleaseChannel {
-  latest,
-  stable,
-}
+enum ReleaseChannel { latest, stable }
 
 /// npm dist-tags (latest and stable versions).
 class NpmDistTags {
   final String? latest;
   final String? stable;
 
-  const NpmDistTags({
-    this.latest,
-    this.stable,
-  });
+  const NpmDistTags({this.latest, this.stable});
 }
 
 /// Lock file timeout for preventing concurrent updates.
@@ -545,10 +538,12 @@ class AutoUpdaterController extends SintController {
     String executable,
     List<String> arguments, {
     String? workingDirectory,
-  })? _execCommand;
+  })?
+  _execCommand;
 
   /// Current update status.
-  final Rx<AutoUpdateInstallStatus?> updateStatus = Rx<AutoUpdateInstallStatus?>(null);
+  final Rx<AutoUpdateInstallStatus?> updateStatus =
+      Rx<AutoUpdateInstallStatus?>(null);
 
   /// Latest available version.
   final RxnString latestVersion = RxnString();
@@ -563,7 +558,8 @@ class AutoUpdaterController extends SintController {
       String executable,
       List<String> arguments, {
       String? workingDirectory,
-    })? execCommand,
+    })?
+    execCommand,
   }) : _execCommand = execCommand;
 
   /// Get the path to the lock file.
@@ -645,10 +641,7 @@ class AutoUpdaterController extends SintController {
     // Create lock file
     try {
       final lockFile = File(lockPath);
-      lockFile.writeAsStringSync(
-        '${pid}',
-        mode: FileMode.writeOnly,
-      );
+      lockFile.writeAsStringSync('$pid', mode: FileMode.writeOnly);
       return true;
     } on FileSystemException {
       return false;
@@ -675,10 +668,12 @@ class AutoUpdaterController extends SintController {
     final npmTag = channel == ReleaseChannel.stable ? 'stable' : 'latest';
 
     try {
-      final result = await _runCommand(
-        'npm',
-        ['view', '$packageUrl@$npmTag', 'version', '--prefer-online'],
-      );
+      final result = await _runCommand('npm', [
+        'view',
+        '$packageUrl@$npmTag',
+        'version',
+        '--prefer-online',
+      ]);
       if (result.exitCode != 0) return null;
       return (result.stdout as String).trim();
     } catch (_) {
@@ -689,17 +684,20 @@ class AutoUpdaterController extends SintController {
   /// Get npm dist-tags (latest and stable versions).
   Future<NpmDistTags> getNpmDistTags() async {
     try {
-      final result = await _runCommand(
-        'npm',
-        ['view', packageUrl, 'dist-tags', '--json', '--prefer-online'],
-      );
+      final result = await _runCommand('npm', [
+        'view',
+        packageUrl,
+        'dist-tags',
+        '--json',
+        '--prefer-online',
+      ]);
 
       if (result.exitCode != 0) {
         return const NpmDistTags();
       }
 
-      final parsed = jsonDecode((result.stdout as String).trim())
-          as Map<String, dynamic>;
+      final parsed =
+          jsonDecode((result.stdout as String).trim()) as Map<String, dynamic>;
       return NpmDistTags(
         latest: parsed['latest'] as String?,
         stable: parsed['stable'] as String?,
@@ -715,10 +713,13 @@ class AutoUpdaterController extends SintController {
     if (userType != 'ant') return [];
 
     try {
-      final result = await _runCommand(
-        'npm',
-        ['view', packageUrl, 'versions', '--json', '--prefer-online'],
-      );
+      final result = await _runCommand('npm', [
+        'view',
+        packageUrl,
+        'versions',
+        '--json',
+        '--prefer-online',
+      ]);
 
       if (result.exitCode != 0) return [];
 
@@ -735,7 +736,7 @@ class AutoUpdaterController extends SintController {
 
   /// Check global install permissions.
   Future<({bool hasPermissions, String? npmPrefix})>
-      checkGlobalInstallPermissions() async {
+  checkGlobalInstallPermissions() async {
     try {
       final prefix = await _getInstallationPrefix();
       if (prefix == null) {
@@ -792,10 +793,11 @@ class AutoUpdaterController extends SintController {
           : packageUrl;
 
       final packageManager = isRunningWithBun ? 'bun' : 'npm';
-      final result = await _runCommand(
-        packageManager,
-        ['install', '-g', packageSpec],
-      );
+      final result = await _runCommand(packageManager, [
+        'install',
+        '-g',
+        packageSpec,
+      ]);
 
       if (result.exitCode != 0) {
         return AutoUpdateInstallStatus.installFailed;
@@ -814,7 +816,7 @@ class AutoUpdaterController extends SintController {
     List<String> arguments,
   ) async {
     if (_execCommand != null) {
-      return _execCommand!(
+      return _execCommand(
         executable,
         arguments,
         workingDirectory: Platform.environment['HOME'],
@@ -949,10 +951,10 @@ class UserController extends SintController {
     String? Function()? getSubscriptionType,
     String? Function()? getRateLimitTier,
     Future<String?> Function()? fetchGitEmail,
-  })  : _getOAuthAccountInfo = getOAuthAccountInfo,
-        _getSubscriptionType = getSubscriptionType,
-        _getRateLimitTier = getRateLimitTier,
-        _fetchGitEmail = fetchGitEmail;
+  }) : _getOAuthAccountInfo = getOAuthAccountInfo,
+       _getSubscriptionType = getSubscriptionType,
+       _getRateLimitTier = getRateLimitTier,
+       _fetchGitEmail = fetchGitEmail;
 
   /// Initialize user data asynchronously. Should be called early in startup.
   Future<void> initUser() async {
@@ -974,9 +976,7 @@ class UserController extends SintController {
   }
 
   /// Get core user data.
-  CoreUserData getCoreUserData({
-    bool includeAnalyticsMetadata = false,
-  }) {
+  CoreUserData getCoreUserData({bool includeAnalyticsMetadata = false}) {
     if (_cachedCoreUserData != null && !includeAnalyticsMetadata) {
       return _cachedCoreUserData!;
     }
@@ -1045,15 +1045,15 @@ class UserController extends SintController {
 
     // Try git email
     if (_fetchGitEmail != null) {
-      return _fetchGitEmail!();
+      return _fetchGitEmail();
     }
 
     try {
-      final result = await Process.run(
-        'git',
-        ['config', '--get', 'user.email'],
-        workingDirectory: cwd,
-      );
+      final result = await Process.run('git', [
+        'config',
+        '--get',
+        'user.email',
+      ], workingDirectory: cwd);
       if (result.exitCode == 0 && (result.stdout as String).trim().isNotEmpty) {
         return (result.stdout as String).trim();
       }

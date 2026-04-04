@@ -1,11 +1,10 @@
-// Compact service — faithful port of openneomclaw/src/services/compact/.
+// Compact service — faithful port of neom_claw/src/services/compact/.
 // Covers: compact.ts, sessionMemoryCompact.ts, microCompact.ts,
 //         autoCompact.ts, prompt.ts, grouping.ts, postCompactCleanup.ts,
 //         compactWarningState.ts, timeBasedMCConfig.ts.
 //
 // All classes, types, methods, validation, and constants are ported.
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -170,8 +169,7 @@ int _estimateBlockTokens(ContentBlock block) {
     case ContentBlockType.redactedThinking:
       return roughTokenCountEstimation(block.data ?? '');
     case ContentBlockType.toolUse:
-      final inputStr =
-          block.input != null ? jsonEncode(block.input) : '{}';
+      final inputStr = block.input != null ? jsonEncode(block.input) : '{}';
       return roughTokenCountEstimation((block.name ?? '') + inputStr);
     default:
       return roughTokenCountEstimation(jsonEncode(block));
@@ -319,7 +317,8 @@ void resetSessionMemoryCompactConfig() {
 /// message starts a new group (the assistant + all following user/attachment
 /// messages until the next assistant).
 List<List<CompactMessage>> groupMessagesByApiRound(
-    List<CompactMessage> messages) {
+  List<CompactMessage> messages,
+) {
   if (messages.isEmpty) return [];
 
   final groups = <List<CompactMessage>>[];
@@ -369,12 +368,14 @@ List<CompactMessage> stripImagesFromMessages(List<CompactMessage> messages) {
     for (final block in message.contentBlocks) {
       if (block.type == ContentBlockType.image) {
         hasMediaBlock = true;
-        newBlocks.add(const ContentBlock(
-            type: ContentBlockType.text, text: '[image]'));
+        newBlocks.add(
+          const ContentBlock(type: ContentBlockType.text, text: '[image]'),
+        );
       } else if (block.type == ContentBlockType.document) {
         hasMediaBlock = true;
-        newBlocks.add(const ContentBlock(
-            type: ContentBlockType.text, text: '[document]'));
+        newBlocks.add(
+          const ContentBlock(type: ContentBlockType.text, text: '[document]'),
+        );
       } else if (block.type == ContentBlockType.toolResult &&
           block.content is List) {
         bool toolHasMedia = false;
@@ -394,12 +395,14 @@ List<CompactMessage> stripImagesFromMessages(List<CompactMessage> messages) {
 
         if (toolHasMedia) {
           hasMediaBlock = true;
-          newBlocks.add(ContentBlock(
-            type: block.type,
-            toolUseId: block.toolUseId,
-            content: newToolContent,
-            isError: block.isError,
-          ));
+          newBlocks.add(
+            ContentBlock(
+              type: block.type,
+              toolUseId: block.toolUseId,
+              content: newToolContent,
+              isError: block.isError,
+            ),
+          );
         } else {
           newBlocks.add(block);
         }
@@ -526,7 +529,9 @@ CompactMessage annotateBoundaryWithPreservedSegment(
 
 /// Merges user-supplied custom instructions with hook-provided instructions.
 String? mergeHookInstructions(
-    String? userInstructions, String? hookInstructions) {
+  String? userInstructions,
+  String? hookInstructions,
+) {
   if (hookInstructions == null || hookInstructions.isEmpty) {
     return (userInstructions != null && userInstructions.isNotEmpty)
         ? userInstructions
@@ -553,8 +558,7 @@ const errorMessageIncompleteResponse =
 // PTL retry marker
 // ---------------------------------------------------------------------------
 
-const _ptlRetryMarker =
-    '[earlier conversation truncated for compaction retry]';
+const _ptlRetryMarker = '[earlier conversation truncated for compaction retry]';
 const _maxPtlRetries = 3;
 
 /// Drops the oldest API-round groups from messages until tokenGap is covered.
@@ -564,7 +568,8 @@ List<CompactMessage>? truncateHeadForPTLRetry(
   int? tokenGap,
 ) {
   // Strip our own synthetic marker from a previous retry before grouping.
-  final input = (messages.isNotEmpty &&
+  final input =
+      (messages.isNotEmpty &&
           messages.first.type == MessageRole.user &&
           messages.first.isMeta &&
           messages.first.contentBlocks.length == 1 &&
@@ -603,7 +608,10 @@ List<CompactMessage>? truncateHeadForPTLRetry(
         timestamp: DateTime.now(),
         isMeta: true,
         contentBlocks: [
-          const ContentBlock(type: ContentBlockType.text, text: _ptlRetryMarker),
+          const ContentBlock(
+            type: ContentBlockType.text,
+            text: _ptlRetryMarker,
+          ),
         ],
       ),
       ...sliced,
@@ -623,9 +631,9 @@ bool hasTextBlocks(CompactMessage message) {
   }
   if (message.type == MessageRole.user) {
     if (message.contentBlocks.isEmpty) return false;
-    return message.contentBlocks.any((b) =>
-        b.type == ContentBlockType.text &&
-        (b.text?.isNotEmpty ?? false));
+    return message.contentBlocks.any(
+      (b) => b.type == ContentBlockType.text && (b.text?.isNotEmpty ?? false),
+    );
   }
   return false;
 }
@@ -635,8 +643,7 @@ List<String> _getToolResultIds(CompactMessage message) {
   if (message.type != MessageRole.user) return [];
   final ids = <String>[];
   for (final block in message.contentBlocks) {
-    if (block.type == ContentBlockType.toolResult &&
-        block.toolUseId != null) {
+    if (block.type == ContentBlockType.toolResult && block.toolUseId != null) {
       ids.add(block.toolUseId!);
     }
   }
@@ -685,10 +692,14 @@ int adjustIndexToPreserveAPIInvariants(
     }
 
     final neededToolUseIds = <String>{
-      ...allToolResultIds.where((id) => !toolUseIdsInKeptRange.contains(id))
+      ...allToolResultIds.where((id) => !toolUseIdsInKeptRange.contains(id)),
     };
 
-    for (int i = adjustedIndex - 1; i >= 0 && neededToolUseIds.isNotEmpty; i--) {
+    for (
+      int i = adjustedIndex - 1;
+      i >= 0 && neededToolUseIds.isNotEmpty;
+      i--
+    ) {
       final message = messages[i];
       if (_hasToolUseWithIds(message, neededToolUseIds)) {
         adjustedIndex = i;
@@ -826,7 +837,8 @@ const _detailedAnalysisInstructionPartial =
    - Pay special attention to specific user feedback that you received, especially if the user told you to do something differently.
 2. Double-check for technical accuracy and completeness, addressing each required element thoroughly.''';
 
-const _baseCompactPrompt = '''Your task is to create a detailed summary of the conversation so far, paying close attention to the user's explicit requests and your previous actions.
+const _baseCompactPrompt =
+    '''Your task is to create a detailed summary of the conversation so far, paying close attention to the user's explicit requests and your previous actions.
 This summary should be thorough in capturing technical details, code patterns, and architectural decisions that would be essential for continuing development work without losing context.
 
 $_detailedAnalysisInstructionBase
@@ -932,8 +944,9 @@ String formatCompactSummary(String summary) {
   );
 
   // Extract and format summary section
-  final summaryMatch =
-      RegExp(r'<summary>([\s\S]*?)</summary>').firstMatch(formatted);
+  final summaryMatch = RegExp(
+    r'<summary>([\s\S]*?)</summary>',
+  ).firstMatch(formatted);
   if (summaryMatch != null) {
     final content = summaryMatch.group(1) ?? '';
     formatted = formatted.replaceFirst(
@@ -1041,8 +1054,10 @@ int _getMaxOutputTokensForModel(String model) {
 
 /// Calculate the auto-compact threshold.
 int getAutoCompactThreshold(String model, int contextWindow) {
-  final effectiveContextWindow =
-      getEffectiveContextWindowSize(model, contextWindow);
+  final effectiveContextWindow = getEffectiveContextWindowSize(
+    model,
+    contextWindow,
+  );
   return effectiveContextWindow - autocompactBufferTokens;
 }
 
@@ -1070,10 +1085,8 @@ TokenWarningState calculateTokenWarningState(
   int contextWindow, {
   bool autoCompactEnabled = true,
 }) {
-  final autoCompactThreshold =
-      getAutoCompactThreshold(model, contextWindow);
-  final effectiveWindow =
-      getEffectiveContextWindowSize(model, contextWindow);
+  final autoCompactThreshold = getAutoCompactThreshold(model, contextWindow);
+  final effectiveWindow = getEffectiveContextWindowSize(model, contextWindow);
   final threshold = autoCompactEnabled ? autoCompactThreshold : effectiveWindow;
 
   final percentLeft = max(
@@ -1152,10 +1165,7 @@ class MicrocompactResult {
   final List<CompactMessage> messages;
   final Map<String, dynamic>? compactionInfo;
 
-  const MicrocompactResult({
-    required this.messages,
-    this.compactionInfo,
-  });
+  const MicrocompactResult({required this.messages, this.compactionInfo});
 }
 
 /// Collect tool_use IDs whose tool name is compactable.
@@ -1197,8 +1207,10 @@ List<String> collectCompactableToolIds(List<CompactMessage> messages) {
   }
   if (lastAssistant == null) return null;
 
-  final gapMinutes =
-      DateTime.now().difference(lastAssistant.timestamp).inMinutes.toDouble();
+  final gapMinutes = DateTime.now()
+      .difference(lastAssistant.timestamp)
+      .inMinutes
+      .toDouble();
   if (!gapMinutes.isFinite || gapMinutes < config.gapThresholdMinutes) {
     return null;
   }
@@ -1219,14 +1231,16 @@ MicrocompactResult? maybeTimeBasedMicrocompact(
 
   final keepRecent = max(1, config.keepRecent);
   final keepSet = <String>{};
-  for (int i = max(0, compactableIds.length - keepRecent);
-      i < compactableIds.length;
-      i++) {
+  for (
+    int i = max(0, compactableIds.length - keepRecent);
+    i < compactableIds.length;
+    i++
+  ) {
     keepSet.add(compactableIds[i]);
   }
 
   final clearSet = <String>{
-    ...compactableIds.where((id) => !keepSet.contains(id))
+    ...compactableIds.where((id) => !keepSet.contains(id)),
   };
 
   if (clearSet.isEmpty) return null;
@@ -1269,8 +1283,7 @@ MicrocompactResult microcompactMessages(
   clearCompactWarningSuppression();
 
   // Time-based trigger runs first and short-circuits
-  final timeBasedResult =
-      maybeTimeBasedMicrocompact(messages, querySource);
+  final timeBasedResult = maybeTimeBasedMicrocompact(messages, querySource);
   if (timeBasedResult != null) return timeBasedResult;
 
   // Legacy microcompact removed — autocompact handles context pressure
@@ -1327,10 +1340,12 @@ String _generateUuid() {
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
   return [
-    bytes.sublist(0, 4),
-    bytes.sublist(4, 6),
-    bytes.sublist(6, 8),
-    bytes.sublist(8, 10),
-    bytes.sublist(10, 16),
-  ].map((b) => b.map((e) => e.toRadixString(16).padLeft(2, '0')).join()).join('-');
+        bytes.sublist(0, 4),
+        bytes.sublist(4, 6),
+        bytes.sublist(6, 8),
+        bytes.sublist(8, 10),
+        bytes.sublist(10, 16),
+      ]
+      .map((b) => b.map((e) => e.toRadixString(16).padLeft(2, '0')).join())
+      .join('-');
 }

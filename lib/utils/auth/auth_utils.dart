@@ -1,4 +1,4 @@
-/// Authentication utilities ported from openneomclaw/src/utils/auth.ts.
+/// Authentication utilities ported from neom_claw/src/utils/auth.ts.
 ///
 /// Token management, API key validation, credential storage, OAuth handling,
 /// subscription checks, and cloud provider auth refresh flows.
@@ -67,10 +67,7 @@ class AuthTokenSourceResult {
   final AuthTokenSourceKind source;
   final bool hasToken;
 
-  const AuthTokenSourceResult({
-    required this.source,
-    required this.hasToken,
-  });
+  const AuthTokenSourceResult({required this.source, required this.hasToken});
 }
 
 /// Result of [getAnthropicApiKeyWithSource].
@@ -78,10 +75,7 @@ class ApiKeyWithSource {
   final String? key;
   final ApiKeySource source;
 
-  const ApiKeyWithSource({
-    required this.key,
-    required this.source,
-  });
+  const ApiKeyWithSource({required this.key, required this.source});
 }
 
 /// OAuth tokens representation.
@@ -121,20 +115,21 @@ class OAuthTokens {
   }
 
   Map<String, dynamic> toJson() => {
-        'accessToken': accessToken,
-        'refreshToken': refreshToken,
-        'expiresAt': expiresAt,
-        'scopes': scopes,
-        'subscriptionType': subscriptionType,
-        'rateLimitTier': rateLimitTier,
-      };
+    'accessToken': accessToken,
+    'refreshToken': refreshToken,
+    'expiresAt': expiresAt,
+    'scopes': scopes,
+    'subscriptionType': subscriptionType,
+    'rateLimitTier': rateLimitTier,
+  };
 
   factory OAuthTokens.fromJson(Map<String, dynamic> json) {
     return OAuthTokens(
       accessToken: json['accessToken'] as String,
       refreshToken: json['refreshToken'] as String?,
       expiresAt: json['expiresAt'] as int?,
-      scopes: (json['scopes'] as List<dynamic>?)
+      scopes:
+          (json['scopes'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           const ['user:inference'],
@@ -145,12 +140,7 @@ class OAuthTokens {
 }
 
 /// Subscription type enum matching OpenNeomClaw.
-enum SubscriptionType {
-  pro,
-  max,
-  team,
-  enterprise,
-}
+enum SubscriptionType { pro, max, team, enterprise }
 
 /// Account information from OAuth profile.
 class AccountInfo {
@@ -181,20 +171,20 @@ class AccountInfo {
   });
 
   Map<String, dynamic> toJson() => {
-        'accountUuid': accountUuid,
-        'emailAddress': emailAddress,
-        if (organizationUuid != null) 'organizationUuid': organizationUuid,
-        if (organizationName != null) 'organizationName': organizationName,
-        if (organizationRole != null) 'organizationRole': organizationRole,
-        if (workspaceRole != null) 'workspaceRole': workspaceRole,
-        if (displayName != null) 'displayName': displayName,
-        if (hasExtraUsageEnabled != null)
-          'hasExtraUsageEnabled': hasExtraUsageEnabled,
-        if (billingType != null) 'billingType': billingType,
-        if (accountCreatedAt != null) 'accountCreatedAt': accountCreatedAt,
-        if (subscriptionCreatedAt != null)
-          'subscriptionCreatedAt': subscriptionCreatedAt,
-      };
+    'accountUuid': accountUuid,
+    'emailAddress': emailAddress,
+    if (organizationUuid != null) 'organizationUuid': organizationUuid,
+    if (organizationName != null) 'organizationName': organizationName,
+    if (organizationRole != null) 'organizationRole': organizationRole,
+    if (workspaceRole != null) 'workspaceRole': workspaceRole,
+    if (displayName != null) 'displayName': displayName,
+    if (hasExtraUsageEnabled != null)
+      'hasExtraUsageEnabled': hasExtraUsageEnabled,
+    if (billingType != null) 'billingType': billingType,
+    if (accountCreatedAt != null) 'accountCreatedAt': accountCreatedAt,
+    if (subscriptionCreatedAt != null)
+      'subscriptionCreatedAt': subscriptionCreatedAt,
+  };
 
   factory AccountInfo.fromJson(Map<String, dynamic> json) {
     return AccountInfo(
@@ -235,9 +225,7 @@ class OrgValidationResult {
   final bool valid;
   final String? message;
 
-  const OrgValidationResult.success()
-      : valid = true,
-        message = null;
+  const OrgValidationResult.success() : valid = true, message = null;
 
   const OrgValidationResult.failure(String this.message) : valid = false;
 }
@@ -346,15 +334,18 @@ bool isAnthropicAuthEnabled() {
 
   final hasExternalAuthToken =
       Platform.environment['ANTHROPIC_AUTH_TOKEN'] != null ||
-          getConfiguredApiKeyHelper() != null ||
-          Platform.environment['NEOMCLAW_API_KEY_FILE_DESCRIPTOR'] != null;
+      getConfiguredApiKeyHelper() != null ||
+      Platform.environment['NEOMCLAW_API_KEY_FILE_DESCRIPTOR'] != null;
 
-  final apiKeyResult =
-      getAnthropicApiKeyWithSource(skipRetrievingKeyFromApiKeyHelper: true);
-  final hasExternalApiKey = apiKeyResult.source == ApiKeySource.anthropicApiKey ||
+  final apiKeyResult = getAnthropicApiKeyWithSource(
+    skipRetrievingKeyFromApiKeyHelper: true,
+  );
+  final hasExternalApiKey =
+      apiKeyResult.source == ApiKeySource.anthropicApiKey ||
       apiKeyResult.source == ApiKeySource.apiKeyHelper;
 
-  final shouldDisableAuth = is3P ||
+  final shouldDisableAuth =
+      is3P ||
       (hasExternalAuthToken && !isManagedOAuthContext()) ||
       (hasExternalApiKey && !isManagedOAuthContext());
 
@@ -397,8 +388,7 @@ AuthTokenSourceResult getAuthTokenSource() {
 
   final oauthTokenFromFd = getOAuthTokenFromFileDescriptor();
   if (oauthTokenFromFd != null) {
-    if (Platform.environment['NEOMCLAW_OAUTH_TOKEN_FILE_DESCRIPTOR'] !=
-        null) {
+    if (Platform.environment['NEOMCLAW_OAUTH_TOKEN_FILE_DESCRIPTOR'] != null) {
       return const AuthTokenSourceResult(
         source: AuthTokenSourceKind.neomClawOauthTokenFileDescriptor,
         hasToken: true,
@@ -445,8 +435,9 @@ String? getAnthropicApiKey() {
 
 /// Check if there is Anthropic API key auth available.
 bool hasAnthropicApiKeyAuth() {
-  final result =
-      getAnthropicApiKeyWithSource(skipRetrievingKeyFromApiKeyHelper: true);
+  final result = getAnthropicApiKeyWithSource(
+    skipRetrievingKeyFromApiKeyHelper: true,
+  );
   return result.key != null && result.source != ApiKeySource.none;
 }
 
@@ -457,7 +448,10 @@ ApiKeyWithSource getAnthropicApiKeyWithSource({
   if (isBareMode()) {
     final envKey = Platform.environment['ANTHROPIC_API_KEY'];
     if (envKey != null) {
-      return ApiKeyWithSource(key: envKey, source: ApiKeySource.anthropicApiKey);
+      return ApiKeyWithSource(
+        key: envKey,
+        source: ApiKeySource.anthropicApiKey,
+      );
     }
     if (getConfiguredApiKeyHelper() != null) {
       return ApiKeyWithSource(
@@ -477,7 +471,10 @@ ApiKeyWithSource getAnthropicApiKeyWithSource({
   // Always check direct env var for non-interactive (--print) mode.
   if (apiKeyEnv != null &&
       _isEnvTruthy(Platform.environment['NEOMCLAW_PREFER_3P_AUTH'])) {
-    return ApiKeyWithSource(key: apiKeyEnv, source: ApiKeySource.anthropicApiKey);
+    return ApiKeyWithSource(
+      key: apiKeyEnv,
+      source: ApiKeySource.anthropicApiKey,
+    );
   }
 
   // CI / test mode.
@@ -486,11 +483,15 @@ ApiKeyWithSource getAnthropicApiKeyWithSource({
     final apiKeyFromFd = getApiKeyFromFileDescriptor();
     if (apiKeyFromFd != null) {
       return ApiKeyWithSource(
-          key: apiKeyFromFd, source: ApiKeySource.anthropicApiKey);
+        key: apiKeyFromFd,
+        source: ApiKeySource.anthropicApiKey,
+      );
     }
     if (apiKeyEnv != null) {
       return ApiKeyWithSource(
-          key: apiKeyEnv, source: ApiKeySource.anthropicApiKey);
+        key: apiKeyEnv,
+        source: ApiKeySource.anthropicApiKey,
+      );
     }
     return const ApiKeyWithSource(key: null, source: ApiKeySource.none);
   }
@@ -498,14 +499,19 @@ ApiKeyWithSource getAnthropicApiKeyWithSource({
   // Check ANTHROPIC_API_KEY against approved list.
   if (apiKeyEnv != null) {
     // Simplified: in the full implementation this checks config approval list.
-    return ApiKeyWithSource(key: apiKeyEnv, source: ApiKeySource.anthropicApiKey);
+    return ApiKeyWithSource(
+      key: apiKeyEnv,
+      source: ApiKeySource.anthropicApiKey,
+    );
   }
 
   // Check file descriptor.
   final apiKeyFromFd = getApiKeyFromFileDescriptor();
   if (apiKeyFromFd != null) {
     return ApiKeyWithSource(
-        key: apiKeyFromFd, source: ApiKeySource.anthropicApiKey);
+      key: apiKeyFromFd,
+      source: ApiKeySource.anthropicApiKey,
+    );
   }
 
   // Check apiKeyHelper.
@@ -513,7 +519,9 @@ ApiKeyWithSource getAnthropicApiKeyWithSource({
   if (apiKeyHelperCommand != null) {
     if (skipRetrievingKeyFromApiKeyHelper) {
       return const ApiKeyWithSource(
-          key: null, source: ApiKeySource.apiKeyHelper);
+        key: null,
+        source: ApiKeySource.apiKeyHelper,
+      );
     }
     return ApiKeyWithSource(
       key: getApiKeyFromApiKeyHelperCached(),
@@ -638,8 +646,7 @@ int calculateApiKeyHelperTtl() {
 // ---------------------------------------------------------------------------
 
 /// Async fetch of API key from the configured helper command.
-Future<String?> getApiKeyFromApiKeyHelper(
-    bool isNonInteractiveSession) async {
+Future<String?> getApiKeyFromApiKeyHelper(bool isNonInteractiveSession) async {
   if (getConfiguredApiKeyHelper() == null) return null;
 
   final ttl = calculateApiKeyHelperTtl();
@@ -651,7 +658,10 @@ Future<String?> getApiKeyFromApiKeyHelper(
     // Stale: return stale value, refresh in background.
     _apiKeyHelperInflight ??= _ApiKeyHelperInflight(
       promise: _runAndCacheApiKeyHelper(
-          isNonInteractiveSession, false, _apiKeyHelperEpoch),
+        isNonInteractiveSession,
+        false,
+        _apiKeyHelperEpoch,
+      ),
       startedAt: null,
     );
     return _apiKeyHelperCache!.value;
@@ -661,7 +671,10 @@ Future<String?> getApiKeyFromApiKeyHelper(
   if (_apiKeyHelperInflight != null) return _apiKeyHelperInflight!.promise;
   _apiKeyHelperInflight = _ApiKeyHelperInflight(
     promise: _runAndCacheApiKeyHelper(
-        isNonInteractiveSession, true, _apiKeyHelperEpoch),
+      isNonInteractiveSession,
+      true,
+      _apiKeyHelperEpoch,
+    ),
     startedAt: DateTime.now().millisecondsSinceEpoch,
   );
   return _apiKeyHelperInflight!.promise;
@@ -858,10 +871,10 @@ Future<bool> checkAndRefreshOAuthTokenIfNeeded({
 }) async {
   if (retryCount == 0 && !force) {
     if (_pendingRefreshCheck != null) return _pendingRefreshCheck!;
-    _pendingRefreshCheck =
-        _checkAndRefreshOAuthTokenIfNeededImpl(retryCount, force).whenComplete(
-      () => _pendingRefreshCheck = null,
-    );
+    _pendingRefreshCheck = _checkAndRefreshOAuthTokenIfNeededImpl(
+      retryCount,
+      force,
+    ).whenComplete(() => _pendingRefreshCheck = null);
     return _pendingRefreshCheck!;
   }
   return _checkAndRefreshOAuthTokenIfNeededImpl(retryCount, force);
@@ -1039,9 +1052,7 @@ AccountInfo? _storedAccountInfo;
 /// Get account information for display.
 UserAccountInfo? getAccountInformation() {
   final authResult = getAuthTokenSource();
-  final accountInfo = UserAccountInfo(
-    tokenSource: authResult.source.name,
-  );
+  final accountInfo = UserAccountInfo(tokenSource: authResult.source.name);
 
   if (isNeomClawAISubscriber()) {
     return UserAccountInfo(
@@ -1060,12 +1071,12 @@ UserAccountInfo? getAccountInformation() {
 // ---------------------------------------------------------------------------
 
 ({String accessKeyId, String secretAccessKey, String sessionToken})?
-    _awsCredentialsCache;
+_awsCredentialsCache;
 DateTime? _awsCredentialsCacheTime;
 
 /// Refresh and get AWS credentials with caching.
-Future<
-    ({String accessKeyId, String secretAccessKey, String sessionToken})?> refreshAndGetAwsCredentials() async {
+Future<({String accessKeyId, String secretAccessKey, String sessionToken})?>
+refreshAndGetAwsCredentials() async {
   if (_awsCredentialsCache != null && _awsCredentialsCacheTime != null) {
     final elapsed = DateTime.now().difference(_awsCredentialsCacheTime!);
     if (elapsed.inMilliseconds < defaultAwsStsTtl) {
@@ -1073,7 +1084,7 @@ Future<
     }
   }
 
-  final refreshed = await _runAwsAuthRefresh();
+  final _refreshed = await _runAwsAuthRefresh();
   final credentials = await _getAwsCredsFromCredentialExport();
 
   if (credentials != null) {
@@ -1097,8 +1108,8 @@ Future<bool> _runAwsAuthRefresh() async {
   return false;
 }
 
-Future<
-    ({String accessKeyId, String secretAccessKey, String sessionToken})?> _getAwsCredsFromCredentialExport() async {
+Future<({String accessKeyId, String secretAccessKey, String sessionToken})?>
+_getAwsCredsFromCredentialExport() async {
   final command = getConfiguredAwsCredentialExport();
   if (command == null) return null;
   // Placeholder: in full implementation runs the command and parses JSON.
@@ -1201,9 +1212,9 @@ Map<String, String> getOtelHeadersFromHelper() {
   final otelHeadersHelper = getConfiguredOtelHeadersHelper();
   if (otelHeadersHelper == null) return {};
 
-  final debounceMs = int.tryParse(
-        Platform.environment['NEOMCLAW_OTEL_HEADERS_HELPER_DEBOUNCE_MS'] ??
-            '',
+  final debounceMs =
+      int.tryParse(
+        Platform.environment['NEOMCLAW_OTEL_HEADERS_HELPER_DEBOUNCE_MS'] ?? '',
       ) ??
       defaultOtelHeadersDebounceMs;
 
@@ -1220,7 +1231,9 @@ Map<String, String> getOtelHeadersFromHelper() {
   try {
     final result = Process.runSync(
       Platform.isWindows ? 'cmd' : 'sh',
-      Platform.isWindows ? ['/c', otelHeadersHelper] : ['-c', otelHeadersHelper],
+      Platform.isWindows
+          ? ['/c', otelHeadersHelper]
+          : ['-c', otelHeadersHelper],
     );
     final output = (result.stdout as String).trim();
     if (output.isEmpty) {
@@ -1230,14 +1243,16 @@ Map<String, String> getOtelHeadersFromHelper() {
     final headers = json.decode(output);
     if (headers is! Map<String, dynamic>) {
       throw Exception(
-          'otelHeadersHelper must return a JSON object with string key-value pairs');
+        'otelHeadersHelper must return a JSON object with string key-value pairs',
+      );
     }
 
     final validated = <String, String>{};
     for (final entry in headers.entries) {
       if (entry.value is! String) {
         throw Exception(
-            'otelHeadersHelper returned non-string value for key "${entry.key}"');
+          'otelHeadersHelper returned non-string value for key "${entry.key}"',
+        );
       }
       validated[entry.key] = entry.value as String;
     }

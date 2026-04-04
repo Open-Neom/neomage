@@ -1,4 +1,4 @@
-// MCPTool -- faithful port of openneomclaw/src/tools/MCPTool.
+// MCPTool -- faithful port of neom_claw/src/tools/MCPTool.
 // Generic wrapper for MCP (Model Context Protocol) server tools.
 //
 // Includes full port of:
@@ -6,8 +6,6 @@
 //     result mapping, and truncation detection
 //   - classifyForCollapse.ts: per-tool allowlists for search/read
 //     classification to enable UI collapsing
-
-import 'dart:convert';
 
 import '../../domain/models/permissions.dart';
 import 'tool.dart';
@@ -40,10 +38,10 @@ class MCPProgress {
   const MCPProgress({this.progress, this.total, this.message});
 
   Map<String, dynamic> toMap() => {
-        if (progress != null) 'progress': progress,
-        if (total != null) 'total': total,
-        if (message != null) 'message': message,
-      };
+    if (progress != null) 'progress': progress,
+    if (total != null) 'total': total,
+    if (message != null) 'message': message,
+  };
 }
 
 // ── MCP server info ────────────────────────────────────────────────────
@@ -63,11 +61,11 @@ class MCPServerInfo {
   });
 
   Map<String, dynamic> toMap() => {
-        'serverName': serverName,
-        if (serverVersion != null) 'serverVersion': serverVersion,
-        if (serverUrl != null) 'serverUrl': serverUrl,
-        if (transport != null) 'transport': transport,
-      };
+    'serverName': serverName,
+    if (serverVersion != null) 'serverVersion': serverVersion,
+    if (serverUrl != null) 'serverUrl': serverUrl,
+    if (transport != null) 'transport': transport,
+  };
 }
 
 // ── Truncation detection ───────────────────────────────────────────────
@@ -105,10 +103,7 @@ class McpToolClassification {
   final bool isSearch;
   final bool isRead;
 
-  const McpToolClassification({
-    required this.isSearch,
-    required this.isRead,
-  });
+  const McpToolClassification({required this.isSearch, required this.isRead});
 }
 
 /// Normalize a tool name from camelCase or kebab-case to snake_case.
@@ -723,25 +718,25 @@ McpToolClassification classifyMcpToolForCollapse(
 /// - Progress reporting support
 class MCPTool extends Tool {
   /// The actual MCP tool name (set when cloning from server).
-  String _name;
+  final String _name;
 
   /// The actual MCP tool description (set when cloning from server).
-  String _description;
+  final String _description;
 
   /// The actual MCP tool prompt (set when cloning from server).
-  String _prompt;
+  final String _prompt;
 
   /// The actual input schema (set when cloning from server).
-  Map<String, dynamic> _inputSchema;
+  final Map<String, dynamic> _inputSchema;
 
   /// MCP server info for this tool.
-  MCPServerInfo? _serverInfo;
+  final MCPServerInfo? _serverInfo;
 
   /// The execution function (set when cloning from server).
-  Future<ToolResult> Function(Map<String, dynamic> input)? _callFn;
+  final Future<ToolResult> Function(Map<String, dynamic> input)? _callFn;
 
   /// User-facing display name (set when cloning from server).
-  String _userFacingName;
+  final String _userFacingName;
 
   MCPTool({
     String name = mcpToolBaseName,
@@ -751,13 +746,13 @@ class MCPTool extends Tool {
     MCPServerInfo? serverInfo,
     Future<ToolResult> Function(Map<String, dynamic>)? callFn,
     String userFacingName = 'mcp',
-  })  : _name = name,
-        _description = description,
-        _prompt = prompt,
-        _inputSchema = inputSchema ?? const {'type': 'object'},
-        _serverInfo = serverInfo,
-        _callFn = callFn,
-        _userFacingName = userFacingName;
+  }) : _name = name,
+       _description = description,
+       _prompt = prompt,
+       _inputSchema = inputSchema ?? const {'type': 'object'},
+       _serverInfo = serverInfo,
+       _callFn = callFn,
+       _userFacingName = userFacingName;
 
   @override
   String get name => _name;
@@ -798,7 +793,7 @@ class MCPTool extends Tool {
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
     if (_callFn != null) {
-      return _callFn!(input);
+      return _callFn(input);
     }
     return ToolResult.error('MCP tool not configured');
   }

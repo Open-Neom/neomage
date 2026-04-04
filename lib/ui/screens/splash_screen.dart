@@ -31,9 +31,7 @@ class _SplashScreenState extends State<SplashScreen> {
       final initialized = await chat.initialize();
       if (mounted) {
         Sint.offAllNamed(
-          initialized
-              ? ClawRouteConstants.chat
-              : ClawRouteConstants.onboarding,
+          initialized ? ClawRouteConstants.chat : ClawRouteConstants.onboarding,
         );
       }
     } else {
@@ -43,8 +41,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

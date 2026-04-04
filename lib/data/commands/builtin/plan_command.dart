@@ -10,10 +10,7 @@ class PlanCommand extends LocalCommand {
   final PlanModeToggle onToggle;
   final bool Function() isPlanMode;
 
-  PlanCommand({
-    required this.onToggle,
-    required this.isPlanMode,
-  });
+  PlanCommand({required this.onToggle, required this.isPlanMode});
 
   @override
   String get name => 'plan';
@@ -33,7 +30,7 @@ class PlanCommand extends LocalCommand {
     return TextCommandResult(
       newState
           ? 'Plan mode enabled. I will think through my approach before '
-              'making changes. Use /plan again to disable.'
+                'making changes. Use /plan again to disable.'
           : 'Plan mode disabled. Returning to normal execution.',
     );
   }

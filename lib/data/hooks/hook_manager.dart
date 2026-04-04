@@ -99,11 +99,7 @@ class HookMatcher {
   final List<HookCommand> hooks;
   final String? source;
 
-  const HookMatcher({
-    this.matcher,
-    required this.hooks,
-    this.source,
-  });
+  const HookMatcher({this.matcher, required this.hooks, this.source});
 }
 
 /// Result of hook execution.
@@ -120,10 +116,8 @@ class HookResult {
     this.systemMessage,
   });
 
-  factory HookResult.block(String reason) => HookResult(
-        shouldContinue: false,
-        stopReason: reason,
-      );
+  factory HookResult.block(String reason) =>
+      HookResult(shouldContinue: false, stopReason: reason);
 
   factory HookResult.pass([String? output]) => HookResult(output: output);
 }
@@ -224,15 +218,12 @@ class HookManager {
     Duration timeout,
   ) async {
     final shell = hook.shell ?? 'bash';
-    final env = <String, String>{
-      'HOOK_INPUT': jsonEncode(input),
-    };
+    final env = <String, String>{'HOOK_INPUT': jsonEncode(input)};
 
-    final result = await Process.run(
-      shell,
-      ['-c', hook.command],
-      environment: env,
-    ).timeout(timeout);
+    final result = await Process.run(shell, [
+      '-c',
+      hook.command,
+    ], environment: env).timeout(timeout);
 
     final exitCode = result.exitCode;
     final stdout = (result.stdout as String).trim();

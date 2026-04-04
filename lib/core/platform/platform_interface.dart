@@ -193,11 +193,11 @@ class PlatformFileStat {
   });
 
   Map<String, dynamic> toJson() => {
-        'size': size,
-        'modified': modified.toIso8601String(),
-        'accessed': accessed.toIso8601String(),
-        'type': type.name,
-      };
+    'size': size,
+    'modified': modified.toIso8601String(),
+    'accessed': accessed.toIso8601String(),
+    'type': type.name,
+  };
 
   factory PlatformFileStat.fromJson(Map<String, dynamic> json) {
     return PlatformFileStat(
@@ -262,10 +262,10 @@ class ProcessOutput {
   }
 
   Map<String, dynamic> toJson() => {
-        'exitCode': exitCode,
-        'stdout': stdout,
-        'stderr': stderr,
-      };
+    'exitCode': exitCode,
+    'stdout': stdout,
+    'stderr': stderr,
+  };
 
   @override
   String toString() =>

@@ -1,5 +1,5 @@
 // /mcp xaa command — manage XAA (SEP-990) IdP connection.
-// Faithful port of openneomclaw/src/commands/mcp/xaaIdpCommand.ts (266 TS LOC).
+// Faithful port of neom_claw/src/commands/mcp/xaaIdpCommand.ts (266 TS LOC).
 //
 // The IdP connection is user-level: configure once, all XAA-enabled MCP
 // servers reuse it. Lives in settings.xaaIdp (non-secret) + a keychain slot
@@ -16,7 +16,6 @@ import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 
-import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';
 import '../command.dart';
 
@@ -51,10 +50,7 @@ class XaaIdpSettings {
   }
 
   Map<String, dynamic> toJson() {
-    final result = <String, dynamic>{
-      'issuer': issuer,
-      'clientId': clientId,
-    };
+    final result = <String, dynamic>{'issuer': issuer, 'clientId': clientId};
     if (callbackPort != null) result['callbackPort'] = callbackPort;
     return result;
   }
@@ -66,9 +62,8 @@ class XaaIdpSettings {
 
 /// Get the user settings file path.
 String _getUserSettingsPath() {
-  final home = Platform.environment['HOME'] ??
-      Platform.environment['USERPROFILE'] ??
-      '';
+  final home =
+      Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
   return p.join(home, '.neomclaw', 'settings.json');
 }
 
@@ -107,9 +102,7 @@ Future<XaaIdpSettings?> getXaaIdpSettings() async {
 
 /// Update user settings with the given partial updates.
 /// Returns an error message string or null on success.
-Future<String?> updateSettingsForSource(
-  Map<String, dynamic> updates,
-) async {
+Future<String?> updateSettingsForSource(Map<String, dynamic> updates) async {
   try {
     final settings = await _readUserSettings();
     // Merge updates. Explicit null values signal key removal.
@@ -138,7 +131,9 @@ String issuerKey(String issuer) {
     final uri = Uri.parse(issuer);
     final normalized = uri.replace(
       host: uri.host.toLowerCase(),
-      path: uri.path.endsWith('/') ? uri.path.substring(0, uri.path.length - 1) : uri.path,
+      path: uri.path.endsWith('/')
+          ? uri.path.substring(0, uri.path.length - 1)
+          : uri.path,
     );
     return normalized.toString();
   } catch (_) {
@@ -155,12 +150,15 @@ String issuerKey(String issuer) {
   // In a full implementation this would use the platform keychain.
   // For now, store in a local secure file.
   try {
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
     final secretDir = Directory(p.join(home, '.neomclaw', 'secrets'));
     secretDir.createSync(recursive: true);
-    final secretFile = File(p.join(secretDir.path, '${issuerKey(issuer)}.secret'));
+    final secretFile = File(
+      p.join(secretDir.path, '${issuerKey(issuer)}.secret'),
+    );
     secretFile.writeAsStringSync(secret);
     return (success: true, warning: null);
   } catch (e) {
@@ -171,7 +169,8 @@ String issuerKey(String issuer) {
 /// Get IdP client secret from the keychain.
 String? getIdpClientSecret(String issuer) {
   try {
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
     final secretFile = File(
@@ -185,7 +184,8 @@ String? getIdpClientSecret(String issuer) {
 /// Clear IdP client secret from the keychain.
 void clearIdpClientSecret(String issuer) {
   try {
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
     final secretFile = File(
@@ -198,7 +198,8 @@ void clearIdpClientSecret(String issuer) {
 /// Get cached IdP id_token.
 String? getCachedIdpIdToken(String issuer) {
   try {
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
     final tokenFile = File(
@@ -215,7 +216,8 @@ String? getCachedIdpIdToken(String issuer) {
 /// Clear cached IdP id_token.
 void clearIdpIdToken(String issuer) {
   try {
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
     final tokenFile = File(
@@ -227,9 +229,8 @@ void clearIdpIdToken(String issuer) {
 
 /// Save an id_token JWT directly to cache. Returns the expiration timestamp.
 int saveIdpIdTokenFromJwt(String issuer, String jwt) {
-  final home = Platform.environment['HOME'] ??
-      Platform.environment['USERPROFILE'] ??
-      '';
+  final home =
+      Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
   final secretDir = Directory(p.join(home, '.neomclaw', 'secrets'));
   secretDir.createSync(recursive: true);
   final tokenFile = File(
@@ -451,9 +452,7 @@ class XaaIdpCommand extends LocalCommand {
       }
     }
 
-    return TextCommandResult(
-      'XAA IdP connection configured for $issuer',
-    );
+    return TextCommandResult('XAA IdP connection configured for $issuer');
   }
 
   // ── login ─────────────────────────────────────────────────────────────────
@@ -487,8 +486,9 @@ class XaaIdpCommand extends LocalCommand {
     // operation. Issuer comes from settings (single source of truth).
     if (idToken != null) {
       final expiresAt = saveIdpIdTokenFromJwt(idp.issuer, idToken);
-      final expiresDate =
-          DateTime.fromMillisecondsSinceEpoch(expiresAt).toIso8601String();
+      final expiresDate = DateTime.fromMillisecondsSinceEpoch(
+        expiresAt,
+      ).toIso8601String();
       return TextCommandResult(
         'id_token cached for ${idp.issuer} (expires $expiresDate)',
       );
@@ -537,7 +537,7 @@ class XaaIdpCommand extends LocalCommand {
       'Client secret: ${hasSecret ? "(stored in keychain)" : "(not set -- PKCE-only)"}',
     );
     buf.write(
-      'Logged in:     ${hasIdToken ? "yes (id_token cached)" : "no -- run \'/mcp-xaa login\'"}',
+      'Logged in:     ${hasIdToken ? "yes (id_token cached)" : "no -- run '/mcp-xaa login'"}',
     );
 
     return TextCommandResult(buf.toString());

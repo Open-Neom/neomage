@@ -1,6 +1,6 @@
 /// Context analysis for conversations.
 ///
-/// Ported from openneomclaw/src/utils/analyzeContext.ts (1382 LOC).
+/// Ported from neom_claw/src/utils/analyzeContext.ts (1382 LOC).
 library;
 
 import 'dart:async';
@@ -45,11 +45,11 @@ class ContextCategory {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'tokens': tokens,
-        'color': color,
-        if (isDeferred) 'isDeferred': isDeferred,
-      };
+    'name': name,
+    'tokens': tokens,
+    'color': color,
+    if (isDeferred) 'isDeferred': isDeferred,
+  };
 }
 
 /// A single square in the context grid visualization.
@@ -73,13 +73,13 @@ class GridSquare {
   });
 
   Map<String, dynamic> toJson() => {
-        'color': color,
-        'isFilled': isFilled,
-        'categoryName': categoryName,
-        'tokens': tokens,
-        'percentage': percentage,
-        'squareFullness': squareFullness,
-      };
+    'color': color,
+    'isFilled': isFilled,
+    'categoryName': categoryName,
+    'tokens': tokens,
+    'percentage': percentage,
+    'squareFullness': squareFullness,
+  };
 }
 
 /// Information about a memory file in context.
@@ -95,10 +95,10 @@ class MemoryFile {
   });
 
   Map<String, dynamic> toJson() => {
-        'path': path,
-        'type': type,
-        'tokens': tokens,
-      };
+    'path': path,
+    'type': type,
+    'tokens': tokens,
+  };
 }
 
 /// Information about an MCP tool in context.
@@ -116,11 +116,11 @@ class McpTool {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'serverName': serverName,
-        'tokens': tokens,
-        'isLoaded': isLoaded,
-      };
+    'name': name,
+    'serverName': serverName,
+    'tokens': tokens,
+    'isLoaded': isLoaded,
+  };
 }
 
 /// Information about a deferred builtin tool.
@@ -136,10 +136,10 @@ class DeferredBuiltinTool {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'tokens': tokens,
-        'isLoaded': isLoaded,
-      };
+    'name': name,
+    'tokens': tokens,
+    'isLoaded': isLoaded,
+  };
 }
 
 /// Information about a system tool.
@@ -175,10 +175,10 @@ class AgentInfo {
   });
 
   Map<String, dynamic> toJson() => {
-        'agentType': agentType,
-        'source': source,
-        'tokens': tokens,
-      };
+    'agentType': agentType,
+    'source': source,
+    'tokens': tokens,
+  };
 }
 
 /// Slash command info for context display.
@@ -194,10 +194,10 @@ class SlashCommandInfo {
   });
 
   Map<String, dynamic> toJson() => {
-        'totalCommands': totalCommands,
-        'includedCommands': includedCommands,
-        'tokens': tokens,
-      };
+    'totalCommands': totalCommands,
+    'includedCommands': includedCommands,
+    'tokens': tokens,
+  };
 }
 
 /// Individual skill detail for context display.
@@ -213,10 +213,10 @@ class SkillFrontmatter {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'source': source,
-        'tokens': tokens,
-      };
+    'name': name,
+    'source': source,
+    'tokens': tokens,
+  };
 }
 
 /// Information about skills included in the context window.
@@ -234,11 +234,11 @@ class SkillInfo {
   });
 
   Map<String, dynamic> toJson() => {
-        'totalSkills': totalSkills,
-        'includedSkills': includedSkills,
-        'tokens': tokens,
-        'skillFrontmatter': skillFrontmatter.map((s) => s.toJson()).toList(),
-      };
+    'totalSkills': totalSkills,
+    'includedSkills': includedSkills,
+    'tokens': tokens,
+    'skillFrontmatter': skillFrontmatter.map((s) => s.toJson()).toList(),
+  };
 }
 
 /// Breakdown of token usage by tool type.
@@ -254,10 +254,10 @@ class ToolCallsByType {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'callTokens': callTokens,
-        'resultTokens': resultTokens,
-      };
+    'name': name,
+    'callTokens': callTokens,
+    'resultTokens': resultTokens,
+  };
 }
 
 /// Breakdown of attachment tokens by type.
@@ -291,14 +291,14 @@ class MessageBreakdown {
   });
 
   Map<String, dynamic> toJson() => {
-        'toolCallTokens': toolCallTokens,
-        'toolResultTokens': toolResultTokens,
-        'attachmentTokens': attachmentTokens,
-        'assistantMessageTokens': assistantMessageTokens,
-        'userMessageTokens': userMessageTokens,
-        'toolCallsByType': toolCallsByType.map((t) => t.toJson()).toList(),
-        'attachmentsByType': attachmentsByType.map((a) => a.toJson()).toList(),
-      };
+    'toolCallTokens': toolCallTokens,
+    'toolResultTokens': toolResultTokens,
+    'attachmentTokens': attachmentTokens,
+    'assistantMessageTokens': assistantMessageTokens,
+    'userMessageTokens': userMessageTokens,
+    'toolCallsByType': toolCallsByType.map((t) => t.toJson()).toList(),
+    'attachmentsByType': attachmentsByType.map((a) => a.toJson()).toList(),
+  };
 }
 
 /// API usage from last response.
@@ -316,19 +316,18 @@ class ApiUsage {
   });
 
   Map<String, dynamic> toJson() => {
-        'input_tokens': inputTokens,
-        'output_tokens': outputTokens,
-        'cache_creation_input_tokens': cacheCreationInputTokens,
-        'cache_read_input_tokens': cacheReadInputTokens,
-      };
+    'input_tokens': inputTokens,
+    'output_tokens': outputTokens,
+    'cache_creation_input_tokens': cacheCreationInputTokens,
+    'cache_read_input_tokens': cacheReadInputTokens,
+  };
 
   factory ApiUsage.fromJson(Map<String, dynamic> json) => ApiUsage(
-        inputTokens: json['input_tokens'] as int? ?? 0,
-        outputTokens: json['output_tokens'] as int? ?? 0,
-        cacheCreationInputTokens:
-            json['cache_creation_input_tokens'] as int? ?? 0,
-        cacheReadInputTokens: json['cache_read_input_tokens'] as int? ?? 0,
-      );
+    inputTokens: json['input_tokens'] as int? ?? 0,
+    outputTokens: json['output_tokens'] as int? ?? 0,
+    cacheCreationInputTokens: json['cache_creation_input_tokens'] as int? ?? 0,
+    cacheReadInputTokens: json['cache_read_input_tokens'] as int? ?? 0,
+  );
 }
 
 /// Complete context analysis data.
@@ -376,35 +375,37 @@ class ContextData {
   });
 
   Map<String, dynamic> toJson() => {
-        'categories': categories.map((c) => c.toJson()).toList(),
-        'totalTokens': totalTokens,
-        'maxTokens': maxTokens,
-        'rawMaxTokens': rawMaxTokens,
-        'percentage': percentage,
-        'gridRows': gridRows
-            .map((row) => row.map((s) => s.toJson()).toList())
-            .toList(),
-        'model': model,
-        'memoryFiles': memoryFiles.map((m) => m.toJson()).toList(),
-        'mcpTools': mcpTools.map((t) => t.toJson()).toList(),
-        if (deferredBuiltinTools != null)
-          'deferredBuiltinTools':
-              deferredBuiltinTools!.map((t) => t.toJson()).toList(),
-        if (systemTools != null)
-          'systemTools': systemTools!.map((t) => t.toJson()).toList(),
-        if (systemPromptSections != null)
-          'systemPromptSections':
-              systemPromptSections!.map((s) => s.toJson()).toList(),
-        'agents': agents.map((a) => a.toJson()).toList(),
-        if (slashCommands != null) 'slashCommands': slashCommands!.toJson(),
-        if (skills != null) 'skills': skills!.toJson(),
-        if (autoCompactThreshold != null)
-          'autoCompactThreshold': autoCompactThreshold,
-        'isAutoCompactEnabled': isAutoCompactEnabled,
-        if (messageBreakdown != null)
-          'messageBreakdown': messageBreakdown!.toJson(),
-        if (apiUsage != null) 'apiUsage': apiUsage!.toJson(),
-      };
+    'categories': categories.map((c) => c.toJson()).toList(),
+    'totalTokens': totalTokens,
+    'maxTokens': maxTokens,
+    'rawMaxTokens': rawMaxTokens,
+    'percentage': percentage,
+    'gridRows': gridRows
+        .map((row) => row.map((s) => s.toJson()).toList())
+        .toList(),
+    'model': model,
+    'memoryFiles': memoryFiles.map((m) => m.toJson()).toList(),
+    'mcpTools': mcpTools.map((t) => t.toJson()).toList(),
+    if (deferredBuiltinTools != null)
+      'deferredBuiltinTools': deferredBuiltinTools!
+          .map((t) => t.toJson())
+          .toList(),
+    if (systemTools != null)
+      'systemTools': systemTools!.map((t) => t.toJson()).toList(),
+    if (systemPromptSections != null)
+      'systemPromptSections': systemPromptSections!
+          .map((s) => s.toJson())
+          .toList(),
+    'agents': agents.map((a) => a.toJson()).toList(),
+    if (slashCommands != null) 'slashCommands': slashCommands!.toJson(),
+    if (skills != null) 'skills': skills!.toJson(),
+    if (autoCompactThreshold != null)
+      'autoCompactThreshold': autoCompactThreshold,
+    'isAutoCompactEnabled': isAutoCompactEnabled,
+    if (messageBreakdown != null)
+      'messageBreakdown': messageBreakdown!.toJson(),
+    if (apiUsage != null) 'apiUsage': apiUsage!.toJson(),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -436,19 +437,18 @@ class ContextAnalyzer extends SintController {
   Future<int?> Function(
     List<Map<String, dynamic>> messages,
     List<Map<String, dynamic>> tools,
-  ) _countTokensWithFallback = (_, __) async => null;
+  )
+  _countTokensWithFallback = (_, __) async => null;
 
   /// Callback for rough token estimation.
-  int Function(String text) _roughTokenCountEstimation =
-      (text) => (text.length / 4).ceil();
+  int Function(String text) _roughTokenCountEstimation = (text) =>
+      (text.length / 4).ceil();
 
   /// Callback for getting the effective context window size.
-  int Function(String model) _getEffectiveContextWindowSize =
-      (_) => 200000;
+  int Function(String model) _getEffectiveContextWindowSize = (_) => 200000;
 
   /// Callback for getting the context window for a model.
-  int Function(String model) _getContextWindowForModel =
-      (_) => 200000;
+  int Function(String model) _getContextWindowForModel = (_) => 200000;
 
   /// Callback for checking if autocompact is enabled.
   bool Function() _isAutoCompactEnabled = () => true;
@@ -458,9 +458,11 @@ class ContextAnalyzer extends SintController {
       (_) => null;
 
   /// Logging callback.
+  // ignore: unused_field
   void Function(String message) _logForDebugging = (_) {};
 
   /// Error logging callback.
+  // ignore: unused_field
   void Function(Object error) _logError = (_) {};
 
   // ---------------------------------------------------------------------------
@@ -471,7 +473,8 @@ class ContextAnalyzer extends SintController {
     Future<int?> Function(
       List<Map<String, dynamic>>,
       List<Map<String, dynamic>>,
-    )? countTokensWithFallback,
+    )?
+    countTokensWithFallback,
     int Function(String)? roughTokenCountEstimation,
     int Function(String)? getEffectiveContextWindowSize,
     int Function(String)? getContextWindowForModel,
@@ -515,17 +518,23 @@ class ContextAnalyzer extends SintController {
   /// Extract a human-readable name from a system prompt section's content.
   static String extractSectionName(String content) {
     // Try to find first markdown heading
-    final headingMatch = RegExp(r'^#+\s+(.+)$', multiLine: true).firstMatch(content);
+    final headingMatch = RegExp(
+      r'^#+\s+(.+)$',
+      multiLine: true,
+    ).firstMatch(content);
     if (headingMatch != null) return headingMatch.group(1)!.trim();
     // Fall back to a truncated preview
-    final firstLine =
-        content.split('\n').firstWhere((l) => l.trim().isNotEmpty, orElse: () => '');
-    return firstLine.length > 40 ? '${firstLine.substring(0, 40)}...' : firstLine;
+    final firstLine = content
+        .split('\n')
+        .firstWhere((l) => l.trim().isNotEmpty, orElse: () => '');
+    return firstLine.length > 40
+        ? '${firstLine.substring(0, 40)}...'
+        : firstLine;
   }
 
   /// Count system prompt tokens.
   Future<({int systemPromptTokens, List<SystemPromptSectionDetail> sections})>
-      countSystemTokens(List<String> effectiveSystemPrompt) async {
+  countSystemTokens(List<String> effectiveSystemPrompt) async {
     final namedEntries = effectiveSystemPrompt
         .where((c) => c.isNotEmpty)
         .map((c) => (name: extractSectionName(c), content: c))
@@ -536,10 +545,11 @@ class ContextAnalyzer extends SintController {
     }
 
     final tokenCounts = await Future.wait(
-      namedEntries.map((entry) => _countTokensWithFallback(
-        [{'role': 'user', 'content': entry.content}],
-        [],
-      )),
+      namedEntries.map(
+        (entry) => _countTokensWithFallback([
+          {'role': 'user', 'content': entry.content},
+        ], []),
+      ),
     );
 
     final sections = List.generate(namedEntries.length, (i) {
@@ -555,7 +565,7 @@ class ContextAnalyzer extends SintController {
 
   /// Count memory file tokens.
   Future<({int neomClawMdTokens, List<MemoryFile> details})>
-      countMemoryFileTokens(
+  countMemoryFileTokens(
     List<({String path, String type, String content})> memoryFiles,
   ) async {
     if (memoryFiles.isEmpty) {
@@ -563,10 +573,11 @@ class ContextAnalyzer extends SintController {
     }
 
     final results = await Future.wait(
-      memoryFiles.map((f) => _countTokensWithFallback(
-        [{'role': 'user', 'content': f.content}],
-        [],
-      )),
+      memoryFiles.map(
+        (f) => _countTokensWithFallback([
+          {'role': 'user', 'content': f.content},
+        ], []),
+      ),
     );
 
     int total = 0;
@@ -575,11 +586,13 @@ class ContextAnalyzer extends SintController {
     for (int i = 0; i < memoryFiles.length; i++) {
       final tokens = results[i] ?? 0;
       total += tokens;
-      details.add(MemoryFile(
-        path: memoryFiles[i].path,
-        type: memoryFiles[i].type,
-        tokens: tokens,
-      ));
+      details.add(
+        MemoryFile(
+          path: memoryFiles[i].path,
+          type: memoryFiles[i].type,
+          tokens: tokens,
+        ),
+      );
     }
 
     return (neomClawMdTokens: total, details: details);
@@ -643,7 +656,7 @@ class ContextAnalyzer extends SintController {
                 final toolUseId = block['tool_use_id'] as String?;
                 final toolName =
                     (toolUseId != null ? toolUseIdToName[toolUseId] : null) ??
-                        'unknown';
+                    'unknown';
                 breakdown.toolResultsByType[toolName] =
                     (breakdown.toolResultsByType[toolName] ?? 0) + blockTokens;
               } else {
@@ -664,27 +677,35 @@ class ContextAnalyzer extends SintController {
       }
     }
 
-    breakdown.totalTokens = breakdown.toolCallTokens +
+    breakdown.totalTokens =
+        breakdown.toolCallTokens +
         breakdown.toolResultTokens +
         breakdown.attachmentTokens +
         breakdown.assistantMessageTokens +
         breakdown.userMessageTokens;
 
     // Convert to sorted lists
-    final toolCallsByType = breakdown.toolCallsByType.entries
-        .map((e) => ToolCallsByType(
-              name: e.key,
-              callTokens: e.value,
-              resultTokens: breakdown.toolResultsByType[e.key] ?? 0,
-            ))
-        .toList()
-      ..sort((a, b) =>
-          (b.callTokens + b.resultTokens) - (a.callTokens + a.resultTokens));
+    final toolCallsByType =
+        breakdown.toolCallsByType.entries
+            .map(
+              (e) => ToolCallsByType(
+                name: e.key,
+                callTokens: e.value,
+                resultTokens: breakdown.toolResultsByType[e.key] ?? 0,
+              ),
+            )
+            .toList()
+          ..sort(
+            (a, b) =>
+                (b.callTokens + b.resultTokens) -
+                (a.callTokens + a.resultTokens),
+          );
 
-    final attachmentsByType = breakdown.attachmentsByType.entries
-        .map((e) => AttachmentsByType(name: e.key, tokens: e.value))
-        .toList()
-      ..sort((a, b) => b.tokens - a.tokens);
+    final attachmentsByType =
+        breakdown.attachmentsByType.entries
+            .map((e) => AttachmentsByType(name: e.key, tokens: e.value))
+            .toList()
+          ..sort((a, b) => b.tokens - a.tokens);
 
     return MessageBreakdown(
       toolCallTokens: breakdown.toolCallTokens,
@@ -711,8 +732,9 @@ class ContextAnalyzer extends SintController {
     final gridWidth = contextWindow >= 1000000
         ? (isNarrowScreen ? 5 : 20)
         : (isNarrowScreen ? 5 : 10);
-    final gridHeight =
-        contextWindow >= 1000000 ? 10 : (isNarrowScreen ? 5 : 10);
+    final gridHeight = contextWindow >= 1000000
+        ? 10
+        : (isNarrowScreen ? 5 : 10);
     final totalSquares = gridWidth * gridHeight;
 
     // Filter out deferred categories
@@ -732,15 +754,19 @@ class ContextAnalyzer extends SintController {
 
     // Separate reserved category
     final reservedCat = categorySquares
-        .where((c) =>
-            c.category.name == _reservedCategoryName ||
-            c.category.name == _manualCompactBufferName)
+        .where(
+          (c) =>
+              c.category.name == _reservedCategoryName ||
+              c.category.name == _manualCompactBufferName,
+        )
         .firstOrNull;
     final nonReservedCats = categorySquares
-        .where((c) =>
-            c.category.name != _reservedCategoryName &&
-            c.category.name != _manualCompactBufferName &&
-            c.category.name != 'Free space')
+        .where(
+          (c) =>
+              c.category.name != _reservedCategoryName &&
+              c.category.name != _manualCompactBufferName &&
+              c.category.name != 'Free space',
+        )
         .toList();
 
     // Add non-reserved squares
@@ -749,54 +775,67 @@ class ContextAnalyzer extends SintController {
       final wholeSquares = exactSquares.floor();
       final fractionalPart = exactSquares - wholeSquares;
 
-      for (int i = 0; i < cat.squares && gridSquares.length < totalSquares; i++) {
+      for (
+        int i = 0;
+        i < cat.squares && gridSquares.length < totalSquares;
+        i++
+      ) {
         double squareFullness = 1.0;
         if (i == wholeSquares && fractionalPart > 0) {
           squareFullness = fractionalPart;
         }
-        gridSquares.add(GridSquare(
-          color: cat.category.color,
-          isFilled: true,
-          categoryName: cat.category.name,
-          tokens: cat.category.tokens,
-          percentage: cat.percentage,
-          squareFullness: squareFullness,
-        ));
+        gridSquares.add(
+          GridSquare(
+            color: cat.category.color,
+            isFilled: true,
+            categoryName: cat.category.name,
+            tokens: cat.category.tokens,
+            percentage: cat.percentage,
+            squareFullness: squareFullness,
+          ),
+        );
       }
     }
 
     // Fill with free space
     final reservedSquareCount = reservedCat?.squares ?? 0;
     final freeSpaceTarget = totalSquares - reservedSquareCount;
-    final freeSpaceCat =
-        categories.where((c) => c.name == 'Free space').firstOrNull;
+    final freeSpaceCat = categories
+        .where((c) => c.name == 'Free space')
+        .firstOrNull;
 
     while (gridSquares.length < freeSpaceTarget) {
-      gridSquares.add(GridSquare(
-        color: 'promptBorder',
-        isFilled: true,
-        categoryName: 'Free space',
-        tokens: freeSpaceCat?.tokens ?? 0,
-        percentage: freeSpaceCat != null
-            ? ((freeSpaceCat.tokens / contextWindow) * 100).round()
-            : 0,
-        squareFullness: 1.0,
-      ));
+      gridSquares.add(
+        GridSquare(
+          color: 'promptBorder',
+          isFilled: true,
+          categoryName: 'Free space',
+          tokens: freeSpaceCat?.tokens ?? 0,
+          percentage: freeSpaceCat != null
+              ? ((freeSpaceCat.tokens / contextWindow) * 100).round()
+              : 0,
+          squareFullness: 1.0,
+        ),
+      );
     }
 
     // Add reserved squares at the end
     if (reservedCat != null) {
-      for (int i = 0;
-          i < reservedCat.squares && gridSquares.length < totalSquares;
-          i++) {
-        gridSquares.add(GridSquare(
-          color: reservedCat.category.color,
-          isFilled: true,
-          categoryName: reservedCat.category.name,
-          tokens: reservedCat.category.tokens,
-          percentage: reservedCat.percentage,
-          squareFullness: 1.0,
-        ));
+      for (
+        int i = 0;
+        i < reservedCat.squares && gridSquares.length < totalSquares;
+        i++
+      ) {
+        gridSquares.add(
+          GridSquare(
+            color: reservedCat.category.color,
+            isFilled: true,
+            categoryName: reservedCat.category.name,
+            tokens: reservedCat.category.tokens,
+            percentage: reservedCat.percentage,
+            squareFullness: 1.0,
+          ),
+        );
       }
     }
 
@@ -852,109 +891,135 @@ class ContextAnalyzer extends SintController {
     final cats = <ContextCategory>[];
 
     if (systemPromptTokens > 0) {
-      cats.add(ContextCategory(
-        name: 'System prompt',
-        tokens: systemPromptTokens,
-        color: 'promptBorder',
-      ));
+      cats.add(
+        ContextCategory(
+          name: 'System prompt',
+          tokens: systemPromptTokens,
+          color: 'promptBorder',
+        ),
+      );
     }
 
     final systemToolsTokens = builtInToolTokens - skillFrontmatterTokens;
     if (systemToolsTokens > 0) {
-      cats.add(ContextCategory(
-        name: 'System tools',
-        tokens: systemToolsTokens,
-        color: 'inactive',
-      ));
+      cats.add(
+        ContextCategory(
+          name: 'System tools',
+          tokens: systemToolsTokens,
+          color: 'inactive',
+        ),
+      );
     }
 
     if (mcpToolTokens > 0) {
-      cats.add(ContextCategory(
-        name: 'MCP tools',
-        tokens: mcpToolTokens,
-        color: 'cyan',
-      ));
+      cats.add(
+        ContextCategory(
+          name: 'MCP tools',
+          tokens: mcpToolTokens,
+          color: 'cyan',
+        ),
+      );
     }
 
     if (deferredToolTokens > 0) {
-      cats.add(ContextCategory(
-        name: 'MCP tools (deferred)',
-        tokens: deferredToolTokens,
-        color: 'inactive',
-        isDeferred: true,
-      ));
+      cats.add(
+        ContextCategory(
+          name: 'MCP tools (deferred)',
+          tokens: deferredToolTokens,
+          color: 'inactive',
+          isDeferred: true,
+        ),
+      );
     }
 
     if (deferredBuiltinTokens > 0) {
-      cats.add(ContextCategory(
-        name: 'System tools (deferred)',
-        tokens: deferredBuiltinTokens,
-        color: 'inactive',
-        isDeferred: true,
-      ));
+      cats.add(
+        ContextCategory(
+          name: 'System tools (deferred)',
+          tokens: deferredBuiltinTokens,
+          color: 'inactive',
+          isDeferred: true,
+        ),
+      );
     }
 
     if (agentTokens > 0) {
-      cats.add(ContextCategory(
-        name: 'Custom agents',
-        tokens: agentTokens,
-        color: 'permission',
-      ));
+      cats.add(
+        ContextCategory(
+          name: 'Custom agents',
+          tokens: agentTokens,
+          color: 'permission',
+        ),
+      );
     }
 
     if (neomClawMdTokens > 0) {
-      cats.add(ContextCategory(
-        name: 'Memory files',
-        tokens: neomClawMdTokens,
-        color: 'neomclaw',
-      ));
+      cats.add(
+        ContextCategory(
+          name: 'Memory files',
+          tokens: neomClawMdTokens,
+          color: 'neomclaw',
+        ),
+      );
     }
 
     if (skillFrontmatterTokens > 0) {
-      cats.add(ContextCategory(
-        name: 'Skills',
-        tokens: skillFrontmatterTokens,
-        color: 'warning',
-      ));
+      cats.add(
+        ContextCategory(
+          name: 'Skills',
+          tokens: skillFrontmatterTokens,
+          color: 'warning',
+        ),
+      );
     }
 
     if (messageTokens > 0) {
-      cats.add(ContextCategory(
-        name: 'Messages',
-        tokens: messageTokens,
-        color: 'purple',
-      ));
+      cats.add(
+        ContextCategory(
+          name: 'Messages',
+          tokens: messageTokens,
+          color: 'purple',
+        ),
+      );
     }
 
     // Calculate actual content usage
-    final actualUsage =
-        cats.fold<int>(0, (sum, cat) => sum + (cat.isDeferred ? 0 : cat.tokens));
+    final actualUsage = cats.fold<int>(
+      0,
+      (sum, cat) => sum + (cat.isDeferred ? 0 : cat.tokens),
+    );
 
     // Reserved space
     int reservedTokens = 0;
     if (isAutoCompact && autoCompactThreshold != null) {
       reservedTokens = contextWindow - autoCompactThreshold;
-      cats.add(ContextCategory(
-        name: _reservedCategoryName,
-        tokens: reservedTokens,
-        color: 'inactive',
-      ));
+      cats.add(
+        ContextCategory(
+          name: _reservedCategoryName,
+          tokens: reservedTokens,
+          color: 'inactive',
+        ),
+      );
     } else if (!isAutoCompact) {
       reservedTokens = manualCompactBufferTokens;
-      cats.add(ContextCategory(
-        name: _manualCompactBufferName,
-        tokens: reservedTokens,
-        color: 'inactive',
-      ));
+      cats.add(
+        ContextCategory(
+          name: _manualCompactBufferName,
+          tokens: reservedTokens,
+          color: 'inactive',
+        ),
+      );
     }
 
     // Free space
     final freeTokens = max(0, contextWindow - actualUsage - reservedTokens);
-    cats.add(ContextCategory(
-      name: 'Free space',
-      tokens: freeTokens,
-      color: 'promptBorder',
-    ));
+    cats.add(
+      ContextCategory(
+        name: 'Free space',
+        tokens: freeTokens,
+        color: 'promptBorder',
+      ),
+    );
 
     final totalIncludingReserved = actualUsage;
 
@@ -962,8 +1027,8 @@ class ContextAnalyzer extends SintController {
     final apiUsage = _getCurrentUsage(messages);
     final totalFromAPI = apiUsage != null
         ? apiUsage.inputTokens +
-            apiUsage.cacheCreationInputTokens +
-            apiUsage.cacheReadInputTokens
+              apiUsage.cacheCreationInputTokens +
+              apiUsage.cacheReadInputTokens
         : null;
 
     final finalTotalTokens = totalFromAPI ?? totalIncludingReserved;
@@ -1008,10 +1073,5 @@ class ContextAnalyzer extends SintController {
   @override
   void onInit() {
     super.onInit();
-  }
-
-  @override
-  void onClose() {
-    super.onClose();
   }
 }

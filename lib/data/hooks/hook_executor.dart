@@ -3,7 +3,6 @@
 // execution history, and statistics.
 
 import 'dart:async';
-import 'dart:math';
 
 import 'hook_types.dart';
 
@@ -98,12 +97,12 @@ class HookStats {
 
   /// Empty stats for initialization.
   factory HookStats.empty() => const HookStats(
-        totalExecutions: 0,
-        executionsByType: {},
-        avgDuration: Duration.zero,
-        failureCount: 0,
-        abortCount: 0,
-      );
+    totalExecutions: 0,
+    executionsByType: {},
+    avgDuration: Duration.zero,
+    failureCount: 0,
+    abortCount: 0,
+  );
 
   /// Failure rate as a percentage (0.0 to 1.0).
   double get failureRate =>
@@ -173,26 +172,17 @@ class _HookChainRunner {
           if (modifiedData != null) {
             currentContext = currentContext.copyWith(
               metadata: {...currentContext.metadata, ...modifiedData},
-              previousResults: [
-                ...currentContext.previousResults,
-                result,
-              ],
+              previousResults: [...currentContext.previousResults, result],
             );
           } else {
             currentContext = currentContext.copyWith(
-              previousResults: [
-                ...currentContext.previousResults,
-                result,
-              ],
+              previousResults: [...currentContext.previousResults, result],
             );
           }
 
         case HookSkip():
           currentContext = currentContext.copyWith(
-            previousResults: [
-              ...currentContext.previousResults,
-              result,
-            ],
+            previousResults: [...currentContext.previousResults, result],
           );
           continue;
 
@@ -204,19 +194,13 @@ class _HookChainRunner {
           // all retries were exhausted and the last result was Retry.
           // Treat as continue.
           currentContext = currentContext.copyWith(
-            previousResults: [
-              ...currentContext.previousResults,
-              result,
-            ],
+            previousResults: [...currentContext.previousResults, result],
           );
 
         case HookTransform(:final data):
           currentContext = currentContext.copyWith(
             metadata: {...currentContext.metadata, ...data},
-            previousResults: [
-              ...currentContext.previousResults,
-              result,
-            ],
+            previousResults: [...currentContext.previousResults, result],
           );
       }
     }
@@ -285,10 +269,7 @@ class _HookChainRunner {
         );
 
         // Timeout is not retried — return error immediately
-        return _ExecutionResult(
-          result: const HookContinue(),
-          event: event,
-        );
+        return _ExecutionResult(result: const HookContinue(), event: event);
       } catch (e, st) {
         stopwatch.stop();
         lastError = e;
@@ -308,10 +289,7 @@ class _HookChainRunner {
 
         // Exceptions in individual hooks should not break the chain.
         // Log and continue.
-        return _ExecutionResult(
-          result: const HookContinue(),
-          event: event,
-        );
+        return _ExecutionResult(result: const HookContinue(), event: event);
       }
     }
 
@@ -421,8 +399,10 @@ class HookExecutor {
       );
     }
 
-    final chain =
-        _chains.putIfAbsent(registration.type, () => HookChain(type: registration.type));
+    final chain = _chains.putIfAbsent(
+      registration.type,
+      () => HookChain(type: registration.type),
+    );
     chain.add(registration);
     _registrationsById[registration.id] = registration;
 
@@ -522,30 +502,34 @@ class HookExecutor {
       try {
         lastResult = hook.handler!(context);
         stopwatch.stop();
-        _recordEvent(HookExecutionEvent(
-          hookId: hook.id,
-          hookName: hook.name,
-          type: type,
-          context: context,
-          result: lastResult,
-          duration: stopwatch.elapsed,
-          timestamp: DateTime.now(),
-        ));
+        _recordEvent(
+          HookExecutionEvent(
+            hookId: hook.id,
+            hookName: hook.name,
+            type: type,
+            context: context,
+            result: lastResult,
+            duration: stopwatch.elapsed,
+            timestamp: DateTime.now(),
+          ),
+        );
 
         if (lastResult is HookAbort) return lastResult;
       } catch (e, st) {
         stopwatch.stop();
-        _recordEvent(HookExecutionEvent(
-          hookId: hook.id,
-          hookName: hook.name,
-          type: type,
-          context: context,
-          result: const HookContinue(),
-          duration: stopwatch.elapsed,
-          error: e,
-          errorStackTrace: st,
-          timestamp: DateTime.now(),
-        ));
+        _recordEvent(
+          HookExecutionEvent(
+            hookId: hook.id,
+            hookName: hook.name,
+            type: type,
+            context: context,
+            result: const HookContinue(),
+            duration: stopwatch.elapsed,
+            error: e,
+            errorStackTrace: st,
+            timestamp: DateTime.now(),
+          ),
+        );
       }
     }
 
@@ -555,10 +539,7 @@ class HookExecutor {
   /// Execute all matching hooks for the given type asynchronously.
   ///
   /// Runs the hook chain in priority order. Returns the final [HookResult].
-  Future<HookResult> executeAsync(
-    HookType type,
-    HookContext context,
-  ) async {
+  Future<HookResult> executeAsync(HookType type, HookContext context) async {
     final chain = _chains[type];
     if (chain == null || chain.isEmpty) return const HookContinue();
 
@@ -613,10 +594,7 @@ class HookExecutor {
   // ── History ──
 
   /// Get execution history, optionally filtered by type and/or limited.
-  List<HookExecutionEvent> getExecutionHistory({
-    HookType? type,
-    int? limit,
-  }) {
+  List<HookExecutionEvent> getExecutionHistory({HookType? type, int? limit}) {
     Iterable<HookExecutionEvent> results = _history;
 
     if (type != null) {
@@ -651,8 +629,7 @@ class HookExecutor {
       executionsByType: Map.unmodifiable(_executionsByType),
       avgDuration: _totalExecutions == 0
           ? Duration.zero
-          : Duration(
-              microseconds: _totalDurationMicros ~/ _totalExecutions),
+          : Duration(microseconds: _totalDurationMicros ~/ _totalExecutions),
       failureCount: _failureCount,
       abortCount: _abortCount,
       lastExecution: _lastExecution,
@@ -681,8 +658,7 @@ class HookExecutor {
     _totalExecutions++;
     _totalDurationMicros += event.duration.inMicroseconds;
     _lastExecution = event.timestamp;
-    _executionsByType[event.type] =
-        (_executionsByType[event.type] ?? 0) + 1;
+    _executionsByType[event.type] = (_executionsByType[event.type] ?? 0) + 1;
     _executionsByHookId[event.hookId] =
         (_executionsByHookId[event.hookId] ?? 0) + 1;
 
@@ -715,7 +691,7 @@ class BuiltInHooks {
   /// otherwise. Runs at [HookPriority.critical].
   static HookRegistration permissionCheckHook({
     required bool Function(String toolName, Map<String, dynamic> input)
-        isPermitted,
+    isPermitted,
   }) {
     return HookRegistration(
       id: 'builtin:permission-check',
@@ -729,9 +705,7 @@ class BuiltInHooks {
         if (context is! ToolHookContext) return const HookContinue();
         final permitted = isPermitted(context.toolName, context.toolInput);
         if (!permitted) {
-          return HookAbort(
-            'Permission denied for tool "${context.toolName}"',
-          );
+          return HookAbort('Permission denied for tool "${context.toolName}"');
         }
         return const HookContinue();
       },
@@ -758,7 +732,8 @@ class BuiltInHooks {
         if (context is! ToolHookContext) return const HookContinue();
 
         // Check file paths in tool input
-        final path = context.toolInput['file_path'] as String? ??
+        final path =
+            context.toolInput['file_path'] as String? ??
             context.toolInput['path'] as String?;
         if (path != null && !isInSandbox(path)) {
           return HookAbort(
@@ -775,9 +750,7 @@ class BuiltInHooks {
   ///
   /// Tracks call counts per time window and returns [HookRetry] when
   /// the limit is exceeded.
-  static HookRegistration rateLimitHook({
-    required int maxCallsPerMinute,
-  }) {
+  static HookRegistration rateLimitHook({required int maxCallsPerMinute}) {
     final callTimestamps = <DateTime>[];
 
     return HookRegistration(
@@ -827,7 +800,8 @@ class BuiltInHooks {
       tags: {'audit', 'logging'},
       handler: (context) {
         if (context is ToolHookContext) {
-          final entry = '[${context.timestamp.toIso8601String()}] '
+          final entry =
+              '[${context.timestamp.toIso8601String()}] '
               'Tool: ${context.toolName}, '
               'Session: ${context.sessionId ?? "none"}, '
               'Error: ${context.toolIsError ?? false}';
@@ -844,7 +818,7 @@ class BuiltInHooks {
   /// via the hook context metadata.
   static HookRegistration costTrackingHook({
     required void Function(int inputTokens, int outputTokens, double cost)
-        onUsage,
+    onUsage,
     double costPerInputToken = 0.000003,
     double costPerOutputToken = 0.000015,
   }) {
@@ -865,16 +839,19 @@ class BuiltInHooks {
           final usage = context.tokenUsage!;
           totalInputTokens += usage.inputTokens;
           totalOutputTokens += usage.outputTokens;
-          final callCost = (usage.inputTokens * costPerInputToken) +
+          final callCost =
+              (usage.inputTokens * costPerInputToken) +
               (usage.outputTokens * costPerOutputToken);
           totalCost += callCost;
           onUsage(usage.inputTokens, usage.outputTokens, callCost);
         }
-        return HookContinue(modifiedData: {
-          'totalInputTokens': totalInputTokens,
-          'totalOutputTokens': totalOutputTokens,
-          'totalCost': totalCost,
-        });
+        return HookContinue(
+          modifiedData: {
+            'totalInputTokens': totalInputTokens,
+            'totalOutputTokens': totalOutputTokens,
+            'totalCost': totalCost,
+          },
+        );
       },
     );
   }
@@ -972,8 +949,10 @@ class BuiltInHooks {
       RegExp(r'(?:api[_-]?key|apikey)\s*[=:]\s*\S+', caseSensitive: false),
       RegExp(r'(?:password|passwd|pwd)\s*[=:]\s*\S+', caseSensitive: false),
       RegExp(r'(?:secret|token)\s*[=:]\s*\S+', caseSensitive: false),
-      RegExp(r'(?:access[_-]?key|aws[_-]?key)\s*[=:]\s*\S+',
-          caseSensitive: false),
+      RegExp(
+        r'(?:access[_-]?key|aws[_-]?key)\s*[=:]\s*\S+',
+        caseSensitive: false,
+      ),
       RegExp(r'-----BEGIN (?:RSA |DSA |EC )?PRIVATE KEY-----'),
       RegExp(r'sk-[a-zA-Z0-9]{20,}'), // OpenAI-style keys
       RegExp(r'ghp_[a-zA-Z0-9]{36}'), // GitHub personal access tokens
@@ -999,9 +978,7 @@ class BuiltInHooks {
                 'Potential secret detected in tool input for '
                 '"${context.toolName}". Pattern: ${pattern.pattern}';
             onWarning?.call(warning);
-            return HookContinue(modifiedData: {
-              'secretWarning': warning,
-            });
+            return HookContinue(modifiedData: {'secretWarning': warning});
           }
         }
 
@@ -1031,10 +1008,12 @@ class BuiltInHooks {
     }
 
     if (isInSandbox != null) {
-      executor.register(sandboxEnforcementHook(
-        allowedPaths: allowedPaths ?? [],
-        isInSandbox: isInSandbox,
-      ));
+      executor.register(
+        sandboxEnforcementHook(
+          allowedPaths: allowedPaths ?? [],
+          isInSandbox: isInSandbox,
+        ),
+      );
     }
 
     executor.register(rateLimitHook(maxCallsPerMinute: maxCallsPerMinute));
@@ -1051,9 +1030,9 @@ class BuiltInHooks {
       executor.register(fileBackupHook(writeBackup: writeBackup));
     }
 
-    executor.register(gitSafetyHook(
-      protectedBranches: protectedBranches ?? ['main', 'master'],
-    ));
+    executor.register(
+      gitSafetyHook(protectedBranches: protectedBranches ?? ['main', 'master']),
+    );
 
     executor.register(secretDetectionHook(onWarning: onSecretWarning));
   }

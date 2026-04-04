@@ -89,17 +89,11 @@ class _PermissionDialogWidgetState extends State<_PermissionDialogWidget> {
                 title: explanation.title,
               ),
               const SizedBox(height: 8),
-              Text(
-                explanation.description,
-                style: theme.textTheme.bodyMedium,
-              ),
+              Text(explanation.description, style: theme.textTheme.bodyMedium),
               const Divider(height: 24),
             ],
             // Tool input preview
-            Text(
-              'Tool Input:',
-              style: theme.textTheme.labelLarge,
-            ),
+            Text('Tool Input:', style: theme.textTheme.labelLarge),
             const SizedBox(height: 4),
             Container(
               width: double.infinity,
@@ -178,10 +172,10 @@ class _PermissionDialogWidgetState extends State<_PermissionDialogWidget> {
   }
 
   Color _riskColor(RiskLevel level) => switch (level) {
-        RiskLevel.low => Colors.green,
-        RiskLevel.medium => Colors.orange,
-        RiskLevel.high => Colors.red,
-      };
+    RiskLevel.low => Colors.green,
+    RiskLevel.medium => Colors.orange,
+    RiskLevel.high => Colors.red,
+  };
 }
 
 class _RiskBadge extends StatelessWidget {
@@ -282,8 +276,7 @@ class PermissionBanner extends StatelessWidget {
             ),
             TextButton(onPressed: onDeny, child: const Text('Deny')),
             const SizedBox(width: 4),
-            FilledButton.tonal(
-                onPressed: onAllow, child: const Text('Allow')),
+            FilledButton.tonal(onPressed: onAllow, child: const Text('Allow')),
           ],
         ),
       ),

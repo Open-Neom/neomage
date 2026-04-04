@@ -28,13 +28,7 @@ enum RemoteConnectionType {
 }
 
 /// Authentication method for remote connections.
-enum RemoteAuthMethod {
-  token,
-  apiKey,
-  oauth,
-  certificate,
-  none,
-}
+enum RemoteAuthMethod { token, apiKey, oauth, certificate, none }
 
 /// Remote session info.
 class RemoteSessionInfo {
@@ -75,39 +69,38 @@ class RemoteSessionInfo {
     DateTime? lastActivity,
     int? messageCount,
     Duration? latency,
-  }) =>
-      RemoteSessionInfo(
-        sessionId: sessionId,
-        hostId: hostId,
-        displayName: displayName,
-        state: state ?? this.state,
-        connectionType: connectionType,
-        connectedAt: connectedAt,
-        lastActivity: lastActivity ?? this.lastActivity,
-        remoteAddress: remoteAddress,
-        remotePort: remotePort,
-        model: model,
-        workingDirectory: workingDirectory,
-        messageCount: messageCount ?? this.messageCount,
-        latency: latency ?? this.latency,
-        metadata: metadata,
-      );
+  }) => RemoteSessionInfo(
+    sessionId: sessionId,
+    hostId: hostId,
+    displayName: displayName,
+    state: state ?? this.state,
+    connectionType: connectionType,
+    connectedAt: connectedAt,
+    lastActivity: lastActivity ?? this.lastActivity,
+    remoteAddress: remoteAddress,
+    remotePort: remotePort,
+    model: model,
+    workingDirectory: workingDirectory,
+    messageCount: messageCount ?? this.messageCount,
+    latency: latency ?? this.latency,
+    metadata: metadata,
+  );
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'hostId': hostId,
-        'displayName': displayName,
-        'state': state.name,
-        'connectionType': connectionType.name,
-        'connectedAt': connectedAt.toIso8601String(),
-        'lastActivity': lastActivity?.toIso8601String(),
-        'remoteAddress': remoteAddress,
-        'remotePort': remotePort,
-        'model': model,
-        'workingDirectory': workingDirectory,
-        'messageCount': messageCount,
-        'latencyMs': latency.inMilliseconds,
-      };
+    'sessionId': sessionId,
+    'hostId': hostId,
+    'displayName': displayName,
+    'state': state.name,
+    'connectionType': connectionType.name,
+    'connectedAt': connectedAt.toIso8601String(),
+    'lastActivity': lastActivity?.toIso8601String(),
+    'remoteAddress': remoteAddress,
+    'remotePort': remotePort,
+    'model': model,
+    'workingDirectory': workingDirectory,
+    'messageCount': messageCount,
+    'latencyMs': latency.inMilliseconds,
+  };
 }
 
 /// Remote message envelope.
@@ -129,22 +122,22 @@ class RemoteMessage {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type,
-        'action': action,
-        'payload': payload,
-        'timestamp': timestamp.toIso8601String(),
-        if (replyTo != null) 'replyTo': replyTo,
-      };
+    'id': id,
+    'type': type,
+    'action': action,
+    'payload': payload,
+    'timestamp': timestamp.toIso8601String(),
+    if (replyTo != null) 'replyTo': replyTo,
+  };
 
   factory RemoteMessage.fromJson(Map<String, dynamic> json) => RemoteMessage(
-        id: json['id'] as String,
-        type: json['type'] as String,
-        action: json['action'] as String,
-        payload: json['payload'] as Map<String, dynamic>? ?? {},
-        timestamp: DateTime.parse(json['timestamp'] as String),
-        replyTo: json['replyTo'] as String?,
-      );
+    id: json['id'] as String,
+    type: json['type'] as String,
+    action: json['action'] as String,
+    payload: json['payload'] as Map<String, dynamic>? ?? {},
+    timestamp: DateTime.parse(json['timestamp'] as String),
+    replyTo: json['replyTo'] as String?,
+  );
 }
 
 /// Remote event for state changes.
@@ -208,12 +201,12 @@ class RemoteClient {
     int maxReconnectAttempts = 10,
     Duration heartbeatInterval = const Duration(seconds: 30),
     Duration reconnectDelay = const Duration(seconds: 2),
-  })  : _url = url,
-        _authToken = authToken,
-        _authMethod = authMethod,
-        _maxReconnectAttempts = maxReconnectAttempts,
-        _heartbeatInterval = heartbeatInterval,
-        _reconnectDelay = reconnectDelay;
+  }) : _url = url,
+       _authToken = authToken,
+       _authMethod = authMethod,
+       _maxReconnectAttempts = maxReconnectAttempts,
+       _heartbeatInterval = heartbeatInterval,
+       _reconnectDelay = reconnectDelay;
 
   /// Current connection state.
   RemoteSessionState get state => _state;
@@ -288,10 +281,9 @@ class RemoteClient {
     _setState(RemoteSessionState.disconnected);
 
     if (_sessionInfo != null) {
-      _eventController.add(RemoteDisconnected(
-        _sessionInfo!.sessionId,
-        'User disconnected',
-      ));
+      _eventController.add(
+        RemoteDisconnected(_sessionInfo!.sessionId, 'User disconnected'),
+      );
     }
 
     // Cancel pending requests.
@@ -332,10 +324,13 @@ class RemoteClient {
     );
 
     // Timeout.
-    return completer.future.timeout(timeout, onTimeout: () {
-      _pendingRequests.remove(id);
-      throw TimeoutException('Request timed out', timeout);
-    });
+    return completer.future.timeout(
+      timeout,
+      onTimeout: () {
+        _pendingRequests.remove(id);
+        throw TimeoutException('Request timed out', timeout);
+      },
+    );
   }
 
   /// Send a fire-and-forget event.
@@ -410,10 +405,9 @@ class RemoteClient {
 
     if (_state != RemoteSessionState.disconnected) {
       _setState(RemoteSessionState.reconnecting);
-      _eventController.add(RemoteDisconnected(
-        _sessionInfo?.sessionId ?? 'unknown',
-        reason,
-      ));
+      _eventController.add(
+        RemoteDisconnected(_sessionInfo?.sessionId ?? 'unknown', reason),
+      );
       _scheduleReconnect();
     }
   }
@@ -423,13 +417,15 @@ class RemoteClient {
     _heartbeatTimer = Timer.periodic(_heartbeatInterval, (_) {
       if (_state == RemoteSessionState.connected && _socket != null) {
         _lastPingSent = DateTime.now();
-        _socket!.add(jsonEncode({
-          'id': _nextMessageId(),
-          'type': 'ping',
-          'action': 'heartbeat',
-          'payload': {},
-          'timestamp': DateTime.now().toIso8601String(),
-        }));
+        _socket!.add(
+          jsonEncode({
+            'id': _nextMessageId(),
+            'type': 'ping',
+            'action': 'heartbeat',
+            'payload': {},
+            'timestamp': DateTime.now().toIso8601String(),
+          }),
+        );
       }
     });
   }
@@ -437,12 +433,16 @@ class RemoteClient {
   void _scheduleReconnect() {
     if (_reconnectAttempts >= _maxReconnectAttempts) {
       _setState(RemoteSessionState.expired);
-      _eventController.add(const RemoteError('Max reconnection attempts exceeded'));
+      _eventController.add(
+        const RemoteError('Max reconnection attempts exceeded'),
+      );
       return;
     }
 
     _reconnectAttempts++;
-    final delay = _reconnectDelay * (1 << (_reconnectAttempts - 1).clamp(0, 5)); // Exponential backoff
+    final delay =
+        _reconnectDelay *
+        (1 << (_reconnectAttempts - 1).clamp(0, 5)); // Exponential backoff
 
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(delay, () => connect());
@@ -469,11 +469,7 @@ class RemoteServer {
   final Map<String, RemoteSessionInfo> _sessions = {};
   int _clientCounter = 0;
 
-  RemoteServer({
-    this.port = 3100,
-    this.host,
-    this.authToken,
-  });
+  RemoteServer({this.port = 3100, this.host, this.authToken});
 
   /// Event stream.
   Stream<RemoteEvent> get events => _eventController.stream;
@@ -486,10 +482,7 @@ class RemoteServer {
 
   /// Start the server.
   Future<void> start() async {
-    _server = await HttpServer.bind(
-      host ?? InternetAddress.loopbackIPv4,
-      port,
-    );
+    _server = await HttpServer.bind(host ?? InternetAddress.loopbackIPv4, port);
 
     _server!.listen(_handleRequest);
   }
@@ -536,10 +529,14 @@ class RemoteServer {
   Future<void> _handleRequest(HttpRequest request) async {
     // CORS headers.
     request.response.headers.add('Access-Control-Allow-Origin', '*');
-    request.response.headers
-        .add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     request.response.headers.add(
-        'Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Api-Key');
+      'Access-Control-Allow-Methods',
+      'GET, POST, OPTIONS',
+    );
+    request.response.headers.add(
+      'Access-Control-Allow-Headers',
+      'Authorization, Content-Type, X-Api-Key',
+    );
 
     if (request.method == 'OPTIONS') {
       request.response.statusCode = 204;
@@ -565,19 +562,21 @@ class RemoteServer {
     switch (path) {
       case '/api/status':
         request.response.headers.contentType = ContentType.json;
-        request.response.write(jsonEncode({
-          'status': 'running',
-          'clients': _clients.length,
-          'sessions': _sessions.values.map((s) => s.toJson()).toList(),
-          'uptime': _server != null ? DateTime.now().toIso8601String() : null,
-        }));
+        request.response.write(
+          jsonEncode({
+            'status': 'running',
+            'clients': _clients.length,
+            'sessions': _sessions.values.map((s) => s.toJson()).toList(),
+            'uptime': _server != null ? DateTime.now().toIso8601String() : null,
+          }),
+        );
         await request.response.close();
 
       case '/api/sessions':
         request.response.headers.contentType = ContentType.json;
-        request.response.write(jsonEncode(
-          _sessions.values.map((s) => s.toJson()).toList(),
-        ));
+        request.response.write(
+          jsonEncode(_sessions.values.map((s) => s.toJson()).toList()),
+        );
         await request.response.close();
 
       case '/ws':
@@ -623,34 +622,43 @@ class RemoteServer {
     _eventController.add(RemoteConnected(session));
 
     // Send welcome message.
-    socket.add(jsonEncode(RemoteMessage(
-      id: 'welcome',
-      type: 'event',
-      action: 'connected',
-      payload: {
-        'clientId': clientId,
-        'serverVersion': '1.0.0',
-        'capabilities': ['chat', 'tools', 'streaming', 'status'],
-      },
-      timestamp: DateTime.now(),
-    ).toJson()));
+    socket.add(
+      jsonEncode(
+        RemoteMessage(
+          id: 'welcome',
+          type: 'event',
+          action: 'connected',
+          payload: {
+            'clientId': clientId,
+            'serverVersion': '1.0.0',
+            'capabilities': ['chat', 'tools', 'streaming', 'status'],
+          },
+          timestamp: DateTime.now(),
+        ).toJson(),
+      ),
+    );
 
     socket.listen(
       (data) {
         try {
-          final message =
-              RemoteMessage.fromJson(jsonDecode(data as String) as Map<String, dynamic>);
+          final message = RemoteMessage.fromJson(
+            jsonDecode(data as String) as Map<String, dynamic>,
+          );
 
           // Handle ping.
           if (message.type == 'ping') {
-            socket.add(jsonEncode(RemoteMessage(
-              id: message.id,
-              type: 'pong',
-              action: 'heartbeat',
-              payload: {},
-              timestamp: DateTime.now(),
-              replyTo: message.id,
-            ).toJson()));
+            socket.add(
+              jsonEncode(
+                RemoteMessage(
+                  id: message.id,
+                  type: 'pong',
+                  action: 'heartbeat',
+                  payload: {},
+                  timestamp: DateTime.now(),
+                  replyTo: message.id,
+                ).toJson(),
+              ),
+            );
             return;
           }
 
@@ -662,13 +670,17 @@ class RemoteServer {
 
           _eventController.add(RemoteMessageReceived(message));
         } catch (e) {
-          _eventController.add(RemoteError('Failed to parse client message', e));
+          _eventController.add(
+            RemoteError('Failed to parse client message', e),
+          );
         }
       },
       onDone: () {
         _clients.remove(clientId);
         _sessions.remove(clientId);
-        _eventController.add(RemoteDisconnected(clientId, 'Client disconnected'));
+        _eventController.add(
+          RemoteDisconnected(clientId, 'Client disconnected'),
+        );
       },
       onError: (e) {
         _clients.remove(clientId);
@@ -706,18 +718,21 @@ class SessionRelay {
     required String displayName,
     Map<String, dynamic>? capabilities,
   }) async {
-    _socket = await WebSocket.connect(relayUrl, headers: {
-      if (relayToken != null) 'Authorization': 'Bearer $relayToken',
-    });
+    _socket = await WebSocket.connect(
+      relayUrl,
+      headers: {if (relayToken != null) 'Authorization': 'Bearer $relayToken'},
+    );
 
     final registrationId = 'host_${DateTime.now().millisecondsSinceEpoch}';
 
-    _socket!.add(jsonEncode({
-      'type': 'register',
-      'hostId': registrationId,
-      'displayName': displayName,
-      'capabilities': capabilities ?? {},
-    }));
+    _socket!.add(
+      jsonEncode({
+        'type': 'register',
+        'hostId': registrationId,
+        'displayName': displayName,
+        'capabilities': capabilities ?? {},
+      }),
+    );
 
     // Start heartbeat.
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 30), (_) {
@@ -727,13 +742,16 @@ class SessionRelay {
     _socket!.listen(
       (data) {
         try {
-          final message =
-              RemoteMessage.fromJson(jsonDecode(data as String) as Map<String, dynamic>);
+          final message = RemoteMessage.fromJson(
+            jsonDecode(data as String) as Map<String, dynamic>,
+          );
           _eventController.add(RemoteMessageReceived(message));
         } catch (_) {}
       },
       onDone: () {
-        _eventController.add(const RemoteDisconnected('relay', 'Relay disconnected'));
+        _eventController.add(
+          const RemoteDisconnected('relay', 'Relay disconnected'),
+        );
       },
     );
 
@@ -742,10 +760,7 @@ class SessionRelay {
 
   /// Connect to a host through the relay.
   Future<void> connectToHost(String hostId) async {
-    _socket?.add(jsonEncode({
-      'type': 'connect',
-      'targetHostId': hostId,
-    }));
+    _socket?.add(jsonEncode({'type': 'connect', 'targetHostId': hostId}));
   }
 
   /// List available hosts on the relay.
@@ -759,8 +774,7 @@ class SessionRelay {
       }
       final response = await request.close();
       final body = await response.transform(utf8.decoder).join();
-      return (jsonDecode(body) as List<dynamic>)
-          .cast<Map<String, dynamic>>();
+      return (jsonDecode(body) as List<dynamic>).cast<Map<String, dynamic>>();
     } finally {
       client.close();
     }
@@ -806,18 +820,20 @@ class RemoteDiscovery {
           final body = await response.transform(utf8.decoder).join();
           final json = jsonDecode(body) as Map<String, dynamic>;
 
-          results.add(RemoteSessionInfo(
-            sessionId: 'discovered_${subnet}_$port',
-            hostId: subnet,
-            displayName: json['displayName'] as String? ?? '$subnet:$port',
-            state: RemoteSessionState.connected,
-            connectionType: RemoteConnectionType.direct,
-            connectedAt: DateTime.now(),
-            remoteAddress: subnet,
-            remotePort: port,
-            model: json['model'] as String?,
-            metadata: json,
-          ));
+          results.add(
+            RemoteSessionInfo(
+              sessionId: 'discovered_${subnet}_$port',
+              hostId: subnet,
+              displayName: json['displayName'] as String? ?? '$subnet:$port',
+              state: RemoteSessionState.connected,
+              connectionType: RemoteConnectionType.direct,
+              connectedAt: DateTime.now(),
+              remoteAddress: subnet,
+              remotePort: port,
+              model: json['model'] as String?,
+              metadata: json,
+            ),
+          );
         }
 
         client.close();
@@ -846,7 +862,8 @@ class RemoteDiscovery {
 
   /// Parse a connection URL.
   static ({String host, int port, String? token}) parseConnectionUrl(
-      String url) {
+    String url,
+  ) {
     final uri = Uri.parse(url);
     return (
       host: uri.host,

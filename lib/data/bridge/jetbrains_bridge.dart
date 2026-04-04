@@ -3,7 +3,6 @@
 // editor, project, inspections, refactoring, VCS, and events.
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'bridge_protocol.dart';
 
@@ -75,14 +74,14 @@ class JetbrainsModule {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'path': path,
-        if (type != null) 'type': type,
-        'sourceRoots': sourceRoots,
-        'testRoots': testRoots,
-        'resourceRoots': resourceRoots,
-        'dependencies': dependencies.map((d) => d.toJson()).toList(),
-      };
+    'name': name,
+    'path': path,
+    if (type != null) 'type': type,
+    'sourceRoots': sourceRoots,
+    'testRoots': testRoots,
+    'resourceRoots': resourceRoots,
+    'dependencies': dependencies.map((d) => d.toJson()).toList(),
+  };
 
   factory JetbrainsModule.fromJson(Map<String, dynamic> json) =>
       JetbrainsModule(
@@ -91,13 +90,15 @@ class JetbrainsModule {
         type: json['type'] as String?,
         sourceRoots:
             (json['sourceRoots'] as List<dynamic>?)?.cast<String>() ?? [],
-        testRoots:
-            (json['testRoots'] as List<dynamic>?)?.cast<String>() ?? [],
+        testRoots: (json['testRoots'] as List<dynamic>?)?.cast<String>() ?? [],
         resourceRoots:
             (json['resourceRoots'] as List<dynamic>?)?.cast<String>() ?? [],
-        dependencies: (json['dependencies'] as List<dynamic>?)
+        dependencies:
+            (json['dependencies'] as List<dynamic>?)
                 ?.map(
-                    (d) => JetbrainsDependency.fromJson(d as Map<String, dynamic>))
+                  (d) =>
+                      JetbrainsDependency.fromJson(d as Map<String, dynamic>),
+                )
                 .toList() ??
             [],
       );
@@ -116,10 +117,10 @@ class JetbrainsDependency {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        if (version != null) 'version': version,
-        'scope': scope,
-      };
+    'name': name,
+    if (version != null) 'version': version,
+    'scope': scope,
+  };
 
   factory JetbrainsDependency.fromJson(Map<String, dynamic> json) =>
       JetbrainsDependency(
@@ -150,14 +151,14 @@ class JetbrainsRunConfiguration {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'type': type,
-        if (mainClass != null) 'mainClass': mainClass,
-        if (module != null) 'module': module,
-        if (workingDirectory != null) 'workingDirectory': workingDirectory,
-        'programArgs': programArgs,
-        'envVars': envVars,
-      };
+    'name': name,
+    'type': type,
+    if (mainClass != null) 'mainClass': mainClass,
+    if (module != null) 'module': module,
+    if (workingDirectory != null) 'workingDirectory': workingDirectory,
+    'programArgs': programArgs,
+    'envVars': envVars,
+  };
 
   factory JetbrainsRunConfiguration.fromJson(Map<String, dynamic> json) =>
       JetbrainsRunConfiguration(
@@ -168,8 +169,10 @@ class JetbrainsRunConfiguration {
         workingDirectory: json['workingDirectory'] as String?,
         programArgs:
             (json['programArgs'] as List<dynamic>?)?.cast<String>() ?? [],
-        envVars: (json['envVars'] as Map<String, dynamic>?)
-                ?.map((k, v) => MapEntry(k, v.toString())) ??
+        envVars:
+            (json['envVars'] as Map<String, dynamic>?)?.map(
+              (k, v) => MapEntry(k, v.toString()),
+            ) ??
             {},
       );
 }
@@ -199,15 +202,14 @@ class JetbrainsInspectionResult {
   });
 
   Map<String, dynamic> toJson() => {
-        'inspectionName': inspectionName,
-        'severity': severity,
-        'description': description,
-        'filePath': filePath,
-        'line': line,
-        'column': column,
-        if (quickFixDescription != null)
-          'quickFixDescription': quickFixDescription,
-      };
+    'inspectionName': inspectionName,
+    'severity': severity,
+    'description': description,
+    'filePath': filePath,
+    'line': line,
+    'column': column,
+    if (quickFixDescription != null) 'quickFixDescription': quickFixDescription,
+  };
 
   factory JetbrainsInspectionResult.fromJson(Map<String, dynamic> json) =>
       JetbrainsInspectionResult(
@@ -261,10 +263,10 @@ class JetbrainsVcsFileStatus {
   });
 
   Map<String, dynamic> toJson() => {
-        'filePath': filePath,
-        'status': status.value,
-        if (originalPath != null) 'originalPath': originalPath,
-      };
+    'filePath': filePath,
+    'status': status.value,
+    if (originalPath != null) 'originalPath': originalPath,
+  };
 
   factory JetbrainsVcsFileStatus.fromJson(Map<String, dynamic> json) =>
       JetbrainsVcsFileStatus(
@@ -295,11 +297,11 @@ class JetbrainsAction {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'text': text,
-        if (description != null) 'description': description,
-        if (shortcut != null) 'shortcut': shortcut,
-      };
+    'id': id,
+    'text': text,
+    if (description != null) 'description': description,
+    if (shortcut != null) 'shortcut': shortcut,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -319,19 +321,18 @@ class JetbrainsBridge {
   bool _connected = false;
 
   // Event controllers
-  final StreamController<String> _onFileEdited =
-      StreamController.broadcast();
+  final StreamController<String> _onFileEdited = StreamController.broadcast();
   final StreamController<Map<String, dynamic>> _onBuildCompleted =
       StreamController.broadcast();
   final StreamController<List<JetbrainsInspectionResult>>
-      _onInspectionCompleted = StreamController.broadcast();
+  _onInspectionCompleted = StreamController.broadcast();
   final StreamController<JetbrainsVcsFileStatus> _onVcsFileChanged =
       StreamController.broadcast();
   final StreamController<Map<String, dynamic>> _onRunConfigurationFinished =
       StreamController.broadcast();
 
   JetbrainsBridge({BridgeProtocol? protocol})
-      : _protocol = protocol ?? BridgeProtocol() {
+    : _protocol = protocol ?? BridgeProtocol() {
     _registerNotificationHandlers();
   }
 
@@ -348,8 +349,7 @@ class JetbrainsBridge {
   Stream<String> get onFileEdited => _onFileEdited.stream;
 
   /// Fires when a build completes. Emits build result info.
-  Stream<Map<String, dynamic>> get onBuildCompleted =>
-      _onBuildCompleted.stream;
+  Stream<Map<String, dynamic>> get onBuildCompleted => _onBuildCompleted.stream;
 
   /// Fires when an inspection run completes.
   Stream<List<JetbrainsInspectionResult>> get onInspectionCompleted =>
@@ -366,10 +366,7 @@ class JetbrainsBridge {
   // ---- Connection ----
 
   /// Connect to a JetBrains IDE plugin for the given project.
-  Future<void> connect(
-    String projectPath, {
-    JetbrainsIdeType? ideType,
-  }) async {
+  Future<void> connect(String projectPath, {JetbrainsIdeType? ideType}) async {
     _projectPath = projectPath;
     _ideType = ideType;
 
@@ -393,9 +390,7 @@ class JetbrainsBridge {
       },
       workspacePaths: [projectPath],
       pid: 0,
-      extensions: {
-        if (ideType != null) 'ideType': ideType.productCode,
-      },
+      extensions: {if (ideType != null) 'ideType': ideType.productCode},
     );
 
     final response = await _protocol.initialize(handshake);
@@ -406,10 +401,10 @@ class JetbrainsBridge {
     // Detect IDE type from server response if not provided.
     if (_ideType == null &&
         response.result is Map<String, dynamic> &&
-        (response.result as Map<String, dynamic>)
-            .containsKey('ideType')) {
+        (response.result as Map<String, dynamic>).containsKey('ideType')) {
       _ideType = JetbrainsIdeType.fromString(
-          (response.result as Map<String, dynamic>)['ideType'] as String);
+        (response.result as Map<String, dynamic>)['ideType'] as String,
+      );
     }
 
     _connected = true;
@@ -426,30 +421,27 @@ class JetbrainsBridge {
   }) {
     return _protocol.sendRequest('jetbrains/openFile', {
       'filePath': filePath,
-      if (line != null) 'line': line,
-      if (column != null) 'column': column,
+      'line': ?line,
+      'column': ?column,
       'focusEditor': focusEditor,
     });
   }
 
   /// Close a file tab.
   Future<BridgeResponse> closeFile(String filePath) {
-    return _protocol.sendRequest(
-        'jetbrains/closeFile', {'filePath': filePath});
+    return _protocol.sendRequest('jetbrains/closeFile', {'filePath': filePath});
   }
 
   /// Get the active editor file path.
   Future<String?> getActiveFile() async {
-    final resp =
-        await _protocol.sendRequest('jetbrains/getActiveFile', null);
+    final resp = await _protocol.sendRequest('jetbrains/getActiveFile', null);
     if (resp.isSuccess) return resp.result as String?;
     return null;
   }
 
   /// Get all open file paths.
   Future<List<String>> getOpenFiles() async {
-    final resp =
-        await _protocol.sendRequest('jetbrains/getOpenFiles', null);
+    final resp = await _protocol.sendRequest('jetbrains/getOpenFiles', null);
     if (resp.isSuccess && resp.result is List) {
       return (resp.result as List).cast<String>();
     }
@@ -458,8 +450,7 @@ class JetbrainsBridge {
 
   /// Get the current selection text and range.
   Future<Map<String, dynamic>?> getSelection() async {
-    final resp =
-        await _protocol.sendRequest('jetbrains/getSelection', null);
+    final resp = await _protocol.sendRequest('jetbrains/getSelection', null);
     if (resp.isSuccess && resp.result is Map<String, dynamic>) {
       return resp.result as Map<String, dynamic>;
     }
@@ -468,8 +459,7 @@ class JetbrainsBridge {
 
   /// Insert text at the current caret position.
   Future<BridgeResponse> insertText(String text) {
-    return _protocol
-        .sendRequest('jetbrains/insertText', {'text': text});
+    return _protocol.sendRequest('jetbrains/insertText', {'text': text});
   }
 
   /// Replace a range of text in the active editor.
@@ -487,8 +477,9 @@ class JetbrainsBridge {
 
   /// Navigate to a symbol by fully qualified name.
   Future<BridgeResponse> navigateToSymbol(String qualifiedName) {
-    return _protocol.sendRequest(
-        'jetbrains/navigateToSymbol', {'qualifiedName': qualifiedName});
+    return _protocol.sendRequest('jetbrains/navigateToSymbol', {
+      'qualifiedName': qualifiedName,
+    });
   }
 
   /// Find usages of a symbol at the current caret position.
@@ -497,8 +488,8 @@ class JetbrainsBridge {
     int? offset,
   }) async {
     final resp = await _protocol.sendRequest('jetbrains/findUsages', {
-      if (filePath != null) 'filePath': filePath,
-      if (offset != null) 'offset': offset,
+      'filePath': ?filePath,
+      'offset': ?offset,
     });
     if (resp.isSuccess && resp.result is List) {
       return (resp.result as List).cast<Map<String, dynamic>>();
@@ -511,7 +502,9 @@ class JetbrainsBridge {
   /// Get the project file/directory structure.
   Future<Map<String, dynamic>> getProjectStructure() async {
     final resp = await _protocol.sendRequest(
-        'jetbrains/getProjectStructure', null);
+      'jetbrains/getProjectStructure',
+      null,
+    );
     if (resp.isSuccess && resp.result is Map<String, dynamic>) {
       return resp.result as Map<String, dynamic>;
     }
@@ -520,12 +513,10 @@ class JetbrainsBridge {
 
   /// Get project modules.
   Future<List<JetbrainsModule>> getModules() async {
-    final resp =
-        await _protocol.sendRequest('jetbrains/getModules', null);
+    final resp = await _protocol.sendRequest('jetbrains/getModules', null);
     if (resp.isSuccess && resp.result is List) {
       return (resp.result as List)
-          .map((m) =>
-              JetbrainsModule.fromJson(m as Map<String, dynamic>))
+          .map((m) => JetbrainsModule.fromJson(m as Map<String, dynamic>))
           .toList();
     }
     return [];
@@ -534,21 +525,22 @@ class JetbrainsBridge {
   /// Get available run/debug configurations.
   Future<List<JetbrainsRunConfiguration>> getRunConfigurations() async {
     final resp = await _protocol.sendRequest(
-        'jetbrains/getRunConfigurations', null);
+      'jetbrains/getRunConfigurations',
+      null,
+    );
     if (resp.isSuccess && resp.result is List) {
       return (resp.result as List)
-          .map((c) => JetbrainsRunConfiguration.fromJson(
-              c as Map<String, dynamic>))
+          .map(
+            (c) =>
+                JetbrainsRunConfiguration.fromJson(c as Map<String, dynamic>),
+          )
           .toList();
     }
     return [];
   }
 
   /// Run a named run/debug configuration.
-  Future<BridgeResponse> runConfiguration(
-    String name, {
-    bool debug = false,
-  }) {
+  Future<BridgeResponse> runConfiguration(String name, {bool debug = false}) {
     return _protocol.sendRequest('jetbrains/runConfiguration', {
       'name': name,
       'debug': debug,
@@ -565,13 +557,15 @@ class JetbrainsBridge {
   }) async {
     final resp = await _protocol.sendRequest('jetbrains/runInspection', {
       'inspectionId': inspectionId,
-      if (filePath != null) 'filePath': filePath,
-      if (scope != null) 'scope': scope,
+      'filePath': ?filePath,
+      'scope': ?scope,
     });
     if (resp.isSuccess && resp.result is List) {
       return (resp.result as List)
-          .map((r) => JetbrainsInspectionResult.fromJson(
-              r as Map<String, dynamic>))
+          .map(
+            (r) =>
+                JetbrainsInspectionResult.fromJson(r as Map<String, dynamic>),
+          )
           .toList();
     }
     return [];
@@ -580,7 +574,9 @@ class JetbrainsBridge {
   /// Get available inspection profiles.
   Future<List<String>> getInspectionProfiles() async {
     final resp = await _protocol.sendRequest(
-        'jetbrains/getInspectionProfiles', null);
+      'jetbrains/getInspectionProfiles',
+      null,
+    );
     if (resp.isSuccess && resp.result is List) {
       return (resp.result as List).cast<String>();
     }
@@ -660,12 +656,12 @@ class JetbrainsBridge {
 
   /// Get VCS status for all changed files.
   Future<List<JetbrainsVcsFileStatus>> getVcsStatus() async {
-    final resp =
-        await _protocol.sendRequest('jetbrains/getVcsStatus', null);
+    final resp = await _protocol.sendRequest('jetbrains/getVcsStatus', null);
     if (resp.isSuccess && resp.result is List) {
       return (resp.result as List)
-          .map((s) => JetbrainsVcsFileStatus.fromJson(
-              s as Map<String, dynamic>))
+          .map(
+            (s) => JetbrainsVcsFileStatus.fromJson(s as Map<String, dynamic>),
+          )
           .toList();
     }
     return [];
@@ -679,16 +675,14 @@ class JetbrainsBridge {
   }) {
     return _protocol.sendRequest('jetbrains/commitChanges', {
       'message': message,
-      if (filePaths != null) 'filePaths': filePaths,
+      'filePaths': ?filePaths,
       'amend': amend,
     });
   }
 
   /// Show diff for a file (or all changes if no path given).
   Future<BridgeResponse> showDiff({String? filePath}) {
-    return _protocol.sendRequest('jetbrains/showDiff', {
-      if (filePath != null) 'filePath': filePath,
-    });
+    return _protocol.sendRequest('jetbrains/showDiff', {'filePath': ?filePath});
   }
 
   // ---- Actions ----
@@ -696,65 +690,64 @@ class JetbrainsBridge {
   /// Register an action that the IDE can invoke.
   void registerAction(JetbrainsAction action) {
     _actions[action.id] = action;
-    _protocol.registerHandler('jetbrains/action/${action.id}',
-        (method, params) async {
+    _protocol.registerHandler('jetbrains/action/${action.id}', (
+      method,
+      params,
+    ) async {
       final context = params is Map<String, dynamic> ? params : null;
       return await action.handler(context);
     });
-    _protocol.sendNotification(
-        'jetbrains/registerAction', action.toJson());
+    _protocol.sendNotification('jetbrains/registerAction', action.toJson());
   }
 
   /// Unregister an action.
   void unregisterAction(String actionId) {
     _actions.remove(actionId);
     _protocol.unregisterHandler('jetbrains/action/$actionId');
-    _protocol.sendNotification(
-        'jetbrains/unregisterAction', {'id': actionId});
+    _protocol.sendNotification('jetbrains/unregisterAction', {'id': actionId});
   }
 
   // ---- Internal notification handlers ----
 
   void _registerNotificationHandlers() {
-    _protocol.registerNotificationHandler(
-      'jetbrains/fileEdited',
-      (_, params) {
-        if (params is Map && params.containsKey('filePath')) {
-          _onFileEdited.add(params['filePath'] as String);
-        }
-      },
-    );
+    _protocol.registerNotificationHandler('jetbrains/fileEdited', (_, params) {
+      if (params is Map && params.containsKey('filePath')) {
+        _onFileEdited.add(params['filePath'] as String);
+      }
+    });
 
-    _protocol.registerNotificationHandler(
-      'jetbrains/buildCompleted',
-      (_, params) {
-        if (params is Map<String, dynamic>) {
-          _onBuildCompleted.add(params);
-        }
-      },
-    );
+    _protocol.registerNotificationHandler('jetbrains/buildCompleted', (
+      _,
+      params,
+    ) {
+      if (params is Map<String, dynamic>) {
+        _onBuildCompleted.add(params);
+      }
+    });
 
-    _protocol.registerNotificationHandler(
-      'jetbrains/inspectionCompleted',
-      (_, params) {
-        if (params is Map && params.containsKey('results')) {
-          final results = (params['results'] as List)
-              .map((r) => JetbrainsInspectionResult.fromJson(
-                  r as Map<String, dynamic>))
-              .toList();
-          _onInspectionCompleted.add(results);
-        }
-      },
-    );
+    _protocol.registerNotificationHandler('jetbrains/inspectionCompleted', (
+      _,
+      params,
+    ) {
+      if (params is Map && params.containsKey('results')) {
+        final results = (params['results'] as List)
+            .map(
+              (r) =>
+                  JetbrainsInspectionResult.fromJson(r as Map<String, dynamic>),
+            )
+            .toList();
+        _onInspectionCompleted.add(results);
+      }
+    });
 
-    _protocol.registerNotificationHandler(
-      'jetbrains/vcsFileChanged',
-      (_, params) {
-        if (params is Map<String, dynamic>) {
-          _onVcsFileChanged.add(JetbrainsVcsFileStatus.fromJson(params));
-        }
-      },
-    );
+    _protocol.registerNotificationHandler('jetbrains/vcsFileChanged', (
+      _,
+      params,
+    ) {
+      if (params is Map<String, dynamic>) {
+        _onVcsFileChanged.add(JetbrainsVcsFileStatus.fromJson(params));
+      }
+    });
 
     _protocol.registerNotificationHandler(
       'jetbrains/runConfigurationFinished',

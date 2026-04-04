@@ -85,7 +85,8 @@ class MemdirService {
     final filePath = '$memPath/$filename';
     final file = File(filePath);
 
-    final fullContent = '''---
+    final fullContent =
+        '''---
 name: $name
 description: $description
 type: ${type.name}
@@ -159,29 +160,39 @@ $content
     buffer.writeln('# auto memory');
     buffer.writeln();
     buffer.writeln(
-        'You have a persistent, file-based memory system at `$memoryDir`. '
-        'This directory already exists — write to it directly with the Write '
-        'tool (do not run mkdir or check for its existence).');
+      'You have a persistent, file-based memory system at `$memoryDir`. '
+      'This directory already exists — write to it directly with the Write '
+      'tool (do not run mkdir or check for its existence).',
+    );
     buffer.writeln();
     buffer.writeln(
-        'You should build up this memory system over time so that future '
-        'conversations can have a complete picture of who the user is, how '
-        'they\'d like to collaborate with you, what behaviors to avoid or '
-        'repeat, and the context behind the work the user gives you.');
+      'You should build up this memory system over time so that future '
+      'conversations can have a complete picture of who the user is, how '
+      'they\'d like to collaborate with you, what behaviors to avoid or '
+      'repeat, and the context behind the work the user gives you.',
+    );
     buffer.writeln();
 
     // Memory types section
     buffer.writeln('## Types of memory');
     buffer.writeln();
     buffer.writeln('There are several discrete types of memory:');
-    buffer.writeln('- **user**: Information about the user\'s role, goals, '
-        'preferences');
-    buffer.writeln('- **feedback**: Guidance about approach — corrections '
-        'and confirmations');
-    buffer.writeln('- **project**: Information about ongoing work, goals, '
-        'initiatives');
-    buffer.writeln('- **reference**: Pointers to external systems and '
-        'resources');
+    buffer.writeln(
+      '- **user**: Information about the user\'s role, goals, '
+      'preferences',
+    );
+    buffer.writeln(
+      '- **feedback**: Guidance about approach — corrections '
+      'and confirmations',
+    );
+    buffer.writeln(
+      '- **project**: Information about ongoing work, goals, '
+      'initiatives',
+    );
+    buffer.writeln(
+      '- **reference**: Pointers to external systems and '
+      'resources',
+    );
     buffer.writeln();
 
     // How to save
@@ -198,9 +209,10 @@ $content
     buffer.writeln('```');
     buffer.writeln();
     buffer.writeln(
-        'Then add a pointer to that file in `$entrypointName`. '
-        '$entrypointName is an index — each entry should be one line, '
-        'under ~150 characters.');
+      'Then add a pointer to that file in `$entrypointName`. '
+      '$entrypointName is an index — each entry should be one line, '
+      'under ~150 characters.',
+    );
     buffer.writeln();
 
     // MEMORY.md content

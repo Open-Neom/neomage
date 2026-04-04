@@ -56,12 +56,7 @@ bool isPromptInputModeEditable(PromptInputMode mode) {
 // ===========================================================================
 
 /// Represents a queue operation for logging purposes.
-enum QueueOperation {
-  enqueue,
-  dequeue,
-  popAll,
-  remove,
-}
+enum QueueOperation { enqueue, dequeue, popAll, remove }
 
 /// A logged queue operation message.
 class QueueOperationMessage {
@@ -170,10 +165,7 @@ class CommandOrigin {
   final String kind;
   final String? agentId;
 
-  const CommandOrigin({
-    required this.kind,
-    this.agentId,
-  });
+  const CommandOrigin({required this.kind, this.agentId});
 }
 
 // ===========================================================================
@@ -262,7 +254,7 @@ class MessageQueueController extends SintController {
 
   /// Callback for logging operations (injectable for testing).
   final void Function(QueueOperation operation, String? content)?
-      _onLogOperation;
+  _onLogOperation;
 
   MessageQueueController({
     void Function(QueueOperation operation, String? content)? onLogOperation,
@@ -328,16 +320,18 @@ class MessageQueueController extends SintController {
 
   /// Add a command to the queue. Defaults priority to 'next'.
   void enqueue(QueuedCommand command) {
-    _commandQueue.add(QueuedCommand(
-      value: command.value,
-      mode: command.mode,
-      priority: command.priority,
-      skipSlashCommands: command.skipSlashCommands,
-      isMeta: command.isMeta,
-      agentId: command.agentId,
-      origin: command.origin,
-      pastedContents: command.pastedContents,
-    ));
+    _commandQueue.add(
+      QueuedCommand(
+        value: command.value,
+        mode: command.mode,
+        priority: command.priority,
+        skipSlashCommands: command.skipSlashCommands,
+        isMeta: command.isMeta,
+        agentId: command.agentId,
+        origin: command.origin,
+        pastedContents: command.pastedContents,
+      ),
+    );
     _notifySubscribers();
     final content = command.value is StringCommandValue
         ? (command.value as StringCommandValue).value
@@ -347,18 +341,20 @@ class MessageQueueController extends SintController {
 
   /// Add a task notification. Defaults priority to 'later'.
   void enqueuePendingNotification(QueuedCommand command) {
-    _commandQueue.add(QueuedCommand(
-      value: command.value,
-      mode: command.mode,
-      priority: command.priority == QueuePriority.next
-          ? QueuePriority.later
-          : command.priority,
-      skipSlashCommands: command.skipSlashCommands,
-      isMeta: command.isMeta,
-      agentId: command.agentId,
-      origin: command.origin,
-      pastedContents: command.pastedContents,
-    ));
+    _commandQueue.add(
+      QueuedCommand(
+        value: command.value,
+        mode: command.mode,
+        priority: command.priority == QueuePriority.next
+            ? QueuePriority.later
+            : command.priority,
+        skipSlashCommands: command.skipSlashCommands,
+        isMeta: command.isMeta,
+        agentId: command.agentId,
+        origin: command.origin,
+        pastedContents: command.pastedContents,
+      ),
+    );
     _notifySubscribers();
     final content = command.value is StringCommandValue
         ? (command.value as StringCommandValue).value
@@ -370,9 +366,7 @@ class MessageQueueController extends SintController {
   ///
   /// An optional [filter] narrows the candidates: only commands for which
   /// the predicate returns true are considered.
-  QueuedCommand? dequeue({
-    bool Function(QueuedCommand)? filter,
-  }) {
+  QueuedCommand? dequeue({bool Function(QueuedCommand)? filter}) {
     if (_commandQueue.isEmpty) return null;
 
     int bestIdx = -1;
@@ -412,9 +406,7 @@ class MessageQueueController extends SintController {
   }
 
   /// Return the highest-priority command without removing it.
-  QueuedCommand? peek({
-    bool Function(QueuedCommand)? filter,
-  }) {
+  QueuedCommand? peek({bool Function(QueuedCommand)? filter}) {
     if (_commandQueue.isEmpty) return null;
 
     int bestIdx = -1;
@@ -484,9 +476,7 @@ class MessageQueueController extends SintController {
   }
 
   /// Remove commands matching a predicate. Returns the removed commands.
-  List<QueuedCommand> removeByFilter(
-    bool Function(QueuedCommand) predicate,
-  ) {
+  List<QueuedCommand> removeByFilter(bool Function(QueuedCommand) predicate) {
     final removed = <QueuedCommand>[];
     for (int i = _commandQueue.length - 1; i >= 0; i--) {
       if (predicate(_commandQueue[i])) {
@@ -556,13 +546,15 @@ class MessageQueueController extends SintController {
     int imageIndex = 0;
     for (final block in value.blocks) {
       if (block is ImageContentBlock && block.sourceType == 'base64') {
-        images.add(PastedContent(
-          id: startId + imageIndex,
-          type: 'image',
-          content: block.data,
-          mediaType: block.mediaType,
-          filename: 'image${imageIndex + 1}',
-        ));
+        images.add(
+          PastedContent(
+            id: startId + imageIndex,
+            type: 'image',
+            content: block.data,
+            mediaType: block.mediaType,
+            filename: 'image${imageIndex + 1}',
+          ),
+        );
         imageIndex++;
       }
     }
@@ -593,11 +585,13 @@ class MessageQueueController extends SintController {
     if (editable.isEmpty) return null;
 
     // Extract text from queued commands
-    final queuedTexts =
-        editable.map((cmd) => _extractTextFromValue(cmd.value)).toList();
-    final allParts = [...queuedTexts, currentInput]
-        .where((s) => s.isNotEmpty)
+    final queuedTexts = editable
+        .map((cmd) => _extractTextFromValue(cmd.value))
         .toList();
+    final allParts = [
+      ...queuedTexts,
+      currentInput,
+    ].where((s) => s.isNotEmpty).toList();
     final newInput = allParts.join('\n');
 
     // Calculate cursor offset
@@ -828,15 +822,17 @@ GroupingResult applyGrouping({
             }
           }
 
-          result.add(GroupedToolUseMessage(
-            toolName: info.toolName,
-            messages: group,
-            results: results,
-            displayMessage: firstMsg,
-            uuid: 'grouped-${firstMsg.uuid}',
-            timestamp: firstMsg.timestamp,
-            messageId: info.messageId,
-          ));
+          result.add(
+            GroupedToolUseMessage(
+              toolName: info.toolName,
+              messages: group,
+              results: results,
+              displayMessage: firstMsg,
+              uuid: 'grouped-${firstMsg.uuid}',
+              timestamp: firstMsg.timestamp,
+              messageId: info.messageId,
+            ),
+          );
         }
         continue;
       }
@@ -901,7 +897,7 @@ class MemoizeWithTTL<R> {
   }) : _keyFn = keyFn;
 
   String _makeKey(List<dynamic> args) {
-    if (_keyFn != null) return _keyFn!(args);
+    if (_keyFn != null) return _keyFn(args);
     return jsonEncode(args);
   }
 
@@ -965,7 +961,7 @@ class MemoizeWithTTLAsync<R> {
   }) : _keyFn = keyFn;
 
   String _makeKey(List<dynamic> args) {
-    if (_keyFn != null) return _keyFn!(args);
+    if (_keyFn != null) return _keyFn(args);
     return jsonEncode(args);
   }
 
@@ -1001,18 +997,20 @@ class MemoizeWithTTLAsync<R> {
       cached.refreshing = true;
 
       final staleEntry = cached;
-      _fn(args).then((newValue) {
-        if (_cache[key] == staleEntry) {
-          _cache[key] = _CacheEntry(
-            value: newValue,
-            timestamp: DateTime.now().millisecondsSinceEpoch,
-          );
-        }
-      }).catchError((_) {
-        if (_cache[key] == staleEntry) {
-          _cache.remove(key);
-        }
-      });
+      _fn(args)
+          .then((newValue) {
+            if (_cache[key] == staleEntry) {
+              _cache[key] = _CacheEntry(
+                value: newValue,
+                timestamp: DateTime.now().millisecondsSinceEpoch,
+              );
+            }
+          })
+          .catchError((_) {
+            if (_cache[key] == staleEntry) {
+              _cache.remove(key);
+            }
+          });
 
       return cached.value;
     }
@@ -1151,8 +1149,5 @@ class _QueueItem<R> {
   final List<dynamic> args;
   final Completer<R> completer;
 
-  _QueueItem({
-    required this.args,
-    required this.completer,
-  });
+  _QueueItem({required this.args, required this.completer});
 }

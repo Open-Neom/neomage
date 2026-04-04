@@ -22,7 +22,9 @@ class CommitCommand extends PromptCommand {
     String args,
     ToolUseContext context,
   ) async {
-    final extraInstructions = args.isNotEmpty ? '\nAdditional instructions: $args' : '';
+    final extraInstructions = args.isNotEmpty
+        ? '\nAdditional instructions: $args'
+        : '';
 
     return [
       TextBlock(

@@ -54,18 +54,42 @@ const maxSkillFileSize = 100000;
 
 /// Supported image formats for multimodal input.
 const supportedImageFormats = {
-  'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg',
+  'jpg',
+  'jpeg',
+  'png',
+  'gif',
+  'webp',
+  'bmp',
+  'svg',
 };
 
 /// Supported audio formats for voice input.
 const supportedAudioFormats = {
-  'mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac', 'webm',
+  'mp3',
+  'wav',
+  'ogg',
+  'flac',
+  'm4a',
+  'aac',
+  'webm',
 };
 
 /// Supported document formats.
 const supportedDocFormats = {
-  'pdf', 'txt', 'md', 'csv', 'tsv', 'json', 'yaml', 'yml', 'xml',
-  'html', 'htm', 'rst', 'tex', 'log',
+  'pdf',
+  'txt',
+  'md',
+  'csv',
+  'tsv',
+  'json',
+  'yaml',
+  'yml',
+  'xml',
+  'html',
+  'htm',
+  'rst',
+  'tex',
+  'log',
 };
 
 /// Model context window sizes (in tokens).
@@ -105,49 +129,125 @@ const neomClawGitignorePatterns = [
 
 /// Commands that ALWAYS require explicit permission.
 const dangerousCommands = <String>{
-  'rm', 'rmdir', 'del',
-  'mkfs', 'fdisk', 'dd',
-  'chmod', 'chown', 'chgrp',
-  'kill', 'killall', 'pkill',
-  'shutdown', 'reboot', 'halt', 'init',
-  'iptables', 'ufw',
-  'useradd', 'userdel', 'usermod',
-  'passwd', 'su', 'sudo',
-  'mount', 'umount',
-  'systemctl', 'service',
+  'rm',
+  'rmdir',
+  'del',
+  'mkfs',
+  'fdisk',
+  'dd',
+  'chmod',
+  'chown',
+  'chgrp',
+  'kill',
+  'killall',
+  'pkill',
+  'shutdown',
+  'reboot',
+  'halt',
+  'init',
+  'iptables',
+  'ufw',
+  'useradd',
+  'userdel',
+  'usermod',
+  'passwd',
+  'su',
+  'sudo',
+  'mount',
+  'umount',
+  'systemctl',
+  'service',
   'crontab',
-  'eval', 'exec',
+  'eval',
+  'exec',
 };
 
 /// Commands that are always safe (read-only, no side effects).
 const safeCommands = <String>{
-  'ls', 'dir', 'pwd', 'whoami', 'hostname', 'uname',
-  'cat', 'head', 'tail', 'less', 'more', 'wc',
-  'echo', 'printf', 'date', 'cal',
-  'which', 'where', 'whereis', 'whatis', 'type',
-  'file', 'stat', 'du', 'df',
-  'env', 'printenv', 'set',
-  'id', 'groups',
-  'true', 'false',
-  'basename', 'dirname', 'realpath', 'readlink',
-  'md5sum', 'sha256sum', 'sha1sum',
-  'sort', 'uniq', 'tr', 'cut', 'paste', 'fold', 'column',
-  'diff', 'comm', 'cmp',
-  'tee', 'xargs',
-  'seq', 'yes',
+  'ls',
+  'dir',
+  'pwd',
+  'whoami',
+  'hostname',
+  'uname',
+  'cat',
+  'head',
+  'tail',
+  'less',
+  'more',
+  'wc',
+  'echo',
+  'printf',
+  'date',
+  'cal',
+  'which',
+  'where',
+  'whereis',
+  'whatis',
+  'type',
+  'file',
+  'stat',
+  'du',
+  'df',
+  'env',
+  'printenv',
+  'set',
+  'id',
+  'groups',
+  'true',
+  'false',
+  'basename',
+  'dirname',
+  'realpath',
+  'readlink',
+  'md5sum',
+  'sha256sum',
+  'sha1sum',
+  'sort',
+  'uniq',
+  'tr',
+  'cut',
+  'paste',
+  'fold',
+  'column',
+  'diff',
+  'comm',
+  'cmp',
+  'tee',
+  'xargs',
+  'seq',
+  'yes',
 };
 
 /// Safe git subcommands (read-only).
 const safeGitCommands = <String>{
-  'status', 'log', 'diff', 'show', 'branch', 'tag',
-  'describe', 'rev-parse', 'rev-list',
-  'ls-files', 'ls-tree', 'ls-remote',
-  'shortlog', 'blame', 'bisect',
-  'config', 'remote', 'stash',
-  'reflog', 'cherry',
-  'name-rev', 'verify-commit', 'verify-tag',
-  'count-objects', 'fsck',
-  'for-each-ref', 'merge-base',
+  'status',
+  'log',
+  'diff',
+  'show',
+  'branch',
+  'tag',
+  'describe',
+  'rev-parse',
+  'rev-list',
+  'ls-files',
+  'ls-tree',
+  'ls-remote',
+  'shortlog',
+  'blame',
+  'bisect',
+  'config',
+  'remote',
+  'stash',
+  'reflog',
+  'cherry',
+  'name-rev',
+  'verify-commit',
+  'verify-tag',
+  'count-objects',
+  'fsck',
+  'for-each-ref',
+  'merge-base',
 };
 
 /// Standard permission prompt templates.
@@ -178,10 +278,8 @@ class PermissionPrompts {
 class ErrorMessages {
   static const apiKeyMissing =
       'No API key configured. Set ANTHROPIC_API_KEY or use /login.';
-  static const apiKeyInvalid =
-      'Invalid API key. Check your credentials.';
-  static const rateLimited =
-      'Rate limited. Retrying in {seconds} seconds...';
+  static const apiKeyInvalid = 'Invalid API key. Check your credentials.';
+  static const rateLimited = 'Rate limited. Retrying in {seconds} seconds...';
   static const contextWindowExceeded =
       'Context window exceeded. Use /compact to compress the conversation.';
   static const modelNotAvailable =
@@ -190,22 +288,17 @@ class ErrorMessages {
       'Tool {tool} not found. Use /tools to list available tools.';
   static const commandNotFound =
       'Unknown command: {command}. Use /help to see available commands.';
-  static const fileNotFound =
-      'File not found: {path}';
+  static const fileNotFound = 'File not found: {path}';
   static const permissionDenied =
       'Permission denied for operation: {operation}';
   static const networkError =
       'Network error: {message}. Check your connection.';
-  static const timeoutError =
-      'Operation timed out after {seconds} seconds.';
-  static const sandboxViolation =
-      'Operation blocked by sandbox: {reason}';
-  static const mcpServerError =
-      'MCP server {name} error: {message}';
+  static const timeoutError = 'Operation timed out after {seconds} seconds.';
+  static const sandboxViolation = 'Operation blocked by sandbox: {reason}';
+  static const mcpServerError = 'MCP server {name} error: {message}';
   static const sessionCorrupted =
       'Session data is corrupted. Starting fresh session.';
-  static const diskFull =
-      'Disk space is low. Free up space to continue.';
+  static const diskFull = 'Disk space is low. Free up space to continue.';
   static const maxAgentsReached =
       'Maximum agent limit ($maxAgents) reached. Wait for agents to complete.';
 }
@@ -396,15 +489,56 @@ const mimeTypes = <String, String>{
 
 /// File extensions considered binary (non-text).
 const binaryExtensions = <String>{
-  'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'tiff',
-  'mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a',
-  'mp4', 'avi', 'mov', 'mkv', 'webm',
-  'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
-  'zip', 'tar', 'gz', 'bz2', 'xz', '7z', 'rar',
-  'exe', 'dll', 'so', 'dylib', 'o', 'a',
-  'class', 'jar', 'pyc', 'pyo',
-  'woff', 'woff2', 'ttf', 'otf', 'eot',
-  'sqlite', 'db',
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'webp',
+  'bmp',
+  'ico',
+  'tiff',
+  'mp3',
+  'wav',
+  'ogg',
+  'flac',
+  'aac',
+  'm4a',
+  'mp4',
+  'avi',
+  'mov',
+  'mkv',
+  'webm',
+  'pdf',
+  'doc',
+  'docx',
+  'xls',
+  'xlsx',
+  'ppt',
+  'pptx',
+  'zip',
+  'tar',
+  'gz',
+  'bz2',
+  'xz',
+  '7z',
+  'rar',
+  'exe',
+  'dll',
+  'so',
+  'dylib',
+  'o',
+  'a',
+  'class',
+  'jar',
+  'pyc',
+  'pyo',
+  'woff',
+  'woff2',
+  'ttf',
+  'otf',
+  'eot',
+  'sqlite',
+  'db',
 };
 
 /// Files/dirs to always ignore during searches.

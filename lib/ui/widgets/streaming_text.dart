@@ -6,11 +6,7 @@ class StreamingText extends StatelessWidget {
   final String text;
   final String? toolName;
 
-  const StreamingText({
-    super.key,
-    required this.text,
-    this.toolName,
-  });
+  const StreamingText({super.key, required this.text, this.toolName});
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +30,8 @@ class StreamingText extends StatelessWidget {
                   Text(
                     'Assistant',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   if (toolName != null) ...[
                     const SizedBox(width: 8),

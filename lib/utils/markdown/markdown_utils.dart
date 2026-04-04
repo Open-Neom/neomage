@@ -55,8 +55,9 @@ class MdElement {
 
 /// Extract all code blocks from markdown text.
 List<({String language, String code, int startLine, int endLine})>
-    extractCodeBlocks(String markdown) {
-  final blocks = <({String language, String code, int startLine, int endLine})>[];
+extractCodeBlocks(String markdown) {
+  final blocks =
+      <({String language, String code, int startLine, int endLine})>[];
   final lines = markdown.split('\n');
   var i = 0;
 
@@ -74,8 +75,9 @@ List<({String language, String code, int startLine, int endLine})>
       i++;
 
       while (i < lines.length) {
-        final closeFence =
-            RegExp('^$fenceChar{$fenceLen,}\\s*\$').firstMatch(lines[i]);
+        final closeFence = RegExp(
+          '^$fenceChar{$fenceLen,}\\s*\$',
+        ).firstMatch(lines[i]);
         if (closeFence != null) {
           break;
         }
@@ -97,8 +99,7 @@ List<({String language, String code, int startLine, int endLine})>
 }
 
 /// Extract all links from markdown text.
-List<({String text, String url, String? title})> extractLinks(
-    String markdown) {
+List<({String text, String url, String? title})> extractLinks(String markdown) {
   final links = <({String text, String url, String? title})>[];
   final pattern = RegExp(r'\[([^\]]+)\]\(([^)]+?)(?:\s+"([^"]+)")?\)');
 
@@ -115,7 +116,8 @@ List<({String text, String url, String? title})> extractLinks(
 
 /// Extract all headings from markdown text.
 List<({int level, String text, int lineNumber})> extractHeadings(
-    String markdown) {
+  String markdown,
+) {
   final headings = <({int level, String text, int lineNumber})>[];
   final lines = markdown.split('\n');
 
@@ -222,7 +224,8 @@ enum TableAlignment { left, center, right }
 
 /// Parse a markdown table into headers and rows.
 ({List<String> headers, List<List<String>> rows})? parseTable(
-    String tableText) {
+  String tableText,
+) {
   final lines = tableText.trim().split('\n');
   if (lines.length < 2) return null;
 
@@ -320,8 +323,22 @@ String stripMarkdown(String markdown) {
 /// Convert plain text to markdown-safe text (escape special chars).
 String escapeMarkdown(String text) {
   const specialChars = [
-    '\\', '`', '*', '_', '{', '}', '[', ']',
-    '(', ')', '#', '+', '-', '.', '!', '|',
+    '\\',
+    '`',
+    '*',
+    '_',
+    '{',
+    '}',
+    '[',
+    ']',
+    '(',
+    ')',
+    '#',
+    '+',
+    '-',
+    '.',
+    '!',
+    '|',
   ];
   var result = text;
   for (final char in specialChars) {
@@ -345,9 +362,7 @@ String formatDiffAsMarkdown(String diff, {String? title}) {
 
 /// Format a file's content as a markdown code block.
 String formatFileAsMarkdown(String content, {String? path, String? language}) {
-  final lang = language ??
-      (path != null ? _detectLanguage(path) : null) ??
-      '';
+  final lang = language ?? (path != null ? _detectLanguage(path) : null) ?? '';
   return '```$lang\n$content\n```';
 }
 

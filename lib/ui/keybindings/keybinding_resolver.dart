@@ -1,4 +1,4 @@
-// Keybinding resolver — comprehensive port of openneomclaw/src/keybindings/.
+// Keybinding resolver — comprehensive port of neom_claw/src/keybindings/.
 // Stateful chord resolution, conflict detection, platform-specific bindings,
 // user config loading/validation, and shortcut display formatting.
 
@@ -40,7 +40,8 @@ const List<ReservedShortcut> nonRebindable = [
   ),
   ReservedShortcut(
     key: 'ctrl+m',
-    reason: 'Cannot be rebound - identical to Enter in terminals (both send CR)',
+    reason:
+        'Cannot be rebound - identical to Enter in terminals (both send CR)',
     severity: ReservedSeverity.error,
   ),
 ];
@@ -62,27 +63,40 @@ const List<ReservedShortcut> terminalReserved = [
 /// macOS-specific shortcuts intercepted by the OS.
 const List<ReservedShortcut> macosReserved = [
   ReservedShortcut(
-      key: 'cmd+c', reason: 'macOS system copy', severity: ReservedSeverity.error),
+    key: 'cmd+c',
+    reason: 'macOS system copy',
+    severity: ReservedSeverity.error,
+  ),
   ReservedShortcut(
-      key: 'cmd+v', reason: 'macOS system paste', severity: ReservedSeverity.error),
+    key: 'cmd+v',
+    reason: 'macOS system paste',
+    severity: ReservedSeverity.error,
+  ),
   ReservedShortcut(
-      key: 'cmd+x', reason: 'macOS system cut', severity: ReservedSeverity.error),
+    key: 'cmd+x',
+    reason: 'macOS system cut',
+    severity: ReservedSeverity.error,
+  ),
   ReservedShortcut(
-      key: 'cmd+q',
-      reason: 'macOS quit application',
-      severity: ReservedSeverity.error),
+    key: 'cmd+q',
+    reason: 'macOS quit application',
+    severity: ReservedSeverity.error,
+  ),
   ReservedShortcut(
-      key: 'cmd+w',
-      reason: 'macOS close window/tab',
-      severity: ReservedSeverity.error),
+    key: 'cmd+w',
+    reason: 'macOS close window/tab',
+    severity: ReservedSeverity.error,
+  ),
   ReservedShortcut(
-      key: 'cmd+tab',
-      reason: 'macOS app switcher',
-      severity: ReservedSeverity.error),
+    key: 'cmd+tab',
+    reason: 'macOS app switcher',
+    severity: ReservedSeverity.error,
+  ),
   ReservedShortcut(
-      key: 'cmd+space',
-      reason: 'macOS Spotlight',
-      severity: ReservedSeverity.error),
+    key: 'cmd+space',
+    reason: 'macOS Spotlight',
+    severity: ReservedSeverity.error,
+  ),
 ];
 
 /// Returns all reserved shortcuts for the current platform.
@@ -184,10 +198,7 @@ class KeybindingBlock {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'context': context,
-        'bindings': bindings,
-      };
+  Map<String, dynamic> toJson() => {'context': context, 'bindings': bindings};
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -295,7 +306,10 @@ String keystrokeToString(ParsedKeystroke ks) {
 }
 
 /// Convert a ParsedKeystroke to a platform-appropriate display string.
-String keystrokeToDisplayString(ParsedKeystroke ks, {String platform = 'linux'}) {
+String keystrokeToDisplayString(
+  ParsedKeystroke ks, {
+  String platform = 'linux',
+}) {
   final parts = <String>[];
   if (ks.ctrl) parts.add('ctrl');
   if (ks.alt || ks.meta) {
@@ -310,29 +324,33 @@ String keystrokeToDisplayString(ParsedKeystroke ks, {String platform = 'linux'})
 }
 
 /// Convert a chord to a platform-appropriate display string.
-String chordToDisplayString(List<ParsedKeystroke> chord,
-    {String platform = 'linux'}) {
-  return chord.map((ks) => keystrokeToDisplayString(ks, platform: platform)).join(' ');
+String chordToDisplayString(
+  List<ParsedKeystroke> chord, {
+  String platform = 'linux',
+}) {
+  return chord
+      .map((ks) => keystrokeToDisplayString(ks, platform: platform))
+      .join(' ');
 }
 
 /// Map internal key names to human-readable display names.
 String _keyToDisplayName(String key) => switch (key) {
-      'escape' => 'Esc',
-      ' ' || 'space' => 'Space',
-      'tab' => 'tab',
-      'enter' => 'Enter',
-      'backspace' => 'Backspace',
-      'delete' => 'Delete',
-      'up' => '\u2191',
-      'down' => '\u2193',
-      'left' => '\u2190',
-      'right' => '\u2192',
-      'pageup' => 'PageUp',
-      'pagedown' => 'PageDown',
-      'home' => 'Home',
-      'end' => 'End',
-      _ => key,
-    };
+  'escape' => 'Esc',
+  ' ' || 'space' => 'Space',
+  'tab' => 'tab',
+  'enter' => 'Enter',
+  'backspace' => 'Backspace',
+  'delete' => 'Delete',
+  'up' => '\u2191',
+  'down' => '\u2193',
+  'left' => '\u2190',
+  'right' => '\u2192',
+  'pageup' => 'PageUp',
+  'pagedown' => 'PageDown',
+  'home' => 'Home',
+  'end' => 'End',
+  _ => key,
+};
 
 // ════════════════════════════════════════════════════════════════════════════
 // Block-level parser
@@ -345,11 +363,13 @@ List<ParsedBinding> parseBindingBlocks(List<KeybindingBlock> blocks) {
     final context = _contextFromString(block.context);
     if (context == null) continue;
     for (final entry in block.bindings.entries) {
-      bindings.add(ParsedBinding(
-        chord: parseChord(entry.key),
-        action: entry.value,
-        context: context,
-      ));
+      bindings.add(
+        ParsedBinding(
+          chord: parseChord(entry.key),
+          action: entry.value,
+          context: context,
+        ),
+      );
     }
   }
   return bindings;
@@ -357,28 +377,28 @@ List<ParsedBinding> parseBindingBlocks(List<KeybindingBlock> blocks) {
 
 /// Map context string to enum (case-sensitive matching).
 KeybindingContext? _contextFromString(String name) => switch (name) {
-      'Global' => KeybindingContext.global,
-      'Chat' => KeybindingContext.chat,
-      'Autocomplete' => KeybindingContext.autocomplete,
-      'Confirmation' => KeybindingContext.confirmation,
-      'Help' => KeybindingContext.help,
-      'Transcript' => KeybindingContext.transcript,
-      'HistorySearch' => KeybindingContext.historySearch,
-      'Task' => KeybindingContext.task,
-      'ThemePicker' => KeybindingContext.themePicker,
-      'Settings' => KeybindingContext.settings,
-      'Tabs' => KeybindingContext.tabs,
-      'Attachments' => KeybindingContext.attachments,
-      'Footer' => KeybindingContext.footer,
-      'MessageSelector' => KeybindingContext.messageSelector,
-      'DiffDialog' => KeybindingContext.diffDialog,
-      'ModelPicker' => KeybindingContext.modelPicker,
-      'Select' => KeybindingContext.select,
-      'Plugin' => KeybindingContext.plugin,
-      'Scroll' => KeybindingContext.scroll,
-      'MessageActions' => KeybindingContext.messageActions,
-      _ => null,
-    };
+  'Global' => KeybindingContext.global,
+  'Chat' => KeybindingContext.chat,
+  'Autocomplete' => KeybindingContext.autocomplete,
+  'Confirmation' => KeybindingContext.confirmation,
+  'Help' => KeybindingContext.help,
+  'Transcript' => KeybindingContext.transcript,
+  'HistorySearch' => KeybindingContext.historySearch,
+  'Task' => KeybindingContext.task,
+  'ThemePicker' => KeybindingContext.themePicker,
+  'Settings' => KeybindingContext.settings,
+  'Tabs' => KeybindingContext.tabs,
+  'Attachments' => KeybindingContext.attachments,
+  'Footer' => KeybindingContext.footer,
+  'MessageSelector' => KeybindingContext.messageSelector,
+  'DiffDialog' => KeybindingContext.diffDialog,
+  'ModelPicker' => KeybindingContext.modelPicker,
+  'Select' => KeybindingContext.select,
+  'Plugin' => KeybindingContext.plugin,
+  'Scroll' => KeybindingContext.scroll,
+  'MessageActions' => KeybindingContext.messageActions,
+  _ => null,
+};
 
 // ════════════════════════════════════════════════════════════════════════════
 // Validation
@@ -447,7 +467,11 @@ KeybindingWarning? validateKeystroke(String keystroke) {
     }
   }
   final parsed = parseKeystroke(keystroke);
-  if (parsed.key.isEmpty && !parsed.ctrl && !parsed.alt && !parsed.shift && !parsed.meta) {
+  if (parsed.key.isEmpty &&
+      !parsed.ctrl &&
+      !parsed.alt &&
+      !parsed.shift &&
+      !parsed.meta) {
     return KeybindingWarning(
       type: KeybindingWarningType.parseError,
       severity: ReservedSeverity.error,
@@ -470,89 +494,106 @@ List<KeybindingWarning> validateUserConfig(List<dynamic> userBlocks) {
 List<KeybindingWarning> _validateBlock(dynamic block, int blockIndex) {
   final warnings = <KeybindingWarning>[];
   if (block is! Map<String, dynamic>) {
-    warnings.add(KeybindingWarning(
-      type: KeybindingWarningType.parseError,
-      severity: ReservedSeverity.error,
-      message: 'Keybinding block ${blockIndex + 1} is not an object',
-    ));
+    warnings.add(
+      KeybindingWarning(
+        type: KeybindingWarningType.parseError,
+        severity: ReservedSeverity.error,
+        message: 'Keybinding block ${blockIndex + 1} is not an object',
+      ),
+    );
     return warnings;
   }
 
   final rawContext = block['context'];
   String? contextName;
   if (rawContext is! String) {
-    warnings.add(KeybindingWarning(
-      type: KeybindingWarningType.parseError,
-      severity: ReservedSeverity.error,
-      message: 'Keybinding block ${blockIndex + 1} missing "context" field',
-    ));
+    warnings.add(
+      KeybindingWarning(
+        type: KeybindingWarningType.parseError,
+        severity: ReservedSeverity.error,
+        message: 'Keybinding block ${blockIndex + 1} missing "context" field',
+      ),
+    );
   } else if (!validContextNames.contains(rawContext)) {
-    warnings.add(KeybindingWarning(
-      type: KeybindingWarningType.invalidContext,
-      severity: ReservedSeverity.error,
-      message: 'Unknown context "$rawContext"',
-      context: rawContext,
-      suggestion: 'Valid contexts: ${validContextNames.join(', ')}',
-    ));
+    warnings.add(
+      KeybindingWarning(
+        type: KeybindingWarningType.invalidContext,
+        severity: ReservedSeverity.error,
+        message: 'Unknown context "$rawContext"',
+        context: rawContext,
+        suggestion: 'Valid contexts: ${validContextNames.join(', ')}',
+      ),
+    );
   } else {
     contextName = rawContext;
   }
 
   final bindings = block['bindings'];
   if (bindings is! Map<String, dynamic>) {
-    warnings.add(KeybindingWarning(
-      type: KeybindingWarningType.parseError,
-      severity: ReservedSeverity.error,
-      message: 'Keybinding block ${blockIndex + 1} missing "bindings" field',
-    ));
+    warnings.add(
+      KeybindingWarning(
+        type: KeybindingWarningType.parseError,
+        severity: ReservedSeverity.error,
+        message: 'Keybinding block ${blockIndex + 1} missing "bindings" field',
+      ),
+    );
     return warnings;
   }
 
   for (final entry in bindings.entries) {
     final keyError = validateKeystroke(entry.key);
     if (keyError != null) {
-      warnings.add(KeybindingWarning(
-        type: keyError.type,
-        severity: keyError.severity,
-        message: keyError.message,
-        key: keyError.key,
-        context: contextName,
-        suggestion: keyError.suggestion,
-      ));
+      warnings.add(
+        KeybindingWarning(
+          type: keyError.type,
+          severity: keyError.severity,
+          message: keyError.message,
+          key: keyError.key,
+          context: contextName,
+          suggestion: keyError.suggestion,
+        ),
+      );
     }
 
     final action = entry.value;
     if (action != null && action is! String) {
-      warnings.add(KeybindingWarning(
-        type: KeybindingWarningType.invalidAction,
-        severity: ReservedSeverity.error,
-        message: 'Invalid action for "${entry.key}": must be a string or null',
-        key: entry.key,
-        context: contextName,
-      ));
+      warnings.add(
+        KeybindingWarning(
+          type: KeybindingWarningType.invalidAction,
+          severity: ReservedSeverity.error,
+          message:
+              'Invalid action for "${entry.key}": must be a string or null',
+          key: entry.key,
+          context: contextName,
+        ),
+      );
     } else if (action is String && action.startsWith('command:')) {
       if (!RegExp(r'^command:[a-zA-Z0-9:\-_]+$').hasMatch(action)) {
-        warnings.add(KeybindingWarning(
-          type: KeybindingWarningType.invalidAction,
-          severity: ReservedSeverity.warning,
-          message:
-              'Invalid command binding "$action" for "${entry.key}": command name may only contain alphanumeric characters, colons, hyphens, and underscores',
-          key: entry.key,
-          context: contextName,
-          action: action,
-        ));
+        warnings.add(
+          KeybindingWarning(
+            type: KeybindingWarningType.invalidAction,
+            severity: ReservedSeverity.warning,
+            message:
+                'Invalid command binding "$action" for "${entry.key}": command name may only contain alphanumeric characters, colons, hyphens, and underscores',
+            key: entry.key,
+            context: contextName,
+            action: action,
+          ),
+        );
       }
       if (contextName != null && contextName != 'Chat') {
-        warnings.add(KeybindingWarning(
-          type: KeybindingWarningType.invalidAction,
-          severity: ReservedSeverity.warning,
-          message:
-              'Command binding "$action" must be in "Chat" context, not "$contextName"',
-          key: entry.key,
-          context: contextName,
-          action: action,
-          suggestion: 'Move this binding to a block with "context": "Chat"',
-        ));
+        warnings.add(
+          KeybindingWarning(
+            type: KeybindingWarningType.invalidAction,
+            severity: ReservedSeverity.warning,
+            message:
+                'Command binding "$action" must be in "Chat" context, not "$contextName"',
+            key: entry.key,
+            context: contextName,
+            action: action,
+            suggestion: 'Move this binding to a block with "context": "Chat"',
+          ),
+        );
       }
     }
   }
@@ -571,16 +612,19 @@ List<KeybindingWarning> checkDuplicates(List<KeybindingBlock> blocks) {
       final normalizedKey = normalizeKeyForComparison(entry.key);
       final existingAction = contextMap[normalizedKey];
       if (existingAction != null && existingAction != (entry.value ?? 'null')) {
-        warnings.add(KeybindingWarning(
-          type: KeybindingWarningType.duplicate,
-          severity: ReservedSeverity.warning,
-          message: 'Duplicate binding "${entry.key}" in ${block.context} context',
-          key: entry.key,
-          context: block.context,
-          action: entry.value ?? 'null (unbind)',
-          suggestion:
-              'Previously bound to "$existingAction". Only the last binding will be used.',
-        ));
+        warnings.add(
+          KeybindingWarning(
+            type: KeybindingWarningType.duplicate,
+            severity: ReservedSeverity.warning,
+            message:
+                'Duplicate binding "${entry.key}" in ${block.context} context',
+            key: entry.key,
+            context: block.context,
+            action: entry.value ?? 'null (unbind)',
+            suggestion:
+                'Previously bound to "$existingAction". Only the last binding will be used.',
+          ),
+        );
       }
       contextMap[normalizedKey] = entry.value ?? 'null';
     }
@@ -599,16 +643,18 @@ List<KeybindingWarning> checkReservedShortcuts(List<ParsedBinding> bindings) {
     final normalizedKey = normalizeKeyForComparison(keyDisplay);
     for (final res in reserved) {
       if (normalizeKeyForComparison(res.key) == normalizedKey) {
-        warnings.add(KeybindingWarning(
-          type: KeybindingWarningType.reserved,
-          severity: res.severity == ReservedSeverity.error
-              ? ReservedSeverity.error
-              : ReservedSeverity.warning,
-          message: '"$keyDisplay" may not work: ${res.reason}',
-          key: keyDisplay,
-          context: binding.context.name,
-          action: binding.action,
-        ));
+        warnings.add(
+          KeybindingWarning(
+            type: KeybindingWarningType.reserved,
+            severity: res.severity == ReservedSeverity.error
+                ? ReservedSeverity.error
+                : ReservedSeverity.warning,
+            message: '"$keyDisplay" may not work: ${res.reason}',
+            key: keyDisplay,
+            context: binding.context.name,
+            action: binding.action,
+          ),
+        );
       }
     }
   }
@@ -661,18 +707,26 @@ String formatWarning(KeybindingWarning warning) {
 /// Format multiple warnings for display.
 String formatWarnings(List<KeybindingWarning> warnings) {
   if (warnings.isEmpty) return '';
-  final errors = warnings.where((w) => w.severity == ReservedSeverity.error).toList();
-  final warns = warnings.where((w) => w.severity == ReservedSeverity.warning).toList();
+  final errors = warnings
+      .where((w) => w.severity == ReservedSeverity.error)
+      .toList();
+  final warns = warnings
+      .where((w) => w.severity == ReservedSeverity.warning)
+      .toList();
   final lines = <String>[];
   if (errors.isNotEmpty) {
-    lines.add('Found ${errors.length} keybinding error${errors.length == 1 ? '' : 's'}:');
+    lines.add(
+      'Found ${errors.length} keybinding error${errors.length == 1 ? '' : 's'}:',
+    );
     for (final e in errors) {
       lines.add(formatWarning(e));
     }
   }
   if (warns.isNotEmpty) {
     if (lines.isNotEmpty) lines.add('');
-    lines.add('Found ${warns.length} keybinding warning${warns.length == 1 ? '' : 's'}:');
+    lines.add(
+      'Found ${warns.length} keybinding warning${warns.length == 1 ? '' : 's'}:',
+    );
     for (final w in warns) {
       lines.add(formatWarning(w));
     }
@@ -773,8 +827,9 @@ class KeybindingResolver {
 
     // Filter bindings by active contexts.
     final ctxSet = activeContexts.toSet();
-    final contextBindings =
-        _bindings.where((b) => ctxSet.contains(b.context)).toList();
+    final contextBindings = _bindings
+        .where((b) => ctxSet.contains(b.context))
+        .toList();
 
     // Check if this could be a prefix for longer chords. Track null-overrides
     // to avoid entering chord-wait for bindings that have been unbound.
@@ -863,7 +918,9 @@ class KeybindingResolver {
   /// Get all bindings for a context.
   List<ParsedBinding> getBindingsForContext(KeybindingContext context) {
     return _bindings
-        .where((b) => b.context == context || b.context == KeybindingContext.global)
+        .where(
+          (b) => b.context == context || b.context == KeybindingContext.global,
+        )
         .toList();
   }
 
@@ -881,7 +938,8 @@ class KeybindingResolver {
     final targetChord = parseChord(keyString);
     final conflicts = <ParsedBinding>[];
     for (final binding in _bindings) {
-      if (binding.context != context && binding.context != KeybindingContext.global) {
+      if (binding.context != context &&
+          binding.context != KeybindingContext.global) {
         continue;
       }
       if (binding.chord.length != targetChord.length) continue;
@@ -904,8 +962,9 @@ class KeybindingResolver {
 
 /// Filter out reserved shortcuts that cannot be rebound.
 List<KeybindingBlock> filterReservedShortcuts(List<KeybindingBlock> blocks) {
-  final reservedKeys =
-      nonRebindable.map((r) => normalizeKeyForComparison(r.key)).toSet();
+  final reservedKeys = nonRebindable
+      .map((r) => normalizeKeyForComparison(r.key))
+      .toSet();
   return blocks
       .map((block) {
         final filtered = <String, String?>{};

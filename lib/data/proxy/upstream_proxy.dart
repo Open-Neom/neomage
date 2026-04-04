@@ -89,9 +89,7 @@ class ProxyStats {
 
   /// Average latency per request.
   Duration get averageLatency => requestCount > 0
-      ? Duration(
-          microseconds: totalLatency.inMicroseconds ~/ requestCount,
-        )
+      ? Duration(microseconds: totalLatency.inMicroseconds ~/ requestCount)
       : Duration.zero;
 
   /// Cache hit ratio as a percentage (0–100).
@@ -165,13 +163,13 @@ class CacheEntry {
 
   /// Serializes the entry to JSON for disk storage.
   Map<String, dynamic> toJson() => {
-        'statusCode': response.statusCode,
-        'headers': response.headers,
-        'body': response.body,
-        'cachedAt': cachedAt.toIso8601String(),
-        'expiresAt': expiresAt.toIso8601String(),
-        'key': key,
-      };
+    'statusCode': response.statusCode,
+    'headers': response.headers,
+    'body': response.body,
+    'cachedAt': cachedAt.toIso8601String(),
+    'expiresAt': expiresAt.toIso8601String(),
+    'key': key,
+  };
 
   /// Deserializes a cache entry from JSON.
   factory CacheEntry.fromJson(Map<String, dynamic> json) {
@@ -430,7 +428,7 @@ class UpstreamProxy {
     final targetBase = _config.targetUrl.endsWith('/')
         ? _config.targetUrl.substring(0, _config.targetUrl.length - 1)
         : _config.targetUrl;
-    final fullPath = '$targetBase${req.path}';
+    final _fullPath = '$targetBase${req.path}';
     // The proxy URL is used as the actual HTTP target; the real target is
     // communicated via the X-Target-Url header.
     return Uri.parse('$proxyBase${req.path}');

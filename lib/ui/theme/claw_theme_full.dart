@@ -165,7 +165,8 @@ class ClawColorScheme {
       accent: accent ?? this.accent,
       accentForeground: accentForeground ?? this.accentForeground,
       destructive: destructive ?? this.destructive,
-      destructiveForeground: destructiveForeground ?? this.destructiveForeground,
+      destructiveForeground:
+          destructiveForeground ?? this.destructiveForeground,
       success: success ?? this.success,
       warning: warning ?? this.warning,
       info: info ?? this.info,
@@ -287,21 +288,111 @@ class ClawTextTheme {
     const String sans = 'Inter';
     const String mono = 'JetBrains Mono';
     return ClawTextTheme(
-      displayLarge: TextStyle(fontFamily: sans, fontSize: 32, fontWeight: FontWeight.w700, color: color, height: 1.2),
-      displayMedium: TextStyle(fontFamily: sans, fontSize: 28, fontWeight: FontWeight.w600, color: color, height: 1.25),
-      headlineLarge: TextStyle(fontFamily: sans, fontSize: 24, fontWeight: FontWeight.w600, color: color, height: 1.3),
-      headlineMedium: TextStyle(fontFamily: sans, fontSize: 20, fontWeight: FontWeight.w600, color: color, height: 1.35),
-      titleLarge: TextStyle(fontFamily: sans, fontSize: 18, fontWeight: FontWeight.w600, color: color, height: 1.4),
-      titleMedium: TextStyle(fontFamily: sans, fontSize: 16, fontWeight: FontWeight.w500, color: color, height: 1.4),
-      bodyLarge: TextStyle(fontFamily: sans, fontSize: 16, fontWeight: FontWeight.w400, color: color, height: 1.5),
-      bodyMedium: TextStyle(fontFamily: sans, fontSize: 14, fontWeight: FontWeight.w400, color: color, height: 1.5),
-      bodySmall: TextStyle(fontFamily: sans, fontSize: 12, fontWeight: FontWeight.w400, color: color, height: 1.5),
-      labelLarge: TextStyle(fontFamily: sans, fontSize: 14, fontWeight: FontWeight.w500, color: color, letterSpacing: 0.5),
-      labelMedium: TextStyle(fontFamily: sans, fontSize: 12, fontWeight: FontWeight.w500, color: color, letterSpacing: 0.5),
-      labelSmall: TextStyle(fontFamily: sans, fontSize: 11, fontWeight: FontWeight.w500, color: color, letterSpacing: 0.5),
-      code: TextStyle(fontFamily: mono, fontSize: 14, fontWeight: FontWeight.w400, color: color, height: 1.6),
-      codeSmall: TextStyle(fontFamily: mono, fontSize: 12, fontWeight: FontWeight.w400, color: color, height: 1.6),
-      terminal: TextStyle(fontFamily: mono, fontSize: 13, fontWeight: FontWeight.w400, color: color, height: 1.5),
+      displayLarge: TextStyle(
+        fontFamily: sans,
+        fontSize: 32,
+        fontWeight: FontWeight.w700,
+        color: color,
+        height: 1.2,
+      ),
+      displayMedium: TextStyle(
+        fontFamily: sans,
+        fontSize: 28,
+        fontWeight: FontWeight.w600,
+        color: color,
+        height: 1.25,
+      ),
+      headlineLarge: TextStyle(
+        fontFamily: sans,
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        color: color,
+        height: 1.3,
+      ),
+      headlineMedium: TextStyle(
+        fontFamily: sans,
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: color,
+        height: 1.35,
+      ),
+      titleLarge: TextStyle(
+        fontFamily: sans,
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: color,
+        height: 1.4,
+      ),
+      titleMedium: TextStyle(
+        fontFamily: sans,
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: color,
+        height: 1.4,
+      ),
+      bodyLarge: TextStyle(
+        fontFamily: sans,
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: color,
+        height: 1.5,
+      ),
+      bodyMedium: TextStyle(
+        fontFamily: sans,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: color,
+        height: 1.5,
+      ),
+      bodySmall: TextStyle(
+        fontFamily: sans,
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: color,
+        height: 1.5,
+      ),
+      labelLarge: TextStyle(
+        fontFamily: sans,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: color,
+        letterSpacing: 0.5,
+      ),
+      labelMedium: TextStyle(
+        fontFamily: sans,
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: color,
+        letterSpacing: 0.5,
+      ),
+      labelSmall: TextStyle(
+        fontFamily: sans,
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: color,
+        letterSpacing: 0.5,
+      ),
+      code: TextStyle(
+        fontFamily: mono,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: color,
+        height: 1.6,
+      ),
+      codeSmall: TextStyle(
+        fontFamily: mono,
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: color,
+        height: 1.6,
+      ),
+      terminal: TextStyle(
+        fontFamily: mono,
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+        color: color,
+        height: 1.5,
+      ),
     );
   }
 
@@ -348,11 +439,11 @@ class ClawTextTheme {
   }
 
   static Map<String, dynamic> _styleToMap(TextStyle s) => {
-        'fontFamily': s.fontFamily,
-        'fontSize': s.fontSize,
-        'fontWeight': s.fontWeight?.index,
-        'color': s.color?.value,
-      };
+    'fontFamily': s.fontFamily,
+    'fontSize': s.fontSize,
+    'fontWeight': s.fontWeight?.index,
+    'color': s.color?.value,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -424,20 +515,20 @@ class ClawComponentTheme {
   }
 
   Map<String, double> toMap() => {
-        'buttonHeight': buttonHeight,
-        'buttonRadius': buttonRadius,
-        'cardRadius': cardRadius,
-        'cardElevation': cardElevation,
-        'inputHeight': inputHeight,
-        'inputRadius': inputRadius,
-        'chipHeight': chipHeight,
-        'badgeSize': badgeSize,
-        'tooltipRadius': tooltipRadius,
-        'dialogRadius': dialogRadius,
-        'statusBarHeight': statusBarHeight,
-        'sidebarWidth': sidebarWidth,
-        'panelMinWidth': panelMinWidth,
-      };
+    'buttonHeight': buttonHeight,
+    'buttonRadius': buttonRadius,
+    'cardRadius': cardRadius,
+    'cardElevation': cardElevation,
+    'inputHeight': inputHeight,
+    'inputRadius': inputRadius,
+    'chipHeight': chipHeight,
+    'badgeSize': badgeSize,
+    'tooltipRadius': tooltipRadius,
+    'dialogRadius': dialogRadius,
+    'statusBarHeight': statusBarHeight,
+    'sidebarWidth': sidebarWidth,
+    'panelMinWidth': panelMinWidth,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -469,16 +560,16 @@ class SyntaxTheme {
   final Color punctuation;
 
   Map<String, int> toMap() => {
-        'keyword': keyword.value,
-        'string': string.value,
-        'comment': comment.value,
-        'number': number.value,
-        'type': type.value,
-        'function': function_.value,
-        'variable': variable.value,
-        'operator': operator_.value,
-        'punctuation': punctuation.value,
-      };
+    'keyword': keyword.value,
+    'string': string.value,
+    'comment': comment.value,
+    'number': number.value,
+    'type': type.value,
+    'function': function_.value,
+    'variable': variable.value,
+    'operator': operator_.value,
+    'punctuation': punctuation.value,
+  };
 
   factory SyntaxTheme.fromMap(Map<String, dynamic> m) {
     Color c(String k) => Color(m[k] as int);
@@ -534,15 +625,15 @@ class ClawTheme {
 
   /// Serialise the entire theme to a map for export / persistence.
   Map<String, dynamic> toMap() => {
-        'name': info.name,
-        'displayName': info.displayName,
-        'isDark': info.isDark,
-        'description': info.description,
-        'colors': colors.toMap(),
-        'textTheme': textTheme.toMap(),
-        'componentTheme': componentTheme.toMap(),
-        'syntaxTheme': syntaxTheme.toMap(),
-      };
+    'name': info.name,
+    'displayName': info.displayName,
+    'isDark': info.isDark,
+    'description': info.description,
+    'colors': colors.toMap(),
+    'textTheme': textTheme.toMap(),
+    'componentTheme': componentTheme.toMap(),
+    'syntaxTheme': syntaxTheme.toMap(),
+  };
 
   /// Reconstruct a [ClawTheme] from a map produced by [toMap].
   factory ClawTheme.fromMap(Map<String, dynamic> m) {
@@ -556,7 +647,9 @@ class ClawTheme {
       colors: ClawColorScheme.fromMap(m['colors'] as Map<String, dynamic>),
       textTheme: ClawTextTheme.defaults(), // text is regenerated from defaults
       componentTheme: const ClawComponentTheme(),
-      syntaxTheme: SyntaxTheme.fromMap(m['syntaxTheme'] as Map<String, dynamic>),
+      syntaxTheme: SyntaxTheme.fromMap(
+        m['syntaxTheme'] as Map<String, dynamic>,
+      ),
     );
   }
 }
@@ -573,7 +666,12 @@ class ClawThemes {
 
   /// Deep navy / purple — the default Claw dark theme.
   static final ClawTheme darkDefault = ClawTheme(
-    info: const ThemeInfo(name: 'dark-default', displayName: 'Dark Default', isDark: true, description: 'Deep navy/purple dark theme'),
+    info: const ThemeInfo(
+      name: 'dark-default',
+      displayName: 'Dark Default',
+      isDark: true,
+      description: 'Deep navy/purple dark theme',
+    ),
     colors: const ClawColorScheme(
       primary: Color(0xFF7C6FE4),
       primaryVariant: Color(0xFF5B4FC7),
@@ -617,7 +715,12 @@ class ClawThemes {
 
   /// Monokai-inspired dark theme.
   static final ClawTheme darkMonokai = ClawTheme(
-    info: const ThemeInfo(name: 'dark-monokai', displayName: 'Monokai', isDark: true, description: 'Monokai-inspired dark theme'),
+    info: const ThemeInfo(
+      name: 'dark-monokai',
+      displayName: 'Monokai',
+      isDark: true,
+      description: 'Monokai-inspired dark theme',
+    ),
     colors: const ClawColorScheme(
       primary: Color(0xFFA6E22E),
       primaryVariant: Color(0xFF86B21E),
@@ -661,7 +764,12 @@ class ClawThemes {
 
   /// Solarized dark theme.
   static final ClawTheme darkSolarized = ClawTheme(
-    info: const ThemeInfo(name: 'dark-solarized', displayName: 'Solarized Dark', isDark: true, description: 'Ethan Schoonover\'s Solarized dark'),
+    info: const ThemeInfo(
+      name: 'dark-solarized',
+      displayName: 'Solarized Dark',
+      isDark: true,
+      description: 'Ethan Schoonover\'s Solarized dark',
+    ),
     colors: const ClawColorScheme(
       primary: Color(0xFF268BD2),
       primaryVariant: Color(0xFF1A6DA8),
@@ -705,7 +813,12 @@ class ClawThemes {
 
   /// Gruvbox dark theme.
   static final ClawTheme darkGruvbox = ClawTheme(
-    info: const ThemeInfo(name: 'dark-gruvbox', displayName: 'Gruvbox Dark', isDark: true, description: 'Retro groove dark theme'),
+    info: const ThemeInfo(
+      name: 'dark-gruvbox',
+      displayName: 'Gruvbox Dark',
+      isDark: true,
+      description: 'Retro groove dark theme',
+    ),
     colors: const ClawColorScheme(
       primary: Color(0xFFFE8019),
       primaryVariant: Color(0xFFD65D0E),
@@ -749,7 +862,12 @@ class ClawThemes {
 
   /// Dracula dark theme.
   static final ClawTheme darkDracula = ClawTheme(
-    info: const ThemeInfo(name: 'dark-dracula', displayName: 'Dracula', isDark: true, description: 'Dracula-inspired dark theme'),
+    info: const ThemeInfo(
+      name: 'dark-dracula',
+      displayName: 'Dracula',
+      isDark: true,
+      description: 'Dracula-inspired dark theme',
+    ),
     colors: const ClawColorScheme(
       primary: Color(0xFFBD93F9),
       primaryVariant: Color(0xFF9B6FD7),
@@ -795,7 +913,12 @@ class ClawThemes {
 
   /// Default light theme.
   static final ClawTheme lightDefault = ClawTheme(
-    info: const ThemeInfo(name: 'light-default', displayName: 'Light Default', isDark: false, description: 'Clean light theme'),
+    info: const ThemeInfo(
+      name: 'light-default',
+      displayName: 'Light Default',
+      isDark: false,
+      description: 'Clean light theme',
+    ),
     colors: const ClawColorScheme(
       primary: Color(0xFF5B4FC7),
       primaryVariant: Color(0xFF4A3FB0),
@@ -839,7 +962,12 @@ class ClawThemes {
 
   /// Solarized light theme.
   static final ClawTheme lightSolarized = ClawTheme(
-    info: const ThemeInfo(name: 'light-solarized', displayName: 'Solarized Light', isDark: false, description: 'Ethan Schoonover\'s Solarized light'),
+    info: const ThemeInfo(
+      name: 'light-solarized',
+      displayName: 'Solarized Light',
+      isDark: false,
+      description: 'Ethan Schoonover\'s Solarized light',
+    ),
     colors: const ClawColorScheme(
       primary: Color(0xFF268BD2),
       primaryVariant: Color(0xFF1A6DA8),
@@ -883,7 +1011,12 @@ class ClawThemes {
 
   /// GitHub-inspired light theme.
   static final ClawTheme lightGithub = ClawTheme(
-    info: const ThemeInfo(name: 'light-github', displayName: 'GitHub Light', isDark: false, description: 'GitHub-inspired light theme'),
+    info: const ThemeInfo(
+      name: 'light-github',
+      displayName: 'GitHub Light',
+      isDark: false,
+      description: 'GitHub-inspired light theme',
+    ),
     colors: const ClawColorScheme(
       primary: Color(0xFF0969DA),
       primaryVariant: Color(0xFF0550AE),
@@ -946,7 +1079,7 @@ class ClawThemes {
 /// Claw themes to Flutter [ThemeData].
 class ThemeManager {
   ThemeManager._({ClawTheme? initial})
-      : _currentTheme = initial ?? ClawThemes.darkDefault {
+    : _currentTheme = initial ?? ClawThemes.darkDefault {
     _controller = StreamController<ClawTheme>.broadcast();
   }
 
@@ -954,7 +1087,8 @@ class ThemeManager {
   static final ThemeManager instance = ThemeManager._();
 
   /// Allow construction for testing with a specific initial theme.
-  factory ThemeManager.withTheme(ClawTheme theme) => ThemeManager._(initial: theme);
+  factory ThemeManager.withTheme(ClawTheme theme) =>
+      ThemeManager._(initial: theme);
 
   ClawTheme _currentTheme;
   late final StreamController<ClawTheme> _controller;
@@ -988,7 +1122,11 @@ class ThemeManager {
     SyntaxTheme? syntax,
   }) {
     final theme = ClawTheme(
-      info: ThemeInfo(name: name, displayName: name, isDark: _looksLikeDark(colors)),
+      info: ThemeInfo(
+        name: name,
+        displayName: name,
+        isDark: _looksLikeDark(colors),
+      ),
       colors: colors,
       textTheme: text ?? ClawTextTheme.defaults(color: colors.onBackground),
       componentTheme: components ?? const ClawComponentTheme(),
@@ -1030,7 +1168,6 @@ class ThemeManager {
       dividerColor: colors.border,
       hintColor: colors.mutedForeground,
       canvasColor: colors.background,
-      dialogBackgroundColor: colors.surface,
       appBarTheme: AppBarTheme(
         backgroundColor: colors.surface,
         foregroundColor: colors.onSurface,
@@ -1062,6 +1199,7 @@ class ThemeManager {
         ),
         textStyle: TextStyle(color: colors.onSurface, fontSize: 12),
       ),
+      dialogTheme: DialogThemeData(backgroundColor: colors.surface),
     );
   }
 
@@ -1096,11 +1234,15 @@ class ThemeManager {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(comp.inputRadius),
-          borderSide: base.inputDecorationTheme.enabledBorder?.borderSide ?? BorderSide.none,
+          borderSide:
+              base.inputDecorationTheme.enabledBorder?.borderSide ??
+              BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(comp.inputRadius),
-          borderSide: base.inputDecorationTheme.focusedBorder?.borderSide ?? BorderSide.none,
+          borderSide:
+              base.inputDecorationTheme.focusedBorder?.borderSide ??
+              BorderSide.none,
         ),
         constraints: BoxConstraints(minHeight: comp.inputHeight),
       ),

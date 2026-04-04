@@ -53,19 +53,31 @@ class File implements FileSystemEntity {
   factory File.fromUri(Uri uri) => File(uri.path);
 
   // --- sync methods ---
+  @override
   bool existsSync() => false;
   int lengthSync() => 0;
   Uint8List readAsBytesSync() => Uint8List(0);
   String readAsStringSync({Encoding encoding = utf8}) => '';
   List<String> readAsLinesSync({Encoding encoding = utf8}) => const <String>[];
-  void writeAsBytesSync(List<int> bytes, {FileMode mode = FileMode.write, bool flush = false}) {}
-  void writeAsStringSync(String contents, {FileMode mode = FileMode.write, Encoding encoding = utf8, bool flush = false}) {}
+  void writeAsBytesSync(
+    List<int> bytes, {
+    FileMode mode = FileMode.write,
+    bool flush = false,
+  }) {}
+  void writeAsStringSync(
+    String contents, {
+    FileMode mode = FileMode.write,
+    Encoding encoding = utf8,
+    bool flush = false,
+  }) {}
   void createSync({bool recursive = false, bool exclusive = false}) {}
   File copySync(String newPath) => File(newPath);
   File renameSync(String newPath) => File(newPath);
   void deleteSync({bool recursive = false}) {}
+  @override
   FileStat statSync() => FileStat._stub();
   DateTime lastModifiedSync() => DateTime.fromMillisecondsSinceEpoch(0);
+  @override
   String resolveSymbolicLinksSync() => path;
 
   // --- async methods ---
@@ -74,32 +86,57 @@ class File implements FileSystemEntity {
   Future<int> length() async => 0;
   Future<Uint8List> readAsBytes() async => Uint8List(0);
   Future<String> readAsString({Encoding encoding = utf8}) async => '';
-  Future<List<String>> readAsLines({Encoding encoding = utf8}) async => const <String>[];
-  Future<File> writeAsBytes(List<int> bytes, {FileMode mode = FileMode.write, bool flush = false}) async => this;
-  Future<File> writeAsString(String contents, {FileMode mode = FileMode.write, Encoding encoding = utf8, bool flush = false}) async => this;
-  Future<File> create({bool recursive = false, bool exclusive = false}) async => this;
+  Future<List<String>> readAsLines({Encoding encoding = utf8}) async =>
+      const <String>[];
+  Future<File> writeAsBytes(
+    List<int> bytes, {
+    FileMode mode = FileMode.write,
+    bool flush = false,
+  }) async => this;
+  Future<File> writeAsString(
+    String contents, {
+    FileMode mode = FileMode.write,
+    Encoding encoding = utf8,
+    bool flush = false,
+  }) async => this;
+  Future<File> create({bool recursive = false, bool exclusive = false}) async =>
+      this;
   Future<File> copy(String newPath) async => File(newPath);
   @override
   Future<File> rename(String newPath) async => File(newPath);
   @override
   Future<FileSystemEntity> delete({bool recursive = false}) async => this;
+  @override
   Future<FileStat> stat() async => FileStat._stub();
-  Future<DateTime> lastModified() async => DateTime.fromMillisecondsSinceEpoch(0);
+  Future<DateTime> lastModified() async =>
+      DateTime.fromMillisecondsSinceEpoch(0);
+  @override
   Future<String> resolveSymbolicLinks() async => path;
 
   // --- stream / random access ---
-  Stream<List<int>> openRead([int? start, int? end]) => Stream.value(Uint8List(0));
-  IOSink openWrite({FileMode mode = FileMode.write, Encoding encoding = utf8}) => _StubIOSink();
-  Future<RandomAccessFile> open({FileMode mode = FileMode.read}) async => _StubRandomAccessFile(path);
-  RandomAccessFile openSync({FileMode mode = FileMode.read}) => _StubRandomAccessFile(path);
+  Stream<List<int>> openRead([int? start, int? end]) =>
+      Stream.value(Uint8List(0));
+  IOSink openWrite({
+    FileMode mode = FileMode.write,
+    Encoding encoding = utf8,
+  }) => _StubIOSink();
+  Future<RandomAccessFile> open({FileMode mode = FileMode.read}) async =>
+      _StubRandomAccessFile(path);
+  RandomAccessFile openSync({FileMode mode = FileMode.read}) =>
+      _StubRandomAccessFile(path);
 
   @override
-  Stream<FileSystemEvent> watch({int events = FileSystemEvent.all, bool recursive = false}) => const Stream.empty();
+  Stream<FileSystemEvent> watch({
+    int events = FileSystemEvent.all,
+    bool recursive = false,
+  }) => const Stream.empty();
 
   @override
   Uri get uri => Uri.file(path);
   @override
-  Directory get parent => Directory(path.contains('/') ? path.substring(0, path.lastIndexOf('/')) : '.');
+  Directory get parent => Directory(
+    path.contains('/') ? path.substring(0, path.lastIndexOf('/')) : '.',
+  );
 
   @override
   String toString() => "File: '$path'";
@@ -123,33 +160,52 @@ class Directory implements FileSystemEntity {
   static Directory get systemTemp => Directory('/tmp');
 
   // --- sync methods ---
+  @override
   bool existsSync() => false;
   void createSync({bool recursive = false}) {}
-  Directory createTempSync([String? prefix]) => Directory('${path}/${prefix ?? ''}temp');
+  Directory createTempSync([String? prefix]) =>
+      Directory('$path/${prefix ?? ''}temp');
   void deleteSync({bool recursive = false}) {}
   Directory renameSync(String newPath) => Directory(newPath);
-  List<FileSystemEntity> listSync({bool recursive = false, bool followLinks = true}) => const <FileSystemEntity>[];
+  List<FileSystemEntity> listSync({
+    bool recursive = false,
+    bool followLinks = true,
+  }) => const <FileSystemEntity>[];
+  @override
   String resolveSymbolicLinksSync() => path;
+  @override
   FileStat statSync() => FileStat._stub();
 
   // --- async methods ---
   @override
   Future<bool> exists() async => false;
   Future<Directory> create({bool recursive = false}) async => this;
-  Future<Directory> createTemp([String? prefix]) async => Directory('${path}/${prefix ?? ''}temp');
+  Future<Directory> createTemp([String? prefix]) async =>
+      Directory('$path/${prefix ?? ''}temp');
   @override
   Future<FileSystemEntity> delete({bool recursive = false}) async => this;
   @override
   Future<Directory> rename(String newPath) async => Directory(newPath);
-  Stream<FileSystemEntity> list({bool recursive = false, bool followLinks = true}) => const Stream.empty();
+  Stream<FileSystemEntity> list({
+    bool recursive = false,
+    bool followLinks = true,
+  }) => const Stream.empty();
+  @override
   Future<String> resolveSymbolicLinks() async => path;
+  @override
   Future<FileStat> stat() async => FileStat._stub();
-  Stream<FileSystemEvent> watch({int events = FileSystemEvent.all, bool recursive = false}) => const Stream.empty();
+  @override
+  Stream<FileSystemEvent> watch({
+    int events = FileSystemEvent.all,
+    bool recursive = false,
+  }) => const Stream.empty();
 
   @override
   Uri get uri => Uri.directory(path);
   @override
-  Directory get parent => Directory(path.contains('/') ? path.substring(0, path.lastIndexOf('/')) : '.');
+  Directory get parent => Directory(
+    path.contains('/') ? path.substring(0, path.lastIndexOf('/')) : '.',
+  );
 
   @override
   String toString() => "Directory: '$path'";
@@ -247,8 +303,12 @@ class ProcessException implements Exception {
   final String message;
   final int errorCode;
 
-  const ProcessException(this.executable, this.arguments,
-      [this.message = '', this.errorCode = 0]);
+  const ProcessException(
+    this.executable,
+    this.arguments, [
+    this.message = '',
+    this.errorCode = 0,
+  ]);
 
   @override
   String toString() => 'ProcessException: $message ($executable)';
@@ -273,7 +333,10 @@ class Stdin extends Stream<List<int>> {
   set echoNewlineMode(bool value) {}
   bool get hasTerminal => false;
   int? readByteSync() => null;
-  String? readLineSync({Encoding encoding = utf8, bool retainNewlines = false}) => null;
+  String? readLineSync({
+    Encoding encoding = utf8,
+    bool retainNewlines = false,
+  }) => null;
   bool get supportsAnsiEscapes => false;
 
   @override
@@ -283,8 +346,12 @@ class Stdin extends Stream<List<int>> {
     void Function()? onDone,
     bool? cancelOnError,
   }) {
-    return const Stream<List<int>>.empty().listen(onData,
-        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+    return const Stream<List<int>>.empty().listen(
+      onData,
+      onError: onError,
+      onDone: onDone,
+      cancelOnError: cancelOnError,
+    );
   }
 }
 
@@ -378,19 +445,19 @@ class FileStat {
   final DateTime changed;
 
   const FileStat._({
-    this.type = FileSystemEntityType.notFound,
-    this.mode = 0,
-    this.size = 0,
     required this.modified,
     required this.accessed,
     required this.changed,
+    this.type = FileSystemEntityType.notFound,
+    this.mode = 0,
+    this.size = 0,
   });
 
   factory FileStat._stub() => FileStat._(
-        modified: DateTime.fromMillisecondsSinceEpoch(0),
-        accessed: DateTime.fromMillisecondsSinceEpoch(0),
-        changed: DateTime.fromMillisecondsSinceEpoch(0),
-      );
+    modified: DateTime.fromMillisecondsSinceEpoch(0),
+    accessed: DateTime.fromMillisecondsSinceEpoch(0),
+    changed: DateTime.fromMillisecondsSinceEpoch(0),
+  );
 
   static FileStat statSync(String path) => FileStat._stub();
 
@@ -402,7 +469,14 @@ class FileStat {
   String toString() => 'FileStat(type=$type, size=$size)';
 }
 
-enum FileSystemEntityType { file, directory, link, notFound, pipe, unixDomainSock }
+enum FileSystemEntityType {
+  file,
+  directory,
+  link,
+  notFound,
+  pipe,
+  unixDomainSock,
+}
 
 class FileSystemEntity {
   static Future<FileSystemEntityType> type(String path) async =>
@@ -415,7 +489,8 @@ class FileSystemEntity {
   static bool isFileSync(String path) => false;
   static bool isDirectorySync(String path) => false;
   static bool isLinkSync(String path) => false;
-  static String parentOf(String path) => path.contains('/') ? path.substring(0, path.lastIndexOf('/')) : '.';
+  static String parentOf(String path) =>
+      path.contains('/') ? path.substring(0, path.lastIndexOf('/')) : '.';
 
   String get path => '';
   Future<FileSystemEntity> delete({bool recursive = false}) async => this;
@@ -426,7 +501,10 @@ class FileSystemEntity {
   bool existsSync() => false;
   Future<FileStat> stat() async => FileStat._stub();
   FileStat statSync() => FileStat._stub();
-  Stream<FileSystemEvent> watch({int events = FileSystemEvent.all, bool recursive = false}) => const Stream.empty();
+  Stream<FileSystemEvent> watch({
+    int events = FileSystemEvent.all,
+    bool recursive = false,
+  }) => const Stream.empty();
   Future<String> resolveSymbolicLinks() async => path;
   String resolveSymbolicLinksSync() => path;
 }
@@ -445,8 +523,7 @@ class FileSystemException implements Exception {
 }
 
 class PathNotFoundException extends FileSystemException {
-  const PathNotFoundException([String message = '', String? path, OSError? osError])
-      : super(message, path, osError);
+  const PathNotFoundException([super.message, super.path, super.osError]);
 
   @override
   String toString() => 'PathNotFoundException: $message (path=$path)';
@@ -480,24 +557,27 @@ class FileSystemEvent {
 
 class FileSystemCreateEvent extends FileSystemEvent {
   const FileSystemCreateEvent._(String path, bool isDirectory)
-      : super._(FileSystemEvent.create, path, isDirectory);
+    : super._(FileSystemEvent.create, path, isDirectory);
 }
 
 class FileSystemModifyEvent extends FileSystemEvent {
   final bool contentChanged;
-  const FileSystemModifyEvent._(String path, bool isDirectory, this.contentChanged)
-      : super._(FileSystemEvent.modify, path, isDirectory);
+  const FileSystemModifyEvent._(
+    String path,
+    bool isDirectory,
+    this.contentChanged,
+  ) : super._(FileSystemEvent.modify, path, isDirectory);
 }
 
 class FileSystemDeleteEvent extends FileSystemEvent {
   const FileSystemDeleteEvent._(String path, bool isDirectory)
-      : super._(FileSystemEvent.delete, path, isDirectory);
+    : super._(FileSystemEvent.delete, path, isDirectory);
 }
 
 class FileSystemMoveEvent extends FileSystemEvent {
   final String? destination;
   const FileSystemMoveEvent._(String path, bool isDirectory, this.destination)
-      : super._(FileSystemEvent.move, path, isDirectory);
+    : super._(FileSystemEvent.move, path, isDirectory);
 }
 
 class Link implements FileSystemEntity {
@@ -506,7 +586,9 @@ class Link implements FileSystemEntity {
   Link(this.path);
 
   static Link fromUri(Uri uri) => Link(uri.path);
+  @override
   Future<bool> exists() async => false;
+  @override
   bool existsSync() => false;
   Future<Link> create(String target, {bool recursive = false}) async => this;
   void createSync(String target, {bool recursive = false}) {}
@@ -515,7 +597,9 @@ class Link implements FileSystemEntity {
   String targetSync() => '';
   Future<Link> update(String target) async => this;
   void updateSync(String target) {}
+  @override
   Future<String> resolveSymbolicLinks() async => path;
+  @override
   String resolveSymbolicLinksSync() => path;
   @override
   Future<FileSystemEntity> delete({bool recursive = false}) async => this;
@@ -526,7 +610,10 @@ class Link implements FileSystemEntity {
   @override
   FileStat statSync() => FileStat._stub();
   @override
-  Stream<FileSystemEvent> watch({int events = FileSystemEvent.all, bool recursive = false}) => const Stream.empty();
+  Stream<FileSystemEvent> watch({
+    int events = FileSystemEvent.all,
+    bool recursive = false,
+  }) => const Stream.empty();
   @override
   Uri get uri => Uri.parse(path);
   @override
@@ -550,9 +637,16 @@ abstract class RandomAccessFile {
   void writeByteSync(int value);
   Future<RandomAccessFile> writeByte(int value);
   void writeFromSync(List<int> buffer, [int start = 0, int? end]);
-  Future<RandomAccessFile> writeFrom(List<int> buffer, [int start = 0, int? end]);
+  Future<RandomAccessFile> writeFrom(
+    List<int> buffer, [
+    int start = 0,
+    int? end,
+  ]);
   void writeStringSync(String string, {Encoding encoding = utf8});
-  Future<RandomAccessFile> writeString(String string, {Encoding encoding = utf8});
+  Future<RandomAccessFile> writeString(
+    String string, {
+    Encoding encoding = utf8,
+  });
   int positionSync();
   Future<int> position();
   void setPositionSync(int position);
@@ -561,8 +655,16 @@ abstract class RandomAccessFile {
   Future<RandomAccessFile> truncate(int length);
   void flushSync();
   Future<RandomAccessFile> flush();
-  void lockSync([FileLock mode = FileLock.exclusive, int start = 0, int end = -1]);
-  Future<RandomAccessFile> lock([FileLock mode = FileLock.exclusive, int start = 0, int end = -1]);
+  void lockSync([
+    FileLock mode = FileLock.exclusive,
+    int start = 0,
+    int end = -1,
+  ]);
+  Future<RandomAccessFile> lock([
+    FileLock mode = FileLock.exclusive,
+    int start = 0,
+    int end = -1,
+  ]);
   void unlockSync([int start = 0, int end = -1]);
   Future<RandomAccessFile> unlock([int start = 0, int end = -1]);
   void closeSync();
@@ -599,11 +701,18 @@ class _StubRandomAccessFile implements RandomAccessFile {
   @override
   void writeFromSync(List<int> buffer, [int start = 0, int? end]) {}
   @override
-  Future<RandomAccessFile> writeFrom(List<int> buffer, [int start = 0, int? end]) async => this;
+  Future<RandomAccessFile> writeFrom(
+    List<int> buffer, [
+    int start = 0,
+    int? end,
+  ]) async => this;
   @override
   void writeStringSync(String string, {Encoding encoding = utf8}) {}
   @override
-  Future<RandomAccessFile> writeString(String string, {Encoding encoding = utf8}) async => this;
+  Future<RandomAccessFile> writeString(
+    String string, {
+    Encoding encoding = utf8,
+  }) async => this;
   @override
   int positionSync() => 0;
   @override
@@ -621,9 +730,17 @@ class _StubRandomAccessFile implements RandomAccessFile {
   @override
   Future<RandomAccessFile> flush() async => this;
   @override
-  void lockSync([FileLock mode = FileLock.exclusive, int start = 0, int end = -1]) {}
+  void lockSync([
+    FileLock mode = FileLock.exclusive,
+    int start = 0,
+    int end = -1,
+  ]) {}
   @override
-  Future<RandomAccessFile> lock([FileLock mode = FileLock.exclusive, int start = 0, int end = -1]) async => this;
+  Future<RandomAccessFile> lock([
+    FileLock mode = FileLock.exclusive,
+    int start = 0,
+    int end = -1,
+  ]) async => this;
   @override
   void unlockSync([int start = 0, int end = -1]) {}
   @override
@@ -665,6 +782,7 @@ class BytesBuilder {
     _buffer.clear();
     return result;
   }
+
   Uint8List toBytes() => Uint8List.fromList(_buffer);
   int get length => _buffer.length;
   bool get isEmpty => _buffer.isEmpty;
@@ -768,7 +886,11 @@ abstract class HttpClientResponse extends Stream<List<int>> {
   HttpClientResponseCompressionState get compressionState;
 }
 
-enum HttpClientResponseCompressionState { notCompressed, decompressed, compressed }
+enum HttpClientResponseCompressionState {
+  notCompressed,
+  decompressed,
+  compressed,
+}
 
 abstract class HttpHeaders {
   static const acceptHeader = 'accept';
@@ -793,9 +915,12 @@ class ContentType {
   final String subType;
   final Map<String, String?> parameters;
 
-  ContentType(this.primaryType, this.subType,
-      {String? charset, Map<String, String?>? parameters})
-      : parameters = parameters ?? {};
+  ContentType(
+    this.primaryType,
+    this.subType, {
+    String? charset,
+    Map<String, String?>? parameters,
+  }) : parameters = parameters ?? {};
 
   static final json = ContentType('application', 'json', charset: 'utf-8');
   static final text = ContentType('text', 'plain', charset: 'utf-8');
@@ -810,8 +935,13 @@ class ContentType {
 }
 
 class HttpServer extends Stream<HttpRequest> {
-  static Future<HttpServer> bind(dynamic address, int port,
-      {int backlog = 0, bool v6Only = false, bool shared = false}) async {
+  static Future<HttpServer> bind(
+    dynamic address,
+    int port, {
+    int backlog = 0,
+    bool v6Only = false,
+    bool shared = false,
+  }) async {
     throw UnsupportedError('HttpServer unavailable on web');
   }
 
@@ -863,6 +993,7 @@ abstract class HttpResponse implements IOSink {
   int statusCode = 200;
   String? reasonPhrase;
   HttpHeaders get headers;
+  @override
   Future close();
 }
 
@@ -886,24 +1017,43 @@ class InternetAddress {
   factory InternetAddress(String address) =>
       InternetAddress._(address, address, InternetAddressType.IPv4);
 
-  static final loopbackIPv4 =
-      InternetAddress._('127.0.0.1', 'localhost', InternetAddressType.IPv4);
-  static final loopbackIPv6 =
-      InternetAddress._('::1', 'localhost', InternetAddressType.IPv6);
-  static final anyIPv4 =
-      InternetAddress._('0.0.0.0', '0.0.0.0', InternetAddressType.IPv4);
-  static final anyIPv6 =
-      InternetAddress._('::', '::', InternetAddressType.IPv6);
+  static final loopbackIPv4 = InternetAddress._(
+    '127.0.0.1',
+    'localhost',
+    InternetAddressType.IPv4,
+  );
+  static final loopbackIPv6 = InternetAddress._(
+    '::1',
+    'localhost',
+    InternetAddressType.IPv6,
+  );
+  static final anyIPv4 = InternetAddress._(
+    '0.0.0.0',
+    '0.0.0.0',
+    InternetAddressType.IPv4,
+  );
+  static final anyIPv6 = InternetAddress._(
+    '::',
+    '::',
+    InternetAddressType.IPv6,
+  );
 
-  static Future<List<InternetAddress>> lookup(String host,
-      {InternetAddressType type = InternetAddressType.any}) async => [];
+  static Future<List<InternetAddress>> lookup(
+    String host, {
+    InternetAddressType type = InternetAddressType.any,
+  }) async => [];
 }
 
 enum InternetAddressType { IPv4, IPv6, unix, any }
 
 class Socket {
-  static Future<Socket> connect(dynamic host, int port,
-      {dynamic sourceAddress, int sourcePort = 0, Duration? timeout}) async {
+  static Future<Socket> connect(
+    dynamic host,
+    int port, {
+    dynamic sourceAddress,
+    int sourcePort = 0,
+    Duration? timeout,
+  }) async {
     throw UnsupportedError('Socket unavailable on web');
   }
 
@@ -919,8 +1069,13 @@ class Socket {
 }
 
 class ServerSocket {
-  static Future<ServerSocket> bind(dynamic address, int port,
-      {int backlog = 0, bool v6Only = false, bool shared = false}) async {
+  static Future<ServerSocket> bind(
+    dynamic address,
+    int port, {
+    int backlog = 0,
+    bool v6Only = false,
+    bool shared = false,
+  }) async {
     throw UnsupportedError('ServerSocket unavailable on web');
   }
 
@@ -938,7 +1093,9 @@ class WebSocket extends Stream<dynamic> {
     Iterable<String>? protocols,
     Map<String, dynamic>? headers,
   }) async {
-    throw UnsupportedError('WebSocket unavailable on web — use web_socket_channel');
+    throw UnsupportedError(
+      'WebSocket unavailable on web — use web_socket_channel',
+    );
   }
 
   int? get closeCode => null;
@@ -957,13 +1114,18 @@ class WebSocket extends Stream<dynamic> {
     void Function()? onDone,
     bool? cancelOnError,
   }) {
-    return _stream.listen(onData,
-        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+    return _stream.listen(
+      onData,
+      onError: onError,
+      onDone: onDone,
+      cancelOnError: cancelOnError,
+    );
   }
 }
 
 class WebSocketTransformer {
-  static Future<WebSocket> upgrade(HttpRequest request, {
+  static Future<WebSocket> upgrade(
+    HttpRequest request, {
     dynamic protocolSelector,
     CompressionOptions compression = CompressionOptions.compressionDefault,
   }) async {
@@ -991,7 +1153,9 @@ class WebSocketStatus {
 
 class CompressionOptions {
   static const CompressionOptions compressionDefault = CompressionOptions();
-  static const CompressionOptions compressionOff = CompressionOptions(enabled: false);
+  static const CompressionOptions compressionOff = CompressionOptions(
+    enabled: false,
+  );
 
   final bool enabled;
   const CompressionOptions({this.enabled = true});

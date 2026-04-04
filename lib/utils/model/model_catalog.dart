@@ -3,12 +3,12 @@
 
 /// API providers.
 enum ModelProvider {
-  firstParty,  // Anthropic direct
-  bedrock,     // AWS Bedrock
-  vertex,      // Google Cloud Vertex AI
-  foundry,     // Anthropic Foundry
-  openai,      // OpenAI compatible
-  gemini,      // Google Gemini
+  firstParty, // Anthropic direct
+  bedrock, // AWS Bedrock
+  vertex, // Google Cloud Vertex AI
+  foundry, // Anthropic Foundry
+  openai, // OpenAI compatible
+  gemini, // Google Gemini
 }
 
 /// Model family.
@@ -214,10 +214,7 @@ final modelPricing = <String, ModelPricing>{
     cacheCreationPerMillion: 1.0,
     cacheReadPerMillion: 0.08,
   ),
-  'gpt-4o': const ModelPricing(
-    inputPerMillion: 2.50,
-    outputPerMillion: 10.0,
-  ),
+  'gpt-4o': const ModelPricing(inputPerMillion: 2.50, outputPerMillion: 10.0),
   'gpt-4o-mini': const ModelPricing(
     inputPerMillion: 0.15,
     outputPerMillion: 0.60,
@@ -306,11 +303,11 @@ class TokenUsage {
   });
 
   TokenUsage operator +(TokenUsage other) => TokenUsage(
-        inputTokens: inputTokens + other.inputTokens,
-        outputTokens: outputTokens + other.outputTokens,
-        cacheCreationTokens: cacheCreationTokens + other.cacheCreationTokens,
-        cacheReadTokens: cacheReadTokens + other.cacheReadTokens,
-      );
+    inputTokens: inputTokens + other.inputTokens,
+    outputTokens: outputTokens + other.outputTokens,
+    cacheCreationTokens: cacheCreationTokens + other.cacheCreationTokens,
+    cacheReadTokens: cacheReadTokens + other.cacheReadTokens,
+  );
 
   int get totalTokens =>
       inputTokens + outputTokens + cacheCreationTokens + cacheReadTokens;
@@ -326,7 +323,8 @@ double calculateCost(String modelId, TokenUsage usage) {
   cost += (usage.outputTokens / 1000000) * pricing.outputPerMillion;
 
   if (pricing.cacheCreationPerMillion != null) {
-    cost += (usage.cacheCreationTokens / 1000000) *
+    cost +=
+        (usage.cacheCreationTokens / 1000000) *
         pricing.cacheCreationPerMillion!;
   }
   if (pricing.cacheReadPerMillion != null) {
@@ -351,7 +349,8 @@ String getDefaultModel({
   Map<String, dynamic>? settings,
 }) {
   // 1. Environment variable
-  final envModel = environment?['ANTHROPIC_MODEL'] ??
+  final envModel =
+      environment?['ANTHROPIC_MODEL'] ??
       environment?['CLAW_MODEL'] ??
       environment?['GEMINI_MODEL'] ??
       environment?['OPENAI_MODEL'];

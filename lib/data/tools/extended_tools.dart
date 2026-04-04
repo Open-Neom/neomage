@@ -43,13 +43,13 @@ class NotebookEditInput {
       );
 
   Map<String, dynamic> toJson() => {
-        'notebook_path': notebookPath,
-        'command': command,
-        'cell_index': cellIndex,
-        if (content != null) 'content': content,
-        if (cellType != null) 'cell_type': cellType,
-        if (targetIndex != null) 'target_index': targetIndex,
-      };
+    'notebook_path': notebookPath,
+    'command': command,
+    'cell_index': cellIndex,
+    if (content != null) 'content': content,
+    if (cellType != null) 'cell_type': cellType,
+    if (targetIndex != null) 'target_index': targetIndex,
+  };
 }
 
 class NotebookEditOutput {
@@ -79,37 +79,37 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'notebook_path': {
-            'type': 'string',
-            'description': 'Absolute path to the .ipynb file',
-          },
-          'command': {
-            'type': 'string',
-            'enum': ['add', 'edit', 'delete', 'move'],
-            'description': 'Operation to perform on the cell',
-          },
-          'cell_index': {
-            'type': 'integer',
-            'description': 'Zero-based index of the target cell',
-          },
-          'content': {
-            'type': 'string',
-            'description': 'New cell content (for add/edit)',
-          },
-          'cell_type': {
-            'type': 'string',
-            'enum': ['code', 'markdown', 'raw'],
-            'description': 'Cell type (for add/edit, default: code)',
-          },
-          'target_index': {
-            'type': 'integer',
-            'description': 'Destination index (for move)',
-          },
-        },
-        'required': ['notebook_path', 'command'],
-      };
+    'type': 'object',
+    'properties': {
+      'notebook_path': {
+        'type': 'string',
+        'description': 'Absolute path to the .ipynb file',
+      },
+      'command': {
+        'type': 'string',
+        'enum': ['add', 'edit', 'delete', 'move'],
+        'description': 'Operation to perform on the cell',
+      },
+      'cell_index': {
+        'type': 'integer',
+        'description': 'Zero-based index of the target cell',
+      },
+      'content': {
+        'type': 'string',
+        'description': 'New cell content (for add/edit)',
+      },
+      'cell_type': {
+        'type': 'string',
+        'enum': ['code', 'markdown', 'raw'],
+        'description': 'Cell type (for add/edit, default: code)',
+      },
+      'target_index': {
+        'type': 'integer',
+        'description': 'Destination index (for move)',
+      },
+    },
+    'required': ['notebook_path', 'command'],
+  };
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
@@ -123,14 +123,16 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
     final cmd = input['command'] as String?;
     if (cmd == null || !['add', 'edit', 'delete', 'move'].contains(cmd)) {
       return const ValidationResult.invalid(
-          'command must be one of: add, edit, delete, move');
+        'command must be one of: add, edit, delete, move',
+      );
     }
     if ((cmd == 'add' || cmd == 'edit') && input['content'] == null) {
       return ValidationResult.invalid('content is required for $cmd');
     }
     if (cmd == 'move' && input['target_index'] == null) {
       return const ValidationResult.invalid(
-          'target_index is required for move');
+        'target_index is required for move',
+      );
     }
     return const ValidationResult.valid();
   }
@@ -162,7 +164,8 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
         case 'edit':
           if (parsed.cellIndex < 0 || parsed.cellIndex >= cells.length) {
             return ToolResult.error(
-                'cell_index ${parsed.cellIndex} out of range (0..${cells.length - 1})');
+              'cell_index ${parsed.cellIndex} out of range (0..${cells.length - 1})',
+            );
           }
           cells[parsed.cellIndex]['source'] = _splitSource(parsed.content!);
           if (parsed.cellType != null) {
@@ -172,14 +175,16 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
         case 'delete':
           if (parsed.cellIndex < 0 || parsed.cellIndex >= cells.length) {
             return ToolResult.error(
-                'cell_index ${parsed.cellIndex} out of range (0..${cells.length - 1})');
+              'cell_index ${parsed.cellIndex} out of range (0..${cells.length - 1})',
+            );
           }
           cells.removeAt(parsed.cellIndex);
 
         case 'move':
           if (parsed.cellIndex < 0 || parsed.cellIndex >= cells.length) {
             return ToolResult.error(
-                'cell_index ${parsed.cellIndex} out of range');
+              'cell_index ${parsed.cellIndex} out of range',
+            );
           }
           final target = parsed.targetIndex!.clamp(0, cells.length - 1);
           final cell = cells.removeAt(parsed.cellIndex);
@@ -202,12 +207,12 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
   }
 
   Map<String, dynamic> _makeCell(String type, String content) => {
-        'cell_type': type,
-        'metadata': <String, dynamic>{},
-        'source': _splitSource(content),
-        if (type == 'code') 'execution_count': null,
-        if (type == 'code') 'outputs': <dynamic>[],
-      };
+    'cell_type': type,
+    'metadata': <String, dynamic>{},
+    'source': _splitSource(content),
+    if (type == 'code') 'execution_count': null,
+    if (type == 'code') 'outputs': <dynamic>[],
+  };
 
   List<String> _splitSource(String content) {
     final lines = content.split('\n');
@@ -257,15 +262,15 @@ class ExitPlanModeTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'plan_summary': {
-            'type': 'string',
-            'description': 'Summary of the plan to execute',
-          },
-        },
-        'required': ['plan_summary'],
-      };
+    'type': 'object',
+    'properties': {
+      'plan_summary': {
+        'type': 'string',
+        'description': 'Summary of the plan to execute',
+      },
+    },
+    'required': ['plan_summary'],
+  };
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
@@ -304,9 +309,9 @@ class PowerShellInput {
       );
 
   Map<String, dynamic> toJson() => {
-        'command': command,
-        if (timeoutMs != null) 'timeout_ms': timeoutMs,
-      };
+    'command': command,
+    if (timeoutMs != null) 'timeout_ms': timeoutMs,
+  };
 }
 
 class PowerShellOutput {
@@ -350,19 +355,19 @@ class PowerShellTool extends Tool with ShellToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'command': {
-            'type': 'string',
-            'description': 'The PowerShell command to execute',
-          },
-          'timeout_ms': {
-            'type': 'integer',
-            'description': 'Timeout in milliseconds (default: 120000)',
-          },
-        },
-        'required': ['command'],
-      };
+    'type': 'object',
+    'properties': {
+      'command': {
+        'type': 'string',
+        'description': 'The PowerShell command to execute',
+      },
+      'timeout_ms': {
+        'type': 'integer',
+        'description': 'Timeout in milliseconds (default: 120000)',
+      },
+    },
+    'required': ['command'],
+  };
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
@@ -382,10 +387,12 @@ class PowerShellTool extends Tool with ShellToolMixin {
 
     final sw = Stopwatch()..start();
     try {
-      final result = await Process.run(
-        'powershell',
-        ['-NoProfile', '-NonInteractive', '-Command', parsed.command],
-      ).timeout(timeout);
+      final result = await Process.run('powershell', [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        parsed.command,
+      ]).timeout(timeout);
       sw.stop();
 
       final out = PowerShellOutput(
@@ -417,14 +424,14 @@ class SkillInput {
   SkillInput({required this.skillName, this.args});
 
   factory SkillInput.fromJson(Map<String, dynamic> json) => SkillInput(
-        skillName: json['skill_name'] as String,
-        args: json['args'] as String?,
-      );
+    skillName: json['skill_name'] as String,
+    args: json['args'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {
-        'skill_name': skillName,
-        if (args != null) 'args': args,
-      };
+    'skill_name': skillName,
+    if (args != null) 'args': args,
+  };
 }
 
 class SkillOutput {
@@ -434,8 +441,7 @@ class SkillOutput {
   const SkillOutput({required this.result, required this.skillLoaded});
 
   @override
-  String toString() =>
-      skillLoaded ? result : 'Skill not found: $result';
+  String toString() => skillLoaded ? result : 'Skill not found: $result';
 }
 
 class SkillTool extends Tool {
@@ -454,19 +460,19 @@ class SkillTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'skill_name': {
-            'type': 'string',
-            'description': 'The skill name to execute (e.g. "commit", "pdf")',
-          },
-          'args': {
-            'type': 'string',
-            'description': 'Optional arguments for the skill',
-          },
-        },
-        'required': ['skill_name'],
-      };
+    'type': 'object',
+    'properties': {
+      'skill_name': {
+        'type': 'string',
+        'description': 'The skill name to execute (e.g. "commit", "pdf")',
+      },
+      'args': {
+        'type': 'string',
+        'description': 'Optional arguments for the skill',
+      },
+    },
+    'required': ['skill_name'],
+  };
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
@@ -487,10 +493,7 @@ class SkillTool extends Tool {
     return ToolResult.success(
       'Skill "${parsed.skillName}" dispatched'
       '${parsed.args != null ? " with args: ${parsed.args}" : ""}',
-      metadata: {
-        'skill_name': parsed.skillName,
-        'skill_loaded': true,
-      },
+      metadata: {'skill_name': parsed.skillName, 'skill_loaded': true},
     );
   }
 }
@@ -511,17 +514,17 @@ class McpToolInput {
   });
 
   factory McpToolInput.fromJson(Map<String, dynamic> json) => McpToolInput(
-        serverName: json['server_name'] as String,
-        toolName: json['tool_name'] as String,
-        arguments:
-            (json['arguments'] as Map<String, dynamic>?) ?? <String, dynamic>{},
-      );
+    serverName: json['server_name'] as String,
+    toolName: json['tool_name'] as String,
+    arguments:
+        (json['arguments'] as Map<String, dynamic>?) ?? <String, dynamic>{},
+  );
 
   Map<String, dynamic> toJson() => {
-        'server_name': serverName,
-        'tool_name': toolName,
-        'arguments': arguments,
-      };
+    'server_name': serverName,
+    'tool_name': toolName,
+    'arguments': arguments,
+  };
 }
 
 class McpToolOutput {
@@ -540,7 +543,11 @@ class McpToolOutput {
 class McpTool extends Tool {
   /// Callback to dispatch to the actual MCP server. Injected by the host.
   final Future<ToolResult> Function(
-      String serverName, String toolName, Map<String, dynamic> args)? dispatch;
+    String serverName,
+    String toolName,
+    Map<String, dynamic> args,
+  )?
+  dispatch;
 
   McpTool({this.dispatch});
 
@@ -557,23 +564,23 @@ class McpTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
+    'type': 'object',
+    'properties': {
+      'server_name': {
+        'type': 'string',
+        'description': 'Name of the MCP server',
+      },
+      'tool_name': {
+        'type': 'string',
+        'description': 'Name of the tool on the server',
+      },
+      'arguments': {
         'type': 'object',
-        'properties': {
-          'server_name': {
-            'type': 'string',
-            'description': 'Name of the MCP server',
-          },
-          'tool_name': {
-            'type': 'string',
-            'description': 'Name of the tool on the server',
-          },
-          'arguments': {
-            'type': 'object',
-            'description': 'Arguments to pass to the tool',
-          },
-        },
-        'required': ['server_name', 'tool_name'],
-      };
+        'description': 'Arguments to pass to the tool',
+      },
+    },
+    'required': ['server_name', 'tool_name'],
+  };
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
@@ -581,8 +588,7 @@ class McpTool extends Tool {
         (input['server_name'] as String).isEmpty) {
       return const ValidationResult.invalid('server_name is required');
     }
-    if (input['tool_name'] == null ||
-        (input['tool_name'] as String).isEmpty) {
+    if (input['tool_name'] == null || (input['tool_name'] as String).isEmpty) {
       return const ValidationResult.invalid('tool_name is required');
     }
     return const ValidationResult.valid();
@@ -606,7 +612,8 @@ class McpTool extends Tool {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class LspToolInput {
-  final String action; // diagnostics, hover, definition, references, completions
+  final String
+  action; // diagnostics, hover, definition, references, completions
   final String filePath;
   final int? line;
   final int? column;
@@ -619,18 +626,18 @@ class LspToolInput {
   });
 
   factory LspToolInput.fromJson(Map<String, dynamic> json) => LspToolInput(
-        action: json['action'] as String,
-        filePath: json['file_path'] as String,
-        line: json['line'] as int?,
-        column: json['column'] as int?,
-      );
+    action: json['action'] as String,
+    filePath: json['file_path'] as String,
+    line: json['line'] as int?,
+    column: json['column'] as int?,
+  );
 
   Map<String, dynamic> toJson() => {
-        'action': action,
-        'file_path': filePath,
-        if (line != null) 'line': line,
-        if (column != null) 'column': column,
-      };
+    'action': action,
+    'file_path': filePath,
+    if (line != null) 'line': line,
+    if (column != null) 'column': column,
+  };
 }
 
 class LspToolOutput {
@@ -645,8 +652,10 @@ class LspToolOutput {
     if (hoverInfo != null) return hoverInfo!;
     if (diagnostics != null && diagnostics!.isNotEmpty) {
       return diagnostics!
-          .map((d) =>
-              '${d['severity']}: ${d['message']} (${d['line']}:${d['column']})')
+          .map(
+            (d) =>
+                '${d['severity']}: ${d['message']} (${d['line']}:${d['column']})',
+          )
           .join('\n');
     }
     if (results != null && results!.isNotEmpty) {
@@ -672,40 +681,34 @@ class LspTool extends Tool with ReadOnlyToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'action': {
-            'type': 'string',
-            'enum': [
-              'diagnostics',
-              'hover',
-              'definition',
-              'references',
-              'completions'
-            ],
-            'description': 'LSP action to perform',
-          },
-          'file_path': {
-            'type': 'string',
-            'description': 'Absolute path to the source file',
-          },
-          'line': {
-            'type': 'integer',
-            'description': 'Line number (1-based)',
-          },
-          'column': {
-            'type': 'integer',
-            'description': 'Column number (1-based)',
-          },
-        },
-        'required': ['action', 'file_path'],
-      };
+    'type': 'object',
+    'properties': {
+      'action': {
+        'type': 'string',
+        'enum': [
+          'diagnostics',
+          'hover',
+          'definition',
+          'references',
+          'completions',
+        ],
+        'description': 'LSP action to perform',
+      },
+      'file_path': {
+        'type': 'string',
+        'description': 'Absolute path to the source file',
+      },
+      'line': {'type': 'integer', 'description': 'Line number (1-based)'},
+      'column': {'type': 'integer', 'description': 'Column number (1-based)'},
+    },
+    'required': ['action', 'file_path'],
+  };
 
   static const _positionActions = {
     'hover',
     'definition',
     'references',
-    'completions'
+    'completions',
   };
 
   @override
@@ -714,10 +717,16 @@ class LspTool extends Tool with ReadOnlyToolMixin {
     if (action == null) {
       return const ValidationResult.invalid('action is required');
     }
-    if (!['diagnostics', 'hover', 'definition', 'references', 'completions']
-        .contains(action)) {
+    if (![
+      'diagnostics',
+      'hover',
+      'definition',
+      'references',
+      'completions',
+    ].contains(action)) {
       return const ValidationResult.invalid(
-          'action must be diagnostics, hover, definition, references, or completions');
+        'action must be diagnostics, hover, definition, references, or completions',
+      );
     }
     if (input['file_path'] == null) {
       return const ValidationResult.invalid('file_path is required');
@@ -725,7 +734,8 @@ class LspTool extends Tool with ReadOnlyToolMixin {
     if (_positionActions.contains(action)) {
       if (input['line'] == null || input['column'] == null) {
         return ValidationResult.invalid(
-            'line and column are required for $action');
+          'line and column are required for $action',
+        );
       }
     }
     return const ValidationResult.valid();
@@ -741,7 +751,8 @@ class LspTool extends Tool with ReadOnlyToolMixin {
       return lspClient!(parsed);
     }
     return ToolResult.error(
-        'No LSP client configured. Wire up an LSP server to use this tool.');
+      'No LSP client configured. Wire up an LSP server to use this tool.',
+    );
   }
 }
 
@@ -771,11 +782,11 @@ class ConfigToolInput {
       );
 
   Map<String, dynamic> toJson() => {
-        'action': action,
-        if (key != null) 'key': key,
-        if (value != null) 'value': value,
-        'scope': scope,
-      };
+    'action': action,
+    if (key != null) 'key': key,
+    if (value != null) 'value': value,
+    'scope': scope,
+  };
 }
 
 class ConfigToolOutput {
@@ -816,36 +827,34 @@ class ConfigTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'action': {
-            'type': 'string',
-            'enum': ['get', 'set', 'list', 'reset'],
-            'description': 'Config operation to perform',
-          },
-          'key': {
-            'type': 'string',
-            'description': 'Configuration key (dot-notation supported)',
-          },
-          'value': {
-            'description': 'Value to set (for set action)',
-          },
-          'scope': {
-            'type': 'string',
-            'enum': ['user', 'project', 'local'],
-            'description': 'Configuration scope (default: user)',
-          },
-        },
-        'required': ['action'],
-      };
+    'type': 'object',
+    'properties': {
+      'action': {
+        'type': 'string',
+        'enum': ['get', 'set', 'list', 'reset'],
+        'description': 'Config operation to perform',
+      },
+      'key': {
+        'type': 'string',
+        'description': 'Configuration key (dot-notation supported)',
+      },
+      'value': {'description': 'Value to set (for set action)'},
+      'scope': {
+        'type': 'string',
+        'enum': ['user', 'project', 'local'],
+        'description': 'Configuration scope (default: user)',
+      },
+    },
+    'required': ['action'],
+  };
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
     final action = input['action'] as String?;
-    if (action == null ||
-        !['get', 'set', 'list', 'reset'].contains(action)) {
+    if (action == null || !['get', 'set', 'list', 'reset'].contains(action)) {
       return const ValidationResult.invalid(
-          'action must be get, set, list, or reset');
+        'action must be get, set, list, or reset',
+      );
     }
     if ((action == 'get' || action == 'set' || action == 'reset') &&
         input['key'] == null) {
@@ -914,10 +923,10 @@ class MemoryToolInput {
       );
 
   Map<String, dynamic> toJson() => {
-        'action': action,
-        if (path != null) 'path': path,
-        if (content != null) 'content': content,
-      };
+    'action': action,
+    if (path != null) 'path': path,
+    if (content != null) 'content': content,
+  };
 }
 
 class MemoryToolOutput {
@@ -946,25 +955,24 @@ class MemoryTool extends Tool with FileWriteToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'action': {
-            'type': 'string',
-            'enum': ['read', 'write', 'append', 'list'],
-            'description': 'Memory operation to perform',
-          },
-          'path': {
-            'type': 'string',
-            'description':
-                'Path to the memory file (relative to project root)',
-          },
-          'content': {
-            'type': 'string',
-            'description': 'Content to write or append',
-          },
-        },
-        'required': ['action'],
-      };
+    'type': 'object',
+    'properties': {
+      'action': {
+        'type': 'string',
+        'enum': ['read', 'write', 'append', 'list'],
+        'description': 'Memory operation to perform',
+      },
+      'path': {
+        'type': 'string',
+        'description': 'Path to the memory file (relative to project root)',
+      },
+      'content': {
+        'type': 'string',
+        'description': 'Content to write or append',
+      },
+    },
+    'required': ['action'],
+  };
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
@@ -972,13 +980,13 @@ class MemoryTool extends Tool with FileWriteToolMixin {
     if (action == null ||
         !['read', 'write', 'append', 'list'].contains(action)) {
       return const ValidationResult.invalid(
-          'action must be read, write, append, or list');
+        'action must be read, write, append, or list',
+      );
     }
     if (action != 'list' && (input['path'] == null)) {
       return ValidationResult.invalid('path is required for $action');
     }
-    if ((action == 'write' || action == 'append') &&
-        input['content'] == null) {
+    if ((action == 'write' || action == 'append') && input['content'] == null) {
       return ValidationResult.invalid('content is required for $action');
     }
     return const ValidationResult.valid();
@@ -1009,10 +1017,7 @@ class MemoryTool extends Tool with FileWriteToolMixin {
       case 'append':
         final file = File(parsed.path!);
         await file.parent.create(recursive: true);
-        await file.writeAsString(
-          parsed.content!,
-          mode: FileMode.append,
-        );
+        await file.writeAsString(parsed.content!, mode: FileMode.append);
         return ToolResult.success('Appended to ${parsed.path}');
 
       case 'list':
@@ -1056,14 +1061,14 @@ class DiffApplyInput {
   DiffApplyInput({required this.filePath, required this.diffContent});
 
   factory DiffApplyInput.fromJson(Map<String, dynamic> json) => DiffApplyInput(
-        filePath: json['file_path'] as String,
-        diffContent: json['diff_content'] as String,
-      );
+    filePath: json['file_path'] as String,
+    diffContent: json['diff_content'] as String,
+  );
 
   Map<String, dynamic> toJson() => {
-        'file_path': filePath,
-        'diff_content': diffContent,
-      };
+    'file_path': filePath,
+    'diff_content': diffContent,
+  };
 }
 
 class DiffApplyOutput {
@@ -1094,24 +1099,23 @@ class DiffApplyTool extends Tool with FileWriteToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'file_path': {
-            'type': 'string',
-            'description': 'Absolute path to the file to patch',
-          },
-          'diff_content': {
-            'type': 'string',
-            'description': 'Unified diff content to apply',
-          },
-        },
-        'required': ['file_path', 'diff_content'],
-      };
+    'type': 'object',
+    'properties': {
+      'file_path': {
+        'type': 'string',
+        'description': 'Absolute path to the file to patch',
+      },
+      'diff_content': {
+        'type': 'string',
+        'description': 'Unified diff content to apply',
+      },
+    },
+    'required': ['file_path', 'diff_content'],
+  };
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
-    if (input['file_path'] == null ||
-        (input['file_path'] as String).isEmpty) {
+    if (input['file_path'] == null || (input['file_path'] as String).isEmpty) {
       return const ValidationResult.invalid('file_path is required');
     }
     if (input['diff_content'] == null ||
@@ -1138,13 +1142,18 @@ class DiffApplyTool extends Tool with FileWriteToolMixin {
       final patchedLines = _applyUnifiedDiff(originalLines, parsed.diffContent);
       final newContent = patchedLines.join('\n');
       await file.writeAsString(
-          newContent.endsWith('\n') ? newContent : '$newContent\n');
+        newContent.endsWith('\n') ? newContent : '$newContent\n',
+      );
 
-      final changed = (patchedLines.length - originalLines.length).abs() +
+      final changed =
+          (patchedLines.length - originalLines.length).abs() +
           _countChangedLines(originalLines, patchedLines);
 
-      final out =
-          DiffApplyOutput(success: true, linesChanged: changed, newContent: newContent);
+      final out = DiffApplyOutput(
+        success: true,
+        linesChanged: changed,
+        newContent: newContent,
+      );
       return ToolResult.success(out.toString());
     } catch (e) {
       return ToolResult.error('Error applying diff: $e');
@@ -1186,8 +1195,9 @@ class DiffApplyTool extends Tool with FileWriteToolMixin {
     _DiffHunk? current;
 
     for (final line in lines) {
-      final hunkMatch =
-          RegExp(r'^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@').firstMatch(line);
+      final hunkMatch = RegExp(
+        r'^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@',
+      ).firstMatch(line);
       if (hunkMatch != null) {
         current = _DiffHunk(
           originalStart: int.parse(hunkMatch.group(1)!),
@@ -1235,9 +1245,9 @@ class MultiEditEntry {
   const MultiEditEntry({required this.oldText, required this.newText});
 
   factory MultiEditEntry.fromJson(Map<String, dynamic> json) => MultiEditEntry(
-        oldText: json['old_text'] as String,
-        newText: json['new_text'] as String,
-      );
+    oldText: json['old_text'] as String,
+    newText: json['new_text'] as String,
+  );
 
   Map<String, dynamic> toJson() => {'old_text': oldText, 'new_text': newText};
 }
@@ -1249,16 +1259,16 @@ class MultiEditInput {
   MultiEditInput({required this.filePath, required this.edits});
 
   factory MultiEditInput.fromJson(Map<String, dynamic> json) => MultiEditInput(
-        filePath: json['file_path'] as String,
-        edits: (json['edits'] as List)
-            .map((e) => MultiEditEntry.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    filePath: json['file_path'] as String,
+    edits: (json['edits'] as List)
+        .map((e) => MultiEditEntry.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 
   Map<String, dynamic> toJson() => {
-        'file_path': filePath,
-        'edits': edits.map((e) => e.toJson()).toList(),
-      };
+    'file_path': filePath,
+    'edits': edits.map((e) => e.toJson()).toList(),
+  };
 }
 
 class MultiEditOutput {
@@ -1289,33 +1299,27 @@ class MultiEditTool extends Tool with FileWriteToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'file_path': {
-            'type': 'string',
-            'description': 'Absolute path to the file to edit',
+    'type': 'object',
+    'properties': {
+      'file_path': {
+        'type': 'string',
+        'description': 'Absolute path to the file to edit',
+      },
+      'edits': {
+        'type': 'array',
+        'description': 'List of {old_text, new_text} replacements',
+        'items': {
+          'type': 'object',
+          'properties': {
+            'old_text': {'type': 'string', 'description': 'Text to find'},
+            'new_text': {'type': 'string', 'description': 'Replacement text'},
           },
-          'edits': {
-            'type': 'array',
-            'description': 'List of {old_text, new_text} replacements',
-            'items': {
-              'type': 'object',
-              'properties': {
-                'old_text': {
-                  'type': 'string',
-                  'description': 'Text to find',
-                },
-                'new_text': {
-                  'type': 'string',
-                  'description': 'Replacement text',
-                },
-              },
-              'required': ['old_text', 'new_text'],
-            },
-          },
+          'required': ['old_text', 'new_text'],
         },
-        'required': ['file_path', 'edits'],
-      };
+      },
+    },
+    'required': ['file_path', 'edits'],
+  };
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
@@ -1324,14 +1328,12 @@ class MultiEditTool extends Tool with FileWriteToolMixin {
     }
     final edits = input['edits'];
     if (edits == null || edits is! List || edits.isEmpty) {
-      return const ValidationResult.invalid(
-          'edits must be a non-empty array');
+      return const ValidationResult.invalid('edits must be a non-empty array');
     }
     for (var i = 0; i < edits.length; i++) {
       final e = edits[i] as Map<String, dynamic>;
       if (e['old_text'] == null || e['new_text'] == null) {
-        return ValidationResult.invalid(
-            'Edit $i missing old_text or new_text');
+        return ValidationResult.invalid('Edit $i missing old_text or new_text');
       }
     }
     return const ValidationResult.valid();
@@ -1357,8 +1359,9 @@ class MultiEditTool extends Tool with FileWriteToolMixin {
       for (var i = 0; i < parsed.edits.length; i++) {
         if (!content.contains(parsed.edits[i].oldText)) {
           return ToolResult.error(
-              'Edit $i: old_text not found in file. '
-              'No edits were applied (atomic).');
+            'Edit $i: old_text not found in file. '
+            'No edits were applied (atomic).',
+          );
         }
       }
 
@@ -1408,22 +1411,22 @@ class SubagentInput {
   });
 
   factory SubagentInput.fromJson(Map<String, dynamic> json) => SubagentInput(
-        name: json['name'] as String,
-        role: json['role'] as String,
-        model: json['model'] as String?,
-        systemPrompt: json['system_prompt'] as String?,
-        tools: (json['tools'] as List?)?.cast<String>(),
-        task: json['task'] as String,
-      );
+    name: json['name'] as String,
+    role: json['role'] as String,
+    model: json['model'] as String?,
+    systemPrompt: json['system_prompt'] as String?,
+    tools: (json['tools'] as List?)?.cast<String>(),
+    task: json['task'] as String,
+  );
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'role': role,
-        if (model != null) 'model': model,
-        if (systemPrompt != null) 'system_prompt': systemPrompt,
-        if (tools != null) 'tools': tools,
-        'task': task,
-      };
+    'name': name,
+    'role': role,
+    if (model != null) 'model': model,
+    if (systemPrompt != null) 'system_prompt': systemPrompt,
+    if (tools != null) 'tools': tools,
+    'task': task,
+  };
 }
 
 class SubagentOutput {
@@ -1457,37 +1460,37 @@ class SubagentTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'name': {
-            'type': 'string',
-            'description': 'A short name for the sub-agent',
-          },
-          'role': {
-            'type': 'string',
-            'description':
-                'The role of the agent (e.g. "code_reviewer", "test_writer")',
-          },
-          'model': {
-            'type': 'string',
-            'description': 'Model to use (default: same as parent)',
-          },
-          'system_prompt': {
-            'type': 'string',
-            'description': 'System prompt for the sub-agent',
-          },
-          'tools': {
-            'type': 'array',
-            'items': {'type': 'string'},
-            'description': 'Tool names available to the sub-agent',
-          },
-          'task': {
-            'type': 'string',
-            'description': 'The task for the sub-agent to perform',
-          },
-        },
-        'required': ['name', 'role', 'task'],
-      };
+    'type': 'object',
+    'properties': {
+      'name': {
+        'type': 'string',
+        'description': 'A short name for the sub-agent',
+      },
+      'role': {
+        'type': 'string',
+        'description':
+            'The role of the agent (e.g. "code_reviewer", "test_writer")',
+      },
+      'model': {
+        'type': 'string',
+        'description': 'Model to use (default: same as parent)',
+      },
+      'system_prompt': {
+        'type': 'string',
+        'description': 'System prompt for the sub-agent',
+      },
+      'tools': {
+        'type': 'array',
+        'items': {'type': 'string'},
+        'description': 'Tool names available to the sub-agent',
+      },
+      'task': {
+        'type': 'string',
+        'description': 'The task for the sub-agent to perform',
+      },
+    },
+    'required': ['name', 'role', 'task'],
+  };
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
@@ -1516,10 +1519,7 @@ class SubagentTool extends Tool {
     return ToolResult.success(
       'Sub-agent "$agentId" created with role "${parsed.role}". '
       'Task queued: ${parsed.task}',
-      metadata: {
-        'agent_id': agentId,
-        'status': 'queued',
-      },
+      metadata: {'agent_id': agentId, 'status': 'queued'},
     );
   }
 }
@@ -1550,11 +1550,11 @@ class ScreenshotInput {
       );
 
   Map<String, dynamic> toJson() => {
-        if (url != null) 'url': url,
-        if (selector != null) 'selector': selector,
-        'viewport_width': viewportWidth,
-        'viewport_height': viewportHeight,
-      };
+    if (url != null) 'url': url,
+    if (selector != null) 'selector': selector,
+    'viewport_width': viewportWidth,
+    'viewport_height': viewportHeight,
+  };
 }
 
 class ScreenshotOutput {
@@ -1589,26 +1589,23 @@ class ScreenshotTool extends Tool with ReadOnlyToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'url': {
-            'type': 'string',
-            'description': 'URL to capture',
-          },
-          'selector': {
-            'type': 'string',
-            'description': 'CSS selector to capture a specific element',
-          },
-          'viewport_width': {
-            'type': 'integer',
-            'description': 'Viewport width in pixels (default: 1280)',
-          },
-          'viewport_height': {
-            'type': 'integer',
-            'description': 'Viewport height in pixels (default: 800)',
-          },
-        },
-      };
+    'type': 'object',
+    'properties': {
+      'url': {'type': 'string', 'description': 'URL to capture'},
+      'selector': {
+        'type': 'string',
+        'description': 'CSS selector to capture a specific element',
+      },
+      'viewport_width': {
+        'type': 'integer',
+        'description': 'Viewport width in pixels (default: 1280)',
+      },
+      'viewport_height': {
+        'type': 'integer',
+        'description': 'Viewport height in pixels (default: 800)',
+      },
+    },
+  };
 
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
@@ -1627,7 +1624,8 @@ class ScreenshotTool extends Tool with ReadOnlyToolMixin {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class ComputerUseInput {
-  final String action; // click, type, scroll, screenshot, key, double_click, drag
+  final String
+  action; // click, type, scroll, screenshot, key, double_click, drag
   final List<int>? coordinates; // [x, y]
   final String? text;
   final String? key;
@@ -1654,13 +1652,13 @@ class ComputerUseInput {
       );
 
   Map<String, dynamic> toJson() => {
-        'action': action,
-        if (coordinates != null) 'coordinates': coordinates,
-        if (text != null) 'text': text,
-        if (key != null) 'key': key,
-        if (scrollDirection != null) 'scroll_direction': scrollDirection,
-        if (scrollAmount != null) 'scroll_amount': scrollAmount,
-      };
+    'action': action,
+    if (coordinates != null) 'coordinates': coordinates,
+    if (text != null) 'text': text,
+    if (key != null) 'key': key,
+    if (scrollDirection != null) 'scroll_direction': scrollDirection,
+    if (scrollAmount != null) 'scroll_amount': scrollAmount,
+  };
 }
 
 class ComputerUseOutput {
@@ -1701,46 +1699,43 @@ class ComputerUseTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'action': {
-            'type': 'string',
-            'enum': [
-              'click',
-              'double_click',
-              'type',
-              'scroll',
-              'screenshot',
-              'key',
-              'drag'
-            ],
-            'description': 'GUI action to perform',
-          },
-          'coordinates': {
-            'type': 'array',
-            'items': {'type': 'integer'},
-            'description': '[x, y] pixel coordinates for click/drag',
-          },
-          'text': {
-            'type': 'string',
-            'description': 'Text to type',
-          },
-          'key': {
-            'type': 'string',
-            'description': 'Key or shortcut to press (e.g. "Enter", "ctrl+c")',
-          },
-          'scroll_direction': {
-            'type': 'string',
-            'enum': ['up', 'down', 'left', 'right'],
-            'description': 'Scroll direction',
-          },
-          'scroll_amount': {
-            'type': 'integer',
-            'description': 'Number of scroll ticks (default: 3)',
-          },
-        },
-        'required': ['action'],
-      };
+    'type': 'object',
+    'properties': {
+      'action': {
+        'type': 'string',
+        'enum': [
+          'click',
+          'double_click',
+          'type',
+          'scroll',
+          'screenshot',
+          'key',
+          'drag',
+        ],
+        'description': 'GUI action to perform',
+      },
+      'coordinates': {
+        'type': 'array',
+        'items': {'type': 'integer'},
+        'description': '[x, y] pixel coordinates for click/drag',
+      },
+      'text': {'type': 'string', 'description': 'Text to type'},
+      'key': {
+        'type': 'string',
+        'description': 'Key or shortcut to press (e.g. "Enter", "ctrl+c")',
+      },
+      'scroll_direction': {
+        'type': 'string',
+        'enum': ['up', 'down', 'left', 'right'],
+        'description': 'Scroll direction',
+      },
+      'scroll_amount': {
+        'type': 'integer',
+        'description': 'Number of scroll ticks (default: 3)',
+      },
+    },
+    'required': ['action'],
+  };
 
   static const _coordActions = {'click', 'double_click', 'drag'};
 
@@ -1752,7 +1747,8 @@ class ComputerUseTool extends Tool {
     }
     if (_coordActions.contains(action) && input['coordinates'] == null) {
       return ValidationResult.invalid(
-          'coordinates [x, y] required for $action');
+        'coordinates [x, y] required for $action',
+      );
     }
     if (action == 'type' && input['text'] == null) {
       return const ValidationResult.invalid('text is required for type');
@@ -1762,7 +1758,8 @@ class ComputerUseTool extends Tool {
     }
     if (action == 'scroll' && input['scroll_direction'] == null) {
       return const ValidationResult.invalid(
-          'scroll_direction required for scroll');
+        'scroll_direction required for scroll',
+      );
     }
     return const ValidationResult.valid();
   }
@@ -1794,16 +1791,16 @@ class ValidateInput {
   ValidateInput({this.filePath, this.content, required this.validatorType});
 
   factory ValidateInput.fromJson(Map<String, dynamic> json) => ValidateInput(
-        filePath: json['file_path'] as String?,
-        content: json['content'] as String?,
-        validatorType: json['validator_type'] as String,
-      );
+    filePath: json['file_path'] as String?,
+    content: json['content'] as String?,
+    validatorType: json['validator_type'] as String,
+  );
 
   Map<String, dynamic> toJson() => {
-        if (filePath != null) 'file_path': filePath,
-        if (content != null) 'content': content,
-        'validator_type': validatorType,
-      };
+    if (filePath != null) 'file_path': filePath,
+    if (content != null) 'content': content,
+    'validator_type': validatorType,
+  };
 }
 
 class ValidateOutput {
@@ -1842,36 +1839,37 @@ class ValidateTool extends Tool with ReadOnlyToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'file_path': {
-            'type': 'string',
-            'description': 'Path to file to validate (alternative to content)',
-          },
-          'content': {
-            'type': 'string',
-            'description': 'Inline content to validate',
-          },
-          'validator_type': {
-            'type': 'string',
-            'enum': ['json', 'yaml', 'toml', 'xml', 'schema'],
-            'description': 'Type of validation to perform',
-          },
-        },
-        'required': ['validator_type'],
-      };
+    'type': 'object',
+    'properties': {
+      'file_path': {
+        'type': 'string',
+        'description': 'Path to file to validate (alternative to content)',
+      },
+      'content': {
+        'type': 'string',
+        'description': 'Inline content to validate',
+      },
+      'validator_type': {
+        'type': 'string',
+        'enum': ['json', 'yaml', 'toml', 'xml', 'schema'],
+        'description': 'Type of validation to perform',
+      },
+    },
+    'required': ['validator_type'],
+  };
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
     final vt = input['validator_type'] as String?;
-    if (vt == null ||
-        !['json', 'yaml', 'toml', 'xml', 'schema'].contains(vt)) {
+    if (vt == null || !['json', 'yaml', 'toml', 'xml', 'schema'].contains(vt)) {
       return const ValidationResult.invalid(
-          'validator_type must be json, yaml, toml, xml, or schema');
+        'validator_type must be json, yaml, toml, xml, or schema',
+      );
     }
     if (input['file_path'] == null && input['content'] == null) {
       return const ValidationResult.invalid(
-          'Either file_path or content is required');
+        'Either file_path or content is required',
+      );
     }
     return const ValidationResult.valid();
   }
@@ -1907,15 +1905,15 @@ class ValidateTool extends Tool with ReadOnlyToolMixin {
         return _validateSchema(content);
       default:
         return ToolResult.error(
-            'Unsupported validator: ${parsed.validatorType}');
+          'Unsupported validator: ${parsed.validatorType}',
+        );
     }
   }
 
   ToolResult _validateJson(String content) {
     try {
       jsonDecode(content);
-      return ToolResult.success(
-          const ValidateOutput(valid: true).toString());
+      return ToolResult.success(const ValidateOutput(valid: true).toString());
     } on FormatException catch (e) {
       return ToolResult.success(
         ValidateOutput(
@@ -2000,7 +1998,8 @@ class ValidateTool extends Tool with ReadOnlyToolMixin {
           errors.add('Unexpected closing tag: </$tagName>');
         } else if (tagStack.last != tagName) {
           errors.add(
-              'Mismatched tag: expected </${tagStack.last}>, found </$tagName>');
+            'Mismatched tag: expected </${tagStack.last}>, found </$tagName>',
+          );
           tagStack.removeLast();
         } else {
           tagStack.removeLast();
@@ -2071,21 +2070,21 @@ final Map<String, Tool> _allExtendedTools = {
 };
 
 List<Tool> _createAllExtendedTools() => [
-      NotebookEditTool(),
-      ExitPlanModeTool(),
-      PowerShellTool(),
-      SkillTool(),
-      McpTool(),
-      LspTool(),
-      ConfigTool(),
-      MemoryTool(),
-      DiffApplyTool(),
-      MultiEditTool(),
-      SubagentTool(),
-      ScreenshotTool(),
-      ComputerUseTool(),
-      ValidateTool(),
-    ];
+  NotebookEditTool(),
+  ExitPlanModeTool(),
+  PowerShellTool(),
+  SkillTool(),
+  McpTool(),
+  LspTool(),
+  ConfigTool(),
+  MemoryTool(),
+  DiffApplyTool(),
+  MultiEditTool(),
+  SubagentTool(),
+  ScreenshotTool(),
+  ComputerUseTool(),
+  ValidateTool(),
+];
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Tool Registry Helper

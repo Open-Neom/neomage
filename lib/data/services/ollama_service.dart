@@ -73,9 +73,7 @@ class OllamaService {
   /// Check if Ollama is running.
   Future<OllamaStatus> checkStatus() async {
     try {
-      final resp = await http
-          .get(Uri.parse(host))
-          .timeout(timeout);
+      final resp = await http.get(Uri.parse(host)).timeout(timeout);
       if (resp.statusCode == 200 && resp.body.contains('Ollama')) {
         return OllamaStatus.running;
       }
@@ -90,9 +88,7 @@ class OllamaService {
   /// List all locally available models.
   Future<List<OllamaModel>> listModels() async {
     try {
-      final resp = await http
-          .get(Uri.parse('$host/api/tags'))
-          .timeout(timeout);
+      final resp = await http.get(Uri.parse('$host/api/tags')).timeout(timeout);
       if (resp.statusCode != 200) return [];
 
       final body = jsonDecode(resp.body);
@@ -131,10 +127,7 @@ class OllamaService {
   /// Pull (download) a model. Returns a stream of progress updates.
   Stream<OllamaPullProgress> pullModel(String name) async* {
     try {
-      final request = http.Request(
-        'POST',
-        Uri.parse('$host/api/pull'),
-      );
+      final request = http.Request('POST', Uri.parse('$host/api/pull'));
       request.headers['Content-Type'] = 'application/json';
       request.body = jsonEncode({'name': name, 'stream': true});
 
@@ -185,7 +178,7 @@ class OllamaService {
           body: jsonEncode({
             'model': model,
             'messages': [
-              {'role': 'user', 'content': prompt}
+              {'role': 'user', 'content': prompt},
             ],
             'stream': false,
           }),
@@ -237,5 +230,9 @@ const ollamaRecommendedModels = [
   (name: 'mistral:7b', desc: 'Mistral 7B general', size: '4.1 GB'),
   (name: 'qwen2.5-coder:32b', desc: 'Best large coding model', size: '18 GB'),
   (name: 'codestral:22b', desc: 'Mistral Codestral', size: '12 GB'),
-  (name: 'llama3.1:70b', desc: 'Llama 3.1 70B (needs 40GB+ RAM)', size: '40 GB'),
+  (
+    name: 'llama3.1:70b',
+    desc: 'Llama 3.1 70B (needs 40GB+ RAM)',
+    size: '40 GB',
+  ),
 ];

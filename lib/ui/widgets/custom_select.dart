@@ -1,4 +1,4 @@
-// CustomSelect — faithful port of openneomclaw/src/components/CustomSelect/
+// CustomSelect — faithful port of neom_claw/src/components/CustomSelect/
 // Ports: Select, SelectOption, SelectInputOption, OptionMap,
 // useSelectState, useSelectNavigation, useSelectInput, SelectMulti.
 //
@@ -15,8 +15,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sint/sint.dart';
-
-import 'design_system.dart';
 
 // ─── Option model (port of select.tsx OptionWithDescription) ─────────────
 
@@ -164,7 +162,8 @@ class SelectController<T> extends SintController {
     selectedValue.value = defaultValue;
 
     // Initialize focus
-    if (defaultFocusValue != null && optionMap.containsValue(defaultFocusValue as T)) {
+    if (defaultFocusValue != null &&
+        optionMap.containsValue(defaultFocusValue as T)) {
       focusedValue.value = defaultFocusValue;
       _scrollToFocus();
     } else if (optionMap.first != null) {
@@ -344,12 +343,14 @@ class SelectController<T> extends SintController {
     final result = <_VisibleOption<T>>[];
 
     for (int i = from; i < to; i++) {
-      result.add(_VisibleOption(
-        option: options[i],
-        index: i,
-        isFocused: options[i].value == focusedValue.value,
-        isSelected: options[i].value == selectedValue.value,
-      ));
+      result.add(
+        _VisibleOption(
+          option: options[i],
+          index: i,
+          isFocused: options[i].value == focusedValue.value,
+          isSelected: options[i].value == selectedValue.value,
+        ),
+      );
     }
     return result;
   }
@@ -368,8 +369,10 @@ class SelectController<T> extends SintController {
       visibleToIndex.value = item.index + visibleOptionCount;
     } else if (item.index >= visibleToIndex.value) {
       visibleToIndex.value = item.index + 1;
-      visibleFromIndex.value =
-          math.max(0, visibleToIndex.value - visibleOptionCount);
+      visibleFromIndex.value = math.max(
+        0,
+        visibleToIndex.value - visibleOptionCount,
+      );
     }
   }
 
@@ -505,7 +508,7 @@ class CustomSelect<T> extends StatelessWidget {
                       },
                 onInputChanged: vo.option.type == SelectOptionType.input
                     ? (text) =>
-                        controller.updateInputValue(vo.option.value, text)
+                          controller.updateInputValue(vo.option.value, text)
                     : null,
               );
             }),
@@ -527,7 +530,9 @@ class CustomSelect<T> extends StatelessWidget {
   }
 
   KeyEventResult _handleKeyEvent(
-      KeyEvent event, SelectController<T> controller) {
+    KeyEvent event,
+    SelectController<T> controller,
+  ) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
@@ -644,10 +649,7 @@ class _SelectOptionTile<T> extends StatelessWidget {
               : null,
           border: isFocused
               ? Border(
-                  left: BorderSide(
-                    color: theme.colorScheme.primary,
-                    width: 2,
-                  ),
+                  left: BorderSide(color: theme.colorScheme.primary, width: 2),
                 )
               : null,
         ),
@@ -672,10 +674,7 @@ class _SelectOptionTile<T> extends StatelessWidget {
             // ── Focus indicator ──
             Text(
               isFocused ? '\u276F ' : '  ',
-              style: TextStyle(
-                color: theme.colorScheme.primary,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: theme.colorScheme.primary, fontSize: 13),
             ),
 
             // ── Label + description ──
@@ -699,7 +698,7 @@ class _SelectOptionTile<T> extends StatelessWidget {
                             style: TextStyle(
                               color: option.dimDescription
                                   ? theme.colorScheme.onSurfaceVariant
-                                      .withValues(alpha: 0.5)
+                                        .withValues(alpha: 0.5)
                                   : theme.colorScheme.onSurfaceVariant,
                               fontSize: 12,
                             ),
@@ -719,8 +718,9 @@ class _SelectOptionTile<T> extends StatelessWidget {
                         option.description!,
                         style: TextStyle(
                           color: option.dimDescription
-                              ? theme.colorScheme.onSurfaceVariant
-                                  .withValues(alpha: 0.5)
+                              ? theme.colorScheme.onSurfaceVariant.withValues(
+                                  alpha: 0.5,
+                                )
                               : theme.colorScheme.onSurfaceVariant,
                           fontSize: 12,
                         ),
@@ -742,7 +742,9 @@ class _SelectOptionTile<T> extends StatelessWidget {
                         decoration: InputDecoration(
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 6),
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
                           hintText: option.placeholder ?? 'Type here...',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(4),
@@ -762,8 +764,9 @@ class _SelectOptionTile<T> extends StatelessWidget {
                 child: Text(
                   'disabled',
                   style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant
-                        .withValues(alpha: 0.5),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.5,
+                    ),
                     fontSize: 11,
                     fontStyle: FontStyle.italic,
                   ),
@@ -906,7 +909,9 @@ class CustomMultiSelect<T> extends StatelessWidget {
                   : () => controller.toggleOption(opt.value),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 4),
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: focused
                       ? theme.colorScheme.primary.withValues(alpha: 0.08)

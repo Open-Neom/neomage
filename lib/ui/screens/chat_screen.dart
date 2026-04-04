@@ -11,14 +11,10 @@ import 'package:sint/sint.dart';
 import '../../claw_routes.dart';
 import '../../data/auth/auth_service.dart';
 import '../../domain/models/message.dart';
-import '../../domain/models/permissions.dart';
 import '../../utils/config/settings.dart';
-import '../../utils/constants/tool_names.dart';
 import '../controllers/chat_controller.dart';
 import '../widgets/input_bar.dart';
 import '../widgets/message_bubble.dart';
-import '../widgets/message_renderer.dart';
-import '../widgets/permission_dialog.dart';
 import '../widgets/streaming_text.dart';
 
 // ── Side Panel Tab Enum ──
@@ -86,7 +82,8 @@ class _ChatScreenState extends State<ChatScreen>
 
   // Model selector
   String _selectedModel = 'gemini-2.5-flash';
-  bool _modelDropdownOpen = false;
+  // ignore: unused_field
+  final bool _modelDropdownOpen = false;
 
   // Session info
   int _turnCount = 0;
@@ -110,7 +107,7 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Future<void> _loadSettings() async {
-    final settings = await AppSettings.load();
+    final _settings = await AppSettings.load();
     // Load the actually configured model from auth service
     try {
       final authService = Sint.find<AuthService>();
@@ -156,8 +153,11 @@ class _ChatScreenState extends State<ChatScreen>
 
   // ── Toast ──
 
-  void _showToast(String message,
-      {IconData icon = Icons.info_outline, Color color = Colors.blue}) {
+  void _showToast(
+    String message, {
+    IconData icon = Icons.info_outline,
+    Color color = Colors.blue,
+  }) {
     setState(() {
       _toasts.add(_ToastEntry(message: message, icon: icon, color: color));
     });
@@ -165,8 +165,9 @@ class _ChatScreenState extends State<ChatScreen>
     _toastTimer = Timer(const Duration(seconds: 4), () {
       if (mounted) {
         setState(() {
-          _toasts.removeWhere((t) =>
-              DateTime.now().difference(t.created).inSeconds >= 4);
+          _toasts.removeWhere(
+            (t) => DateTime.now().difference(t.created).inSeconds >= 4,
+          );
         });
       }
     });
@@ -306,7 +307,8 @@ class _ChatScreenState extends State<ChatScreen>
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
-    final ctrl = HardwareKeyboard.instance.isControlPressed ||
+    final ctrl =
+        HardwareKeyboard.instance.isControlPressed ||
         HardwareKeyboard.instance.isMetaPressed;
 
     // Ctrl+K — command palette
@@ -375,8 +377,7 @@ class _ChatScreenState extends State<ChatScreen>
   @override
   Widget build(BuildContext context) {
     final chat = Sint.find<ChatController>();
-    final isMobile =
-        MediaQuery.of(context).size.width < _mobileBreakpoint;
+    final isMobile = MediaQuery.of(context).size.width < _mobileBreakpoint;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -391,8 +392,7 @@ class _ChatScreenState extends State<ChatScreen>
                 width: _sidePanelWidth,
                 child: _SidePanelContent(
                   selectedTab: _sidePanelTab,
-                  onTabChanged: (tab) =>
-                      setState(() => _sidePanelTab = tab),
+                  onTabChanged: (tab) => setState(() => _sidePanelTab = tab),
                   isDark: isDark,
                   colorScheme: colorScheme,
                 ),
@@ -436,9 +436,7 @@ class _ChatScreenState extends State<ChatScreen>
                           }
 
                           if (msgs.isEmpty && !streaming) {
-                            return _EmptyState(
-                              onSuggestion: chat.sendMessage,
-                            );
+                            return _EmptyState(onSuggestion: chat.sendMessage);
                           }
 
                           if (streaming || msgs.isNotEmpty) {
@@ -447,17 +445,17 @@ class _ChatScreenState extends State<ChatScreen>
 
                           return ListView.builder(
                             controller: _scrollController,
-                            padding: const EdgeInsets.only(
-                                top: 8, bottom: 8),
-                            itemCount:
-                                msgs.length + (streaming ? 1 : 0),
+                            padding: const EdgeInsets.only(top: 8, bottom: 8),
+                            itemCount: msgs.length + (streaming ? 1 : 0),
                             itemBuilder: (context, index) {
                               if (index == msgs.length && streaming) {
                                 return _buildStreamingIndicator(
-                                    chat, isDark, colorScheme);
+                                  chat,
+                                  isDark,
+                                  colorScheme,
+                                );
                               }
-                              return MessageBubble(
-                                  message: msgs[index]);
+                              return MessageBubble(message: msgs[index]);
                             },
                           );
                         }),
@@ -476,13 +474,14 @@ class _ChatScreenState extends State<ChatScreen>
                       }),
 
                       // Input area
-                      Obx(() => InputBar(
-                            onSubmit: (text, {attachments = const []}) {
-                              chat.sendMessage(text,
-                                  attachments: attachments);
-                            },
-                            isLoading: chat.isLoading.value,
-                          )),
+                      Obx(
+                        () => InputBar(
+                          onSubmit: (text, {attachments = const []}) {
+                            chat.sendMessage(text, attachments: attachments);
+                          },
+                          isLoading: chat.isLoading.value,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -507,9 +506,7 @@ class _ChatScreenState extends State<ChatScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: _toasts
-                    .map((t) => _ToastWidget(entry: t))
-                    .toList(),
+                children: _toasts.map((t) => _ToastWidget(entry: t)).toList(),
               ),
             ),
           ],
@@ -532,8 +529,7 @@ class _ChatScreenState extends State<ChatScreen>
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
-          bottom:
-              BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+          bottom: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
         ),
       ),
       child: Row(
@@ -550,13 +546,10 @@ class _ChatScreenState extends State<ChatScreen>
           else
             IconButton(
               icon: Icon(
-                _sidePanelOpen
-                    ? Icons.view_sidebar
-                    : Icons.menu,
+                _sidePanelOpen ? Icons.view_sidebar : Icons.menu,
                 size: 20,
               ),
-              onPressed: () =>
-                  setState(() => _sidePanelOpen = !_sidePanelOpen),
+              onPressed: () => setState(() => _sidePanelOpen = !_sidePanelOpen),
               tooltip: 'Toggle side panel',
             ),
 
@@ -626,22 +619,23 @@ class _ChatScreenState extends State<ChatScreen>
             onPressed: _openCommandPalette,
             tooltip: 'Command palette (Ctrl+K)',
           ),
-          Obx(() => IconButton(
-                icon: const Icon(Icons.delete_outline, size: 20),
-                onPressed: chat.messages.isEmpty
-                    ? null
-                    : () {
-                        chat.clearConversation();
-                        _turnCount = 0;
-                        _sessionCost = 0.0;
-                        _showToast('Conversation cleared');
-                      },
-                tooltip: 'Clear conversation',
-              )),
+          Obx(
+            () => IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20),
+              onPressed: chat.messages.isEmpty
+                  ? null
+                  : () {
+                      chat.clearConversation();
+                      _turnCount = 0;
+                      _sessionCost = 0.0;
+                      _showToast('Conversation cleared');
+                    },
+              tooltip: 'Clear conversation',
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.settings, size: 20),
-            onPressed: () =>
-                Sint.toNamed(ClawRouteConstants.settings),
+            onPressed: () => Sint.toNamed(ClawRouteConstants.settings),
             tooltip: 'Settings',
           ),
         ],
@@ -667,10 +661,7 @@ class _ChatScreenState extends State<ChatScreen>
         );
       }
 
-      return StreamingText(
-        text: text,
-        toolName: toolName,
-      );
+      return StreamingText(text: text, toolName: toolName);
     });
   }
 }
@@ -729,8 +720,7 @@ class _ModelChip extends StatelessWidget {
                 color: colorScheme.primary,
               ),
             ),
-            Icon(Icons.arrow_drop_down,
-                size: 16, color: colorScheme.primary),
+            Icon(Icons.arrow_drop_down, size: 16, color: colorScheme.primary),
           ],
         ),
       ),
@@ -766,10 +756,7 @@ class _InfoChip extends StatelessWidget {
           const SizedBox(width: 3),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 11,
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: TextStyle(fontSize: 11, color: colorScheme.onSurfaceVariant),
           ),
         ],
       ),
@@ -801,17 +788,8 @@ class _ModelSelectorDialog extends StatelessWidget {
       'qwen-turbo',
       'qwen2.5-coder-32b-instruct',
     ],
-    'OpenAI': [
-      'gpt-4o',
-      'gpt-4o-mini',
-      'o1-preview',
-      'o3-mini',
-    ],
-    'DeepSeek': [
-      'deepseek-chat',
-      'deepseek-coder',
-      'deepseek-reasoner',
-    ],
+    'OpenAI': ['gpt-4o', 'gpt-4o-mini', 'o1-preview', 'o3-mini'],
+    'DeepSeek': ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner'],
     'Anthropic': [
       'claude-opus-4-20250514',
       'claude-sonnet-4-20250514',
@@ -863,18 +841,26 @@ class _ModelSelectorDialog extends StatelessWidget {
                         ),
                       ),
                     ),
-                    ...provider.value.map((model) => ListTile(
-                          dense: true,
-                          leading: model == currentModel
-                              ? Icon(Icons.check,
-                                  size: 18, color: colorScheme.primary)
-                              : const SizedBox(width: 18),
-                          title: Text(model, style: const TextStyle(fontSize: 13)),
-                          onTap: () {
-                            onSelect(model);
-                            Navigator.of(context).pop();
-                          },
-                        )),
+                    ...provider.value.map(
+                      (model) => ListTile(
+                        dense: true,
+                        leading: model == currentModel
+                            ? Icon(
+                                Icons.check,
+                                size: 18,
+                                color: colorScheme.primary,
+                              )
+                            : const SizedBox(width: 18),
+                        title: Text(
+                          model,
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                        onTap: () {
+                          onSelect(model);
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ),
                   ];
                 }).toList(),
               ),
@@ -907,8 +893,7 @@ class _SidePanelContent extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border(
-          right: BorderSide(
-              color: colorScheme.outlineVariant, width: 0.5),
+          right: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
         ),
       ),
       child: Column(
@@ -950,8 +935,9 @@ class _SidePanelContent extends StatelessWidget {
             child: switch (selectedTab) {
               SidePanelTab.agents => _AgentsPanel(colorScheme: colorScheme),
               SidePanelTab.tasks => _TasksPanel(colorScheme: colorScheme),
-              SidePanelTab.mcpServers =>
-                _McpServersPanel(colorScheme: colorScheme),
+              SidePanelTab.mcpServers => _McpServersPanel(
+                colorScheme: colorScheme,
+              ),
             },
           ),
         ],
@@ -974,8 +960,11 @@ class _AgentsPanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.group, size: 48,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+            Icon(
+              Icons.group,
+              size: 48,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+            ),
             const SizedBox(height: 12),
             Text(
               'No active agents',
@@ -1011,8 +1000,11 @@ class _TasksPanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.task_alt, size: 48,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+            Icon(
+              Icons.task_alt,
+              size: 48,
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+            ),
             const SizedBox(height: 12),
             Text(
               'No active tasks',
@@ -1073,11 +1065,13 @@ class _McpServersPanelState extends State<_McpServersPanel> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text('Transport',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(ctx).colorScheme.onSurfaceVariant,
-                    )),
+                Text(
+                  'Transport',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 SegmentedButton<String>(
                   segments: const [
@@ -1095,7 +1089,8 @@ class _McpServersPanelState extends State<_McpServersPanel> {
                     controller: commandCtrl,
                     decoration: const InputDecoration(
                       labelText: 'Command',
-                      hintText: 'e.g. npx -y @modelcontextprotocol/server-filesystem /path',
+                      hintText:
+                          'e.g. npx -y @modelcontextprotocol/server-filesystem /path',
                       isDense: true,
                     ),
                     maxLines: 2,
@@ -1113,25 +1108,25 @@ class _McpServersPanelState extends State<_McpServersPanel> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Theme.of(ctx)
-                        .colorScheme
-                        .surfaceContainerHighest
+                    color: Theme.of(ctx).colorScheme.surfaceContainerHighest
                         .withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline,
-                          size: 14,
-                          color: Theme.of(ctx).colorScheme.primary),
+                      Icon(
+                        Icons.info_outline,
+                        size: 14,
+                        color: Theme.of(ctx).colorScheme.primary,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           transportType == 'stdio'
                               ? 'The command will be executed as a subprocess.\n'
-                                'Example: npx -y @modelcontextprotocol/server-github'
+                                    'Example: npx -y @modelcontextprotocol/server-github'
                               : 'Connect to a running MCP server via SSE.\n'
-                                'The server must be accessible at the given URL.',
+                                    'The server must be accessible at the given URL.',
                           style: TextStyle(
                             fontSize: 11,
                             color: Theme.of(ctx).colorScheme.onSurfaceVariant,
@@ -1160,11 +1155,13 @@ class _McpServersPanelState extends State<_McpServersPanel> {
                 if (config.isEmpty) return;
 
                 setState(() {
-                  _servers.add(_McpServerEntry(
-                    name: name,
-                    transport: transportType,
-                    config: config,
-                  ));
+                  _servers.add(
+                    _McpServerEntry(
+                      name: name,
+                      transport: transportType,
+                      config: config,
+                    ),
+                  );
                 });
                 Navigator.of(ctx).pop();
               },
@@ -1215,9 +1212,11 @@ class _McpServersPanelState extends State<_McpServersPanel> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.dns, size: 48,
-                            color: cs.onSurfaceVariant
-                                .withValues(alpha: 0.3)),
+                        Icon(
+                          Icons.dns,
+                          size: 48,
+                          color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           'No MCP servers configured',
@@ -1229,8 +1228,7 @@ class _McpServersPanelState extends State<_McpServersPanel> {
                           'NeomClaw with custom tools and resources.',
                           style: TextStyle(
                             fontSize: 12,
-                            color: cs.onSurfaceVariant
-                                .withValues(alpha: 0.7),
+                            color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -1260,8 +1258,7 @@ class _McpServersPanelState extends State<_McpServersPanel> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     server.name,
@@ -1285,8 +1282,11 @@ class _McpServersPanelState extends State<_McpServersPanel> {
                               ),
                             ),
                             IconButton(
-                              icon: Icon(Icons.delete_outline,
-                                  size: 16, color: cs.error),
+                              icon: Icon(
+                                Icons.delete_outline,
+                                size: 16,
+                                color: cs.error,
+                              ),
                               onPressed: () => _removeServer(index),
                               tooltip: 'Remove',
                             ),
@@ -1372,17 +1372,18 @@ class _CommandPaletteOverlay extends StatelessWidget {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                        ),
                         isDense: true,
                       ),
                       style: const TextStyle(fontSize: 14),
                       onSubmitted: (_) {
                         // Execute first matching command
-                        final query =
-                            searchController.text.toLowerCase();
-                        final match = commands.where((c) =>
-                            c.label.toLowerCase().contains(query));
+                        final query = searchController.text.toLowerCase();
+                        final match = commands.where(
+                          (c) => c.label.toLowerCase().contains(query),
+                        );
                         if (match.isNotEmpty) {
                           match.first.action();
                         }
@@ -1399,42 +1400,41 @@ class _CommandPaletteOverlay extends StatelessWidget {
                         final filtered = query.isEmpty
                             ? commands
                             : commands
-                                .where((c) => c.label
-                                    .toLowerCase()
-                                    .contains(query))
-                                .toList();
+                                  .where(
+                                    (c) =>
+                                        c.label.toLowerCase().contains(query),
+                                  )
+                                  .toList();
 
                         return ListView.builder(
                           shrinkWrap: true,
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 4),
+                          padding: const EdgeInsets.symmetric(vertical: 4),
                           itemCount: filtered.length,
                           itemBuilder: (_, i) {
                             final cmd = filtered[i];
                             return ListTile(
                               dense: true,
                               leading: Icon(cmd.icon, size: 18),
-                              title: Text(cmd.label,
-                                  style:
-                                      const TextStyle(fontSize: 13)),
+                              title: Text(
+                                cmd.label,
+                                style: const TextStyle(fontSize: 13),
+                              ),
                               trailing: cmd.shortcut != null
                                   ? Container(
-                                      padding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: colorScheme
-                                            .surfaceContainerHighest,
-                                        borderRadius:
-                                            BorderRadius.circular(4),
+                                        color:
+                                            colorScheme.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
                                         cmd.shortcut!,
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: colorScheme
-                                              .onSurfaceVariant,
+                                          color: colorScheme.onSurfaceVariant,
                                           fontFamily: 'monospace',
                                         ),
                                       ),
@@ -1521,8 +1521,7 @@ class _ToastWidget extends StatelessWidget {
         elevation: 6,
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: colorScheme.inverseSurface,
             borderRadius: BorderRadius.circular(8),
@@ -1530,8 +1529,7 @@ class _ToastWidget extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(entry.icon,
-                  size: 16, color: colorScheme.onInverseSurface),
+              Icon(entry.icon, size: 16, color: colorScheme.onInverseSurface),
               const SizedBox(width: 8),
               Text(
                 entry.message,
@@ -1571,8 +1569,10 @@ class _AnimatedThinkingDots extends StatelessWidget {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(3, (i) {
-                  final offset =
-                      ((controller.value * 3 - i) % 3).clamp(0.0, 1.0);
+                  final offset = ((controller.value * 3 - i) % 3).clamp(
+                    0.0,
+                    1.0,
+                  );
                   final opacity = 0.3 + 0.7 * offset;
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -1645,19 +1645,16 @@ class _EmptyState extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'Neom Claw',
-                style:
-                    Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: colorScheme.onSurface
-                              .withValues(alpha: 0.7),
-                        ),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'AI coding assistant -- any model, any platform',
-                style:
-                    Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -1668,8 +1665,7 @@ class _EmptyState extends StatelessWidget {
                 children: _suggestions.map((s) {
                   return ActionChip(
                     avatar: Icon(s.$2, size: 16),
-                    label:
-                        Text(s.$1, style: const TextStyle(fontSize: 12)),
+                    label: Text(s.$1, style: const TextStyle(fontSize: 12)),
                     onPressed: () => onSuggestion(s.$1),
                   );
                 }).toList(),
@@ -1679,8 +1675,7 @@ class _EmptyState extends StatelessWidget {
                 'Ctrl+K for command palette',
                 style: TextStyle(
                   fontSize: 11,
-                  color: colorScheme.onSurfaceVariant
-                      .withValues(alpha: 0.5),
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                 ),
               ),
             ],

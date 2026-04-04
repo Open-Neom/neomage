@@ -3,7 +3,6 @@
 
 import 'package:neom_claw/core/platform/claw_io.dart';
 
-import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';
 import '../command.dart';
 
@@ -67,7 +66,9 @@ class AddDirCommand extends LocalCommand {
 
     final buffer = StringBuffer();
     if (added.isNotEmpty) {
-      buffer.writeln('Added ${added.length} director${added.length == 1 ? 'y' : 'ies'}:');
+      buffer.writeln(
+        'Added ${added.length} director${added.length == 1 ? 'y' : 'ies'}:',
+      );
       for (final d in added) {
         buffer.writeln('  $d');
       }
@@ -97,10 +98,7 @@ class CdCommand extends LocalCommand {
   final void Function(String) onDirectoryChange;
   final String Function() getCurrentDir;
 
-  CdCommand({
-    required this.onDirectoryChange,
-    required this.getCurrentDir,
-  });
+  CdCommand({required this.onDirectoryChange, required this.getCurrentDir});
 
   @override
   String get name => 'cd';
@@ -145,10 +143,7 @@ class ConfigCommand extends LocalCommand {
   final Map<String, dynamic> Function() getConfig;
   final void Function(String key, dynamic value) setConfig;
 
-  ConfigCommand({
-    required this.getConfig,
-    required this.setConfig,
-  });
+  ConfigCommand({required this.getConfig, required this.setConfig});
 
   @override
   String get name => 'config';
@@ -165,7 +160,9 @@ class ConfigCommand extends LocalCommand {
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final parts = args.trim().split(RegExp(r'\s+'));
-    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty ? parts[0] : 'list';
+    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty
+        ? parts[0]
+        : 'list';
 
     switch (subcommand) {
       case 'list':
@@ -254,7 +251,9 @@ class PermissionsCommand extends LocalCommand {
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final parts = args.trim().split(RegExp(r'\s+'));
-    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty ? parts[0] : 'list';
+    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty
+        ? parts[0]
+        : 'list';
 
     switch (subcommand) {
       case 'list':
@@ -325,7 +324,9 @@ class HooksCommand extends LocalCommand {
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final parts = args.trim().split(RegExp(r'\s+'));
-    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty ? parts[0] : 'list';
+    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty
+        ? parts[0]
+        : 'list';
 
     switch (subcommand) {
       case 'list':
@@ -395,10 +396,7 @@ class ThemeCommand extends LocalCommand {
   final String Function() getCurrentTheme;
   final void Function(String) setTheme;
 
-  ThemeCommand({
-    required this.getCurrentTheme,
-    required this.setTheme,
-  });
+  ThemeCommand({required this.getCurrentTheme, required this.setTheme});
 
   @override
   String get name => 'theme';
@@ -449,7 +447,8 @@ class TerminalSetupCommand extends LocalCommand {
   String get name => 'terminal-setup';
 
   @override
-  String get description => 'Configure terminal integration for optimal experience';
+  String get description =>
+      'Configure terminal integration for optimal experience';
 
   @override
   List<String> get aliases => const ['setup-terminal'];
@@ -503,10 +502,7 @@ class ResumeCommand extends LocalCommand {
   final Future<List<String>> Function() listSessions;
   final Future<bool> Function(String sessionId) resumeSession;
 
-  ResumeCommand({
-    required this.listSessions,
-    required this.resumeSession,
-  });
+  ResumeCommand({required this.listSessions, required this.resumeSession});
 
   @override
   String get name => 'resume';
@@ -611,10 +607,7 @@ class LoginCommand extends LocalCommand {
   final Future<bool> Function(String apiKey) onLogin;
   final bool Function() isAuthenticated;
 
-  LoginCommand({
-    required this.onLogin,
-    required this.isAuthenticated,
-  });
+  LoginCommand({required this.onLogin, required this.isAuthenticated});
 
   @override
   String get name => 'login';
@@ -669,7 +662,9 @@ class LoginCommand extends LocalCommand {
     if (success) {
       return const TextCommandResult('Authenticated successfully.');
     }
-    return const TextCommandResult('Authentication failed. Check your API key.');
+    return const TextCommandResult(
+      'Authentication failed. Check your API key.',
+    );
   }
 }
 
@@ -678,10 +673,7 @@ class LogoutCommand extends LocalCommand {
   final void Function() onLogout;
   final bool Function() isAuthenticated;
 
-  LogoutCommand({
-    required this.onLogout,
-    required this.isAuthenticated,
-  });
+  LogoutCommand({required this.onLogout, required this.isAuthenticated});
 
   @override
   String get name => 'logout';
@@ -708,7 +700,8 @@ class LogoutCommand extends LocalCommand {
 /// /mcp — manage MCP servers.
 class McpCommand extends LocalCommand {
   final Future<List<Map<String, dynamic>>> Function() listServers;
-  final Future<bool> Function(String name, Map<String, dynamic> config) addServer;
+  final Future<bool> Function(String name, Map<String, dynamic> config)
+  addServer;
   final Future<bool> Function(String name) removeServer;
 
   McpCommand({
@@ -729,7 +722,9 @@ class McpCommand extends LocalCommand {
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final parts = args.trim().split(RegExp(r'\s+'));
-    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty ? parts[0] : 'list';
+    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty
+        ? parts[0]
+        : 'list';
 
     switch (subcommand) {
       case 'list':
@@ -745,10 +740,7 @@ class McpCommand extends LocalCommand {
         final serverName = parts[1];
         final command = parts[2];
         final serverArgs = parts.length > 3 ? parts.sublist(3) : <String>[];
-        final config = {
-          'command': command,
-          'args': serverArgs,
-        };
+        final config = {'command': command, 'args': serverArgs};
         final success = await addServer(serverName, config);
         if (success) {
           return TextCommandResult('Added MCP server: $serverName');
@@ -800,10 +792,7 @@ class TasksCommand extends LocalCommand {
   final Future<List<Map<String, dynamic>>> Function() listTasks;
   final Future<bool> Function(String taskId) cancelTask;
 
-  TasksCommand({
-    required this.listTasks,
-    required this.cancelTask,
-  });
+  TasksCommand({required this.listTasks, required this.cancelTask});
 
   @override
   String get name => 'tasks';
@@ -820,7 +809,9 @@ class TasksCommand extends LocalCommand {
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final parts = args.trim().split(RegExp(r'\s+'));
-    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty ? parts[0] : 'list';
+    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty
+        ? parts[0]
+        : 'list';
 
     switch (subcommand) {
       case 'list':
@@ -834,7 +825,9 @@ class TasksCommand extends LocalCommand {
         if (success) {
           return TextCommandResult('Cancelled task: ${parts[1]}');
         }
-        return TextCommandResult('Task not found or already completed: ${parts[1]}');
+        return TextCommandResult(
+          'Task not found or already completed: ${parts[1]}',
+        );
       default:
         return TextCommandResult(
           'Unknown subcommand: $subcommand\n'
@@ -865,10 +858,7 @@ class AgentsCommand extends LocalCommand {
   final Future<List<Map<String, dynamic>>> Function() listAgents;
   final Future<bool> Function(String agentId) cancelAgent;
 
-  AgentsCommand({
-    required this.listAgents,
-    required this.cancelAgent,
-  });
+  AgentsCommand({required this.listAgents, required this.cancelAgent});
 
   @override
   String get name => 'agents';
@@ -882,7 +872,9 @@ class AgentsCommand extends LocalCommand {
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final parts = args.trim().split(RegExp(r'\s+'));
-    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty ? parts[0] : 'list';
+    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty
+        ? parts[0]
+        : 'list';
 
     switch (subcommand) {
       case 'list':
@@ -1018,7 +1010,9 @@ class BugCommand extends LocalCommand {
 
     // Collect system info
     buffer.writeln('System information:');
-    buffer.writeln('  Platform: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}');
+    buffer.writeln(
+      '  Platform: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+    );
     buffer.writeln('  Dart: ${Platform.version.split(' ').first}');
     buffer.writeln('  CWD: ${context.cwd}');
     buffer.writeln();
@@ -1028,7 +1022,9 @@ class BugCommand extends LocalCommand {
       buffer.writeln();
       buffer.writeln('Bug report prepared. To submit:');
       buffer.writeln('  1. Copy this output');
-      buffer.writeln('  2. Open https://github.com/anthropics/neom-claw/issues/new');
+      buffer.writeln(
+        '  2. Open https://github.com/anthropics/neom-claw/issues/new',
+      );
       buffer.writeln('  3. Paste and submit');
     } else {
       buffer.writeln('Usage: /bug <description of the issue>');
@@ -1078,19 +1074,27 @@ class DoctorCommand extends LocalCommand {
     // Check NEOMCLAW.md
     final claudeMd = File('${context.cwd}/NEOMCLAW.md');
     final hasNeomClawMd = await claudeMd.exists();
-    buffer.writeln(_check('NEOMCLAW.md', hasNeomClawMd, 'Run /init or create manually'));
+    buffer.writeln(
+      _check('NEOMCLAW.md', hasNeomClawMd, 'Run /init or create manually'),
+    );
 
     // Check ripgrep
     final rgResult = await _runCommand('rg', ['--version']);
-    buffer.writeln(_check('ripgrep (rg)', rgResult != null, 'brew install ripgrep'));
+    buffer.writeln(
+      _check('ripgrep (rg)', rgResult != null, 'brew install ripgrep'),
+    );
 
     // Check node (for MCP)
     final nodeResult = await _runCommand('node', ['--version']);
-    buffer.writeln(_check('Node.js (MCP)', nodeResult != null, 'Install Node.js'));
+    buffer.writeln(
+      _check('Node.js (MCP)', nodeResult != null, 'Install Node.js'),
+    );
 
     // Check gh CLI
     final ghResult = await _runCommand('gh', ['--version']);
-    buffer.writeln(_check('GitHub CLI (gh)', ghResult != null, 'brew install gh'));
+    buffer.writeln(
+      _check('GitHub CLI (gh)', ghResult != null, 'brew install gh'),
+    );
 
     // Check jq
     final jqResult = await _runCommand('jq', ['--version']);
@@ -1100,10 +1104,14 @@ class DoctorCommand extends LocalCommand {
 
     // OS info
     buffer.writeln('Environment:');
-    buffer.writeln('  OS: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}');
+    buffer.writeln(
+      '  OS: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+    );
     buffer.writeln('  Dart: ${Platform.version.split(' ').first}');
     buffer.writeln('  Shell: ${Platform.environment['SHELL'] ?? 'unknown'}');
-    buffer.writeln('  Terminal: ${Platform.environment['TERM_PROGRAM'] ?? 'unknown'}');
+    buffer.writeln(
+      '  Terminal: ${Platform.environment['TERM_PROGRAM'] ?? 'unknown'}',
+    );
 
     return TextCommandResult(buffer.toString());
   }
@@ -1169,10 +1177,7 @@ class ListenCommand extends LocalCommand {
   final void Function(bool) onListenToggle;
   final bool Function() isListening;
 
-  ListenCommand({
-    required this.onListenToggle,
-    required this.isListening,
-  });
+  ListenCommand({required this.onListenToggle, required this.isListening});
 
   @override
   String get name => 'listen';
@@ -1204,10 +1209,7 @@ class VimCommand extends LocalCommand {
   final void Function(bool) onVimToggle;
   final bool Function() isVimMode;
 
-  VimCommand({
-    required this.onVimToggle,
-    required this.isVimMode,
-  });
+  VimCommand({required this.onVimToggle, required this.isVimMode});
 
   @override
   String get name => 'vim';
@@ -1232,9 +1234,7 @@ class VimCommand extends LocalCommand {
     final current = isVimMode();
     final newState = !current;
     onVimToggle(newState);
-    return TextCommandResult(
-      'Vim mode ${newState ? "enabled" : "disabled"}.',
-    );
+    return TextCommandResult('Vim mode ${newState ? "enabled" : "disabled"}.');
   }
 }
 
@@ -1268,7 +1268,9 @@ class IdeCommand extends LocalCommand {
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final parts = args.trim().split(RegExp(r'\s+'));
-    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty ? parts[0] : 'status';
+    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty
+        ? parts[0]
+        : 'status';
 
     switch (subcommand) {
       case 'status':
@@ -1339,7 +1341,9 @@ class PromptCommand extends LocalCommand {
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final parts = args.trim().split(RegExp(r'\s+'));
-    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty ? parts[0] : 'show';
+    final subcommand = parts.isNotEmpty && parts[0].isNotEmpty
+        ? parts[0]
+        : 'show';
 
     switch (subcommand) {
       case 'show':
@@ -1351,9 +1355,7 @@ class PromptCommand extends LocalCommand {
             'Use /prompt set <text> to add instructions.',
           );
         }
-        return TextCommandResult(
-          'Current prompt addition:\n$current',
-        );
+        return TextCommandResult('Current prompt addition:\n$current');
       case 'set':
         if (parts.length < 2) {
           return const TextCommandResult('Usage: /prompt set <text>');
@@ -1413,10 +1415,16 @@ class ExportCommand extends LocalCommand {
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final conversation = getConversation();
     if (conversation.isEmpty) {
-      return const TextCommandResult('Nothing to export — conversation is empty.');
+      return const TextCommandResult(
+        'Nothing to export — conversation is empty.',
+      );
     }
 
-    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.').first;
+    final timestamp = DateTime.now()
+        .toIso8601String()
+        .replaceAll(':', '-')
+        .split('.')
+        .first;
     final filename = args.trim().isNotEmpty
         ? args.trim()
         : 'conversation-$timestamp.md';
@@ -1465,10 +1473,7 @@ class UndoCommand extends LocalCommand {
   final Future<Map<String, dynamic>?> Function() getLastChange;
   final Future<bool> Function(String changeId) revertChange;
 
-  UndoCommand({
-    required this.getLastChange,
-    required this.revertChange,
-  });
+  UndoCommand({required this.getLastChange, required this.revertChange});
 
   @override
   String get name => 'undo';
@@ -1494,9 +1499,7 @@ class UndoCommand extends LocalCommand {
 
     final success = await revertChange(changeId);
     if (success) {
-      return TextCommandResult(
-        'Reverted $toolName on $filePath.',
-      );
+      return TextCommandResult('Reverted $toolName on $filePath.');
     }
     return TextCommandResult(
       'Failed to undo change on $filePath. '
@@ -1633,7 +1636,9 @@ class ToolsCommand extends LocalCommand {
         final enabled = tool['enabled'] ?? true;
         final marker = enabled ? '' : ' (disabled)';
         final desc = tool['description'] as String? ?? '';
-        final shortDesc = desc.length > 50 ? '${desc.substring(0, 47)}...' : desc;
+        final shortDesc = desc.length > 50
+            ? '${desc.substring(0, 47)}...'
+            : desc;
         buffer.writeln('    $name$marker — $shortDesc');
       }
     }
@@ -1780,10 +1785,7 @@ List<LocalCommand> registerExtendedCommands(ExtendedCommandsDeps deps) {
     ),
 
     // Configuration
-    ConfigCommand(
-      getConfig: deps.getConfig,
-      setConfig: deps.setConfig,
-    ),
+    ConfigCommand(getConfig: deps.getConfig, setConfig: deps.setConfig),
     PermissionsCommand(
       getPermissions: deps.getPermissions,
       setPermission: deps.setPermission,
@@ -1813,10 +1815,7 @@ List<LocalCommand> registerExtendedCommands(ExtendedCommandsDeps deps) {
     ),
 
     // Authentication
-    LoginCommand(
-      onLogin: deps.onLogin,
-      isAuthenticated: deps.isAuthenticated,
-    ),
+    LoginCommand(onLogin: deps.onLogin, isAuthenticated: deps.isAuthenticated),
     LogoutCommand(
       onLogout: deps.onLogout,
       isAuthenticated: deps.isAuthenticated,
@@ -1830,14 +1829,8 @@ List<LocalCommand> registerExtendedCommands(ExtendedCommandsDeps deps) {
     ),
 
     // Agent & Task Management
-    TasksCommand(
-      listTasks: deps.listTasks,
-      cancelTask: deps.cancelTask,
-    ),
-    AgentsCommand(
-      listAgents: deps.listAgents,
-      cancelAgent: deps.cancelAgent,
-    ),
+    TasksCommand(listTasks: deps.listTasks, cancelTask: deps.cancelTask),
+    AgentsCommand(listAgents: deps.listAgents, cancelAgent: deps.cancelAgent),
 
     // Development
     InitCommand(),
@@ -1850,10 +1843,7 @@ List<LocalCommand> registerExtendedCommands(ExtendedCommandsDeps deps) {
       onListenToggle: deps.onListenToggle,
       isListening: deps.isListening,
     ),
-    VimCommand(
-      onVimToggle: deps.onVimToggle,
-      isVimMode: deps.isVimMode,
-    ),
+    VimCommand(onVimToggle: deps.onVimToggle, isVimMode: deps.isVimMode),
 
     // IDE Integration
     IdeCommand(

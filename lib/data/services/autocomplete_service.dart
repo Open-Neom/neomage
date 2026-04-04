@@ -65,17 +65,17 @@ class CompletionSuggestion {
   });
 
   CompletionSuggestion withScore(double newScore) => CompletionSuggestion(
-        value: value,
-        displayText: displayText,
-        description: description,
-        type: type,
-        icon: icon,
-        score: newScore,
-        detail: detail,
-        insertText: insertText,
-        cursorOffset: cursorOffset,
-        metadata: metadata,
-      );
+    value: value,
+    displayText: displayText,
+    description: description,
+    type: type,
+    icon: icon,
+    score: newScore,
+    detail: detail,
+    insertText: insertText,
+    cursorOffset: cursorOffset,
+    metadata: metadata,
+  );
 }
 
 /// A prompt suggestion (canned/intelligent prompt).
@@ -199,7 +199,9 @@ class FileCompletionProvider implements CompletionProvider {
 
     // Resolve path.
     final parts = prefix.split('/');
-    final dirPart = parts.length > 1 ? parts.sublist(0, parts.length - 1).join('/') : '';
+    final dirPart = parts.length > 1
+        ? parts.sublist(0, parts.length - 1).join('/')
+        : '';
     final filePart = parts.last.toLowerCase();
 
     String targetDir;
@@ -219,9 +221,8 @@ class FileCompletionProvider implements CompletionProvider {
       if (!await dir.exists()) return suggestions;
 
       await for (final entity in dir.list()) {
-        final name = entity.uri.pathSegments
-            .where((s) => s.isNotEmpty)
-            .lastOrNull ?? '';
+        final name =
+            entity.uri.pathSegments.where((s) => s.isNotEmpty).lastOrNull ?? '';
 
         // Skip hidden files unless query starts with '.'
         if (name.startsWith('.') && !filePart.startsWith('.')) continue;
@@ -230,21 +231,20 @@ class FileCompletionProvider implements CompletionProvider {
         if (filePart.isNotEmpty && !_fuzzyMatch(name, filePart)) continue;
 
         final isDir = entity is Directory;
-        final relativePath =
-            dirPart.isEmpty ? name : '$dirPart/$name';
-        final icon = isDir
-            ? 'folder'
-            : _fileIcon(name);
+        final relativePath = dirPart.isEmpty ? name : '$dirPart/$name';
+        final icon = isDir ? 'folder' : _fileIcon(name);
 
-        suggestions.add(CompletionSuggestion(
-          value: relativePath,
-          displayText: name,
-          description: isDir ? 'Directory' : _fileDescription(name),
-          type: isDir ? SuggestionType.directory : SuggestionType.file,
-          icon: icon,
-          score: _fuzzyScore(name, filePart),
-          insertText: isDir ? '$relativePath/' : relativePath,
-        ));
+        suggestions.add(
+          CompletionSuggestion(
+            value: relativePath,
+            displayText: name,
+            description: isDir ? 'Directory' : _fileDescription(name),
+            type: isDir ? SuggestionType.directory : SuggestionType.file,
+            icon: icon,
+            score: _fuzzyScore(name, filePart),
+            insertText: isDir ? '$relativePath/' : relativePath,
+          ),
+        );
       }
     } catch (_) {
       // Permission denied or other IO error.
@@ -319,15 +319,17 @@ class CommandCompletionProvider implements CompletionProvider {
 
     for (final cmd in commands) {
       if (search.isEmpty || _fuzzyMatch(cmd, search)) {
-        suggestions.add(CompletionSuggestion(
-          value: '/$cmd',
-          displayText: '/$cmd',
-          description: _commandDescription(cmd),
-          type: SuggestionType.command,
-          icon: 'command',
-          score: _fuzzyScore(cmd, search),
-          insertText: '/$cmd ',
-        ));
+        suggestions.add(
+          CompletionSuggestion(
+            value: '/$cmd',
+            displayText: '/$cmd',
+            description: _commandDescription(cmd),
+            type: SuggestionType.command,
+            icon: 'command',
+            score: _fuzzyScore(cmd, search),
+            insertText: '/$cmd ',
+          ),
+        );
       }
     }
 
@@ -401,8 +403,11 @@ class GitCompletionProvider implements CompletionProvider {
     final suggestions = <CompletionSuggestion>[];
 
     try {
-      final result = await Process.run('git', ['branch', '-a', '--format=%(refname:short)'],
-          workingDirectory: context.currentDirectory);
+      final result = await Process.run('git', [
+        'branch',
+        '-a',
+        '--format=%(refname:short)',
+      ], workingDirectory: context.currentDirectory);
       if (result.exitCode == 0) {
         final branches = (result.stdout as String)
             .split('\n')
@@ -413,21 +418,26 @@ class GitCompletionProvider implements CompletionProvider {
           final name = branch.trim();
           if (search.isEmpty || _fuzzyMatch(name, search)) {
             final isRemote = name.startsWith('origin/');
-            suggestions.add(CompletionSuggestion(
-              value: name,
-              displayText: name,
-              description: isRemote ? 'Remote branch' : 'Local branch',
-              type: SuggestionType.gitBranch,
-              icon: isRemote ? 'cloud' : 'branch',
-              score: _fuzzyScore(name, search),
-            ));
+            suggestions.add(
+              CompletionSuggestion(
+                value: name,
+                displayText: name,
+                description: isRemote ? 'Remote branch' : 'Local branch',
+                type: SuggestionType.gitBranch,
+                icon: isRemote ? 'cloud' : 'branch',
+                score: _fuzzyScore(name, search),
+              ),
+            );
           }
         }
       }
 
       // Also add recent tags.
-      final tagResult = await Process.run('git', ['tag', '-l', '--sort=-version:refname'],
-          workingDirectory: context.currentDirectory);
+      final tagResult = await Process.run('git', [
+        'tag',
+        '-l',
+        '--sort=-version:refname',
+      ], workingDirectory: context.currentDirectory);
       if (tagResult.exitCode == 0) {
         final tags = (tagResult.stdout as String)
             .split('\n')
@@ -438,14 +448,18 @@ class GitCompletionProvider implements CompletionProvider {
         for (final tag in tags) {
           final name = tag.trim();
           if (search.isEmpty || _fuzzyMatch(name, search)) {
-            suggestions.add(CompletionSuggestion(
-              value: name,
-              displayText: name,
-              description: 'Tag',
-              type: SuggestionType.gitRef,
-              icon: 'tag',
-              score: _fuzzyScore(name, search) * 0.8, // Slightly lower than branches
-            ));
+            suggestions.add(
+              CompletionSuggestion(
+                value: name,
+                displayText: name,
+                description: 'Tag',
+                type: SuggestionType.gitRef,
+                icon: 'tag',
+                score:
+                    _fuzzyScore(name, search) *
+                    0.8, // Slightly lower than branches
+              ),
+            );
           }
         }
       }
@@ -468,26 +482,126 @@ class SnippetProvider implements CompletionProvider {
   int get priority => 3;
 
   final List<_Snippet> _snippets = [
-    _Snippet('fix-bug', 'Fix a bug', 'Fix the bug in {file} where {description}', PromptCategory.debugging),
-    _Snippet('add-test', 'Add tests', 'Add comprehensive tests for {file/function}', PromptCategory.testing),
-    _Snippet('refactor', 'Refactor code', 'Refactor {file/function} to improve {readability/performance/maintainability}', PromptCategory.refactoring),
-    _Snippet('add-docs', 'Add documentation', 'Add documentation comments to all public APIs in {file}', PromptCategory.documentation),
-    _Snippet('review', 'Code review', 'Review the recent changes and suggest improvements', PromptCategory.coding),
-    _Snippet('explain', 'Explain code', 'Explain how {file/function} works step by step', PromptCategory.coding),
-    _Snippet('optimize', 'Optimize performance', 'Optimize {file/function} for better performance', PromptCategory.coding),
-    _Snippet('add-error-handling', 'Add error handling', 'Add proper error handling to {file/function}', PromptCategory.coding),
-    _Snippet('add-logging', 'Add logging', 'Add appropriate logging to {file/module}', PromptCategory.coding),
-    _Snippet('create-api', 'Create API endpoint', 'Create a REST API endpoint for {resource} with CRUD operations', PromptCategory.coding),
-    _Snippet('git-commit', 'Create commit', 'Review my changes and create a well-formatted git commit', PromptCategory.git),
-    _Snippet('git-pr', 'Create PR', 'Create a pull request with a summary of all my changes', PromptCategory.git),
-    _Snippet('add-ci', 'Add CI/CD', 'Set up CI/CD pipeline with {GitHub Actions/GitLab CI}', PromptCategory.devops),
-    _Snippet('add-dockerfile', 'Add Dockerfile', 'Create a Dockerfile for this project', PromptCategory.devops),
-    _Snippet('security-audit', 'Security audit', 'Audit the codebase for security vulnerabilities', PromptCategory.coding),
-    _Snippet('migrate-db', 'Database migration', 'Create a database migration for {change}', PromptCategory.coding),
-    _Snippet('add-types', 'Add type annotations', 'Add type annotations to {file/function}', PromptCategory.coding),
-    _Snippet('cleanup', 'Clean up code', 'Clean up {file}: remove dead code, fix formatting, organize imports', PromptCategory.refactoring),
-    _Snippet('implement-feature', 'Implement feature', 'Implement {feature description} following the existing patterns', PromptCategory.coding),
-    _Snippet('debug-error', 'Debug error', 'Debug this error: {paste error message}', PromptCategory.debugging),
+    _Snippet(
+      'fix-bug',
+      'Fix a bug',
+      'Fix the bug in {file} where {description}',
+      PromptCategory.debugging,
+    ),
+    _Snippet(
+      'add-test',
+      'Add tests',
+      'Add comprehensive tests for {file/function}',
+      PromptCategory.testing,
+    ),
+    _Snippet(
+      'refactor',
+      'Refactor code',
+      'Refactor {file/function} to improve {readability/performance/maintainability}',
+      PromptCategory.refactoring,
+    ),
+    _Snippet(
+      'add-docs',
+      'Add documentation',
+      'Add documentation comments to all public APIs in {file}',
+      PromptCategory.documentation,
+    ),
+    _Snippet(
+      'review',
+      'Code review',
+      'Review the recent changes and suggest improvements',
+      PromptCategory.coding,
+    ),
+    _Snippet(
+      'explain',
+      'Explain code',
+      'Explain how {file/function} works step by step',
+      PromptCategory.coding,
+    ),
+    _Snippet(
+      'optimize',
+      'Optimize performance',
+      'Optimize {file/function} for better performance',
+      PromptCategory.coding,
+    ),
+    _Snippet(
+      'add-error-handling',
+      'Add error handling',
+      'Add proper error handling to {file/function}',
+      PromptCategory.coding,
+    ),
+    _Snippet(
+      'add-logging',
+      'Add logging',
+      'Add appropriate logging to {file/module}',
+      PromptCategory.coding,
+    ),
+    _Snippet(
+      'create-api',
+      'Create API endpoint',
+      'Create a REST API endpoint for {resource} with CRUD operations',
+      PromptCategory.coding,
+    ),
+    _Snippet(
+      'git-commit',
+      'Create commit',
+      'Review my changes and create a well-formatted git commit',
+      PromptCategory.git,
+    ),
+    _Snippet(
+      'git-pr',
+      'Create PR',
+      'Create a pull request with a summary of all my changes',
+      PromptCategory.git,
+    ),
+    _Snippet(
+      'add-ci',
+      'Add CI/CD',
+      'Set up CI/CD pipeline with {GitHub Actions/GitLab CI}',
+      PromptCategory.devops,
+    ),
+    _Snippet(
+      'add-dockerfile',
+      'Add Dockerfile',
+      'Create a Dockerfile for this project',
+      PromptCategory.devops,
+    ),
+    _Snippet(
+      'security-audit',
+      'Security audit',
+      'Audit the codebase for security vulnerabilities',
+      PromptCategory.coding,
+    ),
+    _Snippet(
+      'migrate-db',
+      'Database migration',
+      'Create a database migration for {change}',
+      PromptCategory.coding,
+    ),
+    _Snippet(
+      'add-types',
+      'Add type annotations',
+      'Add type annotations to {file/function}',
+      PromptCategory.coding,
+    ),
+    _Snippet(
+      'cleanup',
+      'Clean up code',
+      'Clean up {file}: remove dead code, fix formatting, organize imports',
+      PromptCategory.refactoring,
+    ),
+    _Snippet(
+      'implement-feature',
+      'Implement feature',
+      'Implement {feature description} following the existing patterns',
+      PromptCategory.coding,
+    ),
+    _Snippet(
+      'debug-error',
+      'Debug error',
+      'Debug this error: {paste error message}',
+      PromptCategory.debugging,
+    ),
   ];
 
   @override
@@ -505,19 +619,23 @@ class SnippetProvider implements CompletionProvider {
         : query.substring(7).trim().toLowerCase();
 
     return _snippets
-        .where((s) =>
-            search.isEmpty ||
-            _fuzzyMatch(s.id, search) ||
-            _fuzzyMatch(s.title, search))
-        .map((s) => CompletionSuggestion(
-              value: s.template,
-              displayText: s.title,
-              description: s.template,
-              type: SuggestionType.snippet,
-              icon: 'snippet',
-              score: _fuzzyScore(s.title, search),
-              insertText: s.template,
-            ))
+        .where(
+          (s) =>
+              search.isEmpty ||
+              _fuzzyMatch(s.id, search) ||
+              _fuzzyMatch(s.title, search),
+        )
+        .map(
+          (s) => CompletionSuggestion(
+            value: s.template,
+            displayText: s.title,
+            description: s.template,
+            type: SuggestionType.snippet,
+            icon: 'snippet',
+            score: _fuzzyScore(s.title, search),
+            insertText: s.template,
+          ),
+        )
         .toList()
       ..sort((a, b) => b.score.compareTo(a.score));
   }
@@ -542,7 +660,7 @@ class AutocompleteService {
   Timer? _debounceTimer;
 
   AutocompleteService({int maxRecentInputs = 100})
-      : _maxRecentInputs = maxRecentInputs {
+    : _maxRecentInputs = maxRecentInputs {
     // Register default providers.
     _providers.addAll([
       FileCompletionProvider(),
@@ -596,19 +714,23 @@ class AutocompleteService {
     }
 
     // Add recent input matches.
-    if (!query.startsWith('/') && !query.startsWith('@') && !query.startsWith('#')) {
+    if (!query.startsWith('/') &&
+        !query.startsWith('@') &&
+        !query.startsWith('#')) {
       for (final recent in _recentInputs) {
         if (_fuzzyMatch(recent, query) && recent != input) {
-          allSuggestions.add(CompletionSuggestion(
-            value: recent,
-            displayText: recent.length > 60
-                ? '${recent.substring(0, 60)}...'
-                : recent,
-            description: 'Recent input',
-            type: SuggestionType.historyEntry,
-            icon: 'history',
-            score: _fuzzyScore(recent, query) * 0.5, // Lower priority
-          ));
+          allSuggestions.add(
+            CompletionSuggestion(
+              value: recent,
+              displayText: recent.length > 60
+                  ? '${recent.substring(0, 60)}...'
+                  : recent,
+              description: 'Recent input',
+              type: SuggestionType.historyEntry,
+              icon: 'history',
+              score: _fuzzyScore(recent, query) * 0.5, // Lower priority
+            ),
+          );
         }
       }
     }
@@ -647,8 +769,9 @@ class AutocompleteService {
 
     // Filter by required context.
     if (hasGit == false) {
-      suggestions =
-          suggestions.where((s) => s.requiredContext != 'git').toList();
+      suggestions = suggestions
+          .where((s) => s.requiredContext != 'git')
+          .toList();
     }
 
     // Sort by usage count (most used first), then by name.
@@ -663,8 +786,7 @@ class AutocompleteService {
 
   /// Record that a prompt suggestion was used (for ranking).
   void recordPromptUsage(String promptText) {
-    final idx =
-        _promptSuggestions.indexWhere((s) => s.text == promptText);
+    final idx = _promptSuggestions.indexWhere((s) => s.text == promptText);
     if (idx >= 0) {
       _promptSuggestions[idx] = _promptSuggestions[idx].copyWith(
         usageCount: _promptSuggestions[idx].usageCount + 1,
@@ -877,8 +999,12 @@ double _fuzzyScore(String text, String query) {
       }
 
       // Bonus for word boundary match.
-      if (i == 0 || text[i - 1] == '_' || text[i - 1] == '-' || text[i - 1] == '/' ||
-          (text[i - 1].toLowerCase() == text[i - 1] && text[i].toUpperCase() == text[i])) {
+      if (i == 0 ||
+          text[i - 1] == '_' ||
+          text[i - 1] == '-' ||
+          text[i - 1] == '/' ||
+          (text[i - 1].toLowerCase() == text[i - 1] &&
+              text[i].toUpperCase() == text[i])) {
         score += 15;
       }
 

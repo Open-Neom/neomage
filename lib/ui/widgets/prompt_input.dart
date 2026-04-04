@@ -48,8 +48,8 @@ enum AttachmentType { file, image, pdf, directory }
 
 /// Callback typedefs.
 typedef OnSubmit = void Function(String text, List<Attachment> attachments);
-typedef OnSuggestionRequest = Future<List<Suggestion>> Function(
-    String query, SuggestionType type);
+typedef OnSuggestionRequest =
+    Future<List<Suggestion>> Function(String query, SuggestionType type);
 
 // ─── PromptInput widget ───
 
@@ -99,6 +99,7 @@ class _PromptInputState extends State<PromptInput> {
   List<Suggestion> _suggestions = [];
   int _selectedSuggestion = 0;
   SuggestionType? _activeSuggestionType;
+  // ignore: unused_field
   String _suggestionQuery = '';
   Timer? _debounce;
 
@@ -164,8 +165,7 @@ class _PromptInputState extends State<PromptInput> {
       if (!mounted) return;
       _suggestionQuery = query;
       _activeSuggestionType = type;
-      final results =
-          await widget.onSuggestionRequest!(query, type);
+      final results = await widget.onSuggestionRequest!(query, type);
       if (!mounted) return;
       setState(() {
         _suggestions = results;
@@ -195,8 +195,7 @@ class _PromptInputState extends State<PromptInput> {
 
     final after = cursor < text.length ? text.substring(cursor) : '';
     _controller.text = '$newBefore$after';
-    _controller.selection =
-        TextSelection.collapsed(offset: newBefore.length);
+    _controller.selection = TextSelection.collapsed(offset: newBefore.length);
     setState(() => _showSuggestions = false);
   }
 
@@ -229,19 +228,22 @@ class _PromptInputState extends State<PromptInput> {
         _historyIndex++;
         _controller.text = _history[_historyIndex];
         _controller.selection = TextSelection.collapsed(
-            offset: _controller.text.length);
+          offset: _controller.text.length,
+        );
       }
     } else {
       if (_historyIndex > 0) {
         _historyIndex--;
         _controller.text = _history[_historyIndex];
         _controller.selection = TextSelection.collapsed(
-            offset: _controller.text.length);
+          offset: _controller.text.length,
+        );
       } else if (_historyIndex == 0) {
         _historyIndex = -1;
         _controller.text = _savedInput;
         _controller.selection = TextSelection.collapsed(
-            offset: _controller.text.length);
+          offset: _controller.text.length,
+        );
       }
     }
   }
@@ -269,8 +271,7 @@ class _PromptInputState extends State<PromptInput> {
     if (_showSuggestions) {
       if (key == LogicalKeyboardKey.arrowDown) {
         setState(() {
-          _selectedSuggestion =
-              (_selectedSuggestion + 1) % _suggestions.length;
+          _selectedSuggestion = (_selectedSuggestion + 1) % _suggestions.length;
         });
         return KeyEventResult.handled;
       }
@@ -278,12 +279,11 @@ class _PromptInputState extends State<PromptInput> {
         setState(() {
           _selectedSuggestion =
               (_selectedSuggestion - 1 + _suggestions.length) %
-                  _suggestions.length;
+              _suggestions.length;
         });
         return KeyEventResult.handled;
       }
-      if (key == LogicalKeyboardKey.tab ||
-          key == LogicalKeyboardKey.enter) {
+      if (key == LogicalKeyboardKey.tab || key == LogicalKeyboardKey.enter) {
         _acceptSuggestion(_suggestions[_selectedSuggestion]);
         return KeyEventResult.handled;
       }
@@ -295,7 +295,8 @@ class _PromptInputState extends State<PromptInput> {
 
     // Submit: Ctrl+Enter or Enter (single line, no shift)
     if (key == LogicalKeyboardKey.enter) {
-      if (ctrl || (!shift && _lineCount == 1 && !_controller.text.contains('\n'))) {
+      if (ctrl ||
+          (!shift && _lineCount == 1 && !_controller.text.contains('\n'))) {
         _submit();
         return KeyEventResult.handled;
       }
@@ -393,15 +394,17 @@ class _PromptInputState extends State<PromptInput> {
                     color: isDark ? Colors.white : Colors.black87,
                   ),
                   decoration: InputDecoration(
-                    hintText: widget.placeholder ?? 'Type a message... (@ to mention files, / for commands)',
+                    hintText:
+                        widget.placeholder ??
+                        'Type a message... (@ to mention files, / for commands)',
                     hintStyle: TextStyle(
-                      color: isDark
-                          ? Colors.white38
-                          : Colors.black38,
+                      color: isDark ? Colors.white38 : Colors.black38,
                     ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ),
@@ -499,12 +502,11 @@ class AutocompleteOverlay extends StatelessWidget {
           return InkWell(
             onTap: () => onSelect(s),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               color: isSelected
                   ? (isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.blue.withValues(alpha: 0.1))
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.blue.withValues(alpha: 0.1))
                   : null,
               child: Row(
                 children: [
@@ -521,8 +523,9 @@ class AutocompleteOverlay extends StatelessWidget {
                         fontFamily: 'monospace',
                         fontSize: 13,
                         color: isDark ? Colors.white : Colors.black87,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.normal,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -577,7 +580,9 @@ class AttachmentChip extends StatelessWidget {
     final bytes = attachment.sizeBytes;
     if (bytes == null) return '';
     if (bytes < 1024) return ' ($bytes B)';
-    if (bytes < 1024 * 1024) return ' (${(bytes / 1024).toStringAsFixed(1)} KB)';
+    if (bytes < 1024 * 1024) {
+      return ' (${(bytes / 1024).toStringAsFixed(1)} KB)';
+    }
     return ' (${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB)';
   }
 
@@ -598,8 +603,9 @@ class AttachmentChip extends StatelessWidget {
       ),
       deleteIcon: const Icon(Icons.close, size: 14),
       onDeleted: onRemove,
-      backgroundColor:
-          isDark ? const Color(0xFF2A2A40) : const Color(0xFFF0F0F5),
+      backgroundColor: isDark
+          ? const Color(0xFF2A2A40)
+          : const Color(0xFFF0F0F5),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(6),
         side: BorderSide(
@@ -733,11 +739,14 @@ class InputToolbar extends StatelessWidget {
                 color: isDark ? Colors.green.shade900 : Colors.green.shade100,
                 borderRadius: BorderRadius.circular(3),
               ),
-              child: Text('VIM', style: textStyle.copyWith(
-                fontSize: 9,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.green.shade300 : Colors.green.shade800,
-              )),
+              child: Text(
+                'VIM',
+                style: textStyle.copyWith(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.green.shade300 : Colors.green.shade800,
+                ),
+              ),
             ),
           ],
 
@@ -774,8 +783,9 @@ class InputToolbar extends StatelessWidget {
                 style: const TextStyle(fontSize: 12),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    isDark ? const Color(0xFF4A3AFF) : const Color(0xFF5B4CFF),
+                backgroundColor: isDark
+                    ? const Color(0xFF4A3AFF)
+                    : const Color(0xFF5B4CFF),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 shape: RoundedRectangleBorder(

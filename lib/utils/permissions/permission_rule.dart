@@ -3,13 +3,13 @@
 
 /// Where a permission rule was loaded from.
 enum PermissionRuleSource {
-  policySettings,   // MDM/enterprise (highest priority)
-  projectSettings,  // .neomclaw/settings.json (shared)
-  localSettings,    // .neomclaw/settings.local.json (gitignored)
-  userSettings,     // ~/.neomclaw/settings.json (global)
-  cliArg,           // --allow/--deny flags
-  command,          // /config command
-  session,          // Current session only
+  policySettings, // MDM/enterprise (highest priority)
+  projectSettings, // .neomclaw/settings.json (shared)
+  localSettings, // .neomclaw/settings.local.json (gitignored)
+  userSettings, // ~/.neomclaw/settings.json (global)
+  cliArg, // --allow/--deny flags
+  command, // /config command
+  session, // Current session only
 }
 
 /// Permission rule behavior.
@@ -180,11 +180,11 @@ class ClassifierReason extends PermissionDecisionReason {
 
 /// Permission modes.
 enum PermissionMode {
-  defaultMode,    // Standard prompt-based approval
-  plan,           // Plan mode (pauses before execution)
-  acceptEdits,    // Auto-accept file edits
+  defaultMode, // Standard prompt-based approval
+  plan, // Plan mode (pauses before execution)
+  acceptEdits, // Auto-accept file edits
   bypassPermissions, // Skip all checks (dangerous)
-  dontAsk,        // Auto-deny unpermitted actions
+  dontAsk, // Auto-deny unpermitted actions
 }
 
 /// Evaluate permissions for a tool invocation.
@@ -204,7 +204,9 @@ PermissionCheckResult evaluatePermission({
   }
 
   // 2. Check deny rules first (highest priority)
-  for (final rule in rules.where((r) => r.behavior == PermissionBehavior.deny)) {
+  for (final rule in rules.where(
+    (r) => r.behavior == PermissionBehavior.deny,
+  )) {
     if (_ruleMatchesTool(rule, toolName, toolInput, filePath)) {
       return PermissionCheckResult(
         behavior: PermissionBehavior.deny,
@@ -214,7 +216,9 @@ PermissionCheckResult evaluatePermission({
   }
 
   // 3. Check allow rules
-  for (final rule in rules.where((r) => r.behavior == PermissionBehavior.allow)) {
+  for (final rule in rules.where(
+    (r) => r.behavior == PermissionBehavior.allow,
+  )) {
     if (_ruleMatchesTool(rule, toolName, toolInput, filePath)) {
       return PermissionCheckResult(
         behavior: PermissionBehavior.allow,
@@ -321,12 +325,14 @@ List<PermissionRule> loadPermissionRules({
       for (final ruleStr in ruleList) {
         if (ruleStr is! String) continue;
         final parsed = parsePermissionRule(ruleStr);
-        rules.add(PermissionRule(
-          source: source,
-          behavior: behavior,
-          toolName: parsed.toolName,
-          ruleContent: parsed.content,
-        ));
+        rules.add(
+          PermissionRule(
+            source: source,
+            behavior: behavior,
+            toolName: parsed.toolName,
+            ruleContent: parsed.content,
+          ),
+        );
       }
     }
   }
@@ -394,10 +400,14 @@ String? validatePermissionRule(String rule) {
   }
 
   // Check for mismatched parentheses
-  final openCount = rule.split('').where((c) => c == '(').length -
-      rule.split(r'\(').length + 1;
-  final closeCount = rule.split('').where((c) => c == ')').length -
-      rule.split(r'\)').length + 1;
+  final openCount =
+      rule.split('').where((c) => c == '(').length -
+      rule.split(r'\(').length +
+      1;
+  final closeCount =
+      rule.split('').where((c) => c == ')').length -
+      rule.split(r'\)').length +
+      1;
   if (openCount != closeCount) {
     return 'Mismatched parentheses';
   }
@@ -426,10 +436,24 @@ String? validatePermissionRule(String rule) {
 
 /// Files that require extra permission to modify.
 const dangerousFiles = {
-  '.gitconfig', '.gitmodules', '.bashrc', '.bash_profile', '.zshrc',
-  '.zprofile', '.profile', '.ripgreprc', '.mcp.json', '.neomclaw.json',
-  '.npmrc', '.yarnrc', '.env', '.env.local', '.env.production',
-  '.ssh/config', '.ssh/authorized_keys', '.ssh/known_hosts',
+  '.gitconfig',
+  '.gitmodules',
+  '.bashrc',
+  '.bash_profile',
+  '.zshrc',
+  '.zprofile',
+  '.profile',
+  '.ripgreprc',
+  '.mcp.json',
+  '.neomclaw.json',
+  '.npmrc',
+  '.yarnrc',
+  '.env',
+  '.env.local',
+  '.env.production',
+  '.ssh/config',
+  '.ssh/authorized_keys',
+  '.ssh/known_hosts',
 };
 
 /// Directories that require extra permission.
@@ -449,14 +473,36 @@ bool isDangerousPath(String path) {
 
 /// System paths that should never be removed.
 const systemPaths = {
-  '/', '/bin', '/sbin', '/usr', '/usr/bin', '/usr/sbin', '/usr/lib',
-  '/usr/local', '/sys', '/etc', '/boot', '/dev', '/proc', '/home',
-  '/root', '/var', '/tmp', '/lib', '/lib64', '/opt',
-  '/System', '/Library', '/Applications', '/Users',
+  '/',
+  '/bin',
+  '/sbin',
+  '/usr',
+  '/usr/bin',
+  '/usr/sbin',
+  '/usr/lib',
+  '/usr/local',
+  '/sys',
+  '/etc',
+  '/boot',
+  '/dev',
+  '/proc',
+  '/home',
+  '/root',
+  '/var',
+  '/tmp',
+  '/lib',
+  '/lib64',
+  '/opt',
+  '/System',
+  '/Library',
+  '/Applications',
+  '/Users',
 };
 
 /// Check if a path is a system path.
 bool isSystemPath(String path) {
-  final normalized = path.endsWith('/') ? path.substring(0, path.length - 1) : path;
+  final normalized = path.endsWith('/')
+      ? path.substring(0, path.length - 1)
+      : path;
   return systemPaths.contains(normalized);
 }

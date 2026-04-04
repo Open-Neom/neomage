@@ -38,9 +38,9 @@ class TelemetryEvent {
     Map<String, dynamic>? properties,
     DateTime? timestamp,
     String? sessionId,
-  })  : properties = properties ?? <String, dynamic>{},
-        timestamp = timestamp ?? DateTime.now(),
-        sessionId = sessionId ?? '';
+  }) : properties = properties ?? <String, dynamic>{},
+       timestamp = timestamp ?? DateTime.now(),
+       sessionId = sessionId ?? '';
 
   final String name;
   final TelemetryEventType type;
@@ -49,12 +49,12 @@ class TelemetryEvent {
   final String sessionId;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'name': name,
-        'type': type.name,
-        'properties': properties,
-        'timestamp': timestamp.toIso8601String(),
-        'sessionId': sessionId,
-      };
+    'name': name,
+    'type': type.name,
+    'properties': properties,
+    'timestamp': timestamp.toIso8601String(),
+    'sessionId': sessionId,
+  };
 
   factory TelemetryEvent.fromJson(Map<String, dynamic> json) {
     return TelemetryEvent(
@@ -79,9 +79,7 @@ class TelemetryEvent {
 
 /// Collects events into a batch for efficient bulk sending.
 class TelemetryBatch {
-  TelemetryBatch({
-    int maxSize = 100,
-  }) : _maxSize = maxSize;
+  TelemetryBatch({int maxSize = 100}) : _maxSize = maxSize;
 
   final int _maxSize;
   final List<TelemetryEvent> _events = [];
@@ -118,10 +116,10 @@ class TelemetryBatch {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'events': _events.map((e) => e.toJson()).toList(),
-        'count': _events.length,
-        'firstEventTime': _firstEventTime?.toIso8601String(),
-      };
+    'events': _events.map((e) => e.toJson()).toList(),
+    'count': _events.length,
+    'firstEventTime': _firstEventTime?.toIso8601String(),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -167,9 +165,7 @@ class ConsoleTelemetrySink implements TelemetrySink {
       if (verbose) {
         stderr.writeln('[telemetry] ${jsonEncode(event.toJson())}');
       } else {
-        stderr.writeln(
-          '[telemetry] ${event.type.name}: ${event.name}',
-        );
+        stderr.writeln('[telemetry] ${event.type.name}: ${event.name}');
       }
     }
     return true;
@@ -187,8 +183,9 @@ class ConsoleTelemetrySink implements TelemetrySink {
 /// `~/.neomclaw/telemetry/`.
 class FileTelemetrySink implements TelemetrySink {
   FileTelemetrySink({String? directory})
-      : _directory = directory ??
-            '${Platform.environment['HOME'] ?? '/tmp'}/.neomclaw/telemetry';
+    : _directory =
+          directory ??
+          '${Platform.environment['HOME'] ?? '/tmp'}/.neomclaw/telemetry';
 
   final String _directory;
   IOSink? _sink;
@@ -257,7 +254,7 @@ class HttpTelemetrySink implements TelemetrySink {
     this.authToken,
     this.maxRetries = 2,
   }) : endpoint =
-            endpoint ?? 'https://telemetry.neomclaw.ai/v1/events'; // stub URL
+           endpoint ?? 'https://telemetry.neomclaw.ai/v1/events'; // stub URL
 
   final String endpoint;
   final int timeoutSeconds;
@@ -289,8 +286,9 @@ class HttpTelemetrySink implements TelemetrySink {
         }
         request.write(payload);
 
-        final response =
-            await request.close().timeout(Duration(seconds: timeoutSeconds));
+        final response = await request.close().timeout(
+          Duration(seconds: timeoutSeconds),
+        );
         // Drain the response body so the connection can be reused.
         await response.drain<void>();
 
@@ -330,8 +328,9 @@ class HttpTelemetrySink implements TelemetrySink {
 // ---------------------------------------------------------------------------
 
 /// Regular expressions for personally-identifiable information.
-final RegExp _emailRegex =
-    RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}');
+final RegExp _emailRegex = RegExp(
+  r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',
+);
 final RegExp _apiKeyRegex = RegExp(
   r'(?:sk-|api[_-]?key[_-]?|token[_-]?|secret[_-]?)[a-zA-Z0-9_\-]{16,}',
   caseSensitive: false,
@@ -341,10 +340,7 @@ final RegExp _apiKeyRegex = RegExp(
 ///
 /// Replaces email addresses, API keys / tokens, and absolute file paths that
 /// contain the user's home directory with redacted placeholders.
-Map<String, dynamic> scrubPii(
-  Map<String, dynamic> data, {
-  String? homeDir,
-}) {
+Map<String, dynamic> scrubPii(Map<String, dynamic> data, {String? homeDir}) {
   final home = homeDir ?? Platform.environment['HOME'] ?? '/home/user';
   final result = <String, dynamic>{};
 
@@ -405,12 +401,14 @@ class PerformanceTracker {
       ...entry.metadata,
       if (extraMetadata != null) ...extraMetadata,
     };
-    _completed.add(PerformanceMetric(
-      operationId: operationId,
-      duration: duration,
-      startTime: entry.startTime,
-      metadata: merged,
-    ));
+    _completed.add(
+      PerformanceMetric(
+        operationId: operationId,
+        duration: duration,
+        startTime: entry.startTime,
+        metadata: merged,
+      ),
+    );
     return duration;
   }
 
@@ -449,11 +447,11 @@ class PerformanceMetric {
   final Map<String, dynamic> metadata;
 
   Map<String, dynamic> toJson() => {
-        'operationId': operationId,
-        'durationMs': duration.inMilliseconds,
-        'startTime': startTime.toIso8601String(),
-        'metadata': metadata,
-      };
+    'operationId': operationId,
+    'durationMs': duration.inMilliseconds,
+    'startTime': startTime.toIso8601String(),
+    'metadata': metadata,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -469,8 +467,8 @@ class TelemetryConfig {
     this.flushIntervalSeconds = 30,
     List<TelemetrySink>? sinks,
     Set<TelemetryEventType>? disabledEventTypes,
-  })  : sinks = sinks ?? [],
-        disabledEventTypes = disabledEventTypes ?? {};
+  }) : sinks = sinks ?? [],
+       disabledEventTypes = disabledEventTypes ?? {};
 
   /// Master switch for all telemetry collection.
   bool enabled;
@@ -492,15 +490,18 @@ class TelemetryConfig {
 
   /// Create a sensible default configuration for development.
   factory TelemetryConfig.development() => TelemetryConfig(
-        enabled: true,
-        scrubPiiEnabled: true,
-        batchSize: 50,
-        flushIntervalSeconds: 10,
-        sinks: [ConsoleTelemetrySink(verbose: true)],
-      );
+    enabled: true,
+    scrubPiiEnabled: true,
+    batchSize: 50,
+    flushIntervalSeconds: 10,
+    sinks: [ConsoleTelemetrySink(verbose: true)],
+  );
 
   /// Create a production configuration with file + HTTP sinks.
-  factory TelemetryConfig.production({String? httpEndpoint, String? authToken}) {
+  factory TelemetryConfig.production({
+    String? httpEndpoint,
+    String? authToken,
+  }) {
     return TelemetryConfig(
       enabled: true,
       scrubPiiEnabled: true,
@@ -522,10 +523,10 @@ class TelemetryConfig {
 /// all configured sinks either on a timer or when the batch fills up.
 class TelemetryService {
   TelemetryService({required TelemetryConfig config})
-      : _config = config,
-        _batch = TelemetryBatch(maxSize: config.batchSize),
-        _performanceTracker = PerformanceTracker(),
-        _sessionId = _generateSessionId() {
+    : _config = config,
+      _batch = TelemetryBatch(maxSize: config.batchSize),
+      _performanceTracker = PerformanceTracker(),
+      _sessionId = _generateSessionId() {
     if (_config.enabled) {
       _startAutoFlush();
     }
@@ -550,11 +551,11 @@ class TelemetryService {
 
   /// Statistics about this service instance.
   Map<String, int> get stats => {
-        'tracked': _totalTracked,
-        'flushed': _totalFlushed,
-        'dropped': _totalDropped,
-        'pending': _batch.length,
-      };
+    'tracked': _totalTracked,
+    'flushed': _totalFlushed,
+    'dropped': _totalDropped,
+    'pending': _batch.length,
+  };
 
   // ---- Session lifecycle ---------------------------------------------------
 
@@ -562,16 +563,18 @@ class TelemetryService {
   void startSession({Map<String, dynamic>? metadata}) {
     if (_sessionStarted) return;
     _sessionStarted = true;
-    track(TelemetryEvent(
-      name: 'session_start',
-      type: TelemetryEventType.sessionStart,
-      properties: {
-        'platform': Platform.operatingSystem,
-        'dartVersion': Platform.version.split(' ').first,
-        if (metadata != null) ...metadata,
-      },
-      sessionId: _sessionId,
-    ));
+    track(
+      TelemetryEvent(
+        name: 'session_start',
+        type: TelemetryEventType.sessionStart,
+        properties: {
+          'platform': Platform.operatingSystem,
+          'dartVersion': Platform.version.split(' ').first,
+          if (metadata != null) ...metadata,
+        },
+        sessionId: _sessionId,
+      ),
+    );
   }
 
   /// Record a session-end event and flush remaining events.
@@ -581,16 +584,18 @@ class TelemetryService {
     // Drain pending performance metrics into events.
     _flushPerformanceMetrics();
 
-    track(TelemetryEvent(
-      name: 'session_end',
-      type: TelemetryEventType.sessionEnd,
-      properties: {
-        'totalTracked': _totalTracked,
-        'totalFlushed': _totalFlushed,
-        if (metadata != null) ...metadata,
-      },
-      sessionId: _sessionId,
-    ));
+    track(
+      TelemetryEvent(
+        name: 'session_end',
+        type: TelemetryEventType.sessionEnd,
+        properties: {
+          'totalTracked': _totalTracked,
+          'totalFlushed': _totalFlushed,
+          if (metadata != null) ...metadata,
+        },
+        sessionId: _sessionId,
+      ),
+    );
     _sessionStarted = false;
     await flush();
   }
@@ -636,17 +641,19 @@ class TelemetryService {
     int? outputTokens,
     String? error,
   }) {
-    track(TelemetryEvent(
-      name: 'api_call',
-      type: TelemetryEventType.apiCall,
-      properties: {
-        'model': model,
-        'latencyMs': latency.inMilliseconds,
-        if (inputTokens != null) 'inputTokens': inputTokens,
-        if (outputTokens != null) 'outputTokens': outputTokens,
-        if (error != null) 'error': error,
-      },
-    ));
+    track(
+      TelemetryEvent(
+        name: 'api_call',
+        type: TelemetryEventType.apiCall,
+        properties: {
+          'model': model,
+          'latencyMs': latency.inMilliseconds,
+          'inputTokens': ?inputTokens,
+          'outputTokens': ?outputTokens,
+          'error': ?error,
+        },
+      ),
+    );
   }
 
   /// Track tool usage with duration.
@@ -656,16 +663,18 @@ class TelemetryService {
     bool success = true,
     String? error,
   }) {
-    track(TelemetryEvent(
-      name: 'tool_use',
-      type: TelemetryEventType.toolUse,
-      properties: {
-        'tool': toolName,
-        'durationMs': duration.inMilliseconds,
-        'success': success,
-        if (error != null) 'error': error,
-      },
-    ));
+    track(
+      TelemetryEvent(
+        name: 'tool_use',
+        type: TelemetryEventType.toolUse,
+        properties: {
+          'tool': toolName,
+          'durationMs': duration.inMilliseconds,
+          'success': success,
+          'error': ?error,
+        },
+      ),
+    );
   }
 
   /// Track an error with contextual information.
@@ -675,16 +684,18 @@ class TelemetryService {
     String? context,
     String? errorCode,
   }) {
-    track(TelemetryEvent(
-      name: 'error',
-      type: TelemetryEventType.error,
-      properties: {
-        'message': message,
-        if (stackTrace != null) 'stackTrace': stackTrace,
-        if (context != null) 'context': context,
-        if (errorCode != null) 'errorCode': errorCode,
-      },
-    ));
+    track(
+      TelemetryEvent(
+        name: 'error',
+        type: TelemetryEventType.error,
+        properties: {
+          'message': message,
+          'stackTrace': ?stackTrace,
+          'context': ?context,
+          'errorCode': ?errorCode,
+        },
+      ),
+    );
   }
 
   /// Track a model switch.
@@ -693,15 +704,13 @@ class TelemetryService {
     required String toModel,
     String? reason,
   }) {
-    track(TelemetryEvent(
-      name: 'model_switch',
-      type: TelemetryEventType.modelSwitch,
-      properties: {
-        'from': fromModel,
-        'to': toModel,
-        if (reason != null) 'reason': reason,
-      },
-    ));
+    track(
+      TelemetryEvent(
+        name: 'model_switch',
+        type: TelemetryEventType.modelSwitch,
+        properties: {'from': fromModel, 'to': toModel, 'reason': ?reason},
+      ),
+    );
   }
 
   /// Track a permission decision.
@@ -710,16 +719,15 @@ class TelemetryService {
     required bool granted,
     String? reason,
   }) {
-    track(TelemetryEvent(
-      name: granted ? 'permission_grant' : 'permission_deny',
-      type: granted
-          ? TelemetryEventType.permissionGrant
-          : TelemetryEventType.permissionDeny,
-      properties: {
-        'tool': tool,
-        if (reason != null) 'reason': reason,
-      },
-    ));
+    track(
+      TelemetryEvent(
+        name: granted ? 'permission_grant' : 'permission_deny',
+        type: granted
+            ? TelemetryEventType.permissionGrant
+            : TelemetryEventType.permissionDeny,
+        properties: {'tool': tool, 'reason': ?reason},
+      ),
+    );
   }
 
   // ---- Flushing ------------------------------------------------------------
@@ -763,12 +771,14 @@ class TelemetryService {
   void _flushPerformanceMetrics() {
     final metrics = _performanceTracker.drain();
     for (final metric in metrics) {
-      _batch.add(TelemetryEvent(
-        name: 'performance_metric',
-        type: TelemetryEventType.performance,
-        properties: metric.toJson(),
-        sessionId: _sessionId,
-      ));
+      _batch.add(
+        TelemetryEvent(
+          name: 'performance_metric',
+          type: TelemetryEventType.performance,
+          properties: metric.toJson(),
+          sessionId: _sessionId,
+        ),
+      );
     }
   }
 

@@ -43,13 +43,7 @@ class SkillDefinition {
 }
 
 /// Where a skill was loaded from.
-enum SkillSource {
-  user,
-  project,
-  plugin,
-  bundled,
-  mcp,
-}
+enum SkillSource { user, project, plugin, bundled, mcp }
 
 /// Skill as a PromptCommand (for registration in CommandRegistry).
 class SkillCommand extends PromptCommand {
@@ -80,12 +74,12 @@ class SkillCommand extends PromptCommand {
 
   @override
   CommandSource get source => switch (skill.source) {
-        SkillSource.user => CommandSource.skills,
-        SkillSource.project => CommandSource.skills,
-        SkillSource.plugin => CommandSource.plugin,
-        SkillSource.bundled => CommandSource.bundled,
-        SkillSource.mcp => CommandSource.mcp,
-      };
+    SkillSource.user => CommandSource.skills,
+    SkillSource.project => CommandSource.skills,
+    SkillSource.plugin => CommandSource.plugin,
+    SkillSource.bundled => CommandSource.bundled,
+    SkillSource.mcp => CommandSource.mcp,
+  };
 
   @override
   Future<List<ContentBlock>> getPrompt(
@@ -216,10 +210,9 @@ SkillDefinition? _parseSkillFile(
 
   // Default name from directory
   name ??= filePath.split('/').reversed.skip(1).first;
-  description ??= body.split('\n').firstWhere(
-        (l) => l.trim().isNotEmpty,
-        orElse: () => name!,
-      );
+  description ??= body
+      .split('\n')
+      .firstWhere((l) => l.trim().isNotEmpty, orElse: () => name!);
 
   return SkillDefinition(
     name: name,

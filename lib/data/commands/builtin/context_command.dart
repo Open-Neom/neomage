@@ -34,11 +34,15 @@ class ContextCommand extends LocalCommand {
     final buffer = StringBuffer();
     buffer.writeln('Context Window Usage:');
     buffer.writeln('  Messages: ${messages.length}');
-    buffer.writeln('  Estimated tokens: ~$estimated / $contextWindow ($percent%)');
+    buffer.writeln(
+      '  Estimated tokens: ~$estimated / $contextWindow ($percent%)',
+    );
     buffer.writeln('  Auto-compact threshold: ${contextWindow - 13000}');
 
     if (estimated > contextWindow * 0.8) {
-      buffer.writeln('  Warning: Approaching context limit. Consider /compact.');
+      buffer.writeln(
+        '  Warning: Approaching context limit. Consider /compact.',
+      );
     }
 
     return TextCommandResult(buffer.toString());

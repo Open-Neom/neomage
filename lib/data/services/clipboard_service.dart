@@ -70,7 +70,9 @@ class ClipboardEntry {
   /// A short preview of the content (first line, truncated).
   String get preview {
     final firstLine = content.split('\n').first;
-    return firstLine.length > 80 ? '${firstLine.substring(0, 80)}...' : firstLine;
+    return firstLine.length > 80
+        ? '${firstLine.substring(0, 80)}...'
+        : firstLine;
   }
 
   @override
@@ -152,10 +154,8 @@ class ClipboardService {
   String? _lastSystemContent;
   StreamController<ClipboardEntry>? _watchController;
 
-  ClipboardService({
-    int ringSize = 30,
-    this.pollIntervalMs = 1000,
-  }) : ring = ClipboardRing(maxSize: ringSize);
+  ClipboardService({int ringSize = 30, this.pollIntervalMs = 1000})
+    : ring = ClipboardRing(maxSize: ringSize);
 
   // -------------------------------------------------------------------------
   // Core operations
@@ -358,7 +358,8 @@ class ClipboardService {
   /// Heuristically determine the content type of clipboard text.
   ClipboardContentType _inferContentType(String text) {
     // Check if it looks like a file path.
-    if (!text.contains('\n') && (text.startsWith('/') || text.startsWith('~'))) {
+    if (!text.contains('\n') &&
+        (text.startsWith('/') || text.startsWith('~'))) {
       return ClipboardContentType.path;
     }
     // Check if it looks like a diff.

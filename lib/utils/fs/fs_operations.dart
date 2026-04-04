@@ -41,8 +41,10 @@ class FileStat {
   bool isFIFO() => false; // Dart doesn't expose FIFO type directly
   /// Returns true if this is a socket.
   bool isSocket() => false;
+
   /// Returns true if this is a character device.
   bool isCharacterDevice() => false;
+
   /// Returns true if this is a block device.
   bool isBlockDevice() => false;
 }
@@ -53,11 +55,7 @@ class Dirent {
   final FileSystemEntityType type;
   final bool isSymLink;
 
-  Dirent({
-    required this.name,
-    required this.type,
-    this.isSymLink = false,
-  });
+  Dirent({required this.name, required this.type, this.isSymLink = false});
 
   bool get isFile => type == FileSystemEntityType.file;
   bool get isDirectory => type == FileSystemEntityType.directory;
@@ -252,7 +250,11 @@ SafeResolvePathResult safeResolvePath(FsOperations fs, String filePath) {
 /// If not a duplicate, adds the resolved path to loadedPaths.
 ///
 /// Returns true if the file should be skipped (is duplicate).
-bool isDuplicatePath(FsOperations fs, String filePath, Set<String> loadedPaths) {
+bool isDuplicatePath(
+  FsOperations fs,
+  String filePath,
+  Set<String> loadedPaths,
+) {
   final result = safeResolvePath(fs, filePath);
   if (loadedPaths.contains(result.resolvedPath)) {
     return true;
@@ -304,8 +306,9 @@ String? resolveDeepestExistingAncestorSync(
       } catch (_) {
         // Dangling: realpath failed but lstat saw the link entry.
         final target = fs.readlinkSync(dir);
-        final absTarget =
-            p.isAbsolute(target) ? target : p.join(p.dirname(dir), target);
+        final absTarget = p.isAbsolute(target)
+            ? target
+            : p.join(p.dirname(dir), target);
         return segments.isEmpty
             ? absTarget
             : p.joinAll([absTarget, ...segments]);
@@ -317,9 +320,7 @@ String? resolveDeepestExistingAncestorSync(
     try {
       final resolved = fs.realpathSync(dir);
       if (resolved != dir) {
-        return segments.isEmpty
-            ? resolved
-            : p.joinAll([resolved, ...segments]);
+        return segments.isEmpty ? resolved : p.joinAll([resolved, ...segments]);
       }
     } catch (_) {
       // realpath can still fail (e.g. EACCES in ancestors). Return
@@ -381,8 +382,7 @@ List<String> getPathsForPermissionCheck(String inputPath) {
         // Path doesn't exist (new file case). existsSync follows symlinks,
         // so this is also reached for DANGLING symlinks.
         if (currentPath == path) {
-          final resolved =
-              resolveDeepestExistingAncestorSync(fsImpl, path);
+          final resolved = resolveDeepestExistingAncestorSync(fsImpl, path);
           if (resolved != null) {
             pathSet.add(resolved);
           }
@@ -408,8 +408,9 @@ List<String> getPathsForPermissionCheck(String inputPath) {
       final target = fsImpl.readlinkSync(currentPath);
 
       // If target is relative, resolve it relative to the symlink's directory
-      final absoluteTarget =
-          p.isAbsolute(target) ? target : p.join(p.dirname(currentPath), target);
+      final absoluteTarget = p.isAbsolute(target)
+          ? target
+          : p.join(p.dirname(currentPath), target);
 
       // Add this intermediate target to the set
       pathSet.add(absoluteTarget);
@@ -460,11 +461,13 @@ class DartFsOperations extends FsOperations {
     final entries = <Dirent>[];
     await for (final entity in dir.list()) {
       final entityStat = await entity.stat();
-      entries.add(Dirent(
-        name: p.basename(entity.path),
-        type: entityStat.type,
-        isSymLink: await FileSystemEntity.isLink(entity.path),
-      ));
+      entries.add(
+        Dirent(
+          name: p.basename(entity.path),
+          type: entityStat.type,
+          isSymLink: await FileSystemEntity.isLink(entity.path),
+        ),
+      );
     }
     return entries;
   }
@@ -480,7 +483,11 @@ class DartFsOperations extends FsOperations {
   }
 
   @override
-  Future<void> rm(String fsPath, {bool recursive = false, bool force = false}) async {
+  Future<void> rm(
+    String fsPath, {
+    bool recursive = false,
+    bool force = false,
+  }) async {
     try {
       if (FileSystemEntity.isDirectorySync(fsPath)) {
         await Directory(fsPath).delete(recursive: recursive);
@@ -809,10 +816,7 @@ Stream<String> readLinesReverse(String path) async* {
       await raf.setPosition(position);
       final readCount = await raf.readInto(buffer, 0, currentChunkSize);
 
-      final combined = <int>[
-        ...buffer.sublist(0, readCount),
-        ...remainder,
-      ];
+      final combined = <int>[...buffer.sublist(0, readCount), ...remainder];
 
       final newlineChar = '\n'.codeUnitAt(0);
       final firstNewline = combined.indexOf(newlineChar);
@@ -855,6 +859,7 @@ class ReadFileInRangeResult {
   final int totalBytes;
   final int readBytes;
   final double mtimeMs;
+
   /// True when output was clipped to maxBytes under truncate mode.
   final bool truncatedByBytes;
 
@@ -915,7 +920,9 @@ Future<ReadFileInRangeResult> readFileInRange(
   final ioStat = await file.stat();
 
   if (ioStat.type == FileSystemEntityType.directory) {
-    throw Exception("EISDIR: illegal operation on a directory, read '$filePath'");
+    throw Exception(
+      "EISDIR: illegal operation on a directory, read '$filePath'",
+    );
   }
 
   final size = ioStat.size;
@@ -957,8 +964,9 @@ ReadFileInRangeResult _readFileInRangeFast(
   final endLine = maxLines != null ? offset + maxLines : double.infinity;
 
   // Strip BOM.
-  final text =
-      (raw.isNotEmpty && raw.codeUnitAt(0) == 0xFEFF) ? raw.substring(1) : raw;
+  final text = (raw.isNotEmpty && raw.codeUnitAt(0) == 0xFEFF)
+      ? raw.substring(1)
+      : raw;
 
   // Split lines, strip \r, select range.
   final selectedLines = <String>[];

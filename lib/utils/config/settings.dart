@@ -19,14 +19,12 @@ class AppSettings {
   // ── Theme ──
 
   String get themeMode => _prefs.getString(_themeKey) ?? 'system';
-  Future<void> setThemeMode(String mode) =>
-      _prefs.setString(_themeKey, mode);
+  Future<void> setThemeMode(String mode) => _prefs.setString(_themeKey, mode);
 
   // ── API Settings ──
 
   int get maxTokens => _prefs.getInt(_maxTokensKey) ?? 16384;
-  Future<void> setMaxTokens(int tokens) =>
-      _prefs.setInt(_maxTokensKey, tokens);
+  Future<void> setMaxTokens(int tokens) => _prefs.setInt(_maxTokensKey, tokens);
 
   bool get streamingEnabled => _prefs.getBool(_streamingKey) ?? true;
   Future<void> setStreamingEnabled(bool enabled) =>

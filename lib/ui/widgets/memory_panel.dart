@@ -1,4 +1,4 @@
-// MemoryPanel — port of openneomclaw/src/components/memory/
+// MemoryPanel — port of neom_claw/src/components/memory/
 // Ports: MemoryFileSelector.tsx, MemoryUpdateNotification.tsx
 //
 // Provides:
@@ -141,7 +141,8 @@ class MemoryPanelController extends SintController {
   final showDreamRow = false.obs;
   final isDreamRunning = false.obs;
   final lastDreamAt = Rxn<DateTime>();
-  final focusedToggle = Rxn<int>(); // null = no toggle focused, 0 = auto-memory, 1 = auto-dream
+  final focusedToggle =
+      Rxn<int>(); // null = no toggle focused, 0 = auto-memory, 1 = auto-dream
   final agentDefinitions = <AgentDefinitionInfo>[].obs;
 
   // Last selected path (persisted across opens)
@@ -160,8 +161,7 @@ class MemoryPanelController extends SintController {
     return '${Directory.current.path}/NEOMCLAW.md';
   }
 
-  bool get hasUserMemory =>
-      memoryFiles.any((f) => f.path == userMemoryPath);
+  bool get hasUserMemory => memoryFiles.any((f) => f.path == userMemoryPath);
 
   bool get hasProjectMemory =>
       memoryFiles.any((f) => f.path == projectMemoryPath);
@@ -177,19 +177,13 @@ class MemoryPanelController extends SintController {
 
     // All memory files (existing + placeholders for missing user/project)
     final allFiles = <MemoryFileInfo>[
-      ...memoryFiles.where((f) => f.path != userMemoryPath && f.path != projectMemoryPath),
+      ...memoryFiles.where(
+        (f) => f.path != userMemoryPath && f.path != projectMemoryPath,
+      ),
       if (!hasUserMemory)
-        MemoryFileInfo(
-          path: userMemoryPath,
-          type: 'User',
-          exists: false,
-        ),
+        MemoryFileInfo(path: userMemoryPath, type: 'User', exists: false),
       if (!hasProjectMemory)
-        MemoryFileInfo(
-          path: projectMemoryPath,
-          type: 'Project',
-          exists: false,
-        ),
+        MemoryFileInfo(path: projectMemoryPath, type: 'Project', exists: false),
       // Include existing user and project files
       ...memoryFiles.where(
         (f) => f.path == userMemoryPath || f.path == projectMemoryPath,
@@ -199,14 +193,14 @@ class MemoryPanelController extends SintController {
     for (final file in allFiles) {
       final displayPath = getDisplayPath(file.path);
       final existsLabel = file.exists ? '' : ' (new)';
-      final depth = file.parent != null
-          ? (depths[file.parent] ?? 0) + 1
-          : 0;
+      final depth = file.parent != null ? (depths[file.parent] ?? 0) + 1 : 0;
       depths[file.path] = depth;
       final indent = depth > 0 ? '  ' * (depth - 1) : '';
 
       String label;
-      if (file.type == 'User' && !file.isNested && file.path == userMemoryPath) {
+      if (file.type == 'User' &&
+          !file.isNested &&
+          file.path == userMemoryPath) {
         label = 'User memory';
       } else if (file.type == 'Project' &&
           !file.isNested &&
@@ -233,32 +227,38 @@ class MemoryPanelController extends SintController {
         description = '';
       }
 
-      options.add(MemorySelectOption(
-        label: label,
-        value: file.path,
-        description: description,
-      ));
+      options.add(
+        MemorySelectOption(
+          label: label,
+          value: file.path,
+          description: description,
+        ),
+      );
     }
 
     // Folder options (auto-memory, team memory, agent memory)
     if (autoMemoryOn.value) {
       final autoMemPath = _getAutoMemPath();
-      options.add(MemorySelectOption(
-        label: 'Open auto-memory folder',
-        value: '$_openFolderPrefix$autoMemPath',
-        isFolder: true,
-      ));
+      options.add(
+        MemorySelectOption(
+          label: 'Open auto-memory folder',
+          value: '$_openFolderPrefix$autoMemPath',
+          isFolder: true,
+        ),
+      );
 
       // Agent memory folders
       for (final agent in agentDefinitions) {
         if (agent.memory != null) {
           final agentDir = _getAgentMemoryDir(agent.agentType, agent.memory!);
-          options.add(MemorySelectOption(
-            label: 'Open ${agent.agentType} agent memory',
-            value: '$_openFolderPrefix$agentDir',
-            description: '${agent.memory} scope',
-            isFolder: true,
-          ));
+          options.add(
+            MemorySelectOption(
+              label: 'Open ${agent.agentType} agent memory',
+              value: '$_openFolderPrefix$agentDir',
+              description: '${agent.memory} scope',
+              isFolder: true,
+            ),
+          );
         }
       }
     }
@@ -482,24 +482,26 @@ class MemoryFileSelector extends StatelessWidget {
                         ? Text(
                             ' \u00B7 ${controller.dreamStatus}',
                             style: TextStyle(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.4),
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.4,
+                              ),
                               fontSize: 12,
                             ),
                           )
                         : null,
                     secondaryTrailing:
                         !controller.isDreamRunning.value &&
-                                controller.autoDreamOn.value
-                            ? Text(
-                                ' \u00B7 /dream to run',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.4),
-                                  fontSize: 12,
-                                ),
-                              )
-                            : null,
+                            controller.autoDreamOn.value
+                        ? Text(
+                            ' \u00B7 /dream to run',
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.4,
+                              ),
+                              fontSize: 12,
+                            ),
+                          )
+                        : null,
                   ),
               ],
             ),
@@ -516,7 +518,8 @@ class MemoryFileSelector extends StatelessWidget {
                   ...options.asMap().entries.map((entry) {
                     final idx = entry.key;
                     final option = entry.value;
-                    final isSelected = !controller.toggleFocused &&
+                    final isSelected =
+                        !controller.toggleFocused &&
                         idx == controller.selectedIndex.value;
 
                     return _MemoryOptionTile(
@@ -593,8 +596,8 @@ class _ToggleRow extends StatelessWidget {
                 fontSize: 13,
               ),
             ),
-            if (trailing != null) trailing!,
-            if (secondaryTrailing != null) secondaryTrailing!,
+            ?trailing,
+            ?secondaryTrailing,
           ],
         ),
       ),
@@ -663,7 +666,9 @@ class _MemoryOptionTile extends StatelessWidget {
                     Text(
                       option.description,
                       style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                         fontSize: 11,
                       ),
                     ),
@@ -702,10 +707,7 @@ class MemoryUpdateNotification extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             'Memory updated in $displayPath',
-            style: TextStyle(
-              color: theme.colorScheme.onSurface,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 13),
           ),
           Text(
             ' \u00B7 /memory to edit',

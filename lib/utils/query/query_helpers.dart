@@ -1,9 +1,8 @@
-// Query helpers — port of openneomclaw queryHelpers.ts + queryContext.ts +
+// Query helpers — port of neom_claw queryHelpers.ts + queryContext.ts +
 // queryProfiler.ts + readEditContext.ts.
 // Query building, context fetching, profiling, and file context extraction.
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -31,10 +30,7 @@ final Map<String, int> _toolProgressLastSentTime = {};
 
 /// Checks if the result should be considered successful based on the last
 /// message.
-bool isResultSuccessful(
-  Map<String, dynamic>? message, {
-  String? stopReason,
-}) {
+bool isResultSuccessful(Map<String, dynamic>? message, {String? stopReason}) {
   if (message == null) return false;
 
   final type = message['type'] as String?;
@@ -56,8 +52,10 @@ bool isResultSuccessful(
     final content = message['message']?['content'];
     if (content is List &&
         content.isNotEmpty &&
-        content.every((block) =>
-            block is Map<String, dynamic> && block['type'] == 'tool_result')) {
+        content.every(
+          (block) =>
+              block is Map<String, dynamic> && block['type'] == 'tool_result',
+        )) {
       return true;
     }
   }
@@ -112,7 +110,8 @@ Iterable<Map<String, dynamic>> normalizeMessage(
             'uuid': innerMsg['uuid'],
             'timestamp': innerMsg['timestamp'],
             'isSynthetic':
-                innerMsg['isMeta'] == true || innerMsg['isVisibleInTranscriptOnly'] == true,
+                innerMsg['isMeta'] == true ||
+                innerMsg['isVisibleInTranscriptOnly'] == true,
             'tool_use_result': innerMsg['toolUseResult'],
           };
         }
@@ -136,7 +135,9 @@ Iterable<Map<String, dynamic>> normalizeMessage(
           yield {
             'type': 'tool_progress',
             'tool_use_id': message['toolUseID'],
-            'tool_name': progressType == 'bash_progress' ? 'Bash' : 'PowerShell',
+            'tool_name': progressType == 'bash_progress'
+                ? 'Bash'
+                : 'PowerShell',
             'parent_tool_use_id': message['parentToolUseID'],
             'elapsed_time_seconds': data['elapsedTimeSeconds'],
             'task_id': data['taskId'],
@@ -154,7 +155,8 @@ Iterable<Map<String, dynamic>> normalizeMessage(
         'uuid': message['uuid'],
         'timestamp': message['timestamp'],
         'isSynthetic':
-            message['isMeta'] == true || message['isVisibleInTranscriptOnly'] == true,
+            message['isMeta'] == true ||
+            message['isVisibleInTranscriptOnly'] == true,
         'tool_use_result': message['toolUseResult'],
       };
     default:
@@ -209,20 +211,19 @@ Stream<Map<String, dynamic>> handleOrphanedPermission({
     finalInput = permissionResult['updatedInput'];
   }
 
-  final finalToolUseBlock = {
-    ...toolUseBlock,
-    'input': finalInput,
-  };
+  final finalToolUseBlock = {...toolUseBlock, 'input': finalInput};
 
   // Add assistant message if not already present.
   final alreadyPresent = mutableMessages.any((m) {
     if (m['type'] != 'assistant') return false;
     final c = m['message']?['content'];
     if (c is! List) return false;
-    return c.any((b) =>
-        b is Map<String, dynamic> &&
-        b['type'] == 'tool_use' &&
-        b['id'] == toolUseId);
+    return c.any(
+      (b) =>
+          b is Map<String, dynamic> &&
+          b['type'] == 'tool_use' &&
+          b['id'] == toolUseId,
+    );
   });
 
   if (!alreadyPresent) {
@@ -343,9 +344,7 @@ FileStateCache extractReadFilesFromMessages(
 
       if (name == 'FileRead') {
         final path = input['file_path'] as String?;
-        if (path != null &&
-            input['offset'] == null &&
-            input['limit'] == null) {
+        if (path != null && input['offset'] == null && input['limit'] == null) {
           fileReadToolUseIds[id] = _expandPath(path, cwd);
         }
       } else if (name == 'FileWrite') {
@@ -417,10 +416,7 @@ FileStateCache extractReadFilesFromMessages(
           final ts = DateTime.parse(timestamp).millisecondsSinceEpoch;
           cache.set(
             writeData.filePath,
-            FileStateCacheEntry(
-              content: writeData.content,
-              timestamp: ts,
-            ),
+            FileStateCacheEntry(content: writeData.content, timestamp: ts),
           );
         }
       }
@@ -447,9 +443,7 @@ FileStateCache extractReadFilesFromMessages(
 }
 
 /// Extract the top-level CLI tools used in BashTool calls from messages.
-Set<String> extractBashToolsFromMessages(
-  List<Map<String, dynamic>> messages,
-) {
+Set<String> extractBashToolsFromMessages(List<Map<String, dynamic>> messages) {
   final tools = <String>{};
   for (final message in messages) {
     if (message['type'] != 'assistant') continue;
@@ -497,8 +491,14 @@ typedef GetUserContextFn = Future<Map<String, String>> Function();
 typedef GetSystemContextFn = Future<Map<String, String>> Function();
 
 /// Fetch the three context pieces for the API cache-key prefix.
-Future<({List<String> defaultSystemPrompt, Map<String, String> userContext, Map<String, String> systemContext})>
-    fetchSystemPromptParts({
+Future<
+  ({
+    List<String> defaultSystemPrompt,
+    Map<String, String> userContext,
+    Map<String, String> systemContext,
+  })
+>
+fetchSystemPromptParts({
   required GetSystemPromptFn getSystemPrompt,
   required GetUserContextFn getUserContext,
   required GetSystemContextFn getSystemContext,
@@ -576,17 +576,17 @@ Future<CacheSafeParams> buildSideQuestionFallbackParams({
       customSystemPrompt
     else
       ...parts.defaultSystemPrompt,
-    if (appendSystemPrompt != null) appendSystemPrompt,
+    ?appendSystemPrompt,
   ];
 
   // Strip in-progress assistant message.
   final last = messages.isNotEmpty ? messages.last : null;
   final forkContextMessages =
       (last != null &&
-              last['type'] == 'assistant' &&
-              last['message']?['stop_reason'] == null)
-          ? messages.sublist(0, messages.length - 1)
-          : messages;
+          last['type'] == 'assistant' &&
+          last['message']?['stop_reason'] == null)
+      ? messages.sublist(0, messages.length - 1)
+      : messages;
 
   final toolUseContext = <String, dynamic>{
     'options': {
@@ -677,7 +677,9 @@ String _getSlowWarning(double deltaMs, String name) {
   if (deltaMs > 100) return ' SLOW';
   if (name.contains('git_status') && deltaMs > 50) return ' git status';
   if (name.contains('tool_schema') && deltaMs > 50) return ' tool schemas';
-  if (name.contains('client_creation') && deltaMs > 50) return ' client creation';
+  if (name.contains('client_creation') && deltaMs > 50) {
+    return ' client creation';
+  }
   return '';
 }
 
@@ -690,15 +692,51 @@ class _QueryPhase {
 }
 
 final List<_QueryPhase> _queryPhases = [
-  _QueryPhase(name: 'Context loading', start: 'query_context_loading_start', end: 'query_context_loading_end'),
-  _QueryPhase(name: 'Microcompact', start: 'query_microcompact_start', end: 'query_microcompact_end'),
-  _QueryPhase(name: 'Autocompact', start: 'query_autocompact_start', end: 'query_autocompact_end'),
-  _QueryPhase(name: 'Query setup', start: 'query_setup_start', end: 'query_setup_end'),
-  _QueryPhase(name: 'Tool schemas', start: 'query_tool_schema_build_start', end: 'query_tool_schema_build_end'),
-  _QueryPhase(name: 'Message normalization', start: 'query_message_normalization_start', end: 'query_message_normalization_end'),
-  _QueryPhase(name: 'Client creation', start: 'query_client_creation_start', end: 'query_client_creation_end'),
-  _QueryPhase(name: 'Network TTFB', start: 'query_api_request_sent', end: 'query_first_chunk_received'),
-  _QueryPhase(name: 'Tool execution', start: 'query_tool_execution_start', end: 'query_tool_execution_end'),
+  _QueryPhase(
+    name: 'Context loading',
+    start: 'query_context_loading_start',
+    end: 'query_context_loading_end',
+  ),
+  _QueryPhase(
+    name: 'Microcompact',
+    start: 'query_microcompact_start',
+    end: 'query_microcompact_end',
+  ),
+  _QueryPhase(
+    name: 'Autocompact',
+    start: 'query_autocompact_start',
+    end: 'query_autocompact_end',
+  ),
+  _QueryPhase(
+    name: 'Query setup',
+    start: 'query_setup_start',
+    end: 'query_setup_end',
+  ),
+  _QueryPhase(
+    name: 'Tool schemas',
+    start: 'query_tool_schema_build_start',
+    end: 'query_tool_schema_build_end',
+  ),
+  _QueryPhase(
+    name: 'Message normalization',
+    start: 'query_message_normalization_start',
+    end: 'query_message_normalization_end',
+  ),
+  _QueryPhase(
+    name: 'Client creation',
+    start: 'query_client_creation_start',
+    end: 'query_client_creation_end',
+  ),
+  _QueryPhase(
+    name: 'Network TTFB',
+    start: 'query_api_request_sent',
+    end: 'query_first_chunk_received',
+  ),
+  _QueryPhase(
+    name: 'Tool execution',
+    start: 'query_tool_execution_start',
+    end: 'query_tool_execution_end',
+  ),
 ];
 
 /// Get the phase summary for the profiling report.
@@ -715,7 +753,9 @@ String _getPhaseSummary() {
       final duration = endTime - startTime;
       final barLen = math.min((duration / 10).ceil(), 50);
       final bar = '\u2588' * barLen;
-      lines.add('  ${phase.name.padRight(22)} ${_formatMs(duration).padLeft(10)}ms $bar');
+      lines.add(
+        '  ${phase.name.padRight(22)} ${_formatMs(duration).padLeft(10)}ms $bar',
+      );
     }
   }
 
@@ -723,7 +763,9 @@ String _getPhaseSummary() {
   if (apiRequestSent != null && _baselineTime != null) {
     final preApiOverhead = apiRequestSent - _baselineTime!;
     lines.add('');
-    lines.add('  ${'Total pre-API overhead'.padRight(22)} ${_formatMs(preApiOverhead).padLeft(10)}ms');
+    lines.add(
+      '  ${'Total pre-API overhead'.padRight(22)} ${_formatMs(preApiOverhead).padLeft(10)}ms',
+    );
   }
 
   return lines.join('\n');
@@ -774,10 +816,10 @@ String getQueryProfileReport() {
   if (firstChunkTime > 0) {
     final preRequestOverhead = apiRequestSentTime;
     final networkLatency = firstChunkTime - apiRequestSentTime;
-    final preRequestPercent =
-        (preRequestOverhead / firstChunkTime * 100).toStringAsFixed(1);
-    final networkPercent =
-        (networkLatency / firstChunkTime * 100).toStringAsFixed(1);
+    final preRequestPercent = (preRequestOverhead / firstChunkTime * 100)
+        .toStringAsFixed(1);
+    final networkPercent = (networkLatency / firstChunkTime * 100)
+        .toStringAsFixed(1);
 
     lines.add('Total TTFT: ${_formatMs(firstChunkTime)}ms');
     lines.add(
@@ -912,7 +954,11 @@ Future<EditContext> _scanForContext(
 
   while (pos < maxScanBytes) {
     await handle.setPosition(pos);
-    final bytesRead = await handle.readInto(buf, prevTail, chunkSize + prevTail);
+    final bytesRead = await handle.readInto(
+      buf,
+      prevTail,
+      chunkSize + prevTail,
+    );
     if (bytesRead == 0) break;
     final actualRead = bytesRead - prevTail;
     if (actualRead <= 0) break;
@@ -925,8 +971,8 @@ Future<EditContext> _scanForContext(
       needleCRLF ??= Uint8List.fromList(
         utf8.encode(needle.replaceAll('\n', '\r\n')),
       );
-      matchAt = _indexOfWithin(buf, needleCRLF!, viewLen);
-      matchLen = needleCRLF!.length;
+      matchAt = _indexOfWithin(buf, needleCRLF, viewLen);
+      matchLen = needleCRLF.length;
     }
 
     if (matchAt != -1) {
@@ -1024,7 +1070,9 @@ Future<String?> readCapped(RandomAccessFile handle) async {
 
   while (true) {
     if (total == buf.length) {
-      final grown = Uint8List(math.min(buf.length * 2, maxScanBytes + chunkSize));
+      final grown = Uint8List(
+        math.min(buf.length * 2, maxScanBytes + chunkSize),
+      );
       grown.setRange(0, total, buf);
       buf = grown;
     }

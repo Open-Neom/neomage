@@ -76,7 +76,8 @@ const String entrypointName = 'MEMORY.md';
 // ── Private helpers ──
 
 String get _homeDir {
-  final home = Platform.environment['HOME'] ??
+  final home =
+      Platform.environment['HOME'] ??
       Platform.environment['USERPROFILE'] ??
       '/tmp';
   return home;

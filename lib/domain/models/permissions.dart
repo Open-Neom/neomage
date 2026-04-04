@@ -112,10 +112,7 @@ class AdditionalWorkingDirectory {
 class PermissionAllowDecision {
   final bool updatedRule;
   final PermissionRule? matchedRule;
-  const PermissionAllowDecision({
-    this.updatedRule = false,
-    this.matchedRule,
-  });
+  const PermissionAllowDecision({this.updatedRule = false, this.matchedRule});
 }
 
 /// Result when user should be prompted.

@@ -94,100 +94,100 @@ class _DoctorScreenState extends State<DoctorScreen> {
   // ── Check definitions ──
 
   List<DiagnosticCheck> _buildCheckList() => [
-        // System
-        DiagnosticCheck(
-          name: 'Flutter Version',
-          description: 'Verify Flutter SDK is accessible',
-          category: DiagnosticCategory.system,
-        ),
-        DiagnosticCheck(
-          name: 'Dart Version',
-          description: 'Verify Dart SDK version',
-          category: DiagnosticCategory.system,
-        ),
-        DiagnosticCheck(
-          name: 'Platform Info',
-          description: 'Detect operating system and architecture',
-          category: DiagnosticCategory.system,
-        ),
-        DiagnosticCheck(
-          name: 'Disk Space',
-          description: 'Check available disk space',
-          category: DiagnosticCategory.system,
-        ),
+    // System
+    DiagnosticCheck(
+      name: 'Flutter Version',
+      description: 'Verify Flutter SDK is accessible',
+      category: DiagnosticCategory.system,
+    ),
+    DiagnosticCheck(
+      name: 'Dart Version',
+      description: 'Verify Dart SDK version',
+      category: DiagnosticCategory.system,
+    ),
+    DiagnosticCheck(
+      name: 'Platform Info',
+      description: 'Detect operating system and architecture',
+      category: DiagnosticCategory.system,
+    ),
+    DiagnosticCheck(
+      name: 'Disk Space',
+      description: 'Check available disk space',
+      category: DiagnosticCategory.system,
+    ),
 
-        // Network
-        DiagnosticCheck(
-          name: 'Network Connectivity',
-          description: 'Test outbound network access',
-          category: DiagnosticCategory.network,
-        ),
-        DiagnosticCheck(
-          name: 'API Endpoint Reachable',
-          description: 'Verify the configured API endpoint responds',
-          category: DiagnosticCategory.network,
-        ),
+    // Network
+    DiagnosticCheck(
+      name: 'Network Connectivity',
+      description: 'Test outbound network access',
+      category: DiagnosticCategory.network,
+    ),
+    DiagnosticCheck(
+      name: 'API Endpoint Reachable',
+      description: 'Verify the configured API endpoint responds',
+      category: DiagnosticCategory.network,
+    ),
 
-        // API
-        DiagnosticCheck(
-          name: 'API Key Validity',
-          description: 'Check that the stored API key has a valid format',
-          category: DiagnosticCategory.api,
-        ),
-        DiagnosticCheck(
-          name: 'Config File Validity',
-          description: 'Verify settings and config files parse correctly',
-          category: DiagnosticCategory.api,
-        ),
+    // API
+    DiagnosticCheck(
+      name: 'API Key Validity',
+      description: 'Check that the stored API key has a valid format',
+      category: DiagnosticCategory.api,
+    ),
+    DiagnosticCheck(
+      name: 'Config File Validity',
+      description: 'Verify settings and config files parse correctly',
+      category: DiagnosticCategory.api,
+    ),
 
-        // Tools
-        DiagnosticCheck(
-          name: 'Bash Tool',
-          description: 'Check shell command execution',
-          category: DiagnosticCategory.tools,
-        ),
-        DiagnosticCheck(
-          name: 'Git Tool',
-          description: 'Verify git binary is available',
-          category: DiagnosticCategory.tools,
-        ),
-        DiagnosticCheck(
-          name: 'Grep Tool',
-          description: 'Verify ripgrep (rg) or grep is available',
-          category: DiagnosticCategory.tools,
-        ),
-        DiagnosticCheck(
-          name: 'Glob Tool',
-          description: 'Verify file globbing works',
-          category: DiagnosticCategory.tools,
-        ),
+    // Tools
+    DiagnosticCheck(
+      name: 'Bash Tool',
+      description: 'Check shell command execution',
+      category: DiagnosticCategory.tools,
+    ),
+    DiagnosticCheck(
+      name: 'Git Tool',
+      description: 'Verify git binary is available',
+      category: DiagnosticCategory.tools,
+    ),
+    DiagnosticCheck(
+      name: 'Grep Tool',
+      description: 'Verify ripgrep (rg) or grep is available',
+      category: DiagnosticCategory.tools,
+    ),
+    DiagnosticCheck(
+      name: 'Glob Tool',
+      description: 'Verify file globbing works',
+      category: DiagnosticCategory.tools,
+    ),
 
-        // MCP
-        DiagnosticCheck(
-          name: 'MCP Config',
-          description: 'Check for .mcp.json or MCP server configuration',
-          category: DiagnosticCategory.mcp,
-        ),
-        DiagnosticCheck(
-          name: 'MCP Server Connections',
-          description: 'Test connectivity to configured MCP servers',
-          category: DiagnosticCategory.mcp,
-        ),
+    // MCP
+    DiagnosticCheck(
+      name: 'MCP Config',
+      description: 'Check for .mcp.json or MCP server configuration',
+      category: DiagnosticCategory.mcp,
+    ),
+    DiagnosticCheck(
+      name: 'MCP Server Connections',
+      description: 'Test connectivity to configured MCP servers',
+      category: DiagnosticCategory.mcp,
+    ),
 
-        // Git
-        DiagnosticCheck(
-          name: 'Git Repo Status',
-          description: 'Check if current directory is a git repository',
-          category: DiagnosticCategory.git,
-        ),
+    // Git
+    DiagnosticCheck(
+      name: 'Git Repo Status',
+      description: 'Check if current directory is a git repository',
+      category: DiagnosticCategory.git,
+    ),
 
-        // Permissions
-        DiagnosticCheck(
-          name: 'Permission Rules',
-          description: 'Validate permission rules in settings',
-          category: DiagnosticCategory.permissions,
-        ),
-      ];
+    // Permissions
+    DiagnosticCheck(
+      name: 'Permission Rules',
+      description: 'Validate permission rules in settings',
+      category: DiagnosticCategory.permissions,
+    ),
+  ];
 
   // ── Run all checks ──
 
@@ -226,8 +226,9 @@ class _DoctorScreenState extends State<DoctorScreen> {
   }
 
   void _scrollToFirstFailure() {
-    final failIndex =
-        _checks.indexWhere((c) => c.status == DiagnosticStatus.fail);
+    final failIndex = _checks.indexWhere(
+      (c) => c.status == DiagnosticStatus.fail,
+    );
     if (failIndex < 0) return;
 
     // Approximate position: header + cards before the failure.
@@ -263,7 +264,8 @@ class _DoctorScreenState extends State<DoctorScreen> {
       case 'Dart Version':
         await _runProcessCheck(check, 'dart', ['--version']);
       case 'Platform Info':
-        check.detail = '${Platform.operatingSystem} '
+        check.detail =
+            '${Platform.operatingSystem} '
             '${Platform.operatingSystemVersion} '
             '(${Platform.localHostname})';
         check.status = DiagnosticStatus.pass;
@@ -302,7 +304,10 @@ class _DoctorScreenState extends State<DoctorScreen> {
   // ── Check implementations ──
 
   Future<void> _runProcessCheck(
-      DiagnosticCheck check, String cmd, List<String> args) async {
+    DiagnosticCheck check,
+    String cmd,
+    List<String> args,
+  ) async {
     try {
       final result = await Process.run(cmd, args);
       final output = (result.stdout as String).trim();
@@ -344,8 +349,9 @@ class _DoctorScreenState extends State<DoctorScreen> {
     try {
       final client = HttpClient()
         ..connectionTimeout = const Duration(seconds: 5);
-      final request =
-          await client.headUrl(Uri.parse('https://api.anthropic.com'));
+      final request = await client.headUrl(
+        Uri.parse('https://api.anthropic.com'),
+      );
       final response = await request.close();
       await response.drain<void>();
       client.close();
@@ -370,16 +376,16 @@ class _DoctorScreenState extends State<DoctorScreen> {
       // for now test the default Anthropic endpoint.
       final client = HttpClient()
         ..connectionTimeout = const Duration(seconds: 5);
-      final request =
-          await client.headUrl(Uri.parse('https://api.anthropic.com/v1'));
+      final request = await client.headUrl(
+        Uri.parse('https://api.anthropic.com/v1'),
+      );
       final response = await request.close();
       await response.drain<void>();
       client.close();
 
       if (response.statusCode < 500) {
         check.status = DiagnosticStatus.pass;
-        check.detail =
-            'Endpoint responded with HTTP ${response.statusCode}';
+        check.detail = 'Endpoint responded with HTTP ${response.statusCode}';
       } else {
         check.status = DiagnosticStatus.warn;
         check.detail = 'Endpoint returned HTTP ${response.statusCode}';
@@ -414,7 +420,8 @@ class _DoctorScreenState extends State<DoctorScreen> {
   }
 
   Future<void> _checkConfigFiles(DiagnosticCheck check) async {
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '/tmp';
     final settingsFile = File('$home/.neomclaw/settings.json');
@@ -463,7 +470,8 @@ class _DoctorScreenState extends State<DoctorScreen> {
 
   Future<void> _checkMcpConfig(DiagnosticCheck check) async {
     final localFile = File('.mcp.json');
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '/tmp';
     final userFile = File('$home/.neomclaw/settings.json');
@@ -491,13 +499,17 @@ class _DoctorScreenState extends State<DoctorScreen> {
 
   Future<void> _checkGitRepo(DiagnosticCheck check) async {
     try {
-      final result =
-          await Process.run('git', ['rev-parse', '--is-inside-work-tree']);
-      if (result.exitCode == 0 &&
-          (result.stdout as String).trim() == 'true') {
+      final result = await Process.run('git', [
+        'rev-parse',
+        '--is-inside-work-tree',
+      ]);
+      if (result.exitCode == 0 && (result.stdout as String).trim() == 'true') {
         // Get branch name.
-        final branch = await Process.run(
-            'git', ['rev-parse', '--abbrev-ref', 'HEAD']);
+        final branch = await Process.run('git', [
+          'rev-parse',
+          '--abbrev-ref',
+          'HEAD',
+        ]);
         check.status = DiagnosticStatus.pass;
         check.detail =
             'Inside git repo, branch: ${(branch.stdout as String).trim()}';
@@ -534,8 +546,10 @@ class _DoctorScreenState extends State<DoctorScreen> {
     final buf = StringBuffer();
     buf.writeln('=== Neom Claw Diagnostic Report ===');
     buf.writeln('Date: ${DateTime.now().toIso8601String()}');
-    buf.writeln('Platform: ${Platform.operatingSystem} '
-        '${Platform.operatingSystemVersion}');
+    buf.writeln(
+      'Platform: ${Platform.operatingSystem} '
+      '${Platform.operatingSystemVersion}',
+    );
     buf.writeln();
 
     final grouped = _groupedChecks();
@@ -560,14 +574,18 @@ class _DoctorScreenState extends State<DoctorScreen> {
       buf.writeln();
     }
 
-    final passCount =
-        _checks.where((c) => c.status == DiagnosticStatus.pass).length;
-    final warnCount =
-        _checks.where((c) => c.status == DiagnosticStatus.warn).length;
-    final failCount =
-        _checks.where((c) => c.status == DiagnosticStatus.fail).length;
+    final passCount = _checks
+        .where((c) => c.status == DiagnosticStatus.pass)
+        .length;
+    final warnCount = _checks
+        .where((c) => c.status == DiagnosticStatus.warn)
+        .length;
+    final failCount = _checks
+        .where((c) => c.status == DiagnosticStatus.fail)
+        .length;
     buf.writeln(
-        'Summary: $passCount passed, $warnCount warnings, $failCount failed');
+      'Summary: $passCount passed, $warnCount warnings, $failCount failed',
+    );
 
     return buf.toString();
   }
@@ -579,8 +597,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final grouped = _groupedChecks();
-    final progress =
-        _checks.isEmpty ? 0.0 : _completed / _checks.length;
+    final progress = _checks.isEmpty ? 0.0 : _completed / _checks.length;
 
     return Scaffold(
       appBar: AppBar(
@@ -590,21 +607,21 @@ class _DoctorScreenState extends State<DoctorScreen> {
             icon: const Icon(Icons.copy),
             tooltip: 'Copy Report',
             onPressed: () {
-              Clipboard.setData(
-                  ClipboardData(text: _generateReport()));
+              Clipboard.setData(ClipboardData(text: _generateReport()));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Report copied to clipboard')),
+                const SnackBar(content: Text('Report copied to clipboard')),
               );
             },
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Re-run All',
-            onPressed: _running ? null : () {
-              setState(() => _checks = _buildCheckList());
-              _runAll();
-            },
+            onPressed: _running
+                ? null
+                : () {
+                    setState(() => _checks = _buildCheckList());
+                    _runAll();
+                  },
           ),
         ],
       ),
@@ -622,8 +639,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
 
           // Summary chips
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
                 _SummaryChip(
@@ -656,8 +672,9 @@ class _DoctorScreenState extends State<DoctorScreen> {
                 if (!_running && _completed == _checks.length)
                   Text(
                     'All checks complete',
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: cs.onSurfaceVariant),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: cs.onSurfaceVariant,
+                    ),
                   ),
               ],
             ),
@@ -710,14 +727,22 @@ class _SummaryChip extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: color),
         const SizedBox(width: 4),
-        Text('$count',
-            style: TextStyle(
-                fontWeight: FontWeight.bold, color: color, fontSize: 13)),
+        Text(
+          '$count',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: color,
+            fontSize: 13,
+          ),
+        ),
         const SizedBox(width: 2),
-        Text(label,
-            style: TextStyle(
-                fontSize: 11,
-                color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }
@@ -727,20 +752,17 @@ class _CategorySection extends StatelessWidget {
   final DiagnosticCategory category;
   final List<DiagnosticCheck> checks;
 
-  const _CategorySection({
-    required this.category,
-    required this.checks,
-  });
+  const _CategorySection({required this.category, required this.checks});
 
   IconData _categoryIcon() => switch (category) {
-        DiagnosticCategory.system => Icons.computer,
-        DiagnosticCategory.network => Icons.wifi,
-        DiagnosticCategory.api => Icons.api,
-        DiagnosticCategory.tools => Icons.build,
-        DiagnosticCategory.mcp => Icons.extension,
-        DiagnosticCategory.git => Icons.commit,
-        DiagnosticCategory.permissions => Icons.shield,
-      };
+    DiagnosticCategory.system => Icons.computer,
+    DiagnosticCategory.network => Icons.wifi,
+    DiagnosticCategory.api => Icons.api,
+    DiagnosticCategory.tools => Icons.build,
+    DiagnosticCategory.mcp => Icons.extension,
+    DiagnosticCategory.git => Icons.commit,
+    DiagnosticCategory.permissions => Icons.shield,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -786,8 +808,11 @@ class _CheckTileState extends State<_CheckTile> {
   Widget _statusIcon() {
     switch (widget.check.status) {
       case DiagnosticStatus.pending:
-        return Icon(Icons.circle_outlined,
-            size: 20, color: Colors.grey.shade400);
+        return Icon(
+          Icons.circle_outlined,
+          size: 20,
+          color: Colors.grey.shade400,
+        );
       case DiagnosticStatus.running:
         return const SizedBox(
           width: 20,
@@ -797,8 +822,11 @@ class _CheckTileState extends State<_CheckTile> {
       case DiagnosticStatus.pass:
         return const Icon(Icons.check_circle, size: 20, color: Colors.green);
       case DiagnosticStatus.warn:
-        return const Icon(Icons.warning_amber_rounded,
-            size: 20, color: Colors.orange);
+        return const Icon(
+          Icons.warning_amber_rounded,
+          size: 20,
+          color: Colors.orange,
+        );
       case DiagnosticStatus.fail:
         return const Icon(Icons.cancel, size: 20, color: Colors.red);
     }
@@ -808,8 +836,8 @@ class _CheckTileState extends State<_CheckTile> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final hasDetail = widget.check.detail != null &&
-        widget.check.detail!.isNotEmpty;
+    final hasDetail =
+        widget.check.detail != null && widget.check.detail!.isNotEmpty;
 
     return InkWell(
       onTap: hasDetail ? () => setState(() => _expanded = !_expanded) : null,
@@ -826,27 +854,32 @@ class _CheckTileState extends State<_CheckTile> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.check.name,
-                          style: const TextStyle(
-                              fontSize: 14, fontWeight: FontWeight.w500)),
-                      Text(widget.check.description,
-                          style: TextStyle(
-                              fontSize: 12, color: cs.onSurfaceVariant)),
+                      Text(
+                        widget.check.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      Text(
+                        widget.check.description,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 if (widget.check.duration != null)
                   Text(
                     '${widget.check.duration!.inMilliseconds}ms',
-                    style: TextStyle(
-                        fontSize: 11, color: cs.onSurfaceVariant),
+                    style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant),
                   ),
                 if (hasDetail) ...[
                   const SizedBox(width: 4),
                   Icon(
-                    _expanded
-                        ? Icons.expand_less
-                        : Icons.expand_more,
+                    _expanded ? Icons.expand_less : Icons.expand_more,
                     size: 20,
                     color: cs.onSurfaceVariant,
                   ),

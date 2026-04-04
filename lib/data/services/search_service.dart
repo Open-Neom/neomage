@@ -251,10 +251,7 @@ class SearchService {
   final List<SearchHistoryEntry> _history = [];
   final Map<String, FileIndex> _indexCache = {};
 
-  SearchService({
-    required this.projectRoot,
-    this.maxHistorySize = 50,
-  });
+  SearchService({required this.projectRoot, this.maxHistorySize = 50});
 
   // -------------------------------------------------------------------------
   // Content search
@@ -304,21 +301,25 @@ class SearchService {
           for (var b = math.max(0, i - options.contextLines); b < i; b++) {
             beforeCtx.add(lines[b]);
           }
-          for (var a = i + 1;
-              a <= math.min(lines.length - 1, i + options.contextLines);
-              a++) {
+          for (
+            var a = i + 1;
+            a <= math.min(lines.length - 1, i + options.contextLines);
+            a++
+          ) {
             afterCtx.add(lines[a]);
           }
 
-          matches.add(SearchMatch(
-            filePath: filePath,
-            lineNumber: i + 1,
-            column: m.start,
-            matchLength: m.end - m.start,
-            lineContent: lines[i],
-            beforeContext: beforeCtx,
-            afterContext: afterCtx,
-          ));
+          matches.add(
+            SearchMatch(
+              filePath: filePath,
+              lineNumber: i + 1,
+              column: m.start,
+              matchLength: m.end - m.start,
+              lineContent: lines[i],
+              beforeContext: beforeCtx,
+              afterContext: afterCtx,
+            ),
+          );
         }
       }
     }
@@ -348,7 +349,12 @@ class SearchService {
     SearchOptions options, {
     String? targetPath,
   }) async {
-    final result = await search(pattern, scope, options, targetPath: targetPath);
+    final result = await search(
+      pattern,
+      scope,
+      options,
+      targetPath: targetPath,
+    );
     final preview = <String, List<ReplacementPreview>>{};
     var count = 0;
     final regex = _buildRegex(pattern, options);
@@ -356,13 +362,15 @@ class SearchService {
     for (final match in result.matches) {
       final replaced = match.lineContent.replaceAll(regex, replacement);
       if (replaced != match.lineContent) {
-        preview.putIfAbsent(match.filePath, () => []).add(
-          ReplacementPreview(
-            lineNumber: match.lineNumber,
-            originalLine: match.lineContent,
-            replacedLine: replaced,
-          ),
-        );
+        preview
+            .putIfAbsent(match.filePath, () => [])
+            .add(
+              ReplacementPreview(
+                lineNumber: match.lineNumber,
+                originalLine: match.lineContent,
+                replacedLine: replaced,
+              ),
+            );
         count++;
       }
     }
@@ -418,10 +426,16 @@ class SearchService {
 
     // Patterns for common Dart declarations.
     final patterns = <SymbolKind, RegExp>{
-      SymbolKind.classType: RegExp(r'^\s*(?:abstract\s+)?class\s+(' + _escRe(name) + r')\b'),
-      SymbolKind.function: RegExp(r'^\s*\w[\w<>,\s]*\s+(' + _escRe(name) + r')\s*\('),
+      SymbolKind.classType: RegExp(
+        r'^\s*(?:abstract\s+)?class\s+(' + _escRe(name) + r')\b',
+      ),
+      SymbolKind.function: RegExp(
+        r'^\s*\w[\w<>,\s]*\s+(' + _escRe(name) + r')\s*\(',
+      ),
       SymbolKind.enumType: RegExp(r'^\s*enum\s+(' + _escRe(name) + r')\b'),
-      SymbolKind.variable: RegExp(r'^\s*(?:final|var|const|late)\s+\w+\s+(' + _escRe(name) + r')\b'),
+      SymbolKind.variable: RegExp(
+        r'^\s*(?:final|var|const|late)\s+\w+\s+(' + _escRe(name) + r')\b',
+      ),
       SymbolKind.typeAlias: RegExp(r'^\s*typedef\s+(' + _escRe(name) + r')\b'),
     };
 
@@ -446,7 +460,9 @@ class SearchService {
 
       for (var i = 0; i < lines.length; i++) {
         // Track containing class/enum.
-        final classMatch = RegExp(r'^\s*(?:abstract\s+)?class\s+(\w+)').firstMatch(lines[i]);
+        final classMatch = RegExp(
+          r'^\s*(?:abstract\s+)?class\s+(\w+)',
+        ).firstMatch(lines[i]);
         if (classMatch != null) currentContainer = classMatch.group(1);
 
         for (final entry in activePatterns.entries) {
@@ -454,13 +470,17 @@ class SearchService {
           if (re == null) continue;
           final m = re.firstMatch(lines[i]);
           if (m != null) {
-            results.add(SymbolMatch(
-              name: m.group(1)!,
-              kind: entry.key,
-              file: filePath,
-              line: i + 1,
-              containerName: entry.key != SymbolKind.classType ? currentContainer : null,
-            ));
+            results.add(
+              SymbolMatch(
+                name: m.group(1)!,
+                kind: entry.key,
+                file: filePath,
+                line: i + 1,
+                containerName: entry.key != SymbolKind.classType
+                    ? currentContainer
+                    : null,
+              ),
+            );
           }
         }
       }
@@ -553,7 +573,12 @@ class SearchService {
 
       if (result.exitCode != 0 && result.exitCode != 1) {
         // Exit code 1 = no matches; other codes are errors.
-        throw ProcessException('rg', args, result.stderr.toString(), result.exitCode);
+        throw ProcessException(
+          'rg',
+          args,
+          result.stderr.toString(),
+          result.exitCode,
+        );
       }
 
       final matches = <SearchMatch>[];
@@ -568,22 +593,26 @@ class SearchService {
 
           if (type == 'match') {
             final data = json['data'] as Map<String, dynamic>;
-            final path = (data['path'] as Map<String, dynamic>)['text'] as String;
+            final path =
+                (data['path'] as Map<String, dynamic>)['text'] as String;
             final lineNum = data['line_number'] as int;
-            final lineText = (data['lines'] as Map<String, dynamic>)['text'] as String;
+            final lineText =
+                (data['lines'] as Map<String, dynamic>)['text'] as String;
             final submatches = data['submatches'] as List<dynamic>;
 
             seenFiles.add(path);
 
             for (final sub in submatches) {
               final s = sub as Map<String, dynamic>;
-              matches.add(SearchMatch(
-                filePath: path,
-                lineNumber: lineNum,
-                column: s['start'] as int,
-                matchLength: (s['end'] as int) - (s['start'] as int),
-                lineContent: lineText.trimRight(),
-              ));
+              matches.add(
+                SearchMatch(
+                  filePath: path,
+                  lineNumber: lineNum,
+                  column: s['start'] as int,
+                  matchLength: (s['end'] as int) - (s['start'] as int),
+                  lineContent: lineText.trimRight(),
+                ),
+              );
             }
           } else if (type == 'summary') {
             final data = json['data'] as Map<String, dynamic>;
@@ -738,12 +767,14 @@ class SearchService {
   void _addToHistory(String pattern, SearchScope scope, SearchOptions options) {
     // Remove duplicate.
     _history.removeWhere((e) => e.pattern == pattern && !e.pinned);
-    _history.add(SearchHistoryEntry(
-      pattern: pattern,
-      scope: scope,
-      options: options,
-      timestamp: DateTime.now(),
-    ));
+    _history.add(
+      SearchHistoryEntry(
+        pattern: pattern,
+        scope: scope,
+        options: options,
+        timestamp: DateTime.now(),
+      ),
+    );
     // Trim to max size (keep pinned).
     while (_history.length > maxHistorySize) {
       final idx = _history.indexWhere((e) => !e.pinned);

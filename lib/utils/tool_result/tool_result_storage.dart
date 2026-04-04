@@ -1,9 +1,10 @@
 /// Utility for persisting large tool results to disk instead of truncating them.
 ///
-/// Ported from openneomclaw/src/utils/toolResultStorage.ts (1040 LOC).
+/// Ported from neom_claw/src/utils/toolResultStorage.ts (1040 LOC).
 ///
 /// Manages tool result persistence, content replacement budgets, and
 /// per-message aggregate enforcement to keep prompt sizes manageable.
+library;
 
 import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
@@ -133,8 +134,8 @@ class ContentReplacementState {
   ContentReplacementState({
     Set<String>? seenIds,
     Map<String, String>? replacements,
-  })  : seenIds = seenIds ?? {},
-        replacements = replacements ?? {};
+  }) : seenIds = seenIds ?? {},
+       replacements = replacements ?? {};
 
   final Set<String> seenIds;
   final Map<String, String> replacements;
@@ -147,7 +148,8 @@ ContentReplacementState createContentReplacementState() {
 
 /// Clone replacement state for a cache-sharing fork.
 ContentReplacementState cloneContentReplacementState(
-    ContentReplacementState source) {
+  ContentReplacementState source,
+) {
   return ContentReplacementState(
     seenIds: Set<String>.from(source.seenIds),
     replacements: Map<String, String>.from(source.replacements),
@@ -185,10 +187,10 @@ class ContentReplacementRecord {
   }
 
   Map<String, dynamic> toJson() => {
-        'kind': kind,
-        'toolUseId': toolUseId,
-        'replacement': replacement,
-      };
+    'kind': kind,
+    'toolUseId': toolUseId,
+    'replacement': replacement,
+  };
 
   factory ContentReplacementRecord.fromJson(Map<String, dynamic> json) {
     return ContentReplacementRecord(
@@ -205,10 +207,7 @@ class ContentReplacementRecord {
 
 /// Simplified message representation for budget enforcement.
 class Message {
-  Message({
-    required this.type,
-    required this.message,
-  });
+  Message({required this.type, required this.message});
 
   final String type;
   final MessageContent message;
@@ -216,10 +215,7 @@ class Message {
 
 /// Simplified message content.
 class MessageContent {
-  MessageContent({
-    required this.content,
-    this.id = '',
-  });
+  MessageContent({required this.content, this.id = ''});
 
   final String id;
   final List<dynamic> content;
@@ -304,10 +300,7 @@ class ToolResultStorage extends SintController {
   // -------------------------------------------------------------------------
 
   /// Resolve the effective persistence threshold for a tool.
-  int getPersistenceThreshold(
-    String toolName,
-    int declaredMaxResultSizeChars,
-  ) {
+  int getPersistenceThreshold(String toolName, int declaredMaxResultSizeChars) {
     // Infinity = hard opt-out.
     if (declaredMaxResultSizeChars == -1 ||
         declaredMaxResultSizeChars >= (1 << 30)) {
@@ -338,15 +331,12 @@ class ToolResultStorage extends SintController {
   // -------------------------------------------------------------------------
 
   /// Persist a tool result to disk and return information about the persisted file.
-  Future<Object> persistToolResult(
-    dynamic content,
-    String toolUseId,
-  ) async {
+  Future<Object> persistToolResult(dynamic content, String toolUseId) async {
     final isJson = content is List;
 
     // Check for non-text content.
     if (isJson) {
-      final hasNonTextContent = (content as List).any(
+      final hasNonTextContent = (content).any(
         (block) => block is Map && block['type'] != 'text',
       );
       if (hasNonTextContent) {
@@ -391,7 +381,8 @@ class ToolResultStorage extends SintController {
     final sb = StringBuffer();
     sb.writeln(persistedOutputTag);
     sb.writeln(
-        'Output too large (${_formatFileSize(result.originalSize)}). Full output saved to: ${result.filepath}');
+      'Output too large (${_formatFileSize(result.originalSize)}). Full output saved to: ${result.filepath}',
+    );
     sb.writeln();
     sb.writeln('Preview (first ${_formatFileSize(previewSizeBytes)}):');
     sb.write(result.preview);
@@ -458,8 +449,7 @@ class ToolResultStorage extends SintController {
   /// Check if content contains image blocks.
   static bool _hasImageBlock(dynamic content) {
     if (content is List) {
-      return content.any(
-          (b) => b is Map && b['type'] == 'image');
+      return content.any((b) => b is Map && b['type'] == 'image');
     }
     return false;
   }
@@ -539,8 +529,9 @@ class ToolResultStorage extends SintController {
     final truncated = content.substring(0, maxBytes);
     final lastNewline = truncated.lastIndexOf('\n');
 
-    final cutPoint =
-        lastNewline > (maxBytes * 0.5).round() ? lastNewline : maxBytes;
+    final cutPoint = lastNewline > (maxBytes * 0.5).round()
+        ? lastNewline
+        : maxBytes;
 
     return (preview: content.substring(0, cutPoint), hasMore: true);
   }
@@ -580,7 +571,8 @@ class ToolResultStorage extends SintController {
 
   /// Extract candidate tool_result blocks from a single user message.
   static List<_ToolResultCandidate> _collectCandidatesFromMessage(
-      Message message) {
+    Message message,
+  ) {
     if (message.type != 'user') return [];
     final candidates = <_ToolResultCandidate>[];
     for (final block in message.message.content) {
@@ -590,18 +582,21 @@ class ToolResultStorage extends SintController {
       if (content == null) continue;
       if (_isContentAlreadyCompacted(content)) continue;
       if (_hasImageBlock(content)) continue;
-      candidates.add(_ToolResultCandidate(
-        toolUseId: block['tool_use_id'] as String,
-        content: content,
-        size: _contentSize(content),
-      ));
+      candidates.add(
+        _ToolResultCandidate(
+          toolUseId: block['tool_use_id'] as String,
+          content: content,
+          size: _contentSize(content),
+        ),
+      );
     }
     return candidates;
   }
 
   /// Extract candidate tool_result blocks grouped by API-level user message.
   static List<List<_ToolResultCandidate>> _collectCandidatesByMessage(
-      List<Message> messages) {
+    List<Message> messages,
+  ) {
     final groups = <List<_ToolResultCandidate>>[];
     var current = <_ToolResultCandidate>[];
     final seenAsstIds = <String>{};
@@ -655,12 +650,14 @@ class ToolResultStorage extends SintController {
     for (final c in candidates) {
       final replacement = state.replacements[c.toolUseId];
       if (replacement != null) {
-        mustReapply.add(_ReapplyCandidate(
-          toolUseId: c.toolUseId,
-          content: c.content,
-          size: c.size,
-          replacement: replacement,
-        ));
+        mustReapply.add(
+          _ReapplyCandidate(
+            toolUseId: c.toolUseId,
+            content: c.content,
+            size: c.size,
+            replacement: replacement,
+          ),
+        );
       } else if (state.seenIds.contains(c.toolUseId)) {
         frozen.add(c);
       } else {
@@ -669,7 +666,10 @@ class ToolResultStorage extends SintController {
     }
 
     return _CandidatePartition(
-        mustReapply: mustReapply, frozen: frozen, fresh: fresh);
+      mustReapply: mustReapply,
+      frozen: frozen,
+      fresh: fresh,
+    );
   }
 
   /// Pick the largest fresh results to replace until under budget.
@@ -730,15 +730,18 @@ class ToolResultStorage extends SintController {
   // -------------------------------------------------------------------------
 
   /// Enforce the per-message budget on aggregate tool result size.
-  Future<({List<Message> messages, List<ContentReplacementRecord> newlyReplaced})>
-      enforceToolResultBudget(
+  Future<
+    ({List<Message> messages, List<ContentReplacementRecord> newlyReplaced})
+  >
+  enforceToolResultBudget(
     List<Message> messages,
     ContentReplacementState state, {
     Set<String> skipToolNames = const {},
   }) async {
     final candidatesByMessage = _collectCandidatesByMessage(messages);
-    final nameByToolUseId =
-        skipToolNames.isNotEmpty ? _buildToolNameMap(messages) : null;
+    final nameByToolUseId = skipToolNames.isNotEmpty
+        ? _buildToolNameMap(messages)
+        : null;
 
     bool shouldSkip(String id) {
       if (nameByToolUseId == null) return false;
@@ -769,11 +772,11 @@ class ToolResultStorage extends SintController {
       for (final c in skipped) {
         state.seenIds.add(c.toolUseId);
       }
-      final eligible =
-          partition.fresh.where((c) => !shouldSkip(c.toolUseId)).toList();
+      final eligible = partition.fresh
+          .where((c) => !shouldSkip(c.toolUseId))
+          .toList();
 
-      final frozenSize =
-          partition.frozen.fold<int>(0, (s, c) => s + c.size);
+      final frozenSize = partition.frozen.fold<int>(0, (s, c) => s + c.size);
       final freshSize = eligible.fold<int>(0, (s, c) => s + c.size);
 
       final selected = (frozenSize + freshSize) > limit
@@ -799,17 +802,21 @@ class ToolResultStorage extends SintController {
     final newlyReplaced = <ContentReplacementRecord>[];
     for (final candidate in toPersist) {
       state.seenIds.add(candidate.toolUseId);
-      final result =
-          await persistToolResult(candidate.content, candidate.toolUseId);
+      final result = await persistToolResult(
+        candidate.content,
+        candidate.toolUseId,
+      );
       if (result is PersistToolResultError) continue;
       final persisted = result as PersistedToolResult;
       final replacementContent = buildLargeToolResultMessage(persisted);
       replacementMap[candidate.toolUseId] = replacementContent;
       state.replacements[candidate.toolUseId] = replacementContent;
-      newlyReplaced.add(ContentReplacementRecord.toolResult(
-        toolUseId: candidate.toolUseId,
-        replacement: replacementContent,
-      ));
+      newlyReplaced.add(
+        ContentReplacementRecord.toolResult(
+          toolUseId: candidate.toolUseId,
+          replacement: replacementContent,
+        ),
+      );
     }
 
     if (replacementMap.isEmpty) {
@@ -856,10 +863,9 @@ class ToolResultStorage extends SintController {
     Map<String, String>? inheritedReplacements,
   }) {
     final state = createContentReplacementState();
-    final candidateIds = _collectCandidatesByMessage(messages)
-        .expand((g) => g)
-        .map((c) => c.toolUseId)
-        .toSet();
+    final candidateIds = _collectCandidatesByMessage(
+      messages,
+    ).expand((g) => g).map((c) => c.toolUseId).toSet();
 
     for (final id in candidateIds) {
       state.seenIds.add(id);

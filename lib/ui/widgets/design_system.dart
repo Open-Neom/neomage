@@ -254,50 +254,22 @@ class ClawShadows {
   ClawShadows._();
 
   static const sm = [
-    BoxShadow(
-      color: Color(0x1A000000),
-      blurRadius: 3,
-      offset: Offset(0, 1),
-    ),
+    BoxShadow(color: Color(0x1A000000), blurRadius: 3, offset: Offset(0, 1)),
   ];
 
   static const md = [
-    BoxShadow(
-      color: Color(0x1F000000),
-      blurRadius: 6,
-      offset: Offset(0, 2),
-    ),
-    BoxShadow(
-      color: Color(0x0F000000),
-      blurRadius: 2,
-      offset: Offset(0, 1),
-    ),
+    BoxShadow(color: Color(0x1F000000), blurRadius: 6, offset: Offset(0, 2)),
+    BoxShadow(color: Color(0x0F000000), blurRadius: 2, offset: Offset(0, 1)),
   ];
 
   static const lg = [
-    BoxShadow(
-      color: Color(0x26000000),
-      blurRadius: 15,
-      offset: Offset(0, 4),
-    ),
-    BoxShadow(
-      color: Color(0x0D000000),
-      blurRadius: 6,
-      offset: Offset(0, 2),
-    ),
+    BoxShadow(color: Color(0x26000000), blurRadius: 15, offset: Offset(0, 4)),
+    BoxShadow(color: Color(0x0D000000), blurRadius: 6, offset: Offset(0, 2)),
   ];
 
   static const xl = [
-    BoxShadow(
-      color: Color(0x33000000),
-      blurRadius: 25,
-      offset: Offset(0, 8),
-    ),
-    BoxShadow(
-      color: Color(0x14000000),
-      blurRadius: 10,
-      offset: Offset(0, 4),
-    ),
+    BoxShadow(color: Color(0x33000000), blurRadius: 25, offset: Offset(0, 8)),
+    BoxShadow(color: Color(0x14000000), blurRadius: 10, offset: Offset(0, 4)),
   ];
 }
 
@@ -342,7 +314,10 @@ class ClawTheme {
         filled: true,
         fillColor: ClawColors.lightElevated,
         border: OutlineInputBorder(borderRadius: ClawRadius.borderMd),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
       ),
       dividerTheme: const DividerThemeData(
         color: ClawColors.lightBorder,
@@ -391,7 +366,10 @@ class ClawTheme {
         filled: true,
         fillColor: ClawColors.darkElevated,
         border: OutlineInputBorder(borderRadius: ClawRadius.borderMd),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
       ),
       dividerTheme: const DividerThemeData(
         color: ClawColors.darkBorder,
@@ -440,33 +418,31 @@ class ClawButton extends StatelessWidget {
 
     final (bgColor, fgColor, borderColor) = switch (variant) {
       ClawButtonVariant.primary => (
-          ClawColors.amber,
-          Colors.white,
-          ClawColors.amber,
-        ),
+        ClawColors.amber,
+        Colors.white,
+        ClawColors.amber,
+      ),
       ClawButtonVariant.secondary => (
-          isDark ? ClawColors.darkElevated : ClawColors.lightElevated,
-          isDark ? ClawColors.darkTextPrimary : ClawColors.lightTextPrimary,
-          isDark ? ClawColors.darkBorder : ClawColors.lightBorder,
-        ),
+        isDark ? ClawColors.darkElevated : ClawColors.lightElevated,
+        isDark ? ClawColors.darkTextPrimary : ClawColors.lightTextPrimary,
+        isDark ? ClawColors.darkBorder : ClawColors.lightBorder,
+      ),
       ClawButtonVariant.ghost => (
-          Colors.transparent,
-          isDark ? ClawColors.darkTextSecondary : ClawColors.lightTextSecondary,
-          Colors.transparent,
-        ),
+        Colors.transparent,
+        isDark ? ClawColors.darkTextSecondary : ClawColors.lightTextSecondary,
+        Colors.transparent,
+      ),
       ClawButtonVariant.danger => (
-          ClawColors.error,
-          Colors.white,
-          ClawColors.error,
-        ),
+        ClawColors.error,
+        Colors.white,
+        ClawColors.error,
+      ),
     };
 
     final style = ButtonStyle(
       backgroundColor: WidgetStatePropertyAll(bgColor),
       foregroundColor: WidgetStatePropertyAll(fgColor),
-      side: WidgetStatePropertyAll(
-        BorderSide(color: borderColor, width: 0.5),
-      ),
+      side: WidgetStatePropertyAll(BorderSide(color: borderColor, width: 0.5)),
       padding: WidgetStatePropertyAll(
         compact
             ? const EdgeInsets.symmetric(horizontal: 10, vertical: 6)
@@ -485,10 +461,7 @@ class ClawButton extends StatelessWidget {
         ? SizedBox(
             width: compact ? 14 : 18,
             height: compact ? 14 : 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: fgColor,
-            ),
+            child: CircularProgressIndicator(strokeWidth: 2, color: fgColor),
           )
         : Row(
             mainAxisSize: MainAxisSize.min,
@@ -536,8 +509,9 @@ class ClawIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final defaultColor =
-        isDark ? ClawColors.darkTextSecondary : ClawColors.lightTextSecondary;
+    final defaultColor = isDark
+        ? ClawColors.darkTextSecondary
+        : ClawColors.lightTextSecondary;
 
     return Tooltip(
       message: tooltip,
@@ -552,7 +526,9 @@ class ClawIconButton extends StatelessWidget {
             child: Icon(
               icon,
               size: size,
-              color: onPressed != null ? (color ?? defaultColor) : defaultColor.withValues(alpha: 0.4),
+              color: onPressed != null
+                  ? (color ?? defaultColor)
+                  : defaultColor.withValues(alpha: 0.4),
             ),
           ),
         ),
@@ -588,18 +564,16 @@ class ClawCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final bg = backgroundColor ??
+    final bg =
+        backgroundColor ??
         (isDark ? ClawColors.darkCard : ClawColors.lightCard);
-    final border =
-        isDark ? ClawColors.darkBorder : ClawColors.lightBorder;
+    final border = isDark ? ClawColors.darkBorder : ClawColors.lightBorder;
 
     return Container(
       decoration: BoxDecoration(
         color: bg,
         borderRadius: ClawRadius.borderLg,
-        border: hasBorder
-            ? Border.all(color: border, width: 0.5)
-            : null,
+        border: hasBorder ? Border.all(color: border, width: 0.5) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -612,16 +586,11 @@ class ClawCard extends StatelessWidget {
                 vertical: ClawSpacing.md,
               ),
               decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: border, width: 0.5),
-                ),
+                border: Border(bottom: BorderSide(color: border, width: 0.5)),
               ),
               child: header!,
             ),
-          Padding(
-            padding: padding ?? ClawSpacing.cardPadding,
-            child: child,
-          ),
+          Padding(padding: padding ?? ClawSpacing.cardPadding, child: child),
           if (footer != null)
             Container(
               padding: const EdgeInsets.symmetric(
@@ -629,9 +598,7 @@ class ClawCard extends StatelessWidget {
                 vertical: ClawSpacing.md,
               ),
               decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: border, width: 0.5),
-                ),
+                border: Border(top: BorderSide(color: border, width: 0.5)),
               ),
               child: footer!,
             ),
@@ -666,25 +633,25 @@ class ClawBadge extends StatelessWidget {
 
     final (fg, bg) = switch (variant) {
       ClawBadgeVariant.success => (
-          ClawColors.success,
-          isDark ? ClawColors.successBg : ClawColors.successLightBg,
-        ),
+        ClawColors.success,
+        isDark ? ClawColors.successBg : ClawColors.successLightBg,
+      ),
       ClawBadgeVariant.warning => (
-          ClawColors.warning,
-          isDark ? ClawColors.warningBg : ClawColors.warningLightBg,
-        ),
+        ClawColors.warning,
+        isDark ? ClawColors.warningBg : ClawColors.warningLightBg,
+      ),
       ClawBadgeVariant.error => (
-          ClawColors.error,
-          isDark ? ClawColors.errorBg : ClawColors.errorLightBg,
-        ),
+        ClawColors.error,
+        isDark ? ClawColors.errorBg : ClawColors.errorLightBg,
+      ),
       ClawBadgeVariant.info => (
-          ClawColors.info,
-          isDark ? ClawColors.infoBg : ClawColors.infoLightBg,
-        ),
+        ClawColors.info,
+        isDark ? ClawColors.infoBg : ClawColors.infoLightBg,
+      ),
       ClawBadgeVariant.neutral => (
-          isDark ? ClawColors.darkTextSecondary : ClawColors.lightTextSecondary,
-          isDark ? ClawColors.darkElevated : ClawColors.lightElevated,
-        ),
+        isDark ? ClawColors.darkTextSecondary : ClawColors.lightTextSecondary,
+        isDark ? ClawColors.darkElevated : ClawColors.lightElevated,
+      ),
     };
 
     return Container(
@@ -738,7 +705,8 @@ class ClawChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final chipColor = color ??
+    final chipColor =
+        color ??
         (isDark ? ClawColors.darkTextSecondary : ClawColors.lightTextSecondary);
     final bg = isDark ? ClawColors.darkElevated : ClawColors.lightElevated;
 
@@ -856,9 +824,11 @@ class ClawAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = backgroundColor ??
+    final bg =
+        backgroundColor ??
         (isDark ? ClawColors.darkElevated : ClawColors.lightElevated);
-    final fg = foregroundColor ??
+    final fg =
+        foregroundColor ??
         (isDark ? ClawColors.darkTextPrimary : ClawColors.lightTextPrimary);
 
     return Container(
@@ -888,7 +858,9 @@ class ClawAvatar extends StatelessWidget {
 
   Widget _fallback(Color fg) {
     if (icon != null) {
-      return Center(child: Icon(icon, size: size * 0.55, color: fg));
+      return Center(
+        child: Icon(icon, size: size * 0.55, color: fg),
+      );
     }
     final initials = (label ?? '?')
         .split(' ')
@@ -959,13 +931,10 @@ class _ClawLoadingIndicatorState extends State<ClawLoadingIndicator>
 
     final indicator = switch (widget.style) {
       ClawLoadingStyle.spinner => SizedBox(
-          width: widget.size,
-          height: widget.size,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: effectiveColor,
-          ),
-        ),
+        width: widget.size,
+        height: widget.size,
+        child: CircularProgressIndicator(strokeWidth: 2, color: effectiveColor),
+      ),
       ClawLoadingStyle.dots => _buildDots(effectiveColor),
       ClawLoadingStyle.shimmer => _buildShimmer(effectiveColor),
     };
@@ -1003,10 +972,7 @@ class _ClawLoadingIndicatorState extends State<ClawLoadingIndicator>
               child: Container(
                 width: widget.size * 0.28,
                 height: widget.size * 0.28,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
             ),
           );
@@ -1080,13 +1046,10 @@ class _ClawToastState extends State<ClawToast>
       vsync: this,
       duration: const Duration(milliseconds: 250),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
     _animController.forward();
     _autoDismiss = Timer(widget.duration, _dismiss);
   }
@@ -1190,8 +1153,7 @@ class ClawDialog extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(
-      backgroundColor:
-          isDark ? ClawColors.darkCard : ClawColors.lightCard,
+      backgroundColor: isDark ? ClawColors.darkCard : ClawColors.lightCard,
       shape: RoundedRectangleBorder(borderRadius: ClawRadius.borderLg),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
@@ -1242,10 +1204,11 @@ class ClawDialog extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: actions
-                      .expand((w) => [w, const SizedBox(width: 8)])
-                      .toList()
-                    ..removeLast(),
+                  children:
+                      actions
+                          .expand((w) => [w, const SizedBox(width: 8)])
+                          .toList()
+                        ..removeLast(),
                 ),
               ),
             ] else
@@ -1283,14 +1246,12 @@ class ClawDropdown<T> extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? ClawColors.darkElevated : ClawColors.lightElevated;
     final border = isDark ? ClawColors.darkBorder : ClawColors.lightBorder;
-    final textColor =
-        isDark ? ClawColors.darkTextPrimary : ClawColors.lightTextPrimary;
+    final textColor = isDark
+        ? ClawColors.darkTextPrimary
+        : ClawColors.lightTextPrimary;
 
     return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: dense ? 2 : 4,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: dense ? 2 : 4),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: ClawRadius.borderMd,
@@ -1314,23 +1275,26 @@ class ClawDropdown<T> extends StatelessWidget {
                 )
               : null,
           items: items
-              .map((item) => DropdownMenuItem<T>(
-                    value: item.value,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (item.icon != null) ...[
-                          Icon(item.icon, size: 16, color: textColor),
-                          const SizedBox(width: 6),
-                        ],
-                        Text(
-                          item.label,
-                          style: ClawTypography.bodyMedium
-                              .copyWith(color: textColor),
-                        ),
+              .map(
+                (item) => DropdownMenuItem<T>(
+                  value: item.value,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (item.icon != null) ...[
+                        Icon(item.icon, size: 16, color: textColor),
+                        const SizedBox(width: 6),
                       ],
-                    ),
-                  ))
+                      Text(
+                        item.label,
+                        style: ClawTypography.bodyMedium.copyWith(
+                          color: textColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
               .toList(),
           onChanged: onChanged,
         ),
@@ -1344,11 +1308,7 @@ class ClawDropdownItem<T> {
   final String label;
   final IconData? icon;
 
-  const ClawDropdownItem({
-    required this.value,
-    required this.label,
-    this.icon,
-  });
+  const ClawDropdownItem({required this.value, required this.label, this.icon});
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1393,20 +1353,19 @@ class ClawTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor =
-        isDark ? ClawColors.darkTextPrimary : ClawColors.lightTextPrimary;
-    final hintColor =
-        isDark ? ClawColors.darkTextTertiary : ClawColors.lightTextTertiary;
+    final textColor = isDark
+        ? ClawColors.darkTextPrimary
+        : ClawColors.lightTextPrimary;
+    final hintColor = isDark
+        ? ClawColors.darkTextTertiary
+        : ClawColors.lightTextTertiary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         if (label != null) ...[
-          Text(
-            label!,
-            style: ClawTypography.label.copyWith(color: textColor),
-          ),
+          Text(label!, style: ClawTypography.label.copyWith(color: textColor)),
           const SizedBox(height: 6),
         ],
         TextField(
@@ -1424,13 +1383,12 @@ class ClawTextField extends StatelessWidget {
             hintText: hint,
             hintStyle: ClawTypography.bodyMedium.copyWith(color: hintColor),
             errorText: errorText,
-            prefixIcon: prefixIcon != null
-                ? Icon(prefixIcon, size: 18)
-                : null,
+            prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18) : null,
             suffix: suffix,
             filled: true,
-            fillColor:
-                isDark ? ClawColors.darkElevated : ClawColors.lightElevated,
+            fillColor: isDark
+                ? ClawColors.darkElevated
+                : ClawColors.lightElevated,
             border: OutlineInputBorder(
               borderRadius: ClawRadius.borderMd,
               borderSide: BorderSide(
@@ -1447,17 +1405,11 @@ class ClawTextField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: ClawRadius.borderMd,
-              borderSide: const BorderSide(
-                color: ClawColors.amber,
-                width: 1,
-              ),
+              borderSide: const BorderSide(color: ClawColors.amber, width: 1),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: ClawRadius.borderMd,
-              borderSide: const BorderSide(
-                color: ClawColors.error,
-                width: 1,
-              ),
+              borderSide: const BorderSide(color: ClawColors.error, width: 1),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -1558,7 +1510,9 @@ class ClawTooltipWrapper extends StatelessWidget {
       message: message,
       preferBelow: preferBelow,
       decoration: BoxDecoration(
-        color: isDark ? ClawColors.darkTextPrimary : ClawColors.lightTextPrimary,
+        color: isDark
+            ? ClawColors.darkTextPrimary
+            : ClawColors.lightTextPrimary,
         borderRadius: ClawRadius.borderSm,
         boxShadow: ClawShadows.md,
       ),
@@ -1595,10 +1549,12 @@ class ClawEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final mutedColor =
-        isDark ? ClawColors.darkTextTertiary : ClawColors.lightTextTertiary;
-    final textColor =
-        isDark ? ClawColors.darkTextSecondary : ClawColors.lightTextSecondary;
+    final mutedColor = isDark
+        ? ClawColors.darkTextTertiary
+        : ClawColors.lightTextTertiary;
+    final textColor = isDark
+        ? ClawColors.darkTextSecondary
+        : ClawColors.lightTextSecondary;
 
     return Center(
       child: Padding(
@@ -1684,10 +1640,7 @@ class _ClawCodeBlockState extends State<ClawCodeBlock> {
       decoration: BoxDecoration(
         color: ClawColors.codeBg,
         borderRadius: ClawRadius.borderMd,
-        border: Border.all(
-          color: ClawColors.darkBorder,
-          width: 0.5,
-        ),
+        border: Border.all(color: ClawColors.darkBorder, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1761,8 +1714,7 @@ class _ClawCodeBlockState extends State<ClawCodeBlock> {
                             textAlign: TextAlign.right,
                           ),
                         ),
-                      if (widget.showLineNumbers)
-                        const SizedBox(width: 12),
+                      if (widget.showLineNumbers) const SizedBox(width: 12),
                       Text(
                         displayLines[i],
                         style: ClawTypography.codeMedium.copyWith(

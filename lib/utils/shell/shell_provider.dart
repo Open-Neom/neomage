@@ -28,15 +28,9 @@ ShellConfig detectShell({Map<String, String>? env}) {
   if (Platform.isWindows) {
     final comspec = environment['COMSPEC'];
     if (comspec != null && comspec.toLowerCase().contains('powershell')) {
-      return ShellConfig(
-        type: ShellType.powershell,
-        shellPath: comspec,
-      );
+      return ShellConfig(type: ShellType.powershell, shellPath: comspec);
     }
-    return ShellConfig(
-      type: ShellType.cmd,
-      shellPath: comspec ?? 'cmd.exe',
-    );
+    return ShellConfig(type: ShellType.cmd, shellPath: comspec ?? 'cmd.exe');
   }
 
   final shell = environment['SHELL'] ?? '/bin/sh';
@@ -107,23 +101,66 @@ Map<String, String> buildEnvironment(
 /// Safe git subcommands for read-only mode.
 const safeGitSubcommands = <String, Set<String>>{
   'log': {
-    '--oneline', '--graph', '--all', '--pretty', '--format', '--stat',
-    '--shortstat', '--name-only', '--name-status', '--numstat',
-    '--author', '--since', '--until', '--grep', '-n', '--follow',
-    '--diff-filter', '--no-merges', '--merges', '--first-parent',
-    '--ancestry-path', '--topo-order', '--date-order',
+    '--oneline',
+    '--graph',
+    '--all',
+    '--pretty',
+    '--format',
+    '--stat',
+    '--shortstat',
+    '--name-only',
+    '--name-status',
+    '--numstat',
+    '--author',
+    '--since',
+    '--until',
+    '--grep',
+    '-n',
+    '--follow',
+    '--diff-filter',
+    '--no-merges',
+    '--merges',
+    '--first-parent',
+    '--ancestry-path',
+    '--topo-order',
+    '--date-order',
   },
   'show': {
-    '--stat', '--name-only', '--name-status', '--format', '--pretty',
-    '--no-patch', '--raw', '--word-diff',
+    '--stat',
+    '--name-only',
+    '--name-status',
+    '--format',
+    '--pretty',
+    '--no-patch',
+    '--raw',
+    '--word-diff',
   },
   'diff': {
-    '--stat', '--shortstat', '--name-only', '--name-status', '--numstat',
-    '--no-color', '--color', '--word-diff', '--unified', '--cached',
-    '--staged', '-U',
+    '--stat',
+    '--shortstat',
+    '--name-only',
+    '--name-status',
+    '--numstat',
+    '--no-color',
+    '--color',
+    '--word-diff',
+    '--unified',
+    '--cached',
+    '--staged',
+    '-U',
   },
   'status': {'--short', '-s', '--porcelain', '--branch', '-b', '--untracked'},
-  'branch': {'--list', '-l', '-a', '--all', '-r', '--remote', '--verbose', '-v', '--contains'},
+  'branch': {
+    '--list',
+    '-l',
+    '-a',
+    '--all',
+    '-r',
+    '--remote',
+    '--verbose',
+    '-v',
+    '--contains',
+  },
   'tag': {'--list', '-l', '-n', '--contains', '--sort'},
   'remote': {'show', '-v', '--verbose'},
   'blame': {'--date', '-e', '-w', '-M', '-C', '-L'},
@@ -142,8 +179,19 @@ const safeGitSubcommands = <String, Set<String>>{
 
 /// Safe npm/yarn/pnpm subcommands (read-only).
 const safePackageManagerSubcommands = {
-  'list', 'ls', 'info', 'view', 'show', 'outdated', 'audit',
-  'why', 'explain', 'bin', 'root', 'prefix', 'config',
+  'list',
+  'ls',
+  'info',
+  'view',
+  'show',
+  'outdated',
+  'audit',
+  'why',
+  'explain',
+  'bin',
+  'root',
+  'prefix',
+  'config',
 };
 
 /// Safe pip subcommands (read-only).
@@ -151,13 +199,27 @@ const safePipSubcommands = {'list', 'show', 'freeze', 'check'};
 
 /// Safe docker subcommands (read-only).
 const safeDockerSubcommands = {
-  'inspect', 'images', 'ps', 'logs', 'port', 'top', 'stats',
-  'diff', 'history', 'version', 'info',
+  'inspect',
+  'images',
+  'ps',
+  'logs',
+  'port',
+  'top',
+  'stats',
+  'diff',
+  'history',
+  'version',
+  'info',
 };
 
 /// Safe gh (GitHub CLI) subcommands (read-only).
 const safeGhSubcommands = {
-  'view', 'list', 'status', 'diff', 'comment', 'checks',
+  'view',
+  'list',
+  'status',
+  'diff',
+  'comment',
+  'checks',
 };
 
 /// Flag argument types for read-only validation.
@@ -209,21 +271,72 @@ String? validateReadOnlyCommand(String command) {
 String? _validateReadOnlyCmd(String cmd, List<String> args) {
   // Safe inspection commands
   const alwaysSafe = {
-    'cat', 'head', 'tail', 'less', 'more', 'wc', 'stat', 'file',
-    'strings', 'xxd', 'hexdump', 'od', 'readlink', 'realpath',
-    'ls', 'tree', 'du', 'df', 'lsof',
-    'grep', 'rg', 'ag', 'ack', 'find', 'fd', 'locate',
-    'which', 'whereis', 'type', 'command',
-    'jq', 'yq', 'awk', 'cut', 'sort', 'uniq', 'tr',
-    'column', 'paste', 'comm', 'diff', 'cmp',
-    'uname', 'hostname', 'whoami', 'id', 'groups', 'date',
-    'uptime', 'free', 'ps', 'top', 'nproc', 'lscpu',
-    'env', 'printenv', 'echo', 'printf', 'true', 'false',
+    'cat',
+    'head',
+    'tail',
+    'less',
+    'more',
+    'wc',
+    'stat',
+    'file',
+    'strings',
+    'xxd',
+    'hexdump',
+    'od',
+    'readlink',
+    'realpath',
+    'ls',
+    'tree',
+    'du',
+    'df',
+    'lsof',
+    'grep',
+    'rg',
+    'ag',
+    'ack',
+    'find',
+    'fd',
+    'locate',
+    'which',
+    'whereis',
+    'type',
+    'command',
+    'jq',
+    'yq',
+    'awk',
+    'cut',
+    'sort',
+    'uniq',
+    'tr',
+    'column',
+    'paste',
+    'comm',
+    'diff',
+    'cmp',
+    'uname',
+    'hostname',
+    'whoami',
+    'id',
+    'groups',
+    'date',
+    'uptime',
+    'free',
+    'ps',
+    'top',
+    'nproc',
+    'lscpu',
+    'env',
+    'printenv',
+    'echo',
+    'printf',
+    'true',
+    'false',
   };
 
   if (alwaysSafe.contains(cmd)) {
     // Check sed for -i flag
-    if (cmd == 'sed' && (args.contains('-i') || args.any((a) => a.startsWith('-i')))) {
+    if (cmd == 'sed' &&
+        (args.contains('-i') || args.any((a) => a.startsWith('-i')))) {
       return 'sed -i (in-place edit) not allowed in read-only mode';
     }
     return null;

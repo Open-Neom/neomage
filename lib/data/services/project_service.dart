@@ -321,7 +321,8 @@ class ProjectService {
 
     while (true) {
       for (final marker in _rootMarkers) {
-        final entity = FileSystemEntity.isDirectorySync('${current.path}/$marker')
+        final entity =
+            FileSystemEntity.isDirectorySync('${current.path}/$marker')
             ? Directory('${current.path}/$marker')
             : File('${current.path}/$marker');
         if (await entity.exists()) {
@@ -377,7 +378,9 @@ class ProjectService {
     int totalBytes = 0;
     final byExtension = <String, int>{};
 
-    await for (final entity in Directory(path).list(recursive: true, followLinks: false)) {
+    await for (final entity in Directory(
+      path,
+    ).list(recursive: true, followLinks: false)) {
       if (_shouldIgnore(entity.path)) continue;
 
       if (entity is File) {
@@ -633,19 +636,26 @@ class ProjectService {
     try {
       final content = await pubspec.readAsString();
 
-      final nameMatch = RegExp(r'^name:\s*(.+)$', multiLine: true)
-          .firstMatch(content);
-      final versionMatch = RegExp(r'^version:\s*(.+)$', multiLine: true)
-          .firstMatch(content);
-      final descMatch = RegExp(r'^description:\s*(.+)$', multiLine: true)
-          .firstMatch(content);
+      final nameMatch = RegExp(
+        r'^name:\s*(.+)$',
+        multiLine: true,
+      ).firstMatch(content);
+      final versionMatch = RegExp(
+        r'^version:\s*(.+)$',
+        multiLine: true,
+      ).firstMatch(content);
+      final descMatch = RegExp(
+        r'^description:\s*(.+)$',
+        multiLine: true,
+      ).firstMatch(content);
 
       // Count dependencies by counting lines under the dependencies block.
       final depCount = _countYamlMapEntries(content, 'dependencies');
       final devDepCount = _countYamlMapEntries(content, 'dev_dependencies');
 
       // Detect Flutter vs pure Dart.
-      final isFlutter = content.contains('flutter:') &&
+      final isFlutter =
+          content.contains('flutter:') &&
           (content.contains('sdk: flutter') ||
               await File('$path/lib/main.dart').exists());
 
@@ -730,15 +740,11 @@ class ProjectService {
         devDependencyCount: devDeps.length,
         scripts: scripts.keys.toList(),
         entryPoints: entryPoints,
-        testCommand: scripts.containsKey('test')
-            ? '${pm.name} run test'
-            : null,
+        testCommand: scripts.containsKey('test') ? '${pm.name} run test' : null,
         buildCommand: scripts.containsKey('build')
             ? '${pm.name} run build'
             : null,
-        lintCommand: scripts.containsKey('lint')
-            ? '${pm.name} run lint'
-            : null,
+        lintCommand: scripts.containsKey('lint') ? '${pm.name} run lint' : null,
       );
     } catch (_) {
       return ProjectInfo(
@@ -754,27 +760,39 @@ class ProjectService {
     try {
       final content = await cargoToml.readAsString();
 
-      final nameMatch = RegExp(r'^name\s*=\s*"(.+?)"', multiLine: true)
-          .firstMatch(content);
-      final versionMatch = RegExp(r'^version\s*=\s*"(.+?)"', multiLine: true)
-          .firstMatch(content);
-      final descMatch = RegExp(r'^description\s*=\s*"(.+?)"', multiLine: true)
-          .firstMatch(content);
+      final nameMatch = RegExp(
+        r'^name\s*=\s*"(.+?)"',
+        multiLine: true,
+      ).firstMatch(content);
+      final versionMatch = RegExp(
+        r'^version\s*=\s*"(.+?)"',
+        multiLine: true,
+      ).firstMatch(content);
+      final descMatch = RegExp(
+        r'^description\s*=\s*"(.+?)"',
+        multiLine: true,
+      ).firstMatch(content);
 
-      final depSection = RegExp(r'\[dependencies\]([^[]*)', dotAll: true)
-          .firstMatch(content);
+      final depSection = RegExp(
+        r'\[dependencies\]([^[]*)',
+        dotAll: true,
+      ).firstMatch(content);
       final depCount = depSection != null
-          ? RegExp(r'^\w', multiLine: true)
-              .allMatches(depSection.group(1)!)
-              .length
+          ? RegExp(
+              r'^\w',
+              multiLine: true,
+            ).allMatches(depSection.group(1)!).length
           : 0;
 
-      final devDepSection = RegExp(r'\[dev-dependencies\]([^[]*)', dotAll: true)
-          .firstMatch(content);
+      final devDepSection = RegExp(
+        r'\[dev-dependencies\]([^[]*)',
+        dotAll: true,
+      ).firstMatch(content);
       final devDepCount = devDepSection != null
-          ? RegExp(r'^\w', multiLine: true)
-              .allMatches(devDepSection.group(1)!)
-              .length
+          ? RegExp(
+              r'^\w',
+              multiLine: true,
+            ).allMatches(devDepSection.group(1)!).length
           : 0;
 
       return ProjectInfo(
@@ -807,8 +825,10 @@ class ProjectService {
   Future<ProjectInfo> _detectGoProject(String path, File goMod) async {
     try {
       final content = await goMod.readAsString();
-      final moduleMatch = RegExp(r'^module\s+(\S+)', multiLine: true)
-          .firstMatch(content);
+      final moduleMatch = RegExp(
+        r'^module\s+(\S+)',
+        multiLine: true,
+      ).firstMatch(content);
 
       final moduleName = moduleMatch?.group(1) ?? _dirName(path);
       final name = moduleName.contains('/')
@@ -816,13 +836,15 @@ class ProjectService {
           : moduleName;
 
       // Count require() entries.
-      final requireBlock = RegExp(r'require\s*\((.*?)\)', dotAll: true)
-          .firstMatch(content);
+      final requireBlock = RegExp(
+        r'require\s*\((.*?)\)',
+        dotAll: true,
+      ).firstMatch(content);
       int depCount = 0;
       if (requireBlock != null) {
-        depCount = LineSplitter.split(requireBlock.group(1)!.trim())
-            .where((l) => l.trim().isNotEmpty)
-            .length;
+        depCount = LineSplitter.split(
+          requireBlock.group(1)!.trim(),
+        ).where((l) => l.trim().isNotEmpty).length;
       }
 
       return ProjectInfo(
@@ -940,8 +962,10 @@ class ProjectService {
   Future<DependencyNode> _dartDependencyTree(String path) async {
     try {
       final content = await File('$path/pubspec.yaml').readAsString();
-      final nameMatch = RegExp(r'^name:\s*(.+)$', multiLine: true)
-          .firstMatch(content);
+      final nameMatch = RegExp(
+        r'^name:\s*(.+)$',
+        multiLine: true,
+      ).firstMatch(content);
       final name = nameMatch?.group(1)?.trim() ?? _dirName(path);
 
       // Parse dependencies block.
@@ -957,12 +981,14 @@ class ProjectService {
           if (match != null) {
             final depName = match.group(1)!;
             final depVersion = match.group(2)!.trim();
-            children.add(DependencyNode(
-              name: depName,
-              version: depVersion.startsWith('^')
-                  ? depVersion.substring(1)
-                  : depVersion,
-            ));
+            children.add(
+              DependencyNode(
+                name: depName,
+                version: depVersion.startsWith('^')
+                    ? depVersion.substring(1)
+                    : depVersion,
+              ),
+            );
           }
         }
       }
@@ -982,17 +1008,15 @@ class ProjectService {
 
       final deps = data['dependencies'] as Map<String, dynamic>? ?? {};
       final children = deps.entries
-          .map((e) => DependencyNode(
-                name: e.key,
-                version: (e.value as String).replaceAll(RegExp(r'[\^~]'), ''),
-              ))
+          .map(
+            (e) => DependencyNode(
+              name: e.key,
+              version: (e.value as String).replaceAll(RegExp(r'[\^~]'), ''),
+            ),
+          )
           .toList();
 
-      return DependencyNode(
-        name: name,
-        version: version,
-        children: children,
-      );
+      return DependencyNode(name: name, version: version, children: children);
     } catch (_) {
       return DependencyNode(name: _dirName(path));
     }
@@ -1039,8 +1063,9 @@ class ProjectService {
   Future<List<String>> _listFilesRecursively(String path) async {
     final files = <String>[];
     try {
-      await for (final entity
-          in Directory(path).list(recursive: true, followLinks: false)) {
+      await for (final entity in Directory(
+        path,
+      ).list(recursive: true, followLinks: false)) {
         if (entity is File && !_shouldIgnore(entity.path)) {
           // Return relative path.
           files.add(entity.path.substring(path.length + 1));

@@ -18,7 +18,8 @@ class Migration {
   final int fromVersion;
   final int toVersion;
   final String description;
-  final Future<Map<String, dynamic>> Function(Map<String, dynamic> data) migrate;
+  final Future<Map<String, dynamic>> Function(Map<String, dynamic> data)
+  migrate;
 
   const Migration({
     required this.fromVersion,
@@ -67,11 +68,14 @@ final settingsMigrations = <Migration>[
         }
       }
       // Add default sandbox settings
-      result.putIfAbsent('sandbox', () => {
-            'enabled': false,
-            'writePaths': <String>['.'],
-            'readPaths': <String>['/'],
-          });
+      result.putIfAbsent(
+        'sandbox',
+        () => {
+          'enabled': false,
+          'writePaths': <String>['.'],
+          'readPaths': <String>['/'],
+        },
+      );
       result['configVersion'] = 2;
       return result;
     },
@@ -139,10 +143,8 @@ String _remapModelName(String model) {
 }
 
 /// Run migrations on settings data.
-Future<MigrationResult> migrateSettings(
-    Map<String, dynamic> data) async {
-  final fromVersion =
-      (data['configVersion'] as int?) ?? 1;
+Future<MigrationResult> migrateSettings(Map<String, dynamic> data) async {
+  final fromVersion = (data['configVersion'] as int?) ?? 1;
   if (fromVersion >= currentConfigVersion) {
     return MigrationResult(
       success: true,
@@ -161,10 +163,12 @@ Future<MigrationResult> migrateSettings(
       try {
         current = await migration.migrate(current);
         applied.add(
-            'v${migration.fromVersion}→v${migration.toVersion}: ${migration.description}');
+          'v${migration.fromVersion}→v${migration.toVersion}: ${migration.description}',
+        );
       } catch (e) {
         errors.add(
-            'v${migration.fromVersion}→v${migration.toVersion} failed: $e');
+          'v${migration.fromVersion}→v${migration.toVersion} failed: $e',
+        );
         break;
       }
     }
@@ -180,10 +184,8 @@ Future<MigrationResult> migrateSettings(
 }
 
 /// Run migrations on session data.
-Future<MigrationResult> migrateSession(
-    Map<String, dynamic> data) async {
-  final fromVersion =
-      (data['sessionVersion'] as int?) ?? 1;
+Future<MigrationResult> migrateSession(Map<String, dynamic> data) async {
+  final fromVersion = (data['sessionVersion'] as int?) ?? 1;
   if (fromVersion >= currentSessionVersion) {
     return MigrationResult(
       success: true,
@@ -202,10 +204,12 @@ Future<MigrationResult> migrateSession(
       try {
         current = await migration.migrate(current);
         applied.add(
-            'v${migration.fromVersion}→v${migration.toVersion}: ${migration.description}');
+          'v${migration.fromVersion}→v${migration.toVersion}: ${migration.description}',
+        );
       } catch (e) {
         errors.add(
-            'v${migration.fromVersion}→v${migration.toVersion} failed: $e');
+          'v${migration.fromVersion}→v${migration.toVersion} failed: $e',
+        );
         break;
       }
     }
@@ -250,8 +254,7 @@ Future<MigrationResult> migrateSettingsFile(String path) async {
 
   final result = await migrateSettings(data);
   if (result.success) {
-    await file.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(data));
+    await file.writeAsString(const JsonEncoder.withIndent('  ').convert(data));
   }
 
   return MigrationResult(
@@ -283,12 +286,12 @@ class VersionInfo {
   });
 
   Map<String, dynamic> toJson() => {
-        'version': version,
-        'buildDate': buildDate,
-        'dartVersion': dartVersion,
-        'flutterVersion': flutterVersion,
-        'platform': platform,
-      };
+    'version': version,
+    'buildDate': buildDate,
+    'dartVersion': dartVersion,
+    'flutterVersion': flutterVersion,
+    'platform': platform,
+  };
 
   @override
   String toString() => 'Neom Claw v$version ($platform)';
@@ -304,8 +307,7 @@ class SemVer implements Comparable<SemVer> {
   const SemVer(this.major, this.minor, this.patch, [this.preRelease]);
 
   factory SemVer.parse(String version) {
-    final cleaned =
-        version.startsWith('v') ? version.substring(1) : version;
+    final cleaned = version.startsWith('v') ? version.substring(1) : version;
     final parts = cleaned.split('-');
     final numbers = parts[0].split('.');
     return SemVer(
@@ -341,7 +343,7 @@ class SemVer implements Comparable<SemVer> {
 
 /// Check if an update is available.
 Future<({bool available, String? latestVersion, String? releaseNotes})>
-    checkForUpdate(String currentVersion) async {
+checkForUpdate(String currentVersion) async {
   // In a real implementation, this would check a release API
   // For now, return no update available
   return (available: false, latestVersion: null, releaseNotes: null);
@@ -372,10 +374,8 @@ Map<String, dynamic> _convertNodeSettings(Map<String, dynamic> nodeSettings) {
       'model': _remapModelName(nodeSettings['model'] as String),
     if (nodeSettings.containsKey('permissions'))
       'permissions': nodeSettings['permissions'],
-    if (nodeSettings.containsKey('env'))
-      'envVars': nodeSettings['env'],
-    if (nodeSettings.containsKey('hooks'))
-      'hooks': nodeSettings['hooks'],
+    if (nodeSettings.containsKey('env')) 'envVars': nodeSettings['env'],
+    if (nodeSettings.containsKey('hooks')) 'hooks': nodeSettings['hooks'],
     if (nodeSettings.containsKey('mcpServers'))
       'mcpServers': nodeSettings['mcpServers'],
     'importedFrom': 'neom-claw-node',
@@ -421,6 +421,7 @@ Future<void> importSettings(String exportJson) async {
   for (final entry in settings.entries) {
     final file = File('$home/.neomclaw/${entry.key}');
     await file.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(entry.value));
+      const JsonEncoder.withIndent('  ').convert(entry.value),
+    );
   }
 }

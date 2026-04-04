@@ -20,8 +20,8 @@ class WebPlatformService implements PlatformService {
   WebPlatformService({
     String baseUrl = 'http://localhost:3219',
     http.Client? client,
-  })  : _baseUrl = baseUrl,
-        _client = client ?? http.Client();
+  }) : _baseUrl = baseUrl,
+       _client = client ?? http.Client();
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -113,13 +113,19 @@ class WebPlatformService implements PlatformService {
 
   @override
   Future<bool> fileExists(String path) async {
-    final json = await _getJson('/api/fs/exists', {'path': path, 'type': 'file'});
+    final json = await _getJson('/api/fs/exists', {
+      'path': path,
+      'type': 'file',
+    });
     return json['exists'] as bool;
   }
 
   @override
   Future<bool> directoryExists(String path) async {
-    final json = await _getJson('/api/fs/exists', {'path': path, 'type': 'directory'});
+    final json = await _getJson('/api/fs/exists', {
+      'path': path,
+      'type': 'directory',
+    });
     return json['exists'] as bool;
   }
 
@@ -147,10 +153,7 @@ class WebPlatformService implements PlatformService {
 
   @override
   Future<void> createDirectory(String path, {bool recursive = true}) async {
-    await _postJson('/api/fs/mkdir', {
-      'path': path,
-      'recursive': recursive,
-    });
+    await _postJson('/api/fs/mkdir', {'path': path, 'recursive': recursive});
   }
 
   @override
@@ -190,17 +193,15 @@ class WebPlatformService implements PlatformService {
   @override
   Future<String> createTempFile({String? prefix, String? suffix}) async {
     final json = await _postJson('/api/fs/temp-file', {
-      if (prefix != null) 'prefix': prefix,
-      if (suffix != null) 'suffix': suffix,
+      'prefix': ?prefix,
+      'suffix': ?suffix,
     });
     return json['path'] as String;
   }
 
   @override
   Future<String> createTempDirectory({String? prefix}) async {
-    final json = await _postJson('/api/fs/temp-dir', {
-      if (prefix != null) 'prefix': prefix,
-    });
+    final json = await _postJson('/api/fs/temp-dir', {'prefix': ?prefix});
     return json['path'] as String;
   }
 
@@ -253,10 +254,7 @@ class WebPlatformService implements PlatformService {
   // ---------------------------------------------------------------------------
 
   @override
-  Stream<FileChangeEvent> watchDirectory(
-    String path, {
-    bool recursive = true,
-  }) {
+  Stream<FileChangeEvent> watchDirectory(String path, {bool recursive = true}) {
     // File watching on web is done via a WebSocket on the server.
     final controller = StreamController<FileChangeEvent>();
     final wsUrl = _baseUrl.replaceFirst('http', 'ws');
@@ -307,8 +305,8 @@ class WebPlatformService implements PlatformService {
     final json = await _postJson('/api/process/run', {
       'executable': executable,
       'arguments': arguments,
-      if (workingDirectory != null) 'workingDirectory': workingDirectory,
-      if (environment != null) 'environment': environment,
+      'workingDirectory': ?workingDirectory,
+      'environment': ?environment,
       if (timeout != null) 'timeoutMs': timeout.inMilliseconds,
       'runInShell': runInShell,
     });
@@ -327,8 +325,8 @@ class WebPlatformService implements PlatformService {
     final json = await _postJson('/api/process/start', {
       'executable': executable,
       'arguments': arguments,
-      if (workingDirectory != null) 'workingDirectory': workingDirectory,
-      if (environment != null) 'environment': environment,
+      'workingDirectory': ?workingDirectory,
+      'environment': ?environment,
       'runInShell': runInShell,
     });
 
@@ -389,13 +387,13 @@ class WebPlatformService implements PlatformService {
     final json = await _postJson('/api/http/request', {
       'method': method,
       'url': url.toString(),
-      if (headers != null) 'headers': headers,
+      'headers': ?headers,
       if (body != null)
         'body': body is String
             ? body
             : body is Map
-                ? jsonEncode(body)
-                : body.toString(),
+            ? jsonEncode(body)
+            : body.toString(),
       if (timeout != null) 'timeoutMs': timeout.inMilliseconds,
     });
 
@@ -455,9 +453,9 @@ class _WebRunningProcess implements RunningProcess {
     required String baseUrl,
     required String wsUrl,
     required http.Client client,
-  })  : _baseUrl = baseUrl,
-        _wsUrl = wsUrl,
-        _client = client {
+  }) : _baseUrl = baseUrl,
+       _wsUrl = wsUrl,
+       _client = client {
     _stdoutController = StreamController<String>.broadcast();
     _stderrController = StreamController<String>.broadcast();
     _connectStreams();
@@ -551,7 +549,8 @@ class _WebRunningProcess implements RunningProcess {
 /// would replace this with `dart:html` WebSocket or `package:web_socket_channel`.
 class _WebSocketImpl implements PlatformWebSocket {
   final StreamController<dynamic> _controller;
-  dynamic _nativeSocket;
+  // ignore: unused_field
+  final dynamic _nativeSocket;
 
   _WebSocketImpl._(this._controller, this._nativeSocket);
 

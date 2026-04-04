@@ -94,7 +94,8 @@ class CommandReference extends InputSegment {
   const CommandReference({required this.commandName, this.args});
 
   @override
-  String toString() => 'CommandReference(/$commandName${args != null ? ' $args' : ''})';
+  String toString() =>
+      'CommandReference(/$commandName${args != null ? ' $args' : ''})';
 
   @override
   bool operator ==(Object other) =>
@@ -177,25 +178,25 @@ final fileMentionPattern = RegExp(
 );
 
 /// Pattern for URL mentions: @https://... or @http://...
-final urlMentionPattern = RegExp(
-  r'@(https?://[^\s]+)',
-  multiLine: true,
-);
+final urlMentionPattern = RegExp(r'@(https?://[^\s]+)', multiLine: true);
 
 /// Pattern for git ref mentions: @branch:name or @commit:hash
-final gitRefPattern = RegExp(
-  r'@(branch|commit|tag):(\S+)',
-  multiLine: true,
-);
+final gitRefPattern = RegExp(r'@(branch|commit|tag):(\S+)', multiLine: true);
 
 /// Slash command at the beginning of input.
 final _slashCommandPattern = RegExp(r'^\s*/([a-z][\w-]*)\s*(.*)', dotAll: true);
 
 /// Implicit file reference patterns — "in file.ts", "the foo.dart file", bare paths.
 final _implicitFilePatterns = [
-  RegExp(r'''(?:in|from|at|see|open|edit|modify|update|check|read|the)\s+[`"']?([a-zA-Z][\w./-]*\.\w{1,10})[`"']?''', caseSensitive: false),
+  RegExp(
+    r'''(?:in|from|at|see|open|edit|modify|update|check|read|the)\s+[`"']?([a-zA-Z][\w./-]*\.\w{1,10})[`"']?''',
+    caseSensitive: false,
+  ),
   RegExp(r'''[`"']([a-zA-Z][\w./-]*\.\w{1,10})[`"']'''),
-  RegExp(r'(?:^|\s)((?:src|lib|test|bin|build|packages?|config)(?:/[\w.-]+)+)', multiLine: true),
+  RegExp(
+    r'(?:^|\s)((?:src|lib|test|bin|build|packages?|config)(?:/[\w.-]+)+)',
+    multiLine: true,
+  ),
 ];
 
 /// Code block pattern.
@@ -246,11 +247,13 @@ ParsedUserInput parseUserInput(String input, {String? workingDirectory}) {
   for (final m in gitRefPattern.allMatches(normalized)) {
     final kind = m.group(1)!; // branch, commit, tag
     final ref = m.group(2)!;
-    mentions.add(_MentionMatch(
-      start: m.start,
-      end: m.end,
-      segment: GitRefMention('$kind:$ref'),
-    ));
+    mentions.add(
+      _MentionMatch(
+        start: m.start,
+        end: m.end,
+        segment: GitRefMention('$kind:$ref'),
+      ),
+    );
   }
 
   for (final m in urlMentionPattern.allMatches(normalized)) {
@@ -258,11 +261,9 @@ ParsedUserInput parseUserInput(String input, {String? workingDirectory}) {
     // Skip if overlapping with an earlier match.
     if (_overlaps(mentions, m.start, m.end)) continue;
     mentionedUrls.add(url);
-    mentions.add(_MentionMatch(
-      start: m.start,
-      end: m.end,
-      segment: UrlMention(url),
-    ));
+    mentions.add(
+      _MentionMatch(start: m.start, end: m.end, segment: UrlMention(url)),
+    );
   }
 
   for (final m in fileMentionPattern.allMatches(normalized)) {
@@ -271,11 +272,17 @@ ParsedUserInput parseUserInput(String input, {String? workingDirectory}) {
     final resolved = resolveFilePath(raw, wd);
     final isDir = _looksLikeDirectory(raw);
     mentionedFiles.add(resolved);
-    mentions.add(_MentionMatch(
-      start: m.start,
-      end: m.end,
-      segment: FileMention(path: resolved, originalText: '@$raw', isDirectory: isDir),
-    ));
+    mentions.add(
+      _MentionMatch(
+        start: m.start,
+        end: m.end,
+        segment: FileMention(
+          path: resolved,
+          originalText: '@$raw',
+          isDirectory: isDir,
+        ),
+      ),
+    );
   }
 
   // Sort mentions by position.
@@ -320,7 +327,11 @@ class _MentionMatch {
   final int start;
   final int end;
   final InputSegment segment;
-  const _MentionMatch({required this.start, required this.end, required this.segment});
+  const _MentionMatch({
+    required this.start,
+    required this.end,
+    required this.segment,
+  });
 }
 
 bool _overlaps(List<_MentionMatch> existing, int start, int end) {
@@ -347,7 +358,10 @@ String resolveFilePath(String mention, String workingDirectory) {
 
   // Expand ~.
   if (p.startsWith('~/')) {
-    final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '/';
+    final home =
+        Platform.environment['HOME'] ??
+        Platform.environment['USERPROFILE'] ??
+        '/';
     p = '$home${p.substring(1)}';
   }
 
@@ -387,7 +401,10 @@ String _normalizePath(String path) {
 bool looksLikeFilePath(String input) {
   if (input.isEmpty) return false;
   // Starts with common path prefixes.
-  if (input.startsWith('/') || input.startsWith('./') || input.startsWith('~/') || input.startsWith('../')) {
+  if (input.startsWith('/') ||
+      input.startsWith('./') ||
+      input.startsWith('~/') ||
+      input.startsWith('../')) {
     return true;
   }
   // Contains path separator and has a file extension.
@@ -399,7 +416,9 @@ bool looksLikeFilePath(String input) {
     return true;
   }
   // Starts with common source directories.
-  if (RegExp(r'^(?:src|lib|test|bin|build|packages?|config)/').hasMatch(input)) {
+  if (RegExp(
+    r'^(?:src|lib|test|bin|build|packages?|config)/',
+  ).hasMatch(input)) {
     return true;
   }
   return false;
@@ -438,7 +457,9 @@ Future<List<MentionSuggestion>> getCompletions(
   final suggestions = <MentionSuggestion>[];
 
   // Determine if it looks like a git ref.
-  if (partial.startsWith('branch:') || partial.startsWith('commit:') || partial.startsWith('tag:')) {
+  if (partial.startsWith('branch:') ||
+      partial.startsWith('commit:') ||
+      partial.startsWith('tag:')) {
     final colonIdx = partial.indexOf(':');
     final refType = partial.substring(0, colonIdx);
     final refPartial = partial.substring(colonIdx + 1);
@@ -462,18 +483,24 @@ Future<List<MentionSuggestion>> getCompletions(
     if (await dir.exists()) {
       await for (final entity in dir.list(followLinks: true)) {
         final name = _baseName(entity.path);
-        if (name.startsWith('.') && !partial.contains('/.')) continue; // skip hidden
-        if (prefix.isNotEmpty && !name.toLowerCase().startsWith(prefix)) continue;
+        if (name.startsWith('.') && !partial.contains('/.')) {
+          continue; // skip hidden
+        }
+        if (prefix.isNotEmpty && !name.toLowerCase().startsWith(prefix)) {
+          continue;
+        }
 
         final isDir = entity is Directory;
         final relativePath = _makeRelative(entity.path, workingDirectory);
         final ext = isDir ? null : _extension(name);
-        suggestions.add(MentionSuggestion(
-          display: name + (isDir ? '/' : ''),
-          completion: '@$relativePath${isDir ? '/' : ''}',
-          type: isDir ? MentionType.directory : MentionType.file,
-          description: isDir ? 'directory' : ext,
-        ));
+        suggestions.add(
+          MentionSuggestion(
+            display: name + (isDir ? '/' : ''),
+            completion: '@$relativePath${isDir ? '/' : ''}',
+            type: isDir ? MentionType.directory : MentionType.file,
+            description: isDir ? 'directory' : ext,
+          ),
+        );
       }
     }
   } catch (_) {
@@ -484,12 +511,14 @@ Future<List<MentionSuggestion>> getCompletions(
   if (!partial.contains('/') && !partial.contains('.')) {
     for (final cmd in knownCommands) {
       if (cmd.startsWith(partial.toLowerCase())) {
-        suggestions.add(MentionSuggestion(
-          display: '/$cmd',
-          completion: '/$cmd ',
-          type: MentionType.command,
-          description: 'command',
-        ));
+        suggestions.add(
+          MentionSuggestion(
+            display: '/$cmd',
+            completion: '/$cmd ',
+            type: MentionType.command,
+            description: 'command',
+          ),
+        );
       }
     }
   }
@@ -505,7 +534,10 @@ Future<List<MentionSuggestion>> getCompletions(
 }
 
 Future<List<MentionSuggestion>> _getGitRefs(
-    String refType, String partial, String workingDirectory) async {
+  String refType,
+  String partial,
+  String workingDirectory,
+) async {
   final suggestions = <MentionSuggestion>[];
   try {
     String command;
@@ -523,23 +555,27 @@ Future<List<MentionSuggestion>> _getGitRefs(
       default:
         return [];
     }
-    final result = await Process.run(
-      'bash',
-      ['-c', command],
-      workingDirectory: workingDirectory,
-    );
+    final result = await Process.run('bash', [
+      '-c',
+      command,
+    ], workingDirectory: workingDirectory);
     if (result.exitCode == 0) {
       final output = (result.stdout as String).trim();
       for (final line in output.split('\n')) {
         final ref = line.trim();
         if (ref.isEmpty) continue;
-        if (partial.isNotEmpty && !ref.toLowerCase().startsWith(partial.toLowerCase())) continue;
-        suggestions.add(MentionSuggestion(
-          display: '$refType:$ref',
-          completion: '@$refType:$ref',
-          type: mentionType,
-          description: refType,
-        ));
+        if (partial.isNotEmpty &&
+            !ref.toLowerCase().startsWith(partial.toLowerCase())) {
+          continue;
+        }
+        suggestions.add(
+          MentionSuggestion(
+            display: '$refType:$ref',
+            completion: '@$refType:$ref',
+            type: mentionType,
+            description: refType,
+          ),
+        );
       }
     }
   } catch (_) {
@@ -554,7 +590,9 @@ String _resolvePartialForCompletion(String partial, String wd) {
     return '$home${partial.substring(1)}';
   }
   if (partial.startsWith('/')) return partial;
-  if (partial.startsWith('./') || partial.startsWith('../')) return '$wd/$partial';
+  if (partial.startsWith('./') || partial.startsWith('../')) {
+    return '$wd/$partial';
+  }
   return '$wd/$partial';
 }
 
@@ -694,12 +732,60 @@ bool _isPlausibleFilePath(String candidate) {
     // that doesn't look like a real extension.
     final ext = candidate.split('.').last;
     const commonExtensions = {
-      'dart', 'ts', 'tsx', 'js', 'jsx', 'py', 'rb', 'rs', 'go', 'java',
-      'kt', 'swift', 'c', 'cpp', 'h', 'hpp', 'cs', 'php', 'vue', 'svelte',
-      'html', 'css', 'scss', 'sass', 'less', 'json', 'yaml', 'yml', 'toml',
-      'xml', 'md', 'txt', 'sh', 'bash', 'zsh', 'fish', 'ps1', 'bat', 'cmd',
-      'sql', 'graphql', 'proto', 'lock', 'log', 'env', 'cfg', 'ini', 'conf',
-      'dockerfile', 'makefile', 'gradle', 'cmake', 'tf', 'hcl',
+      'dart',
+      'ts',
+      'tsx',
+      'js',
+      'jsx',
+      'py',
+      'rb',
+      'rs',
+      'go',
+      'java',
+      'kt',
+      'swift',
+      'c',
+      'cpp',
+      'h',
+      'hpp',
+      'cs',
+      'php',
+      'vue',
+      'svelte',
+      'html',
+      'css',
+      'scss',
+      'sass',
+      'less',
+      'json',
+      'yaml',
+      'yml',
+      'toml',
+      'xml',
+      'md',
+      'txt',
+      'sh',
+      'bash',
+      'zsh',
+      'fish',
+      'ps1',
+      'bat',
+      'cmd',
+      'sql',
+      'graphql',
+      'proto',
+      'lock',
+      'log',
+      'env',
+      'cfg',
+      'ini',
+      'conf',
+      'dockerfile',
+      'makefile',
+      'gradle',
+      'cmake',
+      'tf',
+      'hcl',
     };
     return commonExtensions.contains(ext.toLowerCase());
   }
@@ -717,9 +803,7 @@ class InputHistory {
   int _currentIndex;
   String? _savedInput; // Current unsaved input
 
-  InputHistory({this.maxEntries = 500})
-      : _entries = [],
-        _currentIndex = -1;
+  InputHistory({this.maxEntries = 500}) : _entries = [], _currentIndex = -1;
 
   /// Add a new entry. Resets navigation index. Deduplicates consecutive entries.
   void add(String input) {
@@ -946,11 +1030,14 @@ String? detectLanguage(String input) {
   final keywordMap = <RegExp, String>{
     RegExp(r'\b(?:flutter|dart|pubspec)\b', caseSensitive: false): 'Dart',
     RegExp(r'\b(?:typescript|tsx?)\b', caseSensitive: false): 'TypeScript',
-    RegExp(r'\b(?:javascript|nodejs|node\.js)\b', caseSensitive: false): 'JavaScript',
-    RegExp(r'\b(?:python|pip|django|flask|fastapi)\b', caseSensitive: false): 'Python',
+    RegExp(r'\b(?:javascript|nodejs|node\.js)\b', caseSensitive: false):
+        'JavaScript',
+    RegExp(r'\b(?:python|pip|django|flask|fastapi)\b', caseSensitive: false):
+        'Python',
     RegExp(r'\b(?:rust|cargo|crate)\b', caseSensitive: false): 'Rust',
     RegExp(r'\b(?:golang|go\s+module)\b', caseSensitive: false): 'Go',
-    RegExp(r'\b(?:java|spring\s*boot|maven|gradle)\b', caseSensitive: false): 'Java',
+    RegExp(r'\b(?:java|spring\s*boot|maven|gradle)\b', caseSensitive: false):
+        'Java',
     RegExp(r'\b(?:kotlin|ktor)\b', caseSensitive: false): 'Kotlin',
     RegExp(r'\b(?:swift|swiftui|xcode)\b', caseSensitive: false): 'Swift',
     RegExp(r'\b(?:ruby|rails|bundler|gem)\b', caseSensitive: false): 'Ruby',
@@ -1044,16 +1131,20 @@ List<String> checkInputSafety(String input) {
 
   // Check for common prompt injection patterns.
   final injectionPatterns = <RegExp, String>{
-    RegExp(r'ignore\s+(all\s+)?previous\s+instructions', caseSensitive: false):
-        'Potential prompt injection: "ignore previous instructions" pattern detected.',
+    RegExp(
+      r'ignore\s+(all\s+)?previous\s+instructions',
+      caseSensitive: false,
+    ): 'Potential prompt injection: "ignore previous instructions" pattern detected.',
     RegExp(r'you\s+are\s+now\s+(?:a|an|in)\s+', caseSensitive: false):
         'Potential prompt injection: role reassignment pattern detected.',
     RegExp(r'system\s*:\s*', caseSensitive: false):
         'Potential prompt injection: system message impersonation detected.',
     RegExp(r'<\s*(?:system|admin|root)\s*>', caseSensitive: false):
         'Potential prompt injection: system/admin tag detected.',
-    RegExp(r'(?:ADMIN|SYSTEM|ROOT)\s*(?:MODE|ACCESS|OVERRIDE)', caseSensitive: false):
-        'Potential prompt injection: privilege escalation pattern detected.',
+    RegExp(
+      r'(?:ADMIN|SYSTEM|ROOT)\s*(?:MODE|ACCESS|OVERRIDE)',
+      caseSensitive: false,
+    ): 'Potential prompt injection: privilege escalation pattern detected.',
     RegExp(r'forget\s+(?:everything|all|your)\s+', caseSensitive: false):
         'Potential prompt injection: memory reset pattern detected.',
     RegExp(r'(?:execute|run|eval)\s*\(', caseSensitive: false):
@@ -1071,8 +1162,9 @@ List<String> checkInputSafety(String input) {
   for (var i = 0; i < lines.length; i++) {
     if (lines[i].length > 10000) {
       warnings.add(
-          'Line ${i + 1} is very long (${lines[i].length} characters). '
-          'This may be minified code or binary data.');
+        'Line ${i + 1} is very long (${lines[i].length} characters). '
+        'This may be minified code or binary data.',
+      );
       break; // Only warn once.
     }
   }
@@ -1089,15 +1181,18 @@ List<String> checkInputSafety(String input) {
       final maxFreq = freq.values.fold(0, (a, b) => a > b ? a : b);
       if (maxFreq > words.length * 0.5) {
         warnings.add(
-            'Input contains excessive repetition, which may indicate '
-            'garbled or auto-generated text.');
+          'Input contains excessive repetition, which may indicate '
+          'garbled or auto-generated text.',
+        );
       }
     }
   }
 
   // Check for null bytes or other control characters.
   if (RegExp(r'[\x00-\x08\x0e-\x1f]').hasMatch(input)) {
-    warnings.add('Input contains control characters that may indicate binary data.');
+    warnings.add(
+      'Input contains control characters that may indicate binary data.',
+    );
   }
 
   return warnings;

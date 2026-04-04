@@ -1,4 +1,4 @@
-// OAuth service — faithful port of openneomclaw/src/services/oauth/.
+// OAuth service — faithful port of neom_claw/src/services/oauth/.
 // Covers: client.ts, index.ts (OAuthService class), auth-code-listener.ts,
 //         getOauthProfile.ts, crypto.ts, types.ts.
 //
@@ -67,12 +67,12 @@ class OAuthTokenExchangeResponse {
       expiresIn: json['expires_in'] as int,
       scope: json['scope'] as String?,
       account: json['account'] != null
-          ? OAuthTokenAccount.fromJson(
-              json['account'] as Map<String, dynamic>)
+          ? OAuthTokenAccount.fromJson(json['account'] as Map<String, dynamic>)
           : null,
       organization: json['organization'] != null
           ? OAuthTokenOrganization.fromJson(
-              json['organization'] as Map<String, dynamic>)
+              json['organization'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -83,10 +83,7 @@ class OAuthTokenAccount {
   final String uuid;
   final String emailAddress;
 
-  const OAuthTokenAccount({
-    required this.uuid,
-    required this.emailAddress,
-  });
+  const OAuthTokenAccount({required this.uuid, required this.emailAddress});
 
   factory OAuthTokenAccount.fromJson(Map<String, dynamic> json) {
     return OAuthTokenAccount(
@@ -177,9 +174,11 @@ class OAuthProfileResponse {
   factory OAuthProfileResponse.fromJson(Map<String, dynamic> json) {
     return OAuthProfileResponse(
       account: OAuthProfileAccount.fromJson(
-          json['account'] as Map<String, dynamic>),
+        json['account'] as Map<String, dynamic>,
+      ),
       organization: OAuthProfileOrganization.fromJson(
-          json['organization'] as Map<String, dynamic>),
+        json['organization'] as Map<String, dynamic>,
+      ),
     );
   }
 }
@@ -232,7 +231,8 @@ class OAuthProfileOrganization {
       organizationType: json['organization_type'] as String?,
       rateLimitTier: json['rate_limit_tier'] != null
           ? RateLimitTier.fromJson(
-              json['rate_limit_tier'] as Map<String, dynamic>)
+              json['rate_limit_tier'] as Map<String, dynamic>,
+            )
           : null,
       hasExtraUsageEnabled: json['has_extra_usage_enabled'] as bool?,
       billingType: json['billing_type'] as String?,
@@ -402,8 +402,9 @@ String buildAuthUrl({
     'redirect_uri': isManual
         ? config.manualRedirectUrl
         : 'http://localhost:$port/callback',
-    'scope': (inferenceOnly ? [neomClawAiInferenceScope] : allOAuthScopes)
-        .join(' '),
+    'scope': (inferenceOnly ? [neomClawAiInferenceScope] : allOAuthScopes).join(
+      ' ',
+    ),
     'code_challenge': codeChallenge,
     'code_challenge_method': 'S256',
     'state': state,
@@ -442,16 +443,12 @@ Future<OAuthTokenExchangeResponse> exchangeCodeForTokens({
 
   final client = httpClient ?? HttpClient();
   try {
-    final request =
-        await client.postUrl(Uri.parse(config.tokenUrl));
+    final request = await client.postUrl(Uri.parse(config.tokenUrl));
     request.headers.contentType = ContentType.json;
     request.write(jsonEncode(body));
-    final response = await request.close().timeout(
-          const Duration(seconds: 15),
-        );
+    final response = await request.close().timeout(const Duration(seconds: 15));
 
-    final responseBody =
-        await response.transform(utf8.decoder).join();
+    final responseBody = await response.transform(utf8.decoder).join();
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -489,16 +486,12 @@ Future<OAuthTokens> refreshOAuthToken({
 
   final client = httpClient ?? HttpClient();
   try {
-    final request =
-        await client.postUrl(Uri.parse(config.tokenUrl));
+    final request = await client.postUrl(Uri.parse(config.tokenUrl));
     request.headers.contentType = ContentType.json;
     request.write(jsonEncode(body));
-    final response = await request.close().timeout(
-          const Duration(seconds: 15),
-        );
+    final response = await request.close().timeout(const Duration(seconds: 15));
 
-    final responseBody =
-        await response.transform(utf8.decoder).join();
+    final responseBody = await response.transform(utf8.decoder).join();
 
     if (response.statusCode != 200) {
       throw Exception('Token refresh failed: $responseBody');
@@ -538,17 +531,13 @@ Future<OAuthProfileResponse?> fetchOAuthProfile({
   final config = getOauthConfig();
   final client = httpClient ?? HttpClient();
   try {
-    final request =
-        await client.getUrl(Uri.parse(config.profileUrl));
+    final request = await client.getUrl(Uri.parse(config.profileUrl));
     request.headers.set('Authorization', 'Bearer $accessToken');
-    final response = await request.close().timeout(
-          const Duration(seconds: 15),
-        );
+    final response = await request.close().timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) return null;
 
-    final responseBody =
-        await response.transform(utf8.decoder).join();
+    final responseBody = await response.transform(utf8.decoder).join();
     return OAuthProfileResponse.fromJson(
       jsonDecode(responseBody) as Map<String, dynamic>,
     );
@@ -576,19 +565,19 @@ SubscriptionType? subscriptionTypeFromOrgType(String? orgType) {
 }
 
 /// Fetch profile info and extract subscription details.
-Future<({
-  SubscriptionType? subscriptionType,
-  String? displayName,
-  RateLimitTier? rateLimitTier,
-  bool? hasExtraUsageEnabled,
-  String? billingType,
-  String? accountCreatedAt,
-  String? subscriptionCreatedAt,
-  OAuthProfileResponse? rawProfile,
-})?> fetchProfileInfo({
-  required String accessToken,
-  HttpClient? httpClient,
-}) async {
+Future<
+  ({
+    SubscriptionType? subscriptionType,
+    String? displayName,
+    RateLimitTier? rateLimitTier,
+    bool? hasExtraUsageEnabled,
+    String? billingType,
+    String? accountCreatedAt,
+    String? subscriptionCreatedAt,
+    OAuthProfileResponse? rawProfile,
+  })?
+>
+fetchProfileInfo({required String accessToken, HttpClient? httpClient}) async {
   final profile = await fetchOAuthProfile(
     accessToken: accessToken,
     httpClient: httpClient,
@@ -628,17 +617,13 @@ Future<UserRolesResponse> fetchUserRoles({
   try {
     final request = await client.getUrl(Uri.parse(config.rolesUrl));
     request.headers.set('Authorization', 'Bearer $accessToken');
-    final response = await request.close().timeout(
-          const Duration(seconds: 15),
-        );
+    final response = await request.close().timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) {
-      throw Exception(
-          'Failed to fetch user roles: ${response.statusCode}');
+      throw Exception('Failed to fetch user roles: ${response.statusCode}');
     }
 
-    final responseBody =
-        await response.transform(utf8.decoder).join();
+    final responseBody = await response.transform(utf8.decoder).join();
     return UserRolesResponse.fromJson(
       jsonDecode(responseBody) as Map<String, dynamic>,
     );
@@ -655,16 +640,12 @@ Future<String?> createApiKey({
   final config = getOauthConfig();
   final client = httpClient ?? HttpClient();
   try {
-    final request =
-        await client.postUrl(Uri.parse(config.apiKeyUrl));
+    final request = await client.postUrl(Uri.parse(config.apiKeyUrl));
     request.headers.set('Authorization', 'Bearer $accessToken');
     request.headers.contentLength = 0;
-    final response = await request.close().timeout(
-          const Duration(seconds: 15),
-        );
+    final response = await request.close().timeout(const Duration(seconds: 15));
 
-    final responseBody =
-        await response.transform(utf8.decoder).join();
+    final responseBody = await response.transform(utf8.decoder).join();
     final data = jsonDecode(responseBody) as Map<String, dynamic>;
     return data['raw_key'] as String?;
   } finally {
@@ -687,7 +668,7 @@ class AuthCodeListener {
   final String _callbackPath;
 
   AuthCodeListener({String callbackPath = '/callback'})
-      : _callbackPath = callbackPath;
+    : _callbackPath = callbackPath;
 
   /// Start listening on an OS-assigned port and return the port number.
   Future<int> start({int? port}) async {
@@ -733,7 +714,8 @@ class AuthCodeListener {
       request.response.write('Authorization code not found');
       request.response.close();
       _codeCompleter?.completeError(
-          Exception('No authorization code received'));
+        Exception('No authorization code received'),
+      );
       return;
     }
 
@@ -741,8 +723,7 @@ class AuthCodeListener {
       request.response.statusCode = HttpStatus.badRequest;
       request.response.write('Invalid state parameter');
       request.response.close();
-      _codeCompleter?.completeError(
-          Exception('Invalid state parameter'));
+      _codeCompleter?.completeError(Exception('Invalid state parameter'));
       return;
     }
 
@@ -797,7 +778,7 @@ class AuthCodeListener {
 /// 1. Automatic: Opens browser, redirects to localhost where we capture the code
 /// 2. Manual: User manually copies and pastes the code
 class OAuthService {
-  String _codeVerifier;
+  final String _codeVerifier;
   AuthCodeListener? _authCodeListener;
   int? _port;
   Completer<String>? _manualAuthCodeCompleter;
@@ -807,7 +788,7 @@ class OAuthService {
   /// Start the OAuth flow.
   Future<OAuthTokens> startOAuthFlow({
     required Future<void> Function(String manualUrl, [String? automaticUrl])
-        authURLHandler,
+    authURLHandler,
     Future<void> Function(String url)? openBrowser,
     bool loginWithNeomClawAi = false,
     bool inferenceOnly = false,
@@ -859,17 +840,14 @@ class OAuthService {
     );
 
     // Wait for either automatic or manual auth code
-    final authorizationCode = await _waitForAuthorizationCode(
-      state,
-      () async {
-        if (skipBrowserOpen) {
-          await authURLHandler(manualFlowUrl, automaticFlowUrl);
-        } else {
-          await authURLHandler(manualFlowUrl);
-          if (openBrowser != null) await openBrowser(automaticFlowUrl);
-        }
-      },
-    );
+    final authorizationCode = await _waitForAuthorizationCode(state, () async {
+      if (skipBrowserOpen) {
+        await authURLHandler(manualFlowUrl, automaticFlowUrl);
+      } else {
+        await authURLHandler(manualFlowUrl);
+        if (openBrowser != null) await openBrowser(automaticFlowUrl);
+      }
+    });
 
     final isAutomaticFlow = _authCodeListener?.hasPendingResponse ?? false;
 
@@ -915,14 +893,13 @@ class OAuthService {
     _manualAuthCodeCompleter = Completer<String>();
 
     // Start automatic flow
-    final automaticFuture =
-        _authCodeListener!.waitForAuthorization(state, onReady);
+    final automaticFuture = _authCodeListener!.waitForAuthorization(
+      state,
+      onReady,
+    );
 
     // Return whichever completes first
-    return Future.any([
-      automaticFuture,
-      _manualAuthCodeCompleter!.future,
-    ]);
+    return Future.any([automaticFuture, _manualAuthCodeCompleter!.future]);
   }
 
   /// Handle manual flow callback when user pastes the auth code.
@@ -946,8 +923,8 @@ class OAuthService {
     return OAuthTokens(
       accessToken: response.accessToken,
       refreshToken: response.refreshToken,
-      expiresAt: DateTime.now().millisecondsSinceEpoch +
-          response.expiresIn * 1000,
+      expiresAt:
+          DateTime.now().millisecondsSinceEpoch + response.expiresIn * 1000,
       scopes: parseScopes(response.scope),
       subscriptionType: subscriptionType,
       rateLimitTier: rateLimitTier,

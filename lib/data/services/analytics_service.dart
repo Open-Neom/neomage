@@ -1,4 +1,4 @@
-// Analytics service — port of openneomclaw/src/services/analytics/.
+// Analytics service — port of neom_claw/src/services/analytics/.
 // Public API for event logging, sink routing, sampling, metadata enrichment,
 // Datadog batching, first-party event logging, feature gating (GrowthBook),
 // and sink killswitch.
@@ -8,7 +8,6 @@
 // handles routing to Datadog and first-party event logging.
 
 import 'dart:async';
-import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
 
@@ -120,7 +119,7 @@ class SinkKillswitch {
   final Map<String, bool> Function() _getConfig;
 
   const SinkKillswitch({required Map<String, bool> Function() getConfig})
-      : _getConfig = getConfig;
+    : _getConfig = getConfig;
 
   bool isSinkKilled(SinkName sink) {
     final config = _getConfig();
@@ -183,10 +182,7 @@ class McpToolDetails {
   final AnalyticsVerifiedString serverName;
   final AnalyticsVerifiedString mcpToolName;
 
-  const McpToolDetails({
-    required this.serverName,
-    required this.mcpToolName,
-  });
+  const McpToolDetails({required this.serverName, required this.mcpToolName});
 }
 
 /// Parse MCP tool details from a full tool name.
@@ -202,10 +198,7 @@ McpToolDetails? extractMcpToolDetails(String toolName) {
 }
 
 /// Extract skill name from Skill tool input.
-AnalyticsVerifiedString? extractSkillName(
-  String toolName,
-  Object? input,
-) {
+AnalyticsVerifiedString? extractSkillName(String toolName, Object? input) {
   if (toolName != 'Skill') return null;
   if (input is Map && input['skill'] is String) {
     return input['skill'] as String;
@@ -248,7 +241,9 @@ Object? _truncateToolInputValue(Object? value, [int depth = 0]) {
         .toList();
     final mapped = entries
         .take(_toolInputMaxCollectionItems)
-        .map((e) => MapEntry(e.key, _truncateToolInputValue(e.value, depth + 1)))
+        .map(
+          (e) => MapEntry(e.key, _truncateToolInputValue(e.value, depth + 1)),
+        )
         .toList();
     if (entries.length > _toolInputMaxCollectionItems) {
       mapped.add(MapEntry('...', '${entries.length} keys'));
@@ -292,8 +287,23 @@ AnalyticsVerifiedString? getFileExtensionForAnalytics(String filePath) {
 
 /// Allow-list of commands we extract file extensions from.
 const _fileCommands = <String>{
-  'rm', 'mv', 'cp', 'touch', 'mkdir', 'chmod', 'chown',
-  'cat', 'head', 'tail', 'sort', 'stat', 'diff', 'wc', 'grep', 'rg', 'sed',
+  'rm',
+  'mv',
+  'cp',
+  'touch',
+  'mkdir',
+  'chmod',
+  'chown',
+  'cat',
+  'head',
+  'tail',
+  'sort',
+  'stat',
+  'diff',
+  'wc',
+  'grep',
+  'rg',
+  'sed',
 };
 
 final _compoundOperatorRegex = RegExp(r'\s*(?:&&|\|\||[;|])\s*');
@@ -324,8 +334,9 @@ AnalyticsVerifiedString? getFileExtensionsFromBashCommand(
 
     final firstToken = tokens[0];
     final slashIdx = firstToken.lastIndexOf('/');
-    final baseCmd =
-        slashIdx >= 0 ? firstToken.substring(slashIdx + 1) : firstToken;
+    final baseCmd = slashIdx >= 0
+        ? firstToken.substring(slashIdx + 1)
+        : firstToken;
     if (!_fileCommands.contains(baseCmd)) continue;
 
     for (var i = 1; i < tokens.length; i++) {
@@ -387,24 +398,24 @@ class EnvContext {
   });
 
   Map<String, Object?> toMap() => {
-        'platform': platform,
-        'platformRaw': platformRaw,
-        'arch': arch,
-        'nodeVersion': nodeVersion,
-        'terminal': terminal,
-        'packageManagers': packageManagers,
-        'runtimes': runtimes,
-        'isCi': isCi,
-        'isRemote': isRemote,
-        'isLocalAgentMode': isLocalAgentMode,
-        'version': version,
-        'versionBase': versionBase,
-        'buildTime': buildTime,
-        'deploymentEnvironment': deploymentEnvironment,
-        'wslVersion': wslVersion,
-        'linuxDistroId': linuxDistroId,
-        'vcs': vcs,
-      };
+    'platform': platform,
+    'platformRaw': platformRaw,
+    'arch': arch,
+    'nodeVersion': nodeVersion,
+    'terminal': terminal,
+    'packageManagers': packageManagers,
+    'runtimes': runtimes,
+    'isCi': isCi,
+    'isRemote': isRemote,
+    'isLocalAgentMode': isLocalAgentMode,
+    'version': version,
+    'versionBase': versionBase,
+    'buildTime': buildTime,
+    'deploymentEnvironment': deploymentEnvironment,
+    'wslVersion': wslVersion,
+    'linuxDistroId': linuxDistroId,
+    'vcs': vcs,
+  };
 }
 
 /// Process metrics included with all analytics events.
@@ -426,13 +437,13 @@ class ProcessMetrics {
   });
 
   Map<String, Object> toMap() => {
-        'uptime': uptime,
-        'rss': rss,
-        'heapTotal': heapTotal,
-        'heapUsed': heapUsed,
-        'external': external,
-        'arrayBuffers': arrayBuffers,
-      };
+    'uptime': uptime,
+    'rss': rss,
+    'heapTotal': heapTotal,
+    'heapUsed': heapUsed,
+    'external': external,
+    'arrayBuffers': arrayBuffers,
+  };
 }
 
 /// Core event metadata shared across all analytics systems.
@@ -472,22 +483,22 @@ class EventMetadata {
   });
 
   Map<String, Object?> toMap() => {
-        'model': model,
-        'sessionId': sessionId,
-        'userType': userType,
-        'betas': betas,
-        'envContext': envContext.toMap(),
-        'entrypoint': entrypoint,
-        'isInteractive': isInteractive,
-        'clientType': clientType,
-        'processMetrics': processMetrics?.toMap(),
-        'subscriptionType': subscriptionType,
-        'rh': repoHash,
-        'agentId': agentId,
-        'parentSessionId': parentSessionId,
-        'agentType': agentType,
-        'teamName': teamName,
-      };
+    'model': model,
+    'sessionId': sessionId,
+    'userType': userType,
+    'betas': betas,
+    'envContext': envContext.toMap(),
+    'entrypoint': entrypoint,
+    'isInteractive': isInteractive,
+    'clientType': clientType,
+    'processMetrics': processMetrics?.toMap(),
+    'subscriptionType': subscriptionType,
+    'rh': repoHash,
+    'agentId': agentId,
+    'parentSessionId': parentSessionId,
+    'agentType': agentType,
+    'teamName': teamName,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -513,13 +524,13 @@ class DatadogLog {
   });
 
   Map<String, Object?> toJson() => {
-        'ddsource': ddsource,
-        'ddtags': ddtags,
-        'message': message,
-        'service': service,
-        'hostname': hostname,
-        ...extra,
-      };
+    'ddsource': ddsource,
+    'ddtags': ddtags,
+    'message': message,
+    'service': service,
+    'hostname': hostname,
+    ...extra,
+  };
 }
 
 /// Convert camelCase to snake_case.
@@ -583,9 +594,21 @@ const _datadogAllowedEvents = <String>{
 
 /// Tag fields to include in Datadog log tags.
 const _tagFields = <String>[
-  'arch', 'clientType', 'errorType', 'http_status_range', 'http_status',
-  'kairosActive', 'model', 'platform', 'provider', 'skillMode',
-  'subscriptionType', 'toolName', 'userBucket', 'userType', 'version',
+  'arch',
+  'clientType',
+  'errorType',
+  'http_status_range',
+  'http_status',
+  'kairosActive',
+  'model',
+  'platform',
+  'provider',
+  'skillMode',
+  'subscriptionType',
+  'toolName',
+  'userBucket',
+  'userType',
+  'version',
   'versionBase',
 ];
 
@@ -604,14 +627,18 @@ const _numUserBuckets = 30;
 /// Datadog event tracking service with batched log dispatch.
 class DatadogService {
   final Future<EventMetadata> Function({Object? model, Object? betas})
-      getEventMetadata;
+  getEventMetadata;
   final String Function() getUserId;
   final String Function() getApiProvider;
   final String Function(String) getCanonicalModelName;
   final bool Function(String) isKnownModel;
   final bool Function() isAnalyticsDisabled;
-  final Future<void> Function(String url, Object body, Map<String, String> headers)
-      httpPost;
+  final Future<void> Function(
+    String url,
+    Object body,
+    Map<String, String> headers,
+  )
+  httpPost;
 
   final List<DatadogLog> _logBatch = [];
   Timer? _flushTimer;
@@ -650,7 +677,8 @@ class DatadogService {
     if (_cachedUserBucket != null) return _cachedUserBucket!;
     final userId = getUserId();
     final hash = sha256.convert(utf8.encode(userId)).toString();
-    _cachedUserBucket = int.parse(hash.substring(0, 8), radix: 16) % _numUserBuckets;
+    _cachedUserBucket =
+        int.parse(hash.substring(0, 8), radix: 16) % _numUserBuckets;
     return _cachedUserBucket!;
   }
 
@@ -689,7 +717,10 @@ class DatadogService {
 
       // Normalise model names for cardinality reduction.
       if (allData['model'] is String) {
-        final modelStr = (allData['model'] as String).replaceAll(RegExp(r'\[1m]$', caseSensitive: false), '');
+        final modelStr = (allData['model'] as String).replaceAll(
+          RegExp(r'\[1m]$', caseSensitive: false),
+          '',
+        );
         final shortName = getCanonicalModelName(modelStr);
         allData['model'] = isKnownModel(shortName) ? shortName : 'other';
       }
@@ -767,10 +798,7 @@ class DatadogService {
       await httpPost(
         _datadogLogsEndpoint,
         batch.map((l) => l.toJson()).toList(),
-        {
-          'Content-Type': 'application/json',
-          'DD-API-KEY': _datadogClientToken,
-        },
+        {'Content-Type': 'application/json', 'DD-API-KEY': _datadogClientToken},
       );
     } catch (_) {
       // Swallow network errors.
@@ -820,15 +848,12 @@ class FirstPartyEvent {
   final String eventType;
   final Map<String, Object?> eventData;
 
-  const FirstPartyEvent({
-    required this.eventType,
-    required this.eventData,
-  });
+  const FirstPartyEvent({required this.eventType, required this.eventData});
 
   Map<String, Object?> toJson() => {
-        'event_type': eventType,
-        'event_data': eventData,
-      };
+    'event_type': eventType,
+    'event_data': eventData,
+  };
 }
 
 /// First-party event logging service with batched export and retry.
@@ -841,8 +866,12 @@ class FirstPartyEventLogger {
   final int maxBackoffDelayMs;
   final bool Function() isKilled;
   final Future<Map<String, String>> Function() getAuthHeaders;
-  final Future<void> Function(String url, Object body, Map<String, String> headers)
-      httpPost;
+  final Future<void> Function(
+    String url,
+    Object body,
+    Map<String, String> headers,
+  )
+  httpPost;
   final String Function() getUserAgent;
 
   final List<FirstPartyEvent> _pendingEvents = [];
@@ -879,13 +908,10 @@ class FirstPartyEventLogger {
 
   void _scheduleFlush() {
     if (_flushTimer != null) return;
-    _flushTimer = Timer(
-      const Duration(seconds: 10),
-      () {
-        _flushTimer = null;
-        unawaited(_flush());
-      },
-    );
+    _flushTimer = Timer(const Duration(seconds: 10), () {
+      _flushTimer = null;
+      unawaited(_flush());
+    });
   }
 
   Future<void> _flush() async {
@@ -911,11 +937,9 @@ class FirstPartyEventLogger {
         headers.addAll(authHeaders);
       }
 
-      await httpPost(
-        endpoint,
-        {'events': batch.map((e) => e.toJson()).toList()},
-        headers,
-      );
+      await httpPost(endpoint, {
+        'events': batch.map((e) => e.toJson()).toList(),
+      }, headers);
 
       _attempts = 0;
     } catch (_) {
@@ -984,20 +1008,20 @@ class GrowthBookUserAttributes {
   });
 
   Map<String, Object?> toMap() => {
-        'id': id,
-        'sessionId': sessionId,
-        'deviceID': deviceId,
-        'platform': platform,
-        'apiBaseUrlHost': apiBaseUrlHost,
-        'organizationUUID': organizationUuid,
-        'accountUUID': accountUuid,
-        'userType': userType,
-        'subscriptionType': subscriptionType,
-        'rateLimitTier': rateLimitTier,
-        'firstTokenTime': firstTokenTime,
-        'email': email,
-        'appVersion': appVersion,
-      };
+    'id': id,
+    'sessionId': sessionId,
+    'deviceID': deviceId,
+    'platform': platform,
+    'apiBaseUrlHost': apiBaseUrlHost,
+    'organizationUUID': organizationUuid,
+    'accountUUID': accountUuid,
+    'userType': userType,
+    'subscriptionType': subscriptionType,
+    'rateLimitTier': rateLimitTier,
+    'firstTokenTime': firstTokenTime,
+    'email': email,
+    'appVersion': appVersion,
+  };
 }
 
 /// GrowthBook experiment data for logging.
@@ -1135,7 +1159,10 @@ class GrowthBookService extends SintController {
   }
 
   /// Log exposure for a feature (deduped within session).
-  void logExposure(String feature, void Function(GrowthBookExperimentData) logger) {
+  void logExposure(
+    String feature,
+    void Function(GrowthBookExperimentData) logger,
+  ) {
     if (_loggedExposures.contains(feature)) return;
     final data = _experimentData[feature];
     if (data != null) {
@@ -1253,11 +1280,13 @@ class AnalyticsController extends SintController {
         : metadata;
 
     if (_sink == null) {
-      _eventQueue.add(_QueuedEvent(
-        eventName: eventName,
-        metadata: metadataWithRate,
-        isAsync: false,
-      ));
+      _eventQueue.add(
+        _QueuedEvent(
+          eventName: eventName,
+          metadata: metadataWithRate,
+          isAsync: false,
+        ),
+      );
       return;
     }
 
@@ -1266,7 +1295,10 @@ class AnalyticsController extends SintController {
   }
 
   /// Log an event (asynchronous).
-  Future<void> logEventAsync(String eventName, LogEventMetadata metadata) async {
+  Future<void> logEventAsync(
+    String eventName,
+    LogEventMetadata metadata,
+  ) async {
     final sampleResult = shouldSampleEvent(eventName, _samplingConfig);
     if (sampleResult != null && sampleResult == 0) return;
 
@@ -1275,11 +1307,13 @@ class AnalyticsController extends SintController {
         : metadata;
 
     if (_sink == null) {
-      _eventQueue.add(_QueuedEvent(
-        eventName: eventName,
-        metadata: metadataWithRate,
-        isAsync: true,
-      ));
+      _eventQueue.add(
+        _QueuedEvent(
+          eventName: eventName,
+          metadata: metadataWithRate,
+          isAsync: true,
+        ),
+      );
       return;
     }
 

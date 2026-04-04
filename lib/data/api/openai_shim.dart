@@ -26,18 +26,18 @@ class OpenAiShim extends ApiProvider {
   OpenAiShim(this.config);
 
   Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        if (config.apiKey != null) 'Authorization': 'Bearer ${config.apiKey}',
-        ...config.extraHeaders,
-      };
+    'Content-Type': 'application/json',
+    if (config.apiKey != null) 'Authorization': 'Bearer ${config.apiKey}',
+    ...config.extraHeaders,
+  };
 
   // ── Anthropic → OpenAI message conversion ──
 
   /// Convert Anthropic system prompt to OpenAI system message.
   Map<String, dynamic> _systemMessage(String systemPrompt) => {
-        'role': 'system',
-        'content': systemPrompt,
-      };
+    'role': 'system',
+    'content': systemPrompt,
+  };
 
   /// Convert an Anthropic-format message to OpenAI format.
   Map<String, dynamic> _convertMessage(Message msg) {
@@ -54,10 +54,7 @@ class OpenAiShim extends ApiProvider {
       switch (block) {
         case TextBlock(text: final t):
           parts.add({'type': 'text', 'text': t});
-        case ToolResultBlock(
-            toolUseId: final tid,
-            content: final c,
-          ):
+        case ToolResultBlock(toolUseId: final tid, content: final c):
           // Tool results become separate tool messages in OpenAI
           return {'role': 'tool', 'content': c, 'tool_call_id': tid};
         case ImageBlock(mediaType: final m, base64Data: final d):
@@ -122,8 +119,9 @@ class OpenAiShim extends ApiProvider {
     for (final msg in messages) {
       if (msg.role == MessageRole.user) {
         final toolResults = msg.content.whereType<ToolResultBlock>().toList();
-        final otherContent =
-            msg.content.where((b) => b is! ToolResultBlock).toList();
+        final otherContent = msg.content
+            .where((b) => b is! ToolResultBlock)
+            .toList();
 
         // Add tool results as separate messages
         for (final tr in toolResults) {
@@ -136,10 +134,11 @@ class OpenAiShim extends ApiProvider {
 
         // Add remaining content as user message
         if (otherContent.isNotEmpty) {
-          result.add(_convertMessage(Message(
-            role: MessageRole.user,
-            content: otherContent,
-          )));
+          result.add(
+            _convertMessage(
+              Message(role: MessageRole.user, content: otherContent),
+            ),
+          );
         }
       } else {
         result.add(_convertMessage(msg));
@@ -197,8 +196,7 @@ class OpenAiShim extends ApiProvider {
     var hasStartedText = false;
     final toolCallBuffers = <int, _ToolCallBuffer>{};
 
-    await for (final event
-        in _parseOpenAiSSE(response.stream)) {
+    await for (final event in _parseOpenAiSSE(response.stream)) {
       final choices = event['choices'] as List?;
       if (choices == null || choices.isEmpty) continue;
 
@@ -235,8 +233,10 @@ class OpenAiShim extends ApiProvider {
 
             toolCallBuffers[tcIndex] = _ToolCallBuffer(
               id: tcMap['id'] as String? ?? 'call_${_uuid.v4()}',
-              name: (tcMap['function']
-                  as Map<String, dynamic>?)?['name'] as String? ?? '',
+              name:
+                  (tcMap['function'] as Map<String, dynamic>?)?['name']
+                      as String? ??
+                  '',
               argumentsBuffer: StringBuffer(),
             );
 
@@ -250,8 +250,9 @@ class OpenAiShim extends ApiProvider {
             );
           }
 
-          final args = (tcMap['function']
-              as Map<String, dynamic>?)?['arguments'] as String?;
+          final args =
+              (tcMap['function'] as Map<String, dynamic>?)?['arguments']
+                  as String?;
           if (args != null) {
             toolCallBuffers[tcIndex]!.argumentsBuffer.write(args);
             yield ContentBlockDeltaEvent(
@@ -321,7 +322,8 @@ class OpenAiShim extends ApiProvider {
 
     if (response.statusCode != 200) {
       throw Exception(
-          'OpenAI API error ${response.statusCode}: ${response.body}');
+        'OpenAI API error ${response.statusCode}: ${response.body}',
+      );
     }
 
     return _parseOpenAiResponse(jsonDecode(response.body));
@@ -342,11 +344,13 @@ class OpenAiShim extends ApiProvider {
       for (final tc in toolCalls) {
         final tcMap = tc as Map<String, dynamic>;
         final fn = tcMap['function'] as Map<String, dynamic>;
-        content.add(ToolUseBlock(
-          id: tcMap['id'] as String,
-          name: fn['name'] as String,
-          input: jsonDecode(fn['arguments'] as String),
-        ));
+        content.add(
+          ToolUseBlock(
+            id: tcMap['id'] as String,
+            name: fn['name'] as String,
+            input: jsonDecode(fn['arguments'] as String),
+          ),
+        );
       }
     }
 
@@ -362,8 +366,7 @@ class OpenAiShim extends ApiProvider {
       usage: json['usage'] != null
           ? TokenUsage(
               inputTokens: json['usage']['prompt_tokens'] as int? ?? 0,
-              outputTokens:
-                  json['usage']['completion_tokens'] as int? ?? 0,
+              outputTokens: json['usage']['completion_tokens'] as int? ?? 0,
             )
           : null,
     );

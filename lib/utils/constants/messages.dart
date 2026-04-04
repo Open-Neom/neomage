@@ -198,10 +198,8 @@ class PromptMessages {
       'Continue?';
   static const String confirmPermission =
       'The tool is requesting permission to perform this action. Allow?';
-  static const String enterApiKey =
-      'Enter your Anthropic API key:';
-  static const String selectModel =
-      'Select a model to use:';
+  static const String enterApiKey = 'Enter your Anthropic API key:';
+  static const String selectModel = 'Select a model to use:';
 }
 
 // ---------------------------------------------------------------------------

@@ -10,23 +10,10 @@ import 'dart:typed_data';
 // ─── Types ───
 
 /// Voice input state.
-enum VoiceState {
-  idle,
-  listening,
-  processing,
-  speaking,
-  error,
-}
+enum VoiceState { idle, listening, processing, speaking, error }
 
 /// Audio format for recording.
-enum AudioFormat {
-  wav,
-  mp3,
-  ogg,
-  flac,
-  webm,
-  pcm16,
-}
+enum AudioFormat { wav, mp3, ogg, flac, webm, pcm16 }
 
 /// STT provider.
 enum SttProvider {
@@ -60,16 +47,57 @@ class SpeechLanguage {
     required this.nativeName,
   });
 
-  static const english = SpeechLanguage(code: 'en-US', name: 'English (US)', nativeName: 'English');
-  static const spanish = SpeechLanguage(code: 'es-ES', name: 'Spanish', nativeName: 'Espanol');
-  static const french = SpeechLanguage(code: 'fr-FR', name: 'French', nativeName: 'Francais');
-  static const german = SpeechLanguage(code: 'de-DE', name: 'German', nativeName: 'Deutsch');
-  static const japanese = SpeechLanguage(code: 'ja-JP', name: 'Japanese', nativeName: '日本語');
-  static const chinese = SpeechLanguage(code: 'zh-CN', name: 'Chinese (Simplified)', nativeName: '简体中文');
-  static const portuguese = SpeechLanguage(code: 'pt-BR', name: 'Portuguese (Brazil)', nativeName: 'Portugues');
-  static const korean = SpeechLanguage(code: 'ko-KR', name: 'Korean', nativeName: '한국어');
+  static const english = SpeechLanguage(
+    code: 'en-US',
+    name: 'English (US)',
+    nativeName: 'English',
+  );
+  static const spanish = SpeechLanguage(
+    code: 'es-ES',
+    name: 'Spanish',
+    nativeName: 'Espanol',
+  );
+  static const french = SpeechLanguage(
+    code: 'fr-FR',
+    name: 'French',
+    nativeName: 'Francais',
+  );
+  static const german = SpeechLanguage(
+    code: 'de-DE',
+    name: 'German',
+    nativeName: 'Deutsch',
+  );
+  static const japanese = SpeechLanguage(
+    code: 'ja-JP',
+    name: 'Japanese',
+    nativeName: '日本語',
+  );
+  static const chinese = SpeechLanguage(
+    code: 'zh-CN',
+    name: 'Chinese (Simplified)',
+    nativeName: '简体中文',
+  );
+  static const portuguese = SpeechLanguage(
+    code: 'pt-BR',
+    name: 'Portuguese (Brazil)',
+    nativeName: 'Portugues',
+  );
+  static const korean = SpeechLanguage(
+    code: 'ko-KR',
+    name: 'Korean',
+    nativeName: '한국어',
+  );
 
-  static const all = [english, spanish, french, german, japanese, chinese, portuguese, korean];
+  static const all = [
+    english,
+    spanish,
+    french,
+    german,
+    japanese,
+    chinese,
+    portuguese,
+    korean,
+  ];
 }
 
 /// Voice configuration.
@@ -118,22 +146,21 @@ class VoiceConfig {
     bool? continuousMode,
     int? sampleRate,
     AudioFormat? format,
-  }) =>
-      VoiceConfig(
-        sttProvider: sttProvider ?? this.sttProvider,
-        ttsProvider: ttsProvider ?? this.ttsProvider,
-        language: language ?? this.language,
-        apiKey: apiKey ?? this.apiKey,
-        baseUrl: baseUrl ?? this.baseUrl,
-        model: model ?? this.model,
-        voice: voice ?? this.voice,
-        speed: speed ?? this.speed,
-        silenceThreshold: silenceThreshold ?? this.silenceThreshold,
-        autoSend: autoSend ?? this.autoSend,
-        continuousMode: continuousMode ?? this.continuousMode,
-        sampleRate: sampleRate ?? this.sampleRate,
-        format: format ?? this.format,
-      );
+  }) => VoiceConfig(
+    sttProvider: sttProvider ?? this.sttProvider,
+    ttsProvider: ttsProvider ?? this.ttsProvider,
+    language: language ?? this.language,
+    apiKey: apiKey ?? this.apiKey,
+    baseUrl: baseUrl ?? this.baseUrl,
+    model: model ?? this.model,
+    voice: voice ?? this.voice,
+    speed: speed ?? this.speed,
+    silenceThreshold: silenceThreshold ?? this.silenceThreshold,
+    autoSend: autoSend ?? this.autoSend,
+    continuousMode: continuousMode ?? this.continuousMode,
+    sampleRate: sampleRate ?? this.sampleRate,
+    format: format ?? this.format,
+  );
 }
 
 /// Transcription result from STT.
@@ -260,15 +287,20 @@ class AudioRecorder {
     } else if (Platform.isLinux) {
       _process = await Process.start('arecord', [
         '-q',
-        '-r', '$sampleRate',
-        '-c', '1',
-        '-f', 'S16_LE',
-        '-t', _formatExtension(),
+        '-r',
+        '$sampleRate',
+        '-c',
+        '1',
+        '-f',
+        'S16_LE',
+        '-t',
+        _formatExtension(),
         '-',
       ]);
     } else {
       throw UnsupportedError(
-          'Audio recording not supported on ${Platform.operatingSystem}');
+        'Audio recording not supported on ${Platform.operatingSystem}',
+      );
     }
 
     // Collect audio data and compute levels.
@@ -349,10 +381,7 @@ class AudioRecorder {
 
 /// Abstract speech-to-text provider.
 abstract class SttEngine {
-  Future<TranscriptionResult> transcribe(
-    Uint8List audio,
-    VoiceConfig config,
-  );
+  Future<TranscriptionResult> transcribe(Uint8List audio, VoiceConfig config);
 
   Future<Stream<String>> transcribeStream(
     Stream<Uint8List> audioStream,
@@ -378,9 +407,14 @@ class WhisperSttEngine implements SttEngine {
 
     final client = HttpClient();
     try {
-      final request = await client.postUrl(Uri.parse('$baseUrl/audio/transcriptions'));
+      final request = await client.postUrl(
+        Uri.parse('$baseUrl/audio/transcriptions'),
+      );
       request.headers.set('Authorization', 'Bearer $apiKey');
-      request.headers.set('Content-Type', 'multipart/form-data; boundary=$boundary');
+      request.headers.set(
+        'Content-Type',
+        'multipart/form-data; boundary=$boundary',
+      );
       request.add(body);
 
       final response = await request.close();
@@ -392,24 +426,29 @@ class WhisperSttEngine implements SttEngine {
 
       final json = jsonDecode(responseBody) as Map<String, dynamic>;
       final text = json['text'] as String? ?? '';
-      final segments = (json['segments'] as List<dynamic>?)
-              ?.map((s) => TranscriptionSegment(
-                    text: s['text'] as String,
-                    start: Duration(
-                        milliseconds: ((s['start'] as num) * 1000).round()),
-                    end: Duration(
-                        milliseconds: ((s['end'] as num) * 1000).round()),
-                    confidence:
-                        (s['avg_logprob'] as num?)?.toDouble() ?? 1.0,
-                  ))
+      final segments =
+          (json['segments'] as List<dynamic>?)
+              ?.map(
+                (s) => TranscriptionSegment(
+                  text: s['text'] as String,
+                  start: Duration(
+                    milliseconds: ((s['start'] as num) * 1000).round(),
+                  ),
+                  end: Duration(
+                    milliseconds: ((s['end'] as num) * 1000).round(),
+                  ),
+                  confidence: (s['avg_logprob'] as num?)?.toDouble() ?? 1.0,
+                ),
+              )
               .toList() ??
           [];
 
       return TranscriptionResult(
         text: text,
         duration: Duration(
-            milliseconds:
-                ((json['duration'] as num?)?.toDouble() ?? 0) * 1000 ~/ 1),
+          milliseconds:
+              ((json['duration'] as num?)?.toDouble() ?? 0) * 1000 ~/ 1,
+        ),
         segments: segments,
         detectedLanguage: _detectLanguage(json['language'] as String?),
         rawResponse: responseBody,
@@ -432,8 +471,7 @@ class WhisperSttEngine implements SttEngine {
       (chunk) => buffer.addAll(chunk),
       onDone: () async {
         try {
-          final result = await transcribe(
-              Uint8List.fromList(buffer), config);
+          final result = await transcribe(Uint8List.fromList(buffer), config);
           controller.add(result.text);
           controller.close();
         } catch (e) {
@@ -451,21 +489,28 @@ class WhisperSttEngine implements SttEngine {
   }
 
   Uint8List _buildMultipartBody(
-      Uint8List audio, VoiceConfig config, String boundary) {
+    Uint8List audio,
+    VoiceConfig config,
+    String boundary,
+  ) {
     final buffer = BytesBuilder();
     final encoder = utf8.encoder;
 
     void addField(String name, String value) {
       buffer.add(encoder.convert('--$boundary\r\n'));
-      buffer.add(encoder.convert(
-          'Content-Disposition: form-data; name="$name"\r\n\r\n'));
+      buffer.add(
+        encoder.convert('Content-Disposition: form-data; name="$name"\r\n\r\n'),
+      );
       buffer.add(encoder.convert('$value\r\n'));
     }
 
     void addFile(String name, String filename, Uint8List data) {
       buffer.add(encoder.convert('--$boundary\r\n'));
-      buffer.add(encoder.convert(
-          'Content-Disposition: form-data; name="$name"; filename="$filename"\r\n'));
+      buffer.add(
+        encoder.convert(
+          'Content-Disposition: form-data; name="$name"; filename="$filename"\r\n',
+        ),
+      );
       buffer.add(encoder.convert('Content-Type: audio/wav\r\n\r\n'));
       buffer.add(data);
       buffer.add(encoder.convert('\r\n'));
@@ -484,9 +529,9 @@ class WhisperSttEngine implements SttEngine {
   SpeechLanguage? _detectLanguage(String? code) {
     if (code == null) return null;
     return SpeechLanguage.all.cast<SpeechLanguage?>().firstWhere(
-          (l) => l!.code.startsWith(code),
-          orElse: () => null,
-        );
+      (l) => l!.code.startsWith(code),
+      orElse: () => null,
+    );
   }
 }
 
@@ -502,7 +547,8 @@ class SystemSttEngine implements SttEngine {
     if (Platform.isMacOS) {
       // Save audio to temp file and use macOS Dictation API via osascript.
       final tempFile = File(
-          '${Directory.systemTemp.path}/claw_audio_${DateTime.now().millisecondsSinceEpoch}.wav');
+        '${Directory.systemTemp.path}/claw_audio_${DateTime.now().millisecondsSinceEpoch}.wav',
+      );
       await tempFile.writeAsBytes(audio);
 
       try {
@@ -511,17 +557,22 @@ class SystemSttEngine implements SttEngine {
         if (whisperResult.exitCode == 0) {
           final result = await Process.run('whisper', [
             tempFile.path,
-            '--model', 'base',
-            '--language', config.language.code.split('-').first,
-            '--output_format', 'json',
-            '--output_dir', Directory.systemTemp.path,
+            '--model',
+            'base',
+            '--language',
+            config.language.code.split('-').first,
+            '--output_format',
+            'json',
+            '--output_dir',
+            Directory.systemTemp.path,
           ]);
 
           if (result.exitCode == 0) {
             final jsonFile = File(tempFile.path.replaceAll('.wav', '.json'));
             if (await jsonFile.exists()) {
-              final json = jsonDecode(await jsonFile.readAsString())
-                  as Map<String, dynamic>;
+              final json =
+                  jsonDecode(await jsonFile.readAsString())
+                      as Map<String, dynamic>;
               await jsonFile.delete();
               return TranscriptionResult(
                 text: json['text'] as String? ?? '',
@@ -531,17 +582,15 @@ class SystemSttEngine implements SttEngine {
           }
         }
 
-        return const TranscriptionResult(
-          text: '',
-          duration: Duration.zero,
-        );
+        return const TranscriptionResult(text: '', duration: Duration.zero);
       } finally {
         if (await tempFile.exists()) await tempFile.delete();
       }
     }
 
     throw UnsupportedError(
-        'System STT not supported on ${Platform.operatingSystem}');
+      'System STT not supported on ${Platform.operatingSystem}',
+    );
   }
 
   @override
@@ -570,7 +619,8 @@ class SystemTtsEngine implements TtsEngine {
   Future<Uint8List> synthesize(String text, VoiceConfig config) async {
     if (Platform.isMacOS) {
       final tempFile = File(
-          '${Directory.systemTemp.path}/claw_tts_${DateTime.now().millisecondsSinceEpoch}.aiff');
+        '${Directory.systemTemp.path}/claw_tts_${DateTime.now().millisecondsSinceEpoch}.aiff',
+      );
 
       await Process.run('say', [
         '-o', tempFile.path,
@@ -594,14 +644,16 @@ class SystemTtsEngine implements TtsEngine {
 
     if (Platform.isMacOS) {
       _speakProcess = await Process.start('say', [
-        '-r', '${(175 * config.speed).round()}',
+        '-r',
+        '${(175 * config.speed).round()}',
         text,
       ]);
       await _speakProcess!.exitCode;
       _speakProcess = null;
     } else if (Platform.isLinux) {
       _speakProcess = await Process.start('espeak', [
-        '-s', '${(175 * config.speed).round()}',
+        '-s',
+        '${(175 * config.speed).round()}',
         text,
       ]);
       await _speakProcess!.exitCode;
@@ -632,13 +684,17 @@ class OpenAiTtsEngine implements TtsEngine {
       final request = await client.postUrl(Uri.parse('$baseUrl/audio/speech'));
       request.headers.set('Authorization', 'Bearer $apiKey');
       request.headers.set('Content-Type', 'application/json');
-      request.add(utf8.encode(jsonEncode({
-        'model': 'tts-1',
-        'input': text,
-        'voice': config.voice ?? 'alloy',
-        'speed': config.speed,
-        'response_format': 'mp3',
-      })));
+      request.add(
+        utf8.encode(
+          jsonEncode({
+            'model': 'tts-1',
+            'input': text,
+            'voice': config.voice ?? 'alloy',
+            'speed': config.speed,
+            'response_format': 'mp3',
+          }),
+        ),
+      );
 
       final response = await request.close();
       if (response.statusCode != 200) {
@@ -662,14 +718,18 @@ class OpenAiTtsEngine implements TtsEngine {
 
     // Save to temp file and play.
     final tempFile = File(
-        '${Directory.systemTemp.path}/claw_speech_${DateTime.now().millisecondsSinceEpoch}.mp3');
+      '${Directory.systemTemp.path}/claw_speech_${DateTime.now().millisecondsSinceEpoch}.mp3',
+    );
     await tempFile.writeAsBytes(audio);
 
     try {
       if (Platform.isMacOS) {
         _playProcess = await Process.start('afplay', [tempFile.path]);
       } else if (Platform.isLinux) {
-        _playProcess = await Process.start('mpv', ['--no-video', tempFile.path]);
+        _playProcess = await Process.start('mpv', [
+          '--no-video',
+          tempFile.path,
+        ]);
       }
       await _playProcess?.exitCode;
     } finally {
@@ -701,11 +761,11 @@ class VoiceService {
   StreamSubscription<AudioLevel>? _levelSub;
 
   VoiceService({VoiceConfig? config})
-      : _config = config ?? const VoiceConfig(),
-        _recorder = AudioRecorder(
-          sampleRate: config?.sampleRate ?? 16000,
-          format: config?.format ?? AudioFormat.wav,
-        ) {
+    : _config = config ?? const VoiceConfig(),
+      _recorder = AudioRecorder(
+        sampleRate: config?.sampleRate ?? 16000,
+        format: config?.format ?? AudioFormat.wav,
+      ) {
     _initEngines();
   }
 
@@ -763,8 +823,9 @@ class VoiceService {
       // Start silence detection timer.
       _silenceTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
         if (_lastAudioAboveThreshold != null) {
-          final silenceDuration =
-              DateTime.now().difference(_lastAudioAboveThreshold!);
+          final silenceDuration = DateTime.now().difference(
+            _lastAudioAboveThreshold!,
+          );
           if (silenceDuration.inMilliseconds >
               (_config.silenceThreshold * 1000)) {
             // Silence detected — stop recording.

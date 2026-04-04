@@ -56,6 +56,17 @@ const String forkDirectivePrefix = 'Your directive: ';
 // ── Slash command argument patterns ──
 const List<String> commonHelpArgs = ['help', '-h', '--help'];
 const List<String> commonInfoArgs = [
-  'list', 'show', 'display', 'current', 'view', 'get',
-  'check', 'describe', 'print', 'version', 'about', 'status', '?',
+  'list',
+  'show',
+  'display',
+  'current',
+  'view',
+  'get',
+  'check',
+  'describe',
+  'print',
+  'version',
+  'about',
+  'status',
+  '?',
 ];

@@ -3,7 +3,6 @@
 // and collaborative memory management.
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 
 // ─── Types ───
@@ -57,43 +56,43 @@ class MemoryFile {
     SyncStatus? syncStatus,
     String? remoteHash,
     int? version,
-  }) =>
-      MemoryFile(
-        path: path,
-        type: type,
-        content: content ?? this.content,
-        lastModified: lastModified ?? this.lastModified,
-        hash: hash ?? this.hash,
-        syncStatus: syncStatus ?? this.syncStatus,
-        remoteHash: remoteHash ?? this.remoteHash,
-        author: author,
-        version: version ?? this.version,
-      );
+  }) => MemoryFile(
+    path: path,
+    type: type,
+    content: content ?? this.content,
+    lastModified: lastModified ?? this.lastModified,
+    hash: hash ?? this.hash,
+    syncStatus: syncStatus ?? this.syncStatus,
+    remoteHash: remoteHash ?? this.remoteHash,
+    author: author,
+    version: version ?? this.version,
+  );
 
   Map<String, dynamic> toJson() => {
-        'path': path,
-        'type': type.name,
-        'content': content,
-        'lastModified': lastModified.toIso8601String(),
-        'hash': hash,
-        'syncStatus': syncStatus.name,
-        'remoteHash': remoteHash,
-        'author': author,
-        'version': version,
-      };
+    'path': path,
+    'type': type.name,
+    'content': content,
+    'lastModified': lastModified.toIso8601String(),
+    'hash': hash,
+    'syncStatus': syncStatus.name,
+    'remoteHash': remoteHash,
+    'author': author,
+    'version': version,
+  };
 
   factory MemoryFile.fromJson(Map<String, dynamic> json) => MemoryFile(
-        path: json['path'] as String,
-        type: MemoryFileType.values.byName(json['type'] as String),
-        content: json['content'] as String,
-        lastModified: DateTime.parse(json['lastModified'] as String),
-        hash: json['hash'] as String?,
-        syncStatus:
-            SyncStatus.values.byName(json['syncStatus'] as String? ?? 'notTracked'),
-        remoteHash: json['remoteHash'] as String?,
-        author: json['author'] as String?,
-        version: json['version'] as int? ?? 1,
-      );
+    path: json['path'] as String,
+    type: MemoryFileType.values.byName(json['type'] as String),
+    content: json['content'] as String,
+    lastModified: DateTime.parse(json['lastModified'] as String),
+    hash: json['hash'] as String?,
+    syncStatus: SyncStatus.values.byName(
+      json['syncStatus'] as String? ?? 'notTracked',
+    ),
+    remoteHash: json['remoteHash'] as String?,
+    author: json['author'] as String?,
+    version: json['version'] as int? ?? 1,
+  );
 }
 
 /// A memory section within a file (parsed from markdown).
@@ -174,12 +173,7 @@ class MemoryConflict {
 }
 
 /// Resolution strategy for conflicts.
-enum ConflictResolution {
-  keepLocal,
-  keepRemote,
-  merge,
-  manual,
-}
+enum ConflictResolution { keepLocal, keepRemote, merge, manual }
 
 /// Change event for memory files.
 sealed class MemoryEvent {
@@ -224,12 +218,14 @@ class MemoryParser {
       if (headingMatch != null) {
         // Save previous section.
         if (currentHeading != null) {
-          sections.add(MemorySection(
-            heading: currentHeading,
-            level: currentLevel,
-            content: buffer.toString().trim(),
-            tags: _extractTags(buffer.toString()),
-          ));
+          sections.add(
+            MemorySection(
+              heading: currentHeading,
+              level: currentLevel,
+              content: buffer.toString().trim(),
+              tags: _extractTags(buffer.toString()),
+            ),
+          );
         }
 
         currentHeading = headingMatch.group(2)!;
@@ -242,18 +238,22 @@ class MemoryParser {
 
     // Save last section.
     if (currentHeading != null) {
-      sections.add(MemorySection(
-        heading: currentHeading,
-        level: currentLevel,
-        content: buffer.toString().trim(),
-        tags: _extractTags(buffer.toString()),
-      ));
+      sections.add(
+        MemorySection(
+          heading: currentHeading,
+          level: currentLevel,
+          content: buffer.toString().trim(),
+          tags: _extractTags(buffer.toString()),
+        ),
+      );
     } else if (buffer.toString().trim().isNotEmpty) {
-      sections.add(MemorySection(
-        heading: 'General',
-        level: 1,
-        content: buffer.toString().trim(),
-      ));
+      sections.add(
+        MemorySection(
+          heading: 'General',
+          level: 1,
+          content: buffer.toString().trim(),
+        ),
+      );
     }
 
     return sections;
@@ -300,8 +300,7 @@ class TeamMemoryService {
   Timer? _watchTimer;
   final Map<String, String> _lastKnownHashes = {};
 
-  TeamMemoryService({required String projectRoot})
-      : _projectRoot = projectRoot;
+  TeamMemoryService({required String projectRoot}) : _projectRoot = projectRoot;
 
   /// Event stream.
   Stream<MemoryEvent> get events => _eventController.stream;
@@ -500,58 +499,83 @@ class TeamMemoryService {
 
     // Pattern: "always/never do X" — coding conventions.
     final conventionPatterns = [
-      RegExp(r'(?:always|never|prefer|avoid)\s+(?:use|using|do|doing)\s+(.+)', caseSensitive: false),
-      RegExp(r'(?:the|our)\s+(?:convention|standard|pattern|rule)\s+is\s+(.+)', caseSensitive: false),
-      RegExp(r'(?:we|you should)\s+(?:always|never)\s+(.+)', caseSensitive: false),
+      RegExp(
+        r'(?:always|never|prefer|avoid)\s+(?:use|using|do|doing)\s+(.+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'(?:the|our)\s+(?:convention|standard|pattern|rule)\s+is\s+(.+)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'(?:we|you should)\s+(?:always|never)\s+(.+)',
+        caseSensitive: false,
+      ),
     ];
 
     for (final pattern in conventionPatterns) {
       for (final match in pattern.allMatches(message)) {
-        extracted.add(ExtractedMemory(
-          content: match.group(0)!.trim(),
-          source: 'auto_detected',
-          category: MemoryCategory.codingConventions,
-          confidence: 0.7,
-          sessionId: sessionId,
-          extractedAt: now,
-        ));
+        extracted.add(
+          ExtractedMemory(
+            content: match.group(0)!.trim(),
+            source: 'auto_detected',
+            category: MemoryCategory.codingConventions,
+            confidence: 0.7,
+            sessionId: sessionId,
+            extractedAt: now,
+          ),
+        );
       }
     }
 
     // Pattern: build/run/test commands.
     final commandPatterns = [
-      RegExp(r'(?:run|build|test|deploy|install)\s+(?:with|using|via)\s+[`"]?(.+?)[`"]?$', caseSensitive: false, multiLine: true),
-      RegExp(r'(?:use|run)\s+[`"](.+?)[`"]\s+to\s+(?:build|test|deploy)', caseSensitive: false),
+      RegExp(
+        r'(?:run|build|test|deploy|install)\s+(?:with|using|via)\s+[`"]?(.+?)[`"]?$',
+        caseSensitive: false,
+        multiLine: true,
+      ),
+      RegExp(
+        r'(?:use|run)\s+[`"](.+?)[`"]\s+to\s+(?:build|test|deploy)',
+        caseSensitive: false,
+      ),
     ];
 
     for (final pattern in commandPatterns) {
       for (final match in pattern.allMatches(message)) {
-        extracted.add(ExtractedMemory(
-          content: match.group(0)!.trim(),
-          source: 'auto_detected',
-          category: MemoryCategory.buildInstructions,
-          confidence: 0.6,
-          sessionId: sessionId,
-          extractedAt: now,
-        ));
+        extracted.add(
+          ExtractedMemory(
+            content: match.group(0)!.trim(),
+            source: 'auto_detected',
+            category: MemoryCategory.buildInstructions,
+            confidence: 0.6,
+            sessionId: sessionId,
+            extractedAt: now,
+          ),
+        );
       }
     }
 
     // Pattern: architecture/structure mentions.
     final archPatterns = [
-      RegExp(r'(?:the architecture|the structure|organized as|follows?\s+(?:MVC|MVVM|clean architecture|hexagonal))', caseSensitive: false),
+      RegExp(
+        r'(?:the architecture|the structure|organized as|follows?\s+(?:MVC|MVVM|clean architecture|hexagonal))',
+        caseSensitive: false,
+      ),
     ];
 
     for (final pattern in archPatterns) {
       for (final match in pattern.allMatches(message)) {
-        extracted.add(ExtractedMemory(
-          content: match.group(0)!.trim(),
-          source: 'auto_detected',
-          category: MemoryCategory.architecture,
-          confidence: 0.5,
-          sessionId: sessionId,
-          extractedAt: now,
-        ));
+        extracted.add(
+          ExtractedMemory(
+            content: match.group(0)!.trim(),
+            source: 'auto_detected',
+            category: MemoryCategory.architecture,
+            confidence: 0.5,
+            sessionId: sessionId,
+            extractedAt: now,
+          ),
+        );
       }
     }
 
@@ -588,13 +612,18 @@ class TeamMemoryService {
     final existing = _files[path];
     if (existing != null) {
       final sections = MemoryParser.parse(existing.content);
-      final section = sections.where((s) => s.heading == sectionHeading).firstOrNull;
+      final section = sections
+          .where((s) => s.heading == sectionHeading)
+          .firstOrNull;
 
       if (section != null) {
         // Append to existing section.
         final newContent = '${section.content}\n- ${memory.content}';
-        return updateSection(path, heading: sectionHeading, newContent: newContent)
-            .then((f) => f!);
+        return updateSection(
+          path,
+          heading: sectionHeading,
+          newContent: newContent,
+        ).then((f) => f!);
       }
     }
 
@@ -612,15 +641,18 @@ class TeamMemoryService {
   String mergeContent(String local, String remote, {String? base}) {
     final localSections = MemoryParser.parse(local);
     final remoteSections = MemoryParser.parse(remote);
-    final baseSections =
-        base != null ? MemoryParser.parse(base) : <MemorySection>[];
+    final baseSections = base != null
+        ? MemoryParser.parse(base)
+        : <MemorySection>[];
 
     final mergedSections = <MemorySection>[];
     final processedHeadings = <String>{};
 
     // Process local sections.
     for (final ls in localSections) {
-      final rs = remoteSections.where((s) => s.heading == ls.heading).firstOrNull;
+      final rs = remoteSections
+          .where((s) => s.heading == ls.heading)
+          .firstOrNull;
       final bs = baseSections.where((s) => s.heading == ls.heading).firstOrNull;
 
       processedHeadings.add(ls.heading);
@@ -637,29 +669,36 @@ class TeamMemoryService {
         // Three-way merge.
         if (ls.content == bs.content) {
           // Only remote changed.
-          mergedSections.add(MemorySection(
-            heading: ls.heading,
-            level: ls.level,
-            content: rs.content,
-          ));
+          mergedSections.add(
+            MemorySection(
+              heading: ls.heading,
+              level: ls.level,
+              content: rs.content,
+            ),
+          );
         } else if (rs.content == bs.content) {
           // Only local changed.
           mergedSections.add(ls);
         } else {
           // Both changed — concatenate with markers.
-          mergedSections.add(MemorySection(
-            heading: ls.heading,
-            level: ls.level,
-            content: '${ls.content}\n\n<!-- Remote changes -->\n${rs.content}',
-          ));
+          mergedSections.add(
+            MemorySection(
+              heading: ls.heading,
+              level: ls.level,
+              content:
+                  '${ls.content}\n\n<!-- Remote changes -->\n${rs.content}',
+            ),
+          );
         }
       } else {
         // No base — concatenate.
-        mergedSections.add(MemorySection(
-          heading: ls.heading,
-          level: ls.level,
-          content: '${ls.content}\n\n${rs.content}',
-        ));
+        mergedSections.add(
+          MemorySection(
+            heading: ls.heading,
+            level: ls.level,
+            content: '${ls.content}\n\n${rs.content}',
+          ),
+        );
       }
     }
 
@@ -734,7 +773,9 @@ class TeamMemoryService {
       });
 
     for (final file in sorted) {
-      if (!includeLocal && file.type == MemoryFileType.neomClawLocalMd) continue;
+      if (!includeLocal && file.type == MemoryFileType.neomClawLocalMd) {
+        continue;
+      }
       if (!includeTeam && file.type == MemoryFileType.teamMd) continue;
       if (!includeRules && file.type == MemoryFileType.ruleset) continue;
 

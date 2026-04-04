@@ -1,4 +1,4 @@
-// Port of openneomclaw env.ts + envDynamic.ts + envUtils.ts + envValidation.ts
+// Port of neom_claw env.ts + envDynamic.ts + envUtils.ts + envValidation.ts
 // + managedEnv.ts + managedEnvConstants.ts
 //
 // Environment variable management, detection, and validation utilities for
@@ -372,7 +372,9 @@ String _detectDeploymentEnvironmentImpl() {
 
   // EC2 via hypervisor UUID
   try {
-    final uuid = File('/sys/hypervisor/uuid').readAsStringSync().trim().toLowerCase();
+    final uuid = File(
+      '/sys/hypervisor/uuid',
+    ).readAsStringSync().trim().toLowerCase();
     if (uuid.startsWith('ec2')) return 'aws-ec2';
   } catch (_) {}
 
@@ -382,7 +384,8 @@ String _detectDeploymentEnvironmentImpl() {
     return 'azure-app-service';
   }
   if (env['AZURE_FUNCTIONS_ENVIRONMENT'] != null) return 'azure-functions';
-  if (env['APP_URL'] != null && env['APP_URL']!.contains('ondigitalocean.app')) {
+  if (env['APP_URL'] != null &&
+      env['APP_URL']!.contains('ondigitalocean.app')) {
     return 'digitalocean-app-platform';
   }
   if (env['SPACE_CREATOR_USER_ID'] != null) return 'huggingface-spaces';
@@ -446,8 +449,7 @@ bool? _wslCache;
 bool isWslEnvironment() {
   if (_wslCache != null) return _wslCache!;
   try {
-    _wslCache =
-        File('/proc/sys/fs/binfmt_misc/WSLInterop').existsSync();
+    _wslCache = File('/proc/sys/fs/binfmt_misc/WSLInterop').existsSync();
   } catch (_) {
     _wslCache = false;
   }
@@ -542,8 +544,9 @@ Future<void> initJetBrainsDetection() async {
 /// Check internet access (best-effort, 1 s timeout).
 Future<bool> hasInternetAccess() async {
   try {
-    final result = await InternetAddress.lookup('1.1.1.1')
-        .timeout(const Duration(seconds: 1));
+    final result = await InternetAddress.lookup(
+      '1.1.1.1',
+    ).timeout(const Duration(seconds: 1));
     return result.isNotEmpty;
   } catch (_) {
     return false;
@@ -620,9 +623,7 @@ const _providerManagedEnvVars = <String>{
   'NEOMCLAW_SUBAGENT_MODEL',
 };
 
-const _providerManagedEnvPrefixes = <String>[
-  'VERTEX_REGION_CLAUDE_',
-];
+const _providerManagedEnvPrefixes = <String>['VERTEX_REGION_CLAUDE_'];
 
 /// Check if a key is a provider-managed env var.
 bool isProviderManagedEnvVar(String key) {
@@ -790,7 +791,11 @@ Map<String, String> filterSettingsEnv(Map<String, String>? env) {
 }
 
 /// Trusted setting sources whose env vars can be applied before trust dialog.
-const _trustedSettingSources = ['userSettings', 'flagSettings', 'policySettings'];
+const _trustedSettingSources = [
+  'userSettings',
+  'flagSettings',
+  'policySettings',
+];
 
 /// Apply environment variables from trusted sources.
 ///
@@ -827,7 +832,9 @@ void applySafeConfigEnvironmentVariables({
   }
 
   // Policy settings last
-  final policyEnv = filterSettingsEnv(getSettingsForSourceEnv('policySettings'));
+  final policyEnv = filterSettingsEnv(
+    getSettingsForSourceEnv('policySettings'),
+  );
   policyEnv.forEach((key, value) {
     Platform.environment[key] = value;
   });

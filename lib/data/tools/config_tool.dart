@@ -1,4 +1,4 @@
-// ConfigTool — port of openneomclaw/src/tools/ConfigTool/.
+// ConfigTool — port of neom_claw/src/tools/ConfigTool/.
 // Get and set application settings: theme, model, permissions, verbose mode,
 // with validation, type coercion, supported-settings registry, and AppState sync.
 
@@ -31,15 +31,11 @@ enum SettingSource {
   global,
 
   /// Stored in project settings (.neomclaw/settings.json).
-  settings;
+  settings,
 }
 
 /// AppState keys that can be synced for immediate UI effect.
-enum SyncableAppStateKey {
-  verbose,
-  mainLoopModel,
-  thinkingEnabled,
-}
+enum SyncableAppStateKey { verbose, mainLoopModel, thinkingEnabled }
 
 // ─── Setting Configuration ───────────────────────────────────────────────────
 
@@ -102,8 +98,8 @@ class SettingValidation {
 
   const SettingValidation.valid() : isValid = true, error = null;
   const SettingValidation.invalid(String message)
-      : isValid = false,
-        error = message;
+    : isValid = false,
+      error = message;
 }
 
 // ─── Supported Settings Registry ─────────────────────────────────────────────
@@ -230,7 +226,7 @@ class SupportedSettingsRegistry {
       description: 'Override the default model',
       appStateKey: SyncableAppStateKey.mainLoopModel,
       getOptions: () => defaultModelOptions,
-      formatOnRead: (v) => v == null ? 'default' : v,
+      formatOnRead: (v) => v ?? 'default',
     );
 
     _settings['alwaysThinkingEnabled'] = SettingConfig(
@@ -379,10 +375,7 @@ class ConfigToolInput {
   const ConfigToolInput({required this.setting, this.value});
 
   factory ConfigToolInput.fromJson(Map<String, dynamic> json) =>
-      ConfigToolInput(
-        setting: json['setting'] as String,
-        value: json['value'],
-      );
+      ConfigToolInput(setting: json['setting'] as String, value: json['value']);
 
   /// Whether this is a GET operation (no value provided).
   bool get isGet => value == null;
@@ -409,14 +402,14 @@ class ConfigToolOutput {
   });
 
   Map<String, dynamic> toJson() => {
-        'success': success,
-        if (operation != null) 'operation': operation,
-        if (setting != null) 'setting': setting,
-        if (value != null) 'value': value,
-        if (previousValue != null) 'previousValue': previousValue,
-        if (newValue != null) 'newValue': newValue,
-        if (error != null) 'error': error,
-      };
+    'success': success,
+    if (operation != null) 'operation': operation,
+    if (setting != null) 'setting': setting,
+    if (value != null) 'value': value,
+    if (previousValue != null) 'previousValue': previousValue,
+    if (newValue != null) 'newValue': newValue,
+    if (error != null) 'error': error,
+  };
 }
 
 // ─── Build Nested Object ─────────────────────────────────────────────────────
@@ -447,9 +440,9 @@ class ConfigTool extends Tool {
     GlobalConfigStore? globalConfig,
     SettingsStore? settings,
     this.onAppStateSync,
-  })  : _registry = registry ?? SupportedSettingsRegistry(),
-        _globalConfig = globalConfig ?? InMemoryGlobalConfigStore(),
-        _settings = settings ?? InMemorySettingsStore();
+  }) : _registry = registry ?? SupportedSettingsRegistry(),
+       _globalConfig = globalConfig ?? InMemoryGlobalConfigStore(),
+       _settings = settings ?? InMemorySettingsStore();
 
   @override
   String get name => configToolName;
@@ -471,26 +464,26 @@ class ConfigTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'setting': {
-            'type': 'string',
-            'description':
-                'The setting key (e.g., "theme", "model", '
-                '"permissions.defaultMode")',
-          },
-          'value': {
-            'description': 'The new value. Omit to get current value.',
-            'oneOf': [
-              {'type': 'string'},
-              {'type': 'boolean'},
-              {'type': 'number'},
-            ],
-          },
-        },
-        'required': ['setting'],
-        'additionalProperties': false,
-      };
+    'type': 'object',
+    'properties': {
+      'setting': {
+        'type': 'string',
+        'description':
+            'The setting key (e.g., "theme", "model", '
+            '"permissions.defaultMode")',
+      },
+      'value': {
+        'description': 'The new value. Omit to get current value.',
+        'oneOf': [
+          {'type': 'string'},
+          {'type': 'boolean'},
+          {'type': 'number'},
+        ],
+      },
+    },
+    'required': ['setting'],
+    'additionalProperties': false,
+  };
 
   @override
   String get prompt => _generatePrompt();
@@ -498,15 +491,17 @@ class ConfigTool extends Tool {
   /// Generate a dynamic prompt listing available settings.
   String _generatePrompt() {
     final keys = _registry.getAllKeys();
-    final settingsList = keys.map((key) {
-      final config = _registry.getConfig(key)!;
-      var desc = '  - $key (${config.type}): ${config.description}';
-      final opts = config.effectiveOptions;
-      if (opts != null && opts.isNotEmpty) {
-        desc += ' [${opts.join(", ")}]';
-      }
-      return desc;
-    }).join('\n');
+    final settingsList = keys
+        .map((key) {
+          final config = _registry.getConfig(key)!;
+          var desc = '  - $key (${config.type}): ${config.description}';
+          final opts = config.effectiveOptions;
+          if (opts != null && opts.isNotEmpty) {
+            desc += ' [${opts.join(", ")}]';
+          }
+          return desc;
+        })
+        .join('\n');
 
     return '''Get or set application settings.
 
@@ -567,12 +562,14 @@ To write a setting, provide both the setting key and the new value.
           ? config.formatOnRead!(currentValue)
           : currentValue;
 
-      return _successResult(ConfigToolOutput(
-        success: true,
-        operation: 'get',
-        setting: setting,
-        value: displayValue,
-      ));
+      return _successResult(
+        ConfigToolOutput(
+          success: true,
+          operation: 'get',
+          setting: setting,
+          value: displayValue,
+        ),
+      );
     }
 
     // 3. SET operation.
@@ -589,8 +586,11 @@ To write a setting, provide both the setting key and the new value.
         }
       }
       if (finalValue is! bool) {
-        return _errorResult('$setting requires true or false.',
-            operation: 'set', setting: setting);
+        return _errorResult(
+          '$setting requires true or false.',
+          operation: 'set',
+          setting: setting,
+        );
       }
     }
 
@@ -608,8 +608,11 @@ To write a setting, provide both the setting key and the new value.
     if (config.validateOnWrite != null) {
       final validation = await config.validateOnWrite!(finalValue);
       if (!validation.isValid) {
-        return _errorResult(validation.error ?? 'Validation failed',
-            operation: 'set', setting: setting);
+        return _errorResult(
+          validation.error ?? 'Validation failed',
+          operation: 'set',
+          setting: setting,
+        );
       }
     }
 
@@ -623,8 +626,11 @@ To write a setting, provide both the setting key and the new value.
       } else {
         final result = _settings.setValueAtPath(path, finalValue);
         if (!result.isValid) {
-          return _errorResult(result.error ?? 'Failed to update setting',
-              operation: 'set', setting: setting);
+          return _errorResult(
+            result.error ?? 'Failed to update setting',
+            operation: 'set',
+            setting: setting,
+          );
         }
       }
 
@@ -633,13 +639,15 @@ To write a setting, provide both the setting key and the new value.
         onAppStateSync!(config.appStateKey!, finalValue);
       }
 
-      return _successResult(ConfigToolOutput(
-        success: true,
-        operation: 'set',
-        setting: setting,
-        previousValue: previousValue,
-        newValue: finalValue,
-      ));
+      return _successResult(
+        ConfigToolOutput(
+          success: true,
+          operation: 'set',
+          setting: setting,
+          previousValue: previousValue,
+          newValue: finalValue,
+        ),
+      );
     } catch (e) {
       return _errorResult('$e', operation: 'set', setting: setting);
     }

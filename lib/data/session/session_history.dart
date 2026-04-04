@@ -23,12 +23,12 @@ class SessionSnapshot {
   });
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-        'messages': messages.map((m) => _messageToJson(m)).toList(),
-        'metadata': metadata,
-      };
+    'sessionId': sessionId,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'messages': messages.map((m) => _messageToJson(m)).toList(),
+    'metadata': metadata,
+  };
 
   factory SessionSnapshot.fromJson(Map<String, dynamic> json) {
     return SessionSnapshot(
@@ -38,8 +38,7 @@ class SessionSnapshot {
       messages: (json['messages'] as List)
           .map((m) => _messageFromJson(m as Map<String, dynamic>))
           .toList(),
-      metadata:
-          (json['metadata'] as Map<String, dynamic>?) ?? const {},
+      metadata: (json['metadata'] as Map<String, dynamic>?) ?? const {},
     );
   }
 }
@@ -120,43 +119,38 @@ class _SessionEntry {
 // ── Serialization helpers ──
 
 Map<String, dynamic> _messageToJson(Message m) => {
-      'id': m.id,
-      'role': m.role.name,
-      'content': m.content.map(_blockToJson).toList(),
-      'timestamp': m.timestamp.toIso8601String(),
-      if (m.stopReason != null) 'stopReason': m.stopReason!.name,
-      if (m.usage != null)
-        'usage': {
-          'input_tokens': m.usage!.inputTokens,
-          'output_tokens': m.usage!.outputTokens,
-        },
-    };
+  'id': m.id,
+  'role': m.role.name,
+  'content': m.content.map(_blockToJson).toList(),
+  'timestamp': m.timestamp.toIso8601String(),
+  if (m.stopReason != null) 'stopReason': m.stopReason!.name,
+  if (m.usage != null)
+    'usage': {
+      'input_tokens': m.usage!.inputTokens,
+      'output_tokens': m.usage!.outputTokens,
+    },
+};
 
 Map<String, dynamic> _blockToJson(ContentBlock block) => switch (block) {
-      TextBlock(text: final t) => {'type': 'text', 'text': t},
-      ToolUseBlock(id: final id, name: final n, input: final i) => {
-          'type': 'tool_use',
-          'id': id,
-          'name': n,
-          'input': i,
-        },
-      ToolResultBlock(
-        toolUseId: final tid,
-        content: final c,
-        isError: final e
-      ) =>
-        {
-          'type': 'tool_result',
-          'tool_use_id': tid,
-          'content': c,
-          if (e) 'is_error': true,
-        },
-      ImageBlock(mediaType: final m, base64Data: final d) => {
-          'type': 'image',
-          'media_type': m,
-          'data': d,
-        },
-    };
+  TextBlock(text: final t) => {'type': 'text', 'text': t},
+  ToolUseBlock(id: final id, name: final n, input: final i) => {
+    'type': 'tool_use',
+    'id': id,
+    'name': n,
+    'input': i,
+  },
+  ToolResultBlock(toolUseId: final tid, content: final c, isError: final e) => {
+    'type': 'tool_result',
+    'tool_use_id': tid,
+    'content': c,
+    if (e) 'is_error': true,
+  },
+  ImageBlock(mediaType: final m, base64Data: final d) => {
+    'type': 'image',
+    'media_type': m,
+    'data': d,
+  },
+};
 
 Message _messageFromJson(Map<String, dynamic> json) {
   final role = switch (json['role'] as String) {
@@ -198,19 +192,19 @@ ContentBlock _blockFromJson(Map<String, dynamic> json) {
   return switch (type) {
     'text' => TextBlock(json['text'] as String),
     'tool_use' => ToolUseBlock(
-        id: json['id'] as String,
-        name: json['name'] as String,
-        input: json['input'] as Map<String, dynamic>,
-      ),
+      id: json['id'] as String,
+      name: json['name'] as String,
+      input: json['input'] as Map<String, dynamic>,
+    ),
     'tool_result' => ToolResultBlock(
-        toolUseId: json['tool_use_id'] as String,
-        content: json['content'] as String,
-        isError: json['is_error'] as bool? ?? false,
-      ),
+      toolUseId: json['tool_use_id'] as String,
+      content: json['content'] as String,
+      isError: json['is_error'] as bool? ?? false,
+    ),
     'image' => ImageBlock(
-        mediaType: json['media_type'] as String,
-        base64Data: json['data'] as String,
-      ),
+      mediaType: json['media_type'] as String,
+      base64Data: json['data'] as String,
+    ),
     _ => TextBlock('[Unknown block type: $type]'),
   };
 }

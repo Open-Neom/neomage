@@ -1,4 +1,4 @@
-// Port of openneomclaw theme.ts + systemTheme.ts + logoV2Utils.ts
+// Port of neom_claw theme.ts + systemTheme.ts + logoV2Utils.ts
 //
 // Theme detection, color palettes, logo layout, and display utilities
 // for the neom_claw package.
@@ -528,88 +528,146 @@ const _darkDaltonizedTheme = ClawTheme(
 
 // ANSI themes use ANSI color names instead of RGB
 const _lightAnsiTheme = ClawTheme(
-  autoAccept: 'ansi:magenta', bashBorder: 'ansi:magenta',
-  neomClaw: 'ansi:redBright', neomClawShimmer: 'ansi:yellowBright',
+  autoAccept: 'ansi:magenta',
+  bashBorder: 'ansi:magenta',
+  neomClaw: 'ansi:redBright',
+  neomClawShimmer: 'ansi:yellowBright',
   neomClawBlueForSystemSpinner: 'ansi:blue',
   neomClawBlueShimmerForSystemSpinner: 'ansi:blueBright',
-  permission: 'ansi:blue', permissionShimmer: 'ansi:blueBright',
-  planMode: 'ansi:cyan', ide: 'ansi:blueBright',
-  promptBorder: 'ansi:white', promptBorderShimmer: 'ansi:whiteBright',
-  text: 'ansi:black', inverseText: 'ansi:white',
-  inactive: 'ansi:blackBright', inactiveShimmer: 'ansi:white',
-  subtle: 'ansi:blackBright', suggestion: 'ansi:blue',
-  remember: 'ansi:blue', background: 'ansi:cyan',
-  success: 'ansi:green', error: 'ansi:red',
-  warning: 'ansi:yellow', merged: 'ansi:magenta',
+  permission: 'ansi:blue',
+  permissionShimmer: 'ansi:blueBright',
+  planMode: 'ansi:cyan',
+  ide: 'ansi:blueBright',
+  promptBorder: 'ansi:white',
+  promptBorderShimmer: 'ansi:whiteBright',
+  text: 'ansi:black',
+  inverseText: 'ansi:white',
+  inactive: 'ansi:blackBright',
+  inactiveShimmer: 'ansi:white',
+  subtle: 'ansi:blackBright',
+  suggestion: 'ansi:blue',
+  remember: 'ansi:blue',
+  background: 'ansi:cyan',
+  success: 'ansi:green',
+  error: 'ansi:red',
+  warning: 'ansi:yellow',
+  merged: 'ansi:magenta',
   warningShimmer: 'ansi:yellowBright',
-  diffAdded: 'ansi:green', diffRemoved: 'ansi:red',
-  diffAddedDimmed: 'ansi:green', diffRemovedDimmed: 'ansi:red',
-  diffAddedWord: 'ansi:greenBright', diffRemovedWord: 'ansi:redBright',
-  redForSubagents: 'ansi:red', blueForSubagents: 'ansi:blue',
-  greenForSubagents: 'ansi:green', yellowForSubagents: 'ansi:yellow',
-  purpleForSubagents: 'ansi:magenta', orangeForSubagents: 'ansi:redBright',
-  pinkForSubagents: 'ansi:magentaBright', cyanForSubagents: 'ansi:cyan',
-  professionalBlue: 'ansi:blueBright', chromeYellow: 'ansi:yellow',
-  clawdBody: 'ansi:redBright', clawdBackground: 'ansi:black',
+  diffAdded: 'ansi:green',
+  diffRemoved: 'ansi:red',
+  diffAddedDimmed: 'ansi:green',
+  diffRemovedDimmed: 'ansi:red',
+  diffAddedWord: 'ansi:greenBright',
+  diffRemovedWord: 'ansi:redBright',
+  redForSubagents: 'ansi:red',
+  blueForSubagents: 'ansi:blue',
+  greenForSubagents: 'ansi:green',
+  yellowForSubagents: 'ansi:yellow',
+  purpleForSubagents: 'ansi:magenta',
+  orangeForSubagents: 'ansi:redBright',
+  pinkForSubagents: 'ansi:magentaBright',
+  cyanForSubagents: 'ansi:cyan',
+  professionalBlue: 'ansi:blueBright',
+  chromeYellow: 'ansi:yellow',
+  clawdBody: 'ansi:redBright',
+  clawdBackground: 'ansi:black',
   userMessageBackground: 'ansi:white',
   userMessageBackgroundHover: 'ansi:whiteBright',
   messageActionsBackground: 'ansi:white',
   selectionBg: 'ansi:cyan',
   bashMessageBackgroundColor: 'ansi:whiteBright',
   memoryBackgroundColor: 'ansi:white',
-  rateLimitFill: 'ansi:yellow', rateLimitEmpty: 'ansi:black',
-  fastMode: 'ansi:red', fastModeShimmer: 'ansi:redBright',
-  briefLabelYou: 'ansi:blue', briefLabelNeomClaw: 'ansi:redBright',
-  rainbowRed: 'ansi:red', rainbowOrange: 'ansi:redBright',
-  rainbowYellow: 'ansi:yellow', rainbowGreen: 'ansi:green',
-  rainbowBlue: 'ansi:cyan', rainbowIndigo: 'ansi:blue',
+  rateLimitFill: 'ansi:yellow',
+  rateLimitEmpty: 'ansi:black',
+  fastMode: 'ansi:red',
+  fastModeShimmer: 'ansi:redBright',
+  briefLabelYou: 'ansi:blue',
+  briefLabelNeomClaw: 'ansi:redBright',
+  rainbowRed: 'ansi:red',
+  rainbowOrange: 'ansi:redBright',
+  rainbowYellow: 'ansi:yellow',
+  rainbowGreen: 'ansi:green',
+  rainbowBlue: 'ansi:cyan',
+  rainbowIndigo: 'ansi:blue',
   rainbowViolet: 'ansi:magenta',
-  rainbowRedShimmer: 'ansi:redBright', rainbowOrangeShimmer: 'ansi:yellow',
-  rainbowYellowShimmer: 'ansi:yellowBright', rainbowGreenShimmer: 'ansi:greenBright',
-  rainbowBlueShimmer: 'ansi:cyanBright', rainbowIndigoShimmer: 'ansi:blueBright',
+  rainbowRedShimmer: 'ansi:redBright',
+  rainbowOrangeShimmer: 'ansi:yellow',
+  rainbowYellowShimmer: 'ansi:yellowBright',
+  rainbowGreenShimmer: 'ansi:greenBright',
+  rainbowBlueShimmer: 'ansi:cyanBright',
+  rainbowIndigoShimmer: 'ansi:blueBright',
   rainbowVioletShimmer: 'ansi:magentaBright',
 );
 
 const _darkAnsiTheme = ClawTheme(
-  autoAccept: 'ansi:magentaBright', bashBorder: 'ansi:magentaBright',
-  neomClaw: 'ansi:redBright', neomClawShimmer: 'ansi:yellowBright',
+  autoAccept: 'ansi:magentaBright',
+  bashBorder: 'ansi:magentaBright',
+  neomClaw: 'ansi:redBright',
+  neomClawShimmer: 'ansi:yellowBright',
   neomClawBlueForSystemSpinner: 'ansi:blueBright',
   neomClawBlueShimmerForSystemSpinner: 'ansi:blueBright',
-  permission: 'ansi:blueBright', permissionShimmer: 'ansi:blueBright',
-  planMode: 'ansi:cyanBright', ide: 'ansi:blue',
-  promptBorder: 'ansi:white', promptBorderShimmer: 'ansi:whiteBright',
-  text: 'ansi:whiteBright', inverseText: 'ansi:black',
-  inactive: 'ansi:white', inactiveShimmer: 'ansi:whiteBright',
-  subtle: 'ansi:white', suggestion: 'ansi:blueBright',
-  remember: 'ansi:blueBright', background: 'ansi:cyanBright',
-  success: 'ansi:greenBright', error: 'ansi:redBright',
-  warning: 'ansi:yellowBright', merged: 'ansi:magentaBright',
+  permission: 'ansi:blueBright',
+  permissionShimmer: 'ansi:blueBright',
+  planMode: 'ansi:cyanBright',
+  ide: 'ansi:blue',
+  promptBorder: 'ansi:white',
+  promptBorderShimmer: 'ansi:whiteBright',
+  text: 'ansi:whiteBright',
+  inverseText: 'ansi:black',
+  inactive: 'ansi:white',
+  inactiveShimmer: 'ansi:whiteBright',
+  subtle: 'ansi:white',
+  suggestion: 'ansi:blueBright',
+  remember: 'ansi:blueBright',
+  background: 'ansi:cyanBright',
+  success: 'ansi:greenBright',
+  error: 'ansi:redBright',
+  warning: 'ansi:yellowBright',
+  merged: 'ansi:magentaBright',
   warningShimmer: 'ansi:yellowBright',
-  diffAdded: 'ansi:green', diffRemoved: 'ansi:red',
-  diffAddedDimmed: 'ansi:green', diffRemovedDimmed: 'ansi:red',
-  diffAddedWord: 'ansi:greenBright', diffRemovedWord: 'ansi:redBright',
-  redForSubagents: 'ansi:redBright', blueForSubagents: 'ansi:blueBright',
-  greenForSubagents: 'ansi:greenBright', yellowForSubagents: 'ansi:yellowBright',
-  purpleForSubagents: 'ansi:magentaBright', orangeForSubagents: 'ansi:redBright',
-  pinkForSubagents: 'ansi:magentaBright', cyanForSubagents: 'ansi:cyanBright',
-  professionalBlue: 'rgb(106,155,204)', chromeYellow: 'ansi:yellowBright',
-  clawdBody: 'ansi:redBright', clawdBackground: 'ansi:black',
+  diffAdded: 'ansi:green',
+  diffRemoved: 'ansi:red',
+  diffAddedDimmed: 'ansi:green',
+  diffRemovedDimmed: 'ansi:red',
+  diffAddedWord: 'ansi:greenBright',
+  diffRemovedWord: 'ansi:redBright',
+  redForSubagents: 'ansi:redBright',
+  blueForSubagents: 'ansi:blueBright',
+  greenForSubagents: 'ansi:greenBright',
+  yellowForSubagents: 'ansi:yellowBright',
+  purpleForSubagents: 'ansi:magentaBright',
+  orangeForSubagents: 'ansi:redBright',
+  pinkForSubagents: 'ansi:magentaBright',
+  cyanForSubagents: 'ansi:cyanBright',
+  professionalBlue: 'rgb(106,155,204)',
+  chromeYellow: 'ansi:yellowBright',
+  clawdBody: 'ansi:redBright',
+  clawdBackground: 'ansi:black',
   userMessageBackground: 'ansi:blackBright',
   userMessageBackgroundHover: 'ansi:white',
   messageActionsBackground: 'ansi:blackBright',
   selectionBg: 'ansi:blue',
   bashMessageBackgroundColor: 'ansi:black',
   memoryBackgroundColor: 'ansi:blackBright',
-  rateLimitFill: 'ansi:yellow', rateLimitEmpty: 'ansi:white',
-  fastMode: 'ansi:redBright', fastModeShimmer: 'ansi:redBright',
-  briefLabelYou: 'ansi:blueBright', briefLabelNeomClaw: 'ansi:redBright',
-  rainbowRed: 'ansi:red', rainbowOrange: 'ansi:redBright',
-  rainbowYellow: 'ansi:yellow', rainbowGreen: 'ansi:green',
-  rainbowBlue: 'ansi:cyan', rainbowIndigo: 'ansi:blue',
+  rateLimitFill: 'ansi:yellow',
+  rateLimitEmpty: 'ansi:white',
+  fastMode: 'ansi:redBright',
+  fastModeShimmer: 'ansi:redBright',
+  briefLabelYou: 'ansi:blueBright',
+  briefLabelNeomClaw: 'ansi:redBright',
+  rainbowRed: 'ansi:red',
+  rainbowOrange: 'ansi:redBright',
+  rainbowYellow: 'ansi:yellow',
+  rainbowGreen: 'ansi:green',
+  rainbowBlue: 'ansi:cyan',
+  rainbowIndigo: 'ansi:blue',
   rainbowViolet: 'ansi:magenta',
-  rainbowRedShimmer: 'ansi:redBright', rainbowOrangeShimmer: 'ansi:yellow',
-  rainbowYellowShimmer: 'ansi:yellowBright', rainbowGreenShimmer: 'ansi:greenBright',
-  rainbowBlueShimmer: 'ansi:cyanBright', rainbowIndigoShimmer: 'ansi:blueBright',
+  rainbowRedShimmer: 'ansi:redBright',
+  rainbowOrangeShimmer: 'ansi:yellow',
+  rainbowYellowShimmer: 'ansi:yellowBright',
+  rainbowGreenShimmer: 'ansi:greenBright',
+  rainbowBlueShimmer: 'ansi:cyanBright',
+  rainbowIndigoShimmer: 'ansi:blueBright',
   rainbowVioletShimmer: 'ansi:magentaBright',
 );
 
@@ -633,8 +691,9 @@ ClawTheme getTheme(ThemeName themeName) {
 
 /// Parse an RGB color string like "rgb(255,0,128)" into a Flutter Color.
 Color? parseRgbColor(String themeColor) {
-  final match =
-      RegExp(r'rgb\(\s?(\d+),\s?(\d+),\s?(\d+)\s?\)').firstMatch(themeColor);
+  final match = RegExp(
+    r'rgb\(\s?(\d+),\s?(\d+),\s?(\d+)\s?\)',
+  ).firstMatch(themeColor);
   if (match == null) return null;
   return Color.fromARGB(
     255,
@@ -709,9 +768,10 @@ class _Rgb {
 
 _Rgb? _parseOscRgb(String data) {
   // rgb:RRRR/GGGG/BBBB format
-  final rgbMatch =
-      RegExp(r'^rgba?:([0-9a-f]{1,4})/([0-9a-f]{1,4})/([0-9a-f]{1,4})', caseSensitive: false)
-          .firstMatch(data);
+  final rgbMatch = RegExp(
+    r'^rgba?:([0-9a-f]{1,4})/([0-9a-f]{1,4})/([0-9a-f]{1,4})',
+    caseSensitive: false,
+  ).firstMatch(data);
   if (rgbMatch != null) {
     return _Rgb(
       _hexComponent(rgbMatch.group(1)!),
@@ -721,7 +781,10 @@ _Rgb? _parseOscRgb(String data) {
   }
 
   // #RRGGBB or #RRRRGGGGBBBB
-  final hashMatch = RegExp(r'^#([0-9a-f]+)$', caseSensitive: false).firstMatch(data);
+  final hashMatch = RegExp(
+    r'^#([0-9a-f]+)$',
+    caseSensitive: false,
+  ).firstMatch(data);
   if (hashMatch != null && hashMatch.group(1)!.length % 3 == 0) {
     final hex = hashMatch.group(1)!;
     final n = hex.length ~/ 3;
@@ -886,17 +949,20 @@ String truncatePath(String path, int maxLength) {
   }
 
   var available =
-      maxLength - first.length - last.length - ellipsisWidth - 2 * separatorWidth;
+      maxLength -
+      first.length -
+      last.length -
+      ellipsisWidth -
+      2 * separatorWidth;
 
   if (available <= 0) {
     final availableForFirst = math.max(
       0,
       maxLength - last.length - ellipsisWidth - 2 * separatorWidth,
     );
-    final truncFirst =
-        availableForFirst < first.length && availableForFirst > 0
-            ? first.substring(0, availableForFirst)
-            : first;
+    final truncFirst = availableForFirst < first.length && availableForFirst > 0
+        ? first.substring(0, availableForFirst)
+        : first;
     return '$truncFirst$separator$ellipsis$separator$last';
   }
 
@@ -920,7 +986,7 @@ String truncatePath(String path, int maxLength) {
 
 /// Determine how to display model and billing info.
 ({bool shouldSplit, String truncatedModel, String truncatedBilling})
-    formatModelAndBilling({
+formatModelAndBilling({
   required String modelName,
   required String billingType,
   required int availableWidth,

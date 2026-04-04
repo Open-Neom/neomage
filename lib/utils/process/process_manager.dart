@@ -6,7 +6,6 @@ library;
 
 import 'dart:async';
 import 'dart:collection';
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 
 // ---------------------------------------------------------------------------
@@ -181,16 +180,16 @@ class ProcessManager {
     final stdoutSub = process.stdout
         .transform(const SystemEncoding().decoder)
         .listen((data) {
-      if (config.captureStdout) stdoutBuf.write(data);
-      _eventController.add(StdoutData(pid, data));
-    });
+          if (config.captureStdout) stdoutBuf.write(data);
+          _eventController.add(StdoutData(pid, data));
+        });
 
     final stderrSub = process.stderr
         .transform(const SystemEncoding().decoder)
         .listen((data) {
-      if (config.captureStderr) stderrBuf.write(data);
-      _eventController.add(StderrData(pid, data));
-    });
+          if (config.captureStderr) stderrBuf.write(data);
+          _eventController.add(StderrData(pid, data));
+        });
 
     int exitCode;
     var killed = false;
@@ -212,8 +211,9 @@ class ProcessManager {
     await stderrSub.cancel();
     sw.stop();
 
-    _processInfo[pid]?.status =
-        killed ? ProcessStatus.killed : ProcessStatus.exited;
+    _processInfo[pid]?.status = killed
+        ? ProcessStatus.killed
+        : ProcessStatus.exited;
     _processes.remove(pid);
     _eventController.add(ProcessExited(pid, exitCode));
 
@@ -258,31 +258,26 @@ class ProcessManager {
   }
 
   /// Run a process with an explicit timeout.
-  Future<ProcessOutput> runWithTimeout(
-    ProcessConfig config,
-    Duration timeout,
-  ) {
-    return run(ProcessConfig(
-      command: config.command,
-      args: config.args,
-      workDir: config.workDir,
-      env: config.env,
-      timeout: timeout,
-      stdin: config.stdin,
-      captureStdout: config.captureStdout,
-      captureStderr: config.captureStderr,
-      runInShell: config.runInShell,
-    ));
+  Future<ProcessOutput> runWithTimeout(ProcessConfig config, Duration timeout) {
+    return run(
+      ProcessConfig(
+        command: config.command,
+        args: config.args,
+        workDir: config.workDir,
+        env: config.env,
+        timeout: timeout,
+        stdin: config.stdin,
+        captureStdout: config.captureStdout,
+        captureStderr: config.captureStderr,
+        runInShell: config.runInShell,
+      ),
+    );
   }
 
   /// Pipe stdout of each process into stdin of the next.
   Future<ProcessOutput> runPiped(List<ProcessConfig> configs) async {
     if (configs.isEmpty) {
-      return ProcessOutput(
-        exitCode: 0,
-        duration: Duration.zero,
-        pid: 0,
-      );
+      return ProcessOutput(exitCode: 0, duration: Duration.zero, pid: 0);
     }
     if (configs.length == 1) return run(configs.first);
 
@@ -399,10 +394,8 @@ class ProcessPool {
   final Queue<Completer<void>> _waiters = Queue();
   bool _closed = false;
 
-  ProcessPool({
-    required this.maxConcurrency,
-    ProcessManager? manager,
-  }) : _manager = manager ?? ProcessManager();
+  ProcessPool({required this.maxConcurrency, ProcessManager? manager})
+    : _manager = manager ?? ProcessManager();
 
   /// Submit a process config for execution.
   ///
@@ -478,7 +471,10 @@ class Shell {
 
   /// Get the path to the shell configuration file.
   static String getShellConfig() {
-    final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
+    final home =
+        Platform.environment['HOME'] ??
+        Platform.environment['USERPROFILE'] ??
+        '';
     final shell = detectShell();
     return switch (shell) {
       'zsh' => '$home/.zshrc',

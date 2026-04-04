@@ -1,5 +1,5 @@
 // /security-review command — security-focused code review of pending changes.
-// Faithful port of openneomclaw/src/commands/security-review.ts (243 TS LOC).
+// Faithful port of neom_claw/src/commands/security-review.ts (243 TS LOC).
 //
 // This is a prompt command that performs a comprehensive security review of the
 // changes on the current branch. It executes git commands to gather diff
@@ -15,8 +15,6 @@
 //
 // Covers: input validation, auth/authz, crypto, injection/code execution,
 // data exposure, with extensive false-positive filtering rules and precedents.
-
-import 'package:neom_claw/core/platform/claw_io.dart';
 
 import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';
@@ -226,8 +224,7 @@ class SecurityReviewCommand extends PromptCommand {
       'Complete a security review of the pending changes on the current branch';
 
   @override
-  String get progressMessage =>
-      'analyzing code changes for security risks';
+  String get progressMessage => 'analyzing code changes for security risks';
 
   @override
   Set<String> get allowedTools => securityReviewAllowedTools;

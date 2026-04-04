@@ -1,4 +1,4 @@
-// Extended session management — port of openneomclaw sessionRestore.ts +
+// Extended session management — port of neom_claw sessionRestore.ts +
 // sessionStart.ts + sessionState.ts + sessionEnvironment.ts +
 // sessionActivity.ts + sessionTitle.ts + sessionFileAccessHooks.ts +
 // sessionIngressAuth.ts.
@@ -39,12 +39,12 @@ class RequiresActionDetails {
   final Map<String, dynamic>? input;
 
   Map<String, dynamic> toJson() => {
-        'tool_name': toolName,
-        'action_description': actionDescription,
-        'tool_use_id': toolUseId,
-        'request_id': requestId,
-        if (input != null) 'input': input,
-      };
+    'tool_name': toolName,
+    'action_description': actionDescription,
+    'tool_use_id': toolUseId,
+    'request_id': requestId,
+    if (input != null) 'input': input,
+  };
 }
 
 /// External metadata keys for CCR push / GetSession.
@@ -67,13 +67,10 @@ class SessionExternalMetadata {
 }
 
 /// Listener types.
-typedef SessionStateChangedListener = void Function(
-  SessionState state,
-  RequiresActionDetails? details,
-);
-typedef SessionMetadataChangedListener = void Function(
-  SessionExternalMetadata metadata,
-);
+typedef SessionStateChangedListener =
+    void Function(SessionState state, RequiresActionDetails? details);
+typedef SessionMetadataChangedListener =
+    void Function(SessionExternalMetadata metadata);
 typedef PermissionModeChangedListener = void Function(String mode);
 
 SessionStateChangedListener? _stateListener;
@@ -286,10 +283,11 @@ String extractConversationText(List<Map<String, dynamic>> messages) {
 }
 
 /// Callback type for querying the Haiku model.
-typedef QueryHaikuFn = Future<String?> Function({
-  required String systemPrompt,
-  required String userPrompt,
-});
+typedef QueryHaikuFn =
+    Future<String?> Function({
+      required String systemPrompt,
+      required String userPrompt,
+    });
 
 /// Global Haiku query callback (set by the app).
 QueryHaikuFn? _queryHaiku;
@@ -332,11 +330,7 @@ bool _sessionEnvScriptChecked = false;
 
 /// Get the session env directory path.
 Future<String> getSessionEnvDirPath(String sessionId) async {
-  final dir = p.join(
-    _getNeomClawConfigHomeDir(),
-    'session-env',
-    sessionId,
-  );
+  final dir = p.join(_getNeomClawConfigHomeDir(), 'session-env', sessionId);
   await Directory(dir).create(recursive: true);
   return dir;
 }
@@ -427,12 +421,13 @@ Future<String?> getSessionEnvironmentScript(String sessionId) async {
   final sessionEnvDir = await getSessionEnvDirPath(sessionId);
   try {
     final files = await Directory(sessionEnvDir).list().toList();
-    final hookFiles = files
-        .whereType<File>()
-        .map((f) => p.basename(f.path))
-        .where((name) => _hookEnvRegex.hasMatch(name))
-        .toList()
-      ..sort(_sortHookEnvFiles);
+    final hookFiles =
+        files
+            .whereType<File>()
+            .map((f) => p.basename(f.path))
+            .where((name) => _hookEnvRegex.hasMatch(name))
+            .toList()
+          ..sort(_sortHookEnvFiles);
 
     for (final file in hookFiles) {
       final filePath = p.join(sessionEnvDir, file);
@@ -506,14 +501,16 @@ String? takeInitialUserMessage() {
 }
 
 /// Callback types for hook execution.
-typedef ExecuteSessionStartHooksFn = Stream<HookResultMessage> Function(
-  String source,
-  SessionStartHooksOptions options,
-);
-typedef ExecuteSetupHooksFn = Stream<HookResultMessage> Function(
-  String trigger, {
-  bool? forceSyncExecution,
-});
+typedef ExecuteSessionStartHooksFn =
+    Stream<HookResultMessage> Function(
+      String source,
+      SessionStartHooksOptions options,
+    );
+typedef ExecuteSetupHooksFn =
+    Stream<HookResultMessage> Function(
+      String trigger, {
+      bool? forceSyncExecution,
+    });
 typedef LoadPluginHooksFn = Future<void> Function();
 typedef IsBareModeFn = bool Function();
 
@@ -566,8 +563,7 @@ Future<List<HookResultMessage>> processSessionStartHooks(
 
   // Execute session start hooks.
   if (_executeSessionStartHooks != null) {
-    await for (final hookResult
-        in _executeSessionStartHooks!(source, opts)) {
+    await for (final hookResult in _executeSessionStartHooks!(source, opts)) {
       if (hookResult.content != null) {
         hookMessages.add(hookResult);
       }
@@ -578,8 +574,7 @@ Future<List<HookResultMessage>> processSessionStartHooks(
       if (hookResult.initialUserMessage != null) {
         _pendingInitialUserMessage = hookResult.initialUserMessage;
       }
-      if (hookResult.watchPaths != null &&
-          hookResult.watchPaths!.isNotEmpty) {
+      if (hookResult.watchPaths != null && hookResult.watchPaths!.isNotEmpty) {
         allWatchPaths.addAll(hookResult.watchPaths!);
       }
     }
@@ -587,12 +582,14 @@ Future<List<HookResultMessage>> processSessionStartHooks(
 
   // If hooks provided additional context, add it as a message.
   if (additionalContexts.isNotEmpty) {
-    hookMessages.add(HookResultMessage(
-      content: additionalContexts.join('\n'),
-      hookName: 'SessionStart',
-      toolUseId: 'SessionStart',
-      hookEvent: 'SessionStart',
-    ));
+    hookMessages.add(
+      HookResultMessage(
+        content: additionalContexts.join('\n'),
+        hookName: 'SessionStart',
+        toolUseId: 'SessionStart',
+        hookEvent: 'SessionStart',
+      ),
+    );
   }
 
   return hookMessages;
@@ -630,12 +627,14 @@ Future<List<HookResultMessage>> processSetupHooks(
   }
 
   if (additionalContexts.isNotEmpty) {
-    hookMessages.add(HookResultMessage(
-      content: additionalContexts.join('\n'),
-      hookName: 'Setup',
-      toolUseId: 'Setup',
-      hookEvent: 'Setup',
-    ));
+    hookMessages.add(
+      HookResultMessage(
+        content: additionalContexts.join('\n'),
+        hookName: 'Setup',
+        toolUseId: 'Setup',
+        hookEvent: 'Setup',
+      ),
+    );
   }
 
   return hookMessages;
@@ -761,8 +760,7 @@ void restoreSessionStateFromLog(
     final todos = extractTodosFromTranscript(result.messages);
     if (todos.isNotEmpty) {
       setAppState((prev) {
-        final todosMap =
-            (prev['todos'] as Map<String, dynamic>?) ?? {};
+        final todosMap = (prev['todos'] as Map<String, dynamic>?) ?? {};
         todosMap['default'] = todos;
         prev['todos'] = todosMap;
       });
@@ -938,9 +936,8 @@ bool isMemoryFileAccess(String toolName, Map<String, dynamic>? toolInput) {
 }
 
 /// Callback type for file-access hook registration.
-typedef RegisterHookCallbacksFn = void Function(
-  Map<String, List<Map<String, dynamic>>> callbacks,
-);
+typedef RegisterHookCallbacksFn =
+    void Function(Map<String, List<Map<String, dynamic>>> callbacks);
 
 /// Register session file access tracking hooks.
 void registerSessionFileAccessHooks({
@@ -976,11 +973,26 @@ void registerSessionFileAccessHooks({
 
   registerHookCallbacks({
     'PostToolUse': [
-      {'matcher': 'FileRead', 'hooks': [hook]},
-      {'matcher': 'Grep', 'hooks': [hook]},
-      {'matcher': 'Glob', 'hooks': [hook]},
-      {'matcher': 'FileEdit', 'hooks': [hook]},
-      {'matcher': 'FileWrite', 'hooks': [hook]},
+      {
+        'matcher': 'FileRead',
+        'hooks': [hook],
+      },
+      {
+        'matcher': 'Grep',
+        'hooks': [hook],
+      },
+      {
+        'matcher': 'Glob',
+        'hooks': [hook],
+      },
+      {
+        'matcher': 'FileEdit',
+        'hooks': [hook],
+      },
+      {
+        'matcher': 'FileWrite',
+        'hooks': [hook],
+      },
     ],
   });
 }
@@ -1011,11 +1023,11 @@ String? _readTokenFromWellKnownFile(String path) {
 String? _getTokenFromFileDescriptor() {
   if (_sessionIngressTokenChecked) return _cachedSessionIngressToken;
 
-  final fdEnv =
-      Platform.environment['NEOMCLAW_WEBSOCKET_AUTH_FILE_DESCRIPTOR'];
+  final fdEnv = Platform.environment['NEOMCLAW_WEBSOCKET_AUTH_FILE_DESCRIPTOR'];
   if (fdEnv == null) {
     // No FD env var — try the well-known file.
-    final path = Platform.environment['NEOMCLAW_SESSION_INGRESS_TOKEN_FILE'] ??
+    final path =
+        Platform.environment['NEOMCLAW_SESSION_INGRESS_TOKEN_FILE'] ??
         _ccrSessionIngressTokenPath;
     _cachedSessionIngressToken = _readTokenFromWellKnownFile(path);
     _sessionIngressTokenChecked = true;
@@ -1030,9 +1042,7 @@ String? _getTokenFromFileDescriptor() {
   }
 
   try {
-    final fdPath = Platform.isMacOS
-        ? '/dev/fd/$fd'
-        : '/proc/self/fd/$fd';
+    final fdPath = Platform.isMacOS ? '/dev/fd/$fd' : '/proc/self/fd/$fd';
     final token = File(fdPath).readAsStringSync().trim();
     if (token.isEmpty) {
       _cachedSessionIngressToken = null;
@@ -1044,7 +1054,8 @@ String? _getTokenFromFileDescriptor() {
     return token;
   } catch (_) {
     // FD read failed — try the well-known file.
-    final path = Platform.environment['NEOMCLAW_SESSION_INGRESS_TOKEN_FILE'] ??
+    final path =
+        Platform.environment['NEOMCLAW_SESSION_INGRESS_TOKEN_FILE'] ??
         _ccrSessionIngressTokenPath;
     _cachedSessionIngressToken = _readTokenFromWellKnownFile(path);
     _sessionIngressTokenChecked = true;
@@ -1068,9 +1079,7 @@ Map<String, String> getSessionIngressAuthHeaders() {
   final token = getSessionIngressAuthToken();
   if (token == null) return {};
   if (token.startsWith('sk-ant-sid')) {
-    final headers = <String, String>{
-      'Cookie': 'sessionKey=$token',
-    };
+    final headers = <String, String>{'Cookie': 'sessionKey=$token'};
     final orgUuid = Platform.environment['NEOMCLAW_ORGANIZATION_UUID'];
     if (orgUuid != null) {
       headers['X-Organization-Uuid'] = orgUuid;

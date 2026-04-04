@@ -221,7 +221,7 @@ Examples:
 enum CliOutputFormat { text, json, stream }
 
 CliOutputFormat parseOutputFormat(String? format) => switch (format) {
-      'json' => CliOutputFormat.json,
-      'stream' => CliOutputFormat.stream,
-      _ => CliOutputFormat.text,
-    };
+  'json' => CliOutputFormat.json,
+  'stream' => CliOutputFormat.stream,
+  _ => CliOutputFormat.text,
+};

@@ -3,7 +3,6 @@
 // Skills are modular prompt-based capabilities (like /commit, /review-pr, /pdf).
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 
 // ─── Types ───
@@ -38,25 +37,24 @@ class SkillParameter {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'description': description,
-        'type': type,
-        'required': required,
-        if (defaultValue != null) 'default': defaultValue,
-        if (enumValues != null) 'enum': enumValues,
-        if (pattern != null) 'pattern': pattern,
-      };
+    'name': name,
+    'description': description,
+    'type': type,
+    'required': required,
+    if (defaultValue != null) 'default': defaultValue,
+    if (enumValues != null) 'enum': enumValues,
+    if (pattern != null) 'pattern': pattern,
+  };
 
-  factory SkillParameter.fromJson(Map<String, dynamic> json) =>
-      SkillParameter(
-        name: json['name'] as String,
-        description: json['description'] as String? ?? '',
-        type: json['type'] as String? ?? 'string',
-        required: json['required'] as bool? ?? false,
-        defaultValue: json['default'],
-        enumValues: (json['enum'] as List<dynamic>?)?.cast<String>(),
-        pattern: json['pattern'] as String?,
-      );
+  factory SkillParameter.fromJson(Map<String, dynamic> json) => SkillParameter(
+    name: json['name'] as String,
+    description: json['description'] as String? ?? '',
+    type: json['type'] as String? ?? 'string',
+    required: json['required'] as bool? ?? false,
+    defaultValue: json['default'],
+    enumValues: (json['enum'] as List<dynamic>?)?.cast<String>(),
+    pattern: json['pattern'] as String?,
+  );
 }
 
 /// A skill definition.
@@ -107,27 +105,26 @@ class SkillDefinition {
     }
 
     // Replace $ARGUMENTS with the raw args string.
-    final rawArgs =
-        args.entries.map((e) => '${e.key}=${e.value}').join(' ');
+    final rawArgs = args.entries.map((e) => '${e.key}=${e.value}').join(' ');
     resolved = resolved.replaceAll(r'$ARGUMENTS', rawArgs);
 
     return resolved;
   }
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        if (fullName != null) 'fullName': fullName,
-        'description': description,
-        'prompt': prompt,
-        'source': source.name,
-        'parameters': parameters.map((p) => p.toJson()).toList(),
-        'tools': tools,
-        if (model != null) 'model': model,
-        if (icon != null) 'icon': icon,
-        'tags': tags,
-        if (author != null) 'author': author,
-        if (version != null) 'version': version,
-      };
+    'name': name,
+    if (fullName != null) 'fullName': fullName,
+    'description': description,
+    'prompt': prompt,
+    'source': source.name,
+    'parameters': parameters.map((p) => p.toJson()).toList(),
+    'tools': tools,
+    if (model != null) 'model': model,
+    if (icon != null) 'icon': icon,
+    'tags': tags,
+    if (author != null) 'author': author,
+    if (version != null) 'version': version,
+  };
 
   factory SkillDefinition.fromJson(Map<String, dynamic> json) =>
       SkillDefinition(
@@ -136,14 +133,14 @@ class SkillDefinition {
         description: json['description'] as String? ?? '',
         prompt: json['prompt'] as String? ?? '',
         source: SkillSource.values.byName(
-            json['source'] as String? ?? 'builtin'),
-        parameters: (json['parameters'] as List<dynamic>?)
-                ?.map((p) =>
-                    SkillParameter.fromJson(p as Map<String, dynamic>))
+          json['source'] as String? ?? 'builtin',
+        ),
+        parameters:
+            (json['parameters'] as List<dynamic>?)
+                ?.map((p) => SkillParameter.fromJson(p as Map<String, dynamic>))
                 .toList() ??
             [],
-        tools:
-            (json['tools'] as List<dynamic>?)?.cast<String>() ?? [],
+        tools: (json['tools'] as List<dynamic>?)?.cast<String>() ?? [],
         model: json['model'] as String?,
         icon: json['icon'] as String?,
         tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
@@ -152,7 +149,10 @@ class SkillDefinition {
       );
 
   /// Parse a skill definition from a markdown file with frontmatter.
-  factory SkillDefinition.fromMarkdown(String content, {SkillSource source = SkillSource.project}) {
+  factory SkillDefinition.fromMarkdown(
+    String content, {
+    SkillSource source = SkillSource.project,
+  }) {
     String prompt = content;
     String name = 'unnamed';
     String description = '';
@@ -162,9 +162,10 @@ class SkillDefinition {
     List<String> tags = [];
 
     // Parse YAML-like frontmatter.
-    final frontmatterMatch =
-        RegExp(r'^---\s*\n([\s\S]*?)\n---\s*\n', multiLine: true)
-            .firstMatch(content);
+    final frontmatterMatch = RegExp(
+      r'^---\s*\n([\s\S]*?)\n---\s*\n',
+      multiLine: true,
+    ).firstMatch(content);
 
     if (frontmatterMatch != null) {
       final frontmatter = frontmatterMatch.group(1)!;
@@ -259,7 +260,11 @@ class SkillRegistry {
 
     // Partial match.
     final matches = _skills.entries
-        .where((e) => e.key.contains(name) || (e.value.fullName?.contains(name) ?? false))
+        .where(
+          (e) =>
+              e.key.contains(name) ||
+              (e.value.fullName?.contains(name) ?? false),
+        )
         .toList();
     if (matches.length == 1) return matches.first.value;
 
@@ -267,10 +272,7 @@ class SkillRegistry {
   }
 
   /// Initialize and load skills from all sources.
-  Future<void> initialize({
-    String? projectRoot,
-    String? homeDir,
-  }) async {
+  Future<void> initialize({String? projectRoot, String? homeDir}) async {
     if (_initialized) return;
 
     // Register built-in skills.
@@ -282,7 +284,8 @@ class SkillRegistry {
       _searchPaths.add('$projectRoot/.neomclaw/commands'); // Legacy path
     }
 
-    final home = homeDir ??
+    final home =
+        homeDir ??
         Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'];
     if (home != null) {
@@ -316,14 +319,13 @@ class SkillRegistry {
           s.description.toLowerCase().contains(q) ||
           s.tags.any((t) => t.toLowerCase().contains(q)) ||
           (s.fullName?.toLowerCase().contains(q) ?? false);
-    }).toList()
-      ..sort((a, b) {
-        // Prefer exact name matches.
-        final aExact = a.name.toLowerCase() == q ? 0 : 1;
-        final bExact = b.name.toLowerCase() == q ? 0 : 1;
-        if (aExact != bExact) return aExact.compareTo(bExact);
-        return a.name.compareTo(b.name);
-      });
+    }).toList()..sort((a, b) {
+      // Prefer exact name matches.
+      final aExact = a.name.toLowerCase() == q ? 0 : 1;
+      final bExact = b.name.toLowerCase() == q ? 0 : 1;
+      if (aExact != bExact) return aExact.compareTo(bExact);
+      return a.name.compareTo(b.name);
+    });
   }
 
   /// List skills by source.
@@ -337,8 +339,7 @@ class SkillRegistry {
   }
 
   /// Validate skill arguments against parameters.
-  List<String> validateArgs(
-      SkillDefinition skill, Map<String, dynamic> args) {
+  List<String> validateArgs(SkillDefinition skill, Map<String, dynamic> args) {
     final errors = <String>[];
 
     for (final param in skill.parameters) {
@@ -364,7 +365,8 @@ class SkillRegistry {
           if (param.enumValues != null &&
               !param.enumValues!.contains('$value')) {
             errors.add(
-                '${param.name} must be one of: ${param.enumValues!.join(', ')}');
+              '${param.name} must be one of: ${param.enumValues!.join(', ')}',
+            );
           }
       }
 
@@ -383,7 +385,8 @@ class SkillRegistry {
   Future<void> reload() async {
     // Remove file-based skills.
     _skills.removeWhere(
-        (_, v) => v.source == SkillSource.project || v.source == SkillSource.user);
+      (_, v) => v.source == SkillSource.project || v.source == SkillSource.user,
+    );
     await _loadFromPaths();
   }
 
@@ -429,135 +432,149 @@ class SkillRegistry {
 
   void _registerBuiltins() {
     // Commit skill.
-    register(const SkillDefinition(
-      name: 'commit',
-      description: 'Create a well-formatted git commit',
-      prompt: '''Look at the current git diff and create a commit with a descriptive message.
+    register(
+      const SkillDefinition(
+        name: 'commit',
+        description: 'Create a well-formatted git commit',
+        prompt:
+            '''Look at the current git diff and create a commit with a descriptive message.
 Follow conventional commit format. Include a summary of changes.
 If there are no staged changes, stage all modified files first.
 Do not include unrelated files.''',
-      source: SkillSource.builtin,
-      tools: ['Bash', 'Read'],
-      tags: ['git', 'workflow'],
-      icon: 'commit',
-    ));
+        source: SkillSource.builtin,
+        tools: ['Bash', 'Read'],
+        tags: ['git', 'workflow'],
+        icon: 'commit',
+      ),
+    );
 
     // Review PR skill.
-    register(const SkillDefinition(
-      name: 'review-pr',
-      fullName: 'review-pr',
-      description: 'Review a pull request',
-      prompt: '''Review the pull request {{pr_number}}.
+    register(
+      const SkillDefinition(
+        name: 'review-pr',
+        fullName: 'review-pr',
+        description: 'Review a pull request',
+        prompt: '''Review the pull request {{pr_number}}.
 Look at all changed files, understand the context, and provide feedback.
 Check for: bugs, security issues, performance problems, code style, test coverage.
 Be constructive and specific in feedback.''',
-      source: SkillSource.builtin,
-      parameters: [
-        SkillParameter(
-          name: 'pr_number',
-          description: 'Pull request number or URL',
-          required: true,
-        ),
-      ],
-      tools: ['Bash', 'Read', 'Grep'],
-      tags: ['git', 'review'],
-      icon: 'review',
-    ));
+        source: SkillSource.builtin,
+        parameters: [
+          SkillParameter(
+            name: 'pr_number',
+            description: 'Pull request number or URL',
+            required: true,
+          ),
+        ],
+        tools: ['Bash', 'Read', 'Grep'],
+        tags: ['git', 'review'],
+        icon: 'review',
+      ),
+    );
 
     // PDF skill.
-    register(const SkillDefinition(
-      name: 'pdf',
-      description: 'Read and analyze a PDF file',
-      prompt: '''Read the PDF file at {{file_path}} and provide a summary.
+    register(
+      const SkillDefinition(
+        name: 'pdf',
+        description: 'Read and analyze a PDF file',
+        prompt: '''Read the PDF file at {{file_path}} and provide a summary.
 Extract key information, structure, and main points.''',
-      source: SkillSource.builtin,
-      parameters: [
-        SkillParameter(
-          name: 'file_path',
-          description: 'Path to the PDF file',
-          type: 'file',
-          required: true,
-        ),
-      ],
-      tools: ['Read'],
-      tags: ['documents'],
-      icon: 'document',
-    ));
+        source: SkillSource.builtin,
+        parameters: [
+          SkillParameter(
+            name: 'file_path',
+            description: 'Path to the PDF file',
+            type: 'file',
+            required: true,
+          ),
+        ],
+        tools: ['Read'],
+        tags: ['documents'],
+        icon: 'document',
+      ),
+    );
 
     // Test skill.
-    register(const SkillDefinition(
-      name: 'test',
-      description: 'Run tests and fix failures',
-      prompt: '''Run the project tests. If any tests fail:
+    register(
+      const SkillDefinition(
+        name: 'test',
+        description: 'Run tests and fix failures',
+        prompt: '''Run the project tests. If any tests fail:
 1. Read the failing test file
 2. Understand what the test expects
 3. Read the implementation being tested
 4. Fix the issue
 5. Re-run the tests to verify''',
-      source: SkillSource.builtin,
-      tools: ['Bash', 'Read', 'Edit'],
-      tags: ['testing', 'workflow'],
-      icon: 'test',
-    ));
+        source: SkillSource.builtin,
+        tools: ['Bash', 'Read', 'Edit'],
+        tags: ['testing', 'workflow'],
+        icon: 'test',
+      ),
+    );
 
     // Explain skill.
-    register(const SkillDefinition(
-      name: 'explain',
-      description: 'Explain how code works',
-      prompt: '''Explain how {{target}} works in this codebase.
+    register(
+      const SkillDefinition(
+        name: 'explain',
+        description: 'Explain how code works',
+        prompt: '''Explain how {{target}} works in this codebase.
 Read the relevant files, trace the execution flow, and explain:
 1. What it does at a high level
 2. Key components and their roles
 3. Data flow
 4. Important edge cases
 5. How it connects to the rest of the codebase''',
-      source: SkillSource.builtin,
-      parameters: [
-        SkillParameter(
-          name: 'target',
-          description: 'File, function, or concept to explain',
-          required: true,
-        ),
-      ],
-      tools: ['Read', 'Grep', 'Glob'],
-      tags: ['learning', 'documentation'],
-      icon: 'explain',
-    ));
+        source: SkillSource.builtin,
+        parameters: [
+          SkillParameter(
+            name: 'target',
+            description: 'File, function, or concept to explain',
+            required: true,
+          ),
+        ],
+        tools: ['Read', 'Grep', 'Glob'],
+        tags: ['learning', 'documentation'],
+        icon: 'explain',
+      ),
+    );
 
     // Refactor skill.
-    register(const SkillDefinition(
-      name: 'refactor',
-      description: 'Refactor code for improvement',
-      prompt: '''Refactor {{target}} to improve {{aspect}}.
+    register(
+      const SkillDefinition(
+        name: 'refactor',
+        description: 'Refactor code for improvement',
+        prompt: '''Refactor {{target}} to improve {{aspect}}.
 1. Read the current code
 2. Identify specific improvements
 3. Make the changes
 4. Verify the changes compile/work
 5. Summarize what was changed and why''',
-      source: SkillSource.builtin,
-      parameters: [
-        SkillParameter(
-          name: 'target',
-          description: 'File or function to refactor',
-          required: true,
-        ),
-        SkillParameter(
-          name: 'aspect',
-          description: 'What to improve',
-          required: false,
-          defaultValue: 'readability and maintainability',
-        ),
-      ],
-      tools: ['Read', 'Edit', 'Bash'],
-      tags: ['refactoring'],
-      icon: 'refactor',
-    ));
+        source: SkillSource.builtin,
+        parameters: [
+          SkillParameter(
+            name: 'target',
+            description: 'File or function to refactor',
+            required: true,
+          ),
+          SkillParameter(
+            name: 'aspect',
+            description: 'What to improve',
+            required: false,
+            defaultValue: 'readability and maintainability',
+          ),
+        ],
+        tools: ['Read', 'Edit', 'Bash'],
+        tags: ['refactoring'],
+        icon: 'refactor',
+      ),
+    );
 
     // Security audit skill.
-    register(const SkillDefinition(
-      name: 'security-audit',
-      description: 'Audit codebase for security vulnerabilities',
-      prompt: '''Perform a security audit of this codebase.
+    register(
+      const SkillDefinition(
+        name: 'security-audit',
+        description: 'Audit codebase for security vulnerabilities',
+        prompt: '''Perform a security audit of this codebase.
 Check for:
 - Hardcoded secrets/credentials
 - SQL injection
@@ -567,35 +584,38 @@ Check for:
 - Dependency vulnerabilities
 - Insecure configurations
 Report findings with severity, location, and remediation steps.''',
-      source: SkillSource.builtin,
-      tools: ['Read', 'Grep', 'Glob', 'Bash'],
-      tags: ['security'],
-      icon: 'security',
-    ));
+        source: SkillSource.builtin,
+        tools: ['Read', 'Grep', 'Glob', 'Bash'],
+        tags: ['security'],
+        icon: 'security',
+      ),
+    );
 
     // Doc skill.
-    register(const SkillDefinition(
-      name: 'doc',
-      description: 'Generate documentation',
-      prompt: '''Generate documentation for {{target}}.
+    register(
+      const SkillDefinition(
+        name: 'doc',
+        description: 'Generate documentation',
+        prompt: '''Generate documentation for {{target}}.
 Include:
 - Overview/purpose
 - API reference (public methods/properties)
 - Usage examples
 - Configuration options
 - Common patterns''',
-      source: SkillSource.builtin,
-      parameters: [
-        SkillParameter(
-          name: 'target',
-          description: 'File, module, or API to document',
-          required: true,
-        ),
-      ],
-      tools: ['Read', 'Grep', 'Glob'],
-      tags: ['documentation'],
-      icon: 'document',
-    ));
+        source: SkillSource.builtin,
+        parameters: [
+          SkillParameter(
+            name: 'target',
+            description: 'File, module, or API to document',
+            required: true,
+          ),
+        ],
+        tools: ['Read', 'Grep', 'Glob'],
+        tags: ['documentation'],
+        icon: 'document',
+      ),
+    );
   }
 
   Future<void> _loadFromPaths() async {
@@ -603,7 +623,8 @@ Include:
       final dir = Directory(searchPath);
       if (!await dir.exists()) continue;
 
-      final source = searchPath.contains('.neomclaw/skills') &&
+      final source =
+          searchPath.contains('.neomclaw/skills') &&
               !searchPath.startsWith(Platform.environment['HOME'] ?? '')
           ? SkillSource.project
           : SkillSource.user;
@@ -612,27 +633,28 @@ Include:
         if (entity is File && entity.path.endsWith('.md')) {
           try {
             final content = await entity.readAsString();
-            final skill =
-                SkillDefinition.fromMarkdown(content, source: source);
+            final skill = SkillDefinition.fromMarkdown(content, source: source);
 
             // Derive name from filename if not in frontmatter.
             final name = skill.name == 'unnamed'
                 ? entity.uri.pathSegments.last.replaceAll('.md', '')
                 : skill.name;
 
-            register(SkillDefinition(
-              name: name,
-              fullName: skill.fullName,
-              description: skill.description.isEmpty
-                  ? 'Custom skill: $name'
-                  : skill.description,
-              prompt: skill.prompt,
-              source: source,
-              parameters: skill.parameters,
-              tools: skill.tools,
-              model: skill.model,
-              tags: skill.tags,
-            ));
+            register(
+              SkillDefinition(
+                name: name,
+                fullName: skill.fullName,
+                description: skill.description.isEmpty
+                    ? 'Custom skill: $name'
+                    : skill.description,
+                prompt: skill.prompt,
+                source: source,
+                parameters: skill.parameters,
+                tools: skill.tools,
+                model: skill.model,
+                tags: skill.tags,
+              ),
+            );
           } catch (_) {
             // Skip malformed skill files.
           }

@@ -22,8 +22,9 @@ class MessageBubble extends StatelessWidget {
         ),
         margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
         child: Column(
-          crossAxisAlignment:
-              isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          crossAxisAlignment: isUser
+              ? CrossAxisAlignment.end
+              : CrossAxisAlignment.start,
           children: [
             // Role label
             Padding(
@@ -67,27 +68,29 @@ class MessageBubble extends StatelessWidget {
   }
 
   Widget _buildBlock(ContentBlock block) => switch (block) {
-        TextBlock(text: final text) => MarkdownBody(
-            data: text,
-            selectable: true,
-            styleSheet: MarkdownStyleSheet(
-              codeblockDecoration: BoxDecoration(
-                color: Colors.black87,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              code: const TextStyle(
-                fontFamily: 'JetBrains Mono',
-                fontSize: 13,
-                color: Colors.greenAccent,
-              ),
-            ),
-          ),
-        ToolUseBlock(name: final name, input: final input) =>
-          _ToolUseChip(name: name, input: input),
-        ToolResultBlock(content: final content, isError: final isError) =>
-          _ToolResultCard(content: content, isError: isError),
-        _ => const SizedBox.shrink(),
-      };
+    TextBlock(text: final text) => MarkdownBody(
+      data: text,
+      selectable: true,
+      styleSheet: MarkdownStyleSheet(
+        codeblockDecoration: BoxDecoration(
+          color: Colors.black87,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        code: const TextStyle(
+          fontFamily: 'JetBrains Mono',
+          fontSize: 13,
+          color: Colors.greenAccent,
+        ),
+      ),
+    ),
+    ToolUseBlock(name: final name, input: final input) => _ToolUseChip(
+      name: name,
+      input: input,
+    ),
+    ToolResultBlock(content: final content, isError: final isError) =>
+      _ToolResultCard(content: content, isError: isError),
+    _ => const SizedBox.shrink(),
+  };
 }
 
 class _ToolUseChip extends StatelessWidget {

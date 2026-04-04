@@ -24,12 +24,7 @@ enum FeatureGate {
 }
 
 /// Subscription plan tiers.
-enum Plan {
-  free,
-  pro,
-  team,
-  enterprise,
-}
+enum Plan { free, pro, team, enterprise }
 
 /// Result of checking access to a feature gate.
 class AccessResult {
@@ -82,11 +77,11 @@ class FeatureGateConfig {
 
   /// Serializes the config to a JSON-encodable map.
   Map<String, dynamic> toJson() => {
-        'gates': gates.map((k, v) => MapEntry(k.name, v)),
-        'organizationId': organizationId,
-        'plan': plan.name,
-        'evaluatedAt': evaluatedAt.toIso8601String(),
-      };
+    'gates': gates.map((k, v) => MapEntry(k.name, v)),
+    'organizationId': organizationId,
+    'plan': plan.name,
+    'evaluatedAt': evaluatedAt.toIso8601String(),
+  };
 
   /// Deserializes a config from a JSON map.
   factory FeatureGateConfig.fromJson(Map<String, dynamic> json) {
@@ -112,9 +107,7 @@ class FeatureGateConfig {
 
 /// Default gate configurations for each plan tier.
 const Map<Plan, Set<FeatureGate>> _planDefaults = {
-  Plan.free: {
-    FeatureGate.mcpServers,
-  },
+  Plan.free: {FeatureGate.mcpServers},
   Plan.pro: {
     FeatureGate.mcpServers,
     FeatureGate.betaFeatures,
@@ -189,9 +182,9 @@ class FeatureGateService {
     Plan plan = Plan.free,
     String? configPath,
     String? organizationId,
-  })  : _plan = plan,
-        _configPath = configPath,
-        _organizationId = organizationId {
+  }) : _plan = plan,
+       _configPath = configPath,
+       _organizationId = organizationId {
     _applyPlanDefaults();
   }
 
@@ -256,10 +249,10 @@ class FeatureGateService {
     final upgradeUrl = _upgradeUrls[_plan];
     return AccessResult(
       allowed: false,
-      reason:
-          '${gate.name} is not available on the ${_plan.name} plan.',
-      upgradeUrl:
-          (upgradeUrl != null && upgradeUrl.isNotEmpty) ? upgradeUrl : null,
+      reason: '${gate.name} is not available on the ${_plan.name} plan.',
+      upgradeUrl: (upgradeUrl != null && upgradeUrl.isNotEmpty)
+          ? upgradeUrl
+          : null,
     );
   }
 
@@ -323,9 +316,7 @@ class FeatureGateService {
   Future<void> saveToLocal() async {
     if (_configPath == null) return;
     final config = FeatureGateConfig(
-      gates: {
-        for (final gate in FeatureGate.values) gate: isEnabled(gate),
-      },
+      gates: {for (final gate in FeatureGate.values) gate: isEnabled(gate)},
       organizationId: _organizationId,
       plan: _plan,
       evaluatedAt: DateTime.now(),

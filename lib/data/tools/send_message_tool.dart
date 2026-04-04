@@ -1,4 +1,4 @@
-// SendMessageTool — faithful port of openneomclaw/src/tools/SendMessageTool.
+// SendMessageTool — faithful port of neom_claw/src/tools/SendMessageTool.
 // Routes messages between agents in a multi-agent swarm system.
 //
 // Supports:
@@ -65,9 +65,9 @@ class ShutdownRequestMessage implements StructuredMessage {
 
   @override
   Map<String, dynamic> toMap() => {
-        'type': type,
-        if (reason != null) 'reason': reason,
-      };
+    'type': type,
+    if (reason != null) 'reason': reason,
+  };
 }
 
 class ShutdownResponseMessage implements StructuredMessage {
@@ -85,11 +85,11 @@ class ShutdownResponseMessage implements StructuredMessage {
 
   @override
   Map<String, dynamic> toMap() => {
-        'type': type,
-        'request_id': requestId,
-        'approve': approve,
-        if (reason != null) 'reason': reason,
-      };
+    'type': type,
+    'request_id': requestId,
+    'approve': approve,
+    if (reason != null) 'reason': reason,
+  };
 }
 
 class PlanApprovalResponseMessage implements StructuredMessage {
@@ -107,11 +107,11 @@ class PlanApprovalResponseMessage implements StructuredMessage {
 
   @override
   Map<String, dynamic> toMap() => {
-        'type': type,
-        'request_id': requestId,
-        'approve': approve,
-        if (feedback != null) 'feedback': feedback,
-      };
+    'type': type,
+    'request_id': requestId,
+    'approve': approve,
+    if (feedback != null) 'feedback': feedback,
+  };
 }
 
 // ── Output types ───────────────────────────────────────────────────────
@@ -135,13 +135,13 @@ class MessageRouting {
   });
 
   Map<String, dynamic> toMap() => {
-        'sender': sender,
-        if (senderColor != null) 'senderColor': senderColor,
-        'target': target,
-        if (targetColor != null) 'targetColor': targetColor,
-        if (summary != null) 'summary': summary,
-        if (content != null) 'content': content,
-      };
+    'sender': sender,
+    if (senderColor != null) 'senderColor': senderColor,
+    'target': target,
+    if (targetColor != null) 'targetColor': targetColor,
+    if (summary != null) 'summary': summary,
+    if (content != null) 'content': content,
+  };
 }
 
 /// Output from a direct message send.
@@ -157,10 +157,10 @@ class MessageOutput {
   });
 
   Map<String, dynamic> toMap() => {
-        'success': success,
-        'message': message,
-        if (routing != null) 'routing': routing!.toMap(),
-      };
+    'success': success,
+    'message': message,
+    if (routing != null) 'routing': routing!.toMap(),
+  };
 }
 
 /// Output from a broadcast message.
@@ -178,11 +178,11 @@ class BroadcastOutput {
   });
 
   Map<String, dynamic> toMap() => {
-        'success': success,
-        'message': message,
-        'recipients': recipients,
-        if (routing != null) 'routing': routing!.toMap(),
-      };
+    'success': success,
+    'message': message,
+    'recipients': recipients,
+    if (routing != null) 'routing': routing!.toMap(),
+  };
 }
 
 /// Output from a shutdown request.
@@ -200,11 +200,11 @@ class RequestOutput {
   });
 
   Map<String, dynamic> toMap() => {
-        'success': success,
-        'message': message,
-        'request_id': requestId,
-        'target': target,
-      };
+    'success': success,
+    'message': message,
+    'request_id': requestId,
+    'target': target,
+  };
 }
 
 /// Output from a shutdown or plan response.
@@ -220,10 +220,10 @@ class ResponseOutput {
   });
 
   Map<String, dynamic> toMap() => {
-        'success': success,
-        'message': message,
-        if (requestId != null) 'request_id': requestId,
-      };
+    'success': success,
+    'message': message,
+    if (requestId != null) 'request_id': requestId,
+  };
 }
 
 // ── Queued message ─────────────────────────────────────────────────────
@@ -244,12 +244,12 @@ class _QueuedMessage {
   });
 
   Map<String, dynamic> toMap() => {
-        'from': from,
-        'text': message,
-        if (summary != null) 'summary': summary,
-        'timestamp': timestamp.toIso8601String(),
-        if (color != null) 'color': color,
-      };
+    'from': from,
+    'text': message,
+    if (summary != null) 'summary': summary,
+    'timestamp': timestamp.toIso8601String(),
+    if (color != null) 'color': color,
+  };
 }
 
 // ── Address parsing ────────────────────────────────────────────────────
@@ -377,28 +377,29 @@ class SendMessageTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'to': {
-            'type': 'string',
-            'description':
-                'Recipient: teammate name, or "*" for broadcast to all '
-                    'teammates',
-          },
-          'summary': {
-            'type': 'string',
-            'description':
-                'A 5-10 word summary shown as a preview in the UI '
-                    '(required when message is a string)',
-          },
-          'message': {
-            'description': 'Plain text message content, or a structured '
-                'message object (shutdown_request, shutdown_response, '
-                'plan_approval_response)',
-          },
-        },
-        'required': ['to', 'message'],
-      };
+    'type': 'object',
+    'properties': {
+      'to': {
+        'type': 'string',
+        'description':
+            'Recipient: teammate name, or "*" for broadcast to all '
+            'teammates',
+      },
+      'summary': {
+        'type': 'string',
+        'description':
+            'A 5-10 word summary shown as a preview in the UI '
+            '(required when message is a string)',
+      },
+      'message': {
+        'description':
+            'Plain text message content, or a structured '
+            'message object (shutdown_request, shutdown_response, '
+            'plan_approval_response)',
+      },
+    },
+    'required': ['to', 'message'],
+  };
 
   @override
   bool get isEnabled => isSwarmEnabled?.call() ?? true;
@@ -452,9 +453,7 @@ class SendMessageTool extends Tool {
     // Check for empty address targets
     if ((addr.scheme == 'bridge' || addr.scheme == 'uds') &&
         addr.target.trim().isEmpty) {
-      return const ValidationResult.invalid(
-        'address target must not be empty',
-      );
+      return const ValidationResult.invalid('address target must not be empty');
     }
 
     // Reject @ notation — there is only one team per session
@@ -569,13 +568,16 @@ class SendMessageTool extends Tool {
     final senderColor = getAgentColor?.call();
 
     // Queue the message
-    _writeToMailbox(recipientName, _QueuedMessage(
-      from: senderName,
-      message: content,
-      summary: summary,
-      timestamp: DateTime.now(),
-      color: senderColor,
-    ));
+    _writeToMailbox(
+      recipientName,
+      _QueuedMessage(
+        from: senderName,
+        message: content,
+        summary: summary,
+        timestamp: DateTime.now(),
+        color: senderColor,
+      ),
+    );
 
     final teamContext = getTeamContext?.call();
     final recipientColor = _findTeammateColor(teamContext, recipientName);
@@ -627,7 +629,8 @@ class SendMessageTool extends Tool {
     if (recipients.isEmpty) {
       final output = BroadcastOutput(
         success: true,
-        message: 'No teammates to broadcast to (you are the only '
+        message:
+            'No teammates to broadcast to (you are the only '
             'team member)',
         recipients: const [],
       );
@@ -639,13 +642,16 @@ class SendMessageTool extends Tool {
 
     // Send to each recipient
     for (final recipientName in recipients) {
-      _writeToMailbox(recipientName, _QueuedMessage(
-        from: senderName,
-        message: content,
-        summary: summary,
-        timestamp: DateTime.now(),
-        color: senderColor,
-      ));
+      _writeToMailbox(
+        recipientName,
+        _QueuedMessage(
+          from: senderName,
+          message: content,
+          summary: summary,
+          timestamp: DateTime.now(),
+          color: senderColor,
+        ),
+      );
     }
 
     final routing = MessageRouting(
@@ -658,7 +664,8 @@ class SendMessageTool extends Tool {
 
     final output = BroadcastOutput(
       success: true,
-      message: 'Message broadcast to ${recipients.length} '
+      message:
+          'Message broadcast to ${recipients.length} '
           'teammate(s): ${recipients.join(', ')}',
       recipients: recipients,
       routing: routing,
@@ -720,19 +727,23 @@ class SendMessageTool extends Tool {
       'type': 'shutdown_request',
       'requestId': requestId,
       'from': senderName,
-      if (reason != null) 'reason': reason,
+      'reason': ?reason,
     };
 
-    _writeToMailbox(targetName, _QueuedMessage(
-      from: senderName,
-      message: jsonEncode(shutdownMessage),
-      timestamp: DateTime.now(),
-      color: senderColor,
-    ));
+    _writeToMailbox(
+      targetName,
+      _QueuedMessage(
+        from: senderName,
+        message: jsonEncode(shutdownMessage),
+        timestamp: DateTime.now(),
+        color: senderColor,
+      ),
+    );
 
     final output = RequestOutput(
       success: true,
-      message: 'Shutdown request sent to $targetName. '
+      message:
+          'Shutdown request sent to $targetName. '
           'Request ID: $requestId',
       requestId: requestId,
       target: targetName,
@@ -755,16 +766,20 @@ class SendMessageTool extends Tool {
       'from': agentName,
     };
 
-    _writeToMailbox(teamLeadName, _QueuedMessage(
-      from: agentName,
-      message: jsonEncode(approvedMessage),
-      timestamp: DateTime.now(),
-      color: senderColor,
-    ));
+    _writeToMailbox(
+      teamLeadName,
+      _QueuedMessage(
+        from: agentName,
+        message: jsonEncode(approvedMessage),
+        timestamp: DateTime.now(),
+        color: senderColor,
+      ),
+    );
 
     final output = ResponseOutput(
       success: true,
-      message: 'Shutdown approved. Sent confirmation to team-lead. '
+      message:
+          'Shutdown approved. Sent confirmation to team-lead. '
           'Agent $agentName is now exiting.',
       requestId: requestId,
     );
@@ -787,12 +802,15 @@ class SendMessageTool extends Tool {
       'reason': reason,
     };
 
-    _writeToMailbox(teamLeadName, _QueuedMessage(
-      from: agentName,
-      message: jsonEncode(rejectedMessage),
-      timestamp: DateTime.now(),
-      color: senderColor,
-    ));
+    _writeToMailbox(
+      teamLeadName,
+      _QueuedMessage(
+        from: agentName,
+        message: jsonEncode(rejectedMessage),
+        timestamp: DateTime.now(),
+        color: senderColor,
+      ),
+    );
 
     final output = ResponseOutput(
       success: true,
@@ -817,7 +835,7 @@ class SendMessageTool extends Tool {
     }
 
     final teamContext = getTeamContext?.call();
-    final teamName = teamContext?.teamName;
+    final _teamName = teamContext?.teamName;
 
     final approvalResponse = {
       'type': 'plan_approval_response',
@@ -826,15 +844,19 @@ class SendMessageTool extends Tool {
       'timestamp': DateTime.now().toIso8601String(),
     };
 
-    _writeToMailbox(recipientName, _QueuedMessage(
-      from: teamLeadName,
-      message: jsonEncode(approvalResponse),
-      timestamp: DateTime.now(),
-    ));
+    _writeToMailbox(
+      recipientName,
+      _QueuedMessage(
+        from: teamLeadName,
+        message: jsonEncode(approvalResponse),
+        timestamp: DateTime.now(),
+      ),
+    );
 
     final output = ResponseOutput(
       success: true,
-      message: 'Plan approved for $recipientName. They will receive the '
+      message:
+          'Plan approved for $recipientName. They will receive the '
           'approval and can proceed with implementation.',
       requestId: requestId,
     );
@@ -867,15 +889,19 @@ class SendMessageTool extends Tool {
       'timestamp': DateTime.now().toIso8601String(),
     };
 
-    _writeToMailbox(recipientName, _QueuedMessage(
-      from: teamLeadName,
-      message: jsonEncode(rejectionResponse),
-      timestamp: DateTime.now(),
-    ));
+    _writeToMailbox(
+      recipientName,
+      _QueuedMessage(
+        from: teamLeadName,
+        message: jsonEncode(rejectionResponse),
+        timestamp: DateTime.now(),
+      ),
+    );
 
     final output = ResponseOutput(
       success: true,
-      message: 'Plan rejected for $recipientName with feedback: '
+      message:
+          'Plan rejected for $recipientName with feedback: '
           '"$feedback"',
       requestId: requestId,
     );
@@ -928,8 +954,7 @@ class SendMessageTool extends Tool {
   bool isAgentActive(String agentId) => _agentRegistry.containsKey(agentId);
 
   /// Get info about a registered agent.
-  Map<String, dynamic>? getAgentInfo(String agentId) =>
-      _agentRegistry[agentId];
+  Map<String, dynamic>? getAgentInfo(String agentId) => _agentRegistry[agentId];
 
   // ── Helpers ──────────────────────────────────────────────────────────
 

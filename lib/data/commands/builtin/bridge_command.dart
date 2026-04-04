@@ -1,5 +1,5 @@
 // /remote-control command — manages the bidirectional bridge connection.
-// Faithful port of openneomclaw/src/commands/bridge/bridge.tsx (508 TS LOC).
+// Faithful port of neom_claw/src/commands/bridge/bridge.tsx (508 TS LOC).
 //
 // Covers: bridge prerequisites checking, QR code display, session URL
 // management, connect/disconnect flow, env-less bridge support, policy
@@ -10,7 +10,6 @@ import 'dart:async';
 
 import 'package:sint/sint.dart';
 
-import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';
 import '../command.dart';
 
@@ -19,8 +18,7 @@ import '../command.dart';
 // ============================================================================
 
 /// Message shown when bridge is disconnected.
-const String remoteControlDisconnectedMsg =
-    'Remote Control disconnected.';
+const String remoteControlDisconnectedMsg = 'Remote Control disconnected.';
 
 /// Login instruction for bridge access.
 const String bridgeLoginInstruction =
@@ -73,24 +71,20 @@ class BridgePrerequisiteResult {
   });
 
   const BridgePrerequisiteResult.success()
-      : canConnect = true,
-        errorMessage = null,
-        reason = null;
+    : canConnect = true,
+      errorMessage = null,
+      reason = null;
 
   const BridgePrerequisiteResult.failure({
     required String message,
     required BridgeDisabledReason failReason,
-  })  : canConnect = false,
-        errorMessage = message,
-        reason = failReason;
+  }) : canConnect = false,
+       errorMessage = message,
+       reason = failReason;
 }
 
 /// Menu option for the disconnect dialog.
-enum DisconnectMenuOption {
-  disconnect,
-  showQR,
-  continueSession,
-}
+enum DisconnectMenuOption { disconnect, showQR, continueSession }
 
 // ============================================================================
 // Bridge Configuration
@@ -161,8 +155,10 @@ class BridgeConfig {
 /// Get the bridge access token from the environment or config.
 String? getBridgeAccessToken() {
   // Check environment variable first.
-  final envToken = const String.fromEnvironment('BRIDGE_ACCESS_TOKEN',
-      defaultValue: '');
+  final envToken = const String.fromEnvironment(
+    'BRIDGE_ACCESS_TOKEN',
+    defaultValue: '',
+  );
   if (envToken.isNotEmpty) return envToken;
 
   // In production, this would read from the config store.
@@ -349,23 +345,23 @@ class BridgeController extends SintController {
 
   /// Get menu options for the disconnect dialog.
   List<({String label, DisconnectMenuOption action, bool isFocused})>
-      get menuOptions => [
-            (
-              label: 'Disconnect this session',
-              action: DisconnectMenuOption.disconnect,
-              isFocused: focusIndex.value == 0,
-            ),
-            (
-              label: showQR.value ? 'Hide QR code' : 'Show QR code',
-              action: DisconnectMenuOption.showQR,
-              isFocused: focusIndex.value == 1,
-            ),
-            (
-              label: 'Continue',
-              action: DisconnectMenuOption.continueSession,
-              isFocused: focusIndex.value == 2,
-            ),
-          ];
+  get menuOptions => [
+    (
+      label: 'Disconnect this session',
+      action: DisconnectMenuOption.disconnect,
+      isFocused: focusIndex.value == 0,
+    ),
+    (
+      label: showQR.value ? 'Hide QR code' : 'Show QR code',
+      action: DisconnectMenuOption.showQR,
+      isFocused: focusIndex.value == 1,
+    ),
+    (
+      label: 'Continue',
+      action: DisconnectMenuOption.continueSession,
+      isFocused: focusIndex.value == 2,
+    ),
+  ];
 
   /// Get the dialog title text.
   String get dialogTitle => 'Remote Control';
@@ -419,8 +415,7 @@ class BridgeCommand extends LocalCommand {
 
     if (!prerequisiteResult.canConnect) {
       return TextCommandResult(
-        prerequisiteResult.errorMessage ??
-            'Remote Control is not available.',
+        prerequisiteResult.errorMessage ?? 'Remote Control is not available.',
       );
     }
 

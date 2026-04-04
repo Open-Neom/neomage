@@ -1,4 +1,4 @@
-// Plugin service — port of openneomclaw/src/services/plugins/.
+// Plugin service — port of neom_claw/src/services/plugins/.
 // Handles plugin installation, uninstallation, enabling, disabling, updating,
 // background marketplace reconciliation, CLI command wrappers, and
 // installation status tracking.
@@ -12,12 +12,7 @@ import 'package:sint/sint.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Scopes at which a plugin can be installed.
-enum PluginScope {
-  user,
-  project,
-  local,
-  managed,
-}
+enum PluginScope { user, project, local, managed }
 
 /// Valid installable scopes (excludes 'managed' which can only come from
 /// managed-settings.json).
@@ -36,12 +31,7 @@ const validUpdateScopes = <PluginScope>[
 ];
 
 /// Status of a marketplace or plugin installation.
-enum InstallationStatus {
-  pending,
-  installing,
-  installed,
-  failed,
-}
+enum InstallationStatus { pending, installing, installed, failed }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Data classes
@@ -63,12 +53,11 @@ class MarketplaceInstallStatus {
     String? name,
     InstallationStatus? status,
     String? error,
-  }) =>
-      MarketplaceInstallStatus(
-        name: name ?? this.name,
-        status: status ?? this.status,
-        error: error ?? this.error,
-      );
+  }) => MarketplaceInstallStatus(
+    name: name ?? this.name,
+    status: status ?? this.status,
+    error: error ?? this.error,
+  );
 }
 
 /// A single plugin installation status entry.
@@ -97,11 +86,10 @@ class PluginInstallationStatus {
   PluginInstallationStatus copyWith({
     List<MarketplaceInstallStatus>? marketplaces,
     List<PluginInstallStatus>? plugins,
-  }) =>
-      PluginInstallationStatus(
-        marketplaces: marketplaces ?? this.marketplaces,
-        plugins: plugins ?? this.plugins,
-      );
+  }) => PluginInstallationStatus(
+    marketplaces: marketplaces ?? this.marketplaces,
+    plugins: plugins ?? this.plugins,
+  );
 }
 
 /// Result of a plugin operation (install, uninstall, enable, disable).
@@ -361,16 +349,16 @@ class PluginOperationsService {
   final Future<PluginMarketplaceEntry?> Function(String) getPluginById;
   final Map<String, bool>? Function(String source) getSettingsEnabledPlugins;
   final void Function(String source, Map<String, Object?> update)
-      updateSettings;
+  updateSettings;
   final void Function() clearAllCaches;
   final InstalledPluginsV2 Function() loadInstalledPluginsV2;
   final void Function(String pluginId, PluginScope scope, String? projectPath)
-      removePluginInstallation;
+  removePluginInstallation;
   final Future<void> Function(String installPath) markVersionOrphaned;
   final void Function(String pluginId) deletePluginOptions;
   final Future<void> Function(String pluginId) deletePluginDataDir;
   final List<String> Function(String pluginId, List<LoadedPlugin> allPlugins)
-      findReverseDependents;
+  findReverseDependents;
   final bool Function(String pluginId) isPluginBlockedByPolicy;
   final String Function() getOriginalCwd;
   final Set<String> Function() getManagedPluginNames;
@@ -408,10 +396,16 @@ class PluginOperationsService {
   /// Search all editable settings scopes for a plugin ID.
   ({String pluginId, PluginScope scope})? findPluginInSettings(String plugin) {
     final hasMarketplace = plugin.contains('@');
-    const searchOrder = [PluginScope.local, PluginScope.project, PluginScope.user];
+    const searchOrder = [
+      PluginScope.local,
+      PluginScope.project,
+      PluginScope.user,
+    ];
 
     for (final scope in searchOrder) {
-      final enabledPlugins = getSettingsEnabledPlugins(scopeToSettingSource(scope));
+      final enabledPlugins = getSettingsEnabledPlugins(
+        scopeToSettingSource(scope),
+      );
       if (enabledPlugins == null) continue;
 
       for (final key in enabledPlugins.keys) {
@@ -424,18 +418,18 @@ class PluginOperationsService {
   }
 
   /// Find a plugin from loaded plugins by identifier.
-  LoadedPlugin? findPluginByIdentifier(String plugin, List<LoadedPlugin> plugins) {
+  LoadedPlugin? findPluginByIdentifier(
+    String plugin,
+    List<LoadedPlugin> plugins,
+  ) {
     final id = parsePluginIdentifier(plugin);
-    return plugins.cast<LoadedPlugin?>().firstWhere(
-      (p) {
-        if (p!.name == plugin || p.name == id.name) return true;
-        if (id.marketplace != null && p.source != null) {
-          return p.name == id.name && p.source!.contains('@${id.marketplace}');
-        }
-        return false;
-      },
-      orElse: () => null,
-    );
+    return plugins.cast<LoadedPlugin?>().firstWhere((p) {
+      if (p!.name == plugin || p.name == id.name) return true;
+      if (id.marketplace != null && p.source != null) {
+        return p.name == id.name && p.source!.contains('@${id.marketplace}');
+      }
+      return false;
+    }, orElse: () => null);
   }
 
   /// Get the most relevant installation for a plugin from V2 data.
@@ -450,26 +444,36 @@ class PluginOperationsService {
 
     final currentProjectPath = getOriginalCwd();
 
-    final localInstall = installations.cast<PluginInstallationRecord?>().firstWhere(
-      (i) => i!.scope == PluginScope.local && i.projectPath == currentProjectPath,
-      orElse: () => null,
-    );
+    final localInstall = installations
+        .cast<PluginInstallationRecord?>()
+        .firstWhere(
+          (i) =>
+              i!.scope == PluginScope.local &&
+              i.projectPath == currentProjectPath,
+          orElse: () => null,
+        );
     if (localInstall != null) {
       return (scope: localInstall.scope, projectPath: localInstall.projectPath);
     }
 
-    final projectInstall = installations.cast<PluginInstallationRecord?>().firstWhere(
-      (i) => i!.scope == PluginScope.project && i.projectPath == currentProjectPath,
-      orElse: () => null,
-    );
+    final projectInstall = installations
+        .cast<PluginInstallationRecord?>()
+        .firstWhere(
+          (i) =>
+              i!.scope == PluginScope.project &&
+              i.projectPath == currentProjectPath,
+          orElse: () => null,
+        );
     if (projectInstall != null) {
-      return (scope: projectInstall.scope, projectPath: projectInstall.projectPath);
+      return (
+        scope: projectInstall.scope,
+        projectPath: projectInstall.projectPath,
+      );
     }
 
-    final userInstall = installations.cast<PluginInstallationRecord?>().firstWhere(
-      (i) => i!.scope == PluginScope.user,
-      orElse: () => null,
-    );
+    final userInstall = installations
+        .cast<PluginInstallationRecord?>()
+        .firstWhere((i) => i!.scope == PluginScope.user, orElse: () => null);
     if (userInstall != null) {
       return (scope: userInstall.scope, projectPath: null);
     }
@@ -520,7 +524,8 @@ class PluginOperationsService {
 
     return PluginOperationResult(
       success: true,
-      message: 'Successfully installed plugin: $pluginId (scope: ${scope.name})',
+      message:
+          'Successfully installed plugin: $pluginId (scope: ${scope.name})',
       pluginId: pluginId,
       pluginName: entry.name,
       scope: scope,
@@ -545,13 +550,13 @@ class PluginOperationsService {
     String pluginName;
 
     if (foundPlugin != null) {
-      pluginId = settings?.keys.firstWhere(
+      pluginId =
+          settings?.keys.firstWhere(
             (k) =>
                 k == plugin ||
                 k == foundPlugin.name ||
                 k.startsWith('${foundPlugin.name}@'),
-            orElse: () =>
-                plugin.contains('@') ? plugin : foundPlugin.name,
+            orElse: () => plugin.contains('@') ? plugin : foundPlugin.name,
           ) ??
           (plugin.contains('@') ? plugin : foundPlugin.name);
       pluginName = foundPlugin.name;
@@ -566,14 +571,18 @@ class PluginOperationsService {
     final projectPath = getProjectPathForScope(scope);
     final installedData = loadInstalledPluginsV2();
     final installations = installedData.plugins[pluginId];
-    final scopeInstallation = installations?.cast<PluginInstallationRecord?>().firstWhere(
-      (i) => i!.scope == scope && i.projectPath == projectPath,
-      orElse: () => null,
-    );
+    final scopeInstallation = installations
+        ?.cast<PluginInstallationRecord?>()
+        .firstWhere(
+          (i) => i!.scope == scope && i.projectPath == projectPath,
+          orElse: () => null,
+        );
 
     if (scopeInstallation == null) {
       final actual = getPluginInstallationFromV2(pluginId);
-      if (actual.scope != scope && installations != null && installations.isNotEmpty) {
+      if (actual.scope != scope &&
+          installations != null &&
+          installations.isNotEmpty) {
         if (actual.scope == PluginScope.project) {
           return PluginOperationResult(
             success: false,
@@ -628,7 +637,8 @@ class PluginOperationsService {
 
     return PluginOperationResult(
       success: true,
-      message: 'Successfully uninstalled plugin: $pluginName (scope: ${scope.name})$depWarn',
+      message:
+          'Successfully uninstalled plugin: $pluginName (scope: ${scope.name})$depWarn',
       pluginId: pluginId,
       pluginName: pluginName,
       scope: scope,
@@ -679,7 +689,8 @@ class PluginOperationsService {
 
     return PluginOperationResult(
       success: true,
-      message: 'Successfully disabled $disabledCount plugin${disabledCount == 1 ? '' : 's'}',
+      message:
+          'Successfully disabled $disabledCount plugin${disabledCount == 1 ? '' : 's'}',
     );
   }
 
@@ -783,7 +794,8 @@ class PluginOperationsService {
     final id = parsePluginIdentifier(pluginId);
     return PluginOperationResult(
       success: true,
-      message: 'Successfully ${operation}d plugin: ${id.name} (scope: ${resolvedScope.name})',
+      message:
+          'Successfully ${operation}d plugin: ${id.name} (scope: ${resolvedScope.name})',
       pluginId: pluginId,
       pluginName: id.name,
       scope: resolvedScope,
@@ -809,7 +821,8 @@ class PluginInstallationController extends SintController {
   /// Callback for marketplace reconciliation.
   final Future<ReconciliationResult> Function({
     required void Function(ReconciliationProgressEvent) onProgress,
-  })? reconcileMarketplaces;
+  })?
+  reconcileMarketplaces;
 
   /// Callback for refreshing active plugins.
   final Future<void> Function()? refreshActivePlugins;
@@ -818,7 +831,8 @@ class PluginInstallationController extends SintController {
   final MarketplaceDiff Function()? computeDiff;
 
   /// Analytics event logger.
-  final void Function(String eventName, Map<String, Object?> metadata)? logEvent;
+  final void Function(String eventName, Map<String, Object?> metadata)?
+  logEvent;
 
   PluginInstallationController({
     this.reconcileMarketplaces,
@@ -839,10 +853,12 @@ class PluginInstallationController extends SintController {
 
       installationStatus.value = PluginInstallationStatus(
         marketplaces: pendingNames
-            .map((name) => MarketplaceInstallStatus(
-                  name: name,
-                  status: InstallationStatus.pending,
-                ))
+            .map(
+              (name) => MarketplaceInstallStatus(
+                name: name,
+                status: InstallationStatus.pending,
+              ),
+            )
             .toList(),
         plugins: const [],
       );
@@ -898,9 +914,10 @@ class PluginInstallationController extends SintController {
     final current = installationStatus.value;
     installationStatus.value = current.copyWith(
       marketplaces: current.marketplaces
-          .map((m) => m.name == name
-              ? m.copyWith(status: status, error: error)
-              : m)
+          .map(
+            (m) =>
+                m.name == name ? m.copyWith(status: status, error: error) : m,
+          )
           .toList(),
     );
   }
@@ -931,10 +948,10 @@ class PluginTelemetryFields {
   });
 
   Map<String, Object?> toMap() => {
-        if (pluginName != null) '_PROTO_plugin_name': pluginName,
-        if (marketplaceName != null) '_PROTO_marketplace_name': marketplaceName,
-        'is_managed': isManaged,
-      };
+    if (pluginName != null) '_PROTO_plugin_name': pluginName,
+    if (marketplaceName != null) '_PROTO_marketplace_name': marketplaceName,
+    'is_managed': isManaged,
+  };
 }
 
 /// Build telemetry fields for a plugin CLI command.
@@ -956,7 +973,9 @@ String classifyPluginCommandError(Object error) {
   if (message.contains('not found')) return 'not_found';
   if (message.contains('blocked')) return 'blocked_by_policy';
   if (message.contains('scope')) return 'scope_mismatch';
-  if (message.contains('network') || message.contains('timeout')) return 'network';
+  if (message.contains('network') || message.contains('timeout')) {
+    return 'network';
+  }
   return 'unknown';
 }
 

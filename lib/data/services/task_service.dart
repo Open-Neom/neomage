@@ -19,17 +19,20 @@ enum TaskStatus {
   timedOut;
 
   bool get isTerminal =>
-      this == completed || this == failed || this == cancelled || this == timedOut;
+      this == completed ||
+      this == failed ||
+      this == cancelled ||
+      this == timedOut;
 
   String get label => switch (this) {
-        pending => 'Pending',
-        queued => 'Queued',
-        running => 'Running',
-        completed => 'Completed',
-        failed => 'Failed',
-        cancelled => 'Cancelled',
-        timedOut => 'Timed Out',
-      };
+    pending => 'Pending',
+    queued => 'Queued',
+    running => 'Running',
+    completed => 'Completed',
+    failed => 'Failed',
+    cancelled => 'Cancelled',
+    timedOut => 'Timed Out',
+  };
 }
 
 enum TaskPriority implements Comparable<TaskPriority> {
@@ -104,13 +107,12 @@ class TaskProgress {
     int? total,
     String? message,
     double? percentage,
-  }) =>
-      TaskProgress(
-        current: current ?? this.current,
-        total: total ?? this.total,
-        message: message ?? this.message,
-        percentage: percentage ?? this.percentage,
-      );
+  }) => TaskProgress(
+    current: current ?? this.current,
+    total: total ?? this.total,
+    message: message ?? this.message,
+    percentage: percentage ?? this.percentage,
+  );
 
   @override
   String toString() {
@@ -127,12 +129,14 @@ class TaskLog {
   final List<TaskLogEntry> _entries = [];
 
   void add(TaskLogLevel level, String message, {Object? data}) {
-    _entries.add(TaskLogEntry(
-      timestamp: DateTime.now(),
-      level: level,
-      message: message,
-      data: data,
-    ));
+    _entries.add(
+      TaskLogEntry(
+        timestamp: DateTime.now(),
+        level: level,
+        message: message,
+        data: data,
+      ),
+    );
   }
 
   void info(String message, {Object? data}) =>
@@ -173,11 +177,11 @@ enum TaskLogLevel {
   error;
 
   String get prefix => switch (this) {
-        debug => 'DEBUG',
-        info => 'INFO',
-        warning => 'WARN',
-        error => 'ERROR',
-      };
+    debug => 'DEBUG',
+    info => 'INFO',
+    warning => 'WARN',
+    error => 'ERROR',
+  };
 }
 
 class TaskLogEntry {
@@ -207,8 +211,8 @@ class TaskLogEntry {
 // BackgroundTask
 // ---------------------------------------------------------------------------
 
-typedef TaskFunction<T> = Future<T> Function(
-    TaskProgress Function(TaskProgress) updateProgress);
+typedef TaskFunction<T> =
+    Future<T> Function(TaskProgress Function(TaskProgress) updateProgress);
 
 class BackgroundTask<T> {
   final String id;
@@ -223,7 +227,7 @@ class BackgroundTask<T> {
   TaskProgress _progress = const TaskProgress();
   DateTime? _startTime;
   DateTime? _endTime;
-  DateTime _createdAt;
+  final DateTime _createdAt;
   Completer<TaskResult<T>>? _completer;
   Timer? _timeoutTimer;
   bool _cancelRequested = false;
@@ -234,8 +238,8 @@ class BackgroundTask<T> {
     required TaskFunction<T> function,
     this.priority = TaskPriority.normal,
     this.timeout,
-  })  : _function = function,
-        _createdAt = DateTime.now();
+  }) : _function = function,
+       _createdAt = DateTime.now();
 
   TaskStatus get status => _status;
   TaskResult<T>? get result => _result;
@@ -243,8 +247,9 @@ class BackgroundTask<T> {
   DateTime? get startTime => _startTime;
   DateTime? get endTime => _endTime;
   DateTime get createdAt => _createdAt;
-  Duration? get elapsed =>
-      _startTime == null ? null : (_endTime ?? DateTime.now()).difference(_startTime!);
+  Duration? get elapsed => _startTime == null
+      ? null
+      : (_endTime ?? DateTime.now()).difference(_startTime!);
   bool get isRunning => _status == TaskStatus.running;
   bool get isTerminal => _status.isTerminal;
   bool get cancelRequested => _cancelRequested;
@@ -321,21 +326,21 @@ class BackgroundTask<T> {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'status': _status.label,
-        'priority': priority.name,
-        'progress': {
-          'current': _progress.current,
-          'total': _progress.total,
-          'message': _progress.message,
-          'fraction': _progress.fraction,
-        },
-        'createdAt': _createdAt.toIso8601String(),
-        'startTime': _startTime?.toIso8601String(),
-        'endTime': _endTime?.toIso8601String(),
-        'elapsed': elapsed?.inMilliseconds,
-      };
+    'id': id,
+    'name': name,
+    'status': _status.label,
+    'priority': priority.name,
+    'progress': {
+      'current': _progress.current,
+      'total': _progress.total,
+      'message': _progress.message,
+      'fraction': _progress.fraction,
+    },
+    'createdAt': _createdAt.toIso8601String(),
+    'startTime': _startTime?.toIso8601String(),
+    'endTime': _endTime?.toIso8601String(),
+    'elapsed': elapsed?.inMilliseconds,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -383,7 +388,8 @@ class TaskIsolateRunner {
         if (!completer.isCompleted) {
           isolate.kill(priority: Isolate.immediate);
           completer.completeError(
-              TimeoutException('Isolate timed out', timeout));
+            TimeoutException('Isolate timed out', timeout),
+          );
         }
       });
     }
@@ -592,8 +598,10 @@ class TaskManager {
 
   /// Remove completed/cancelled/failed tasks from the registry.
   int pruneCompleted() {
-    final toRemove =
-        _tasks.entries.where((e) => e.value.isTerminal).map((e) => e.key).toList();
+    final toRemove = _tasks.entries
+        .where((e) => e.value.isTerminal)
+        .map((e) => e.key)
+        .toList();
     for (final id in toRemove) {
       _tasks.remove(id);
     }
@@ -602,16 +610,18 @@ class TaskManager {
 
   /// Get summary statistics.
   TaskManagerStats get stats => TaskManagerStats(
-        total: _tasks.length,
-        running: _tasks.values.where((t) => t.status == TaskStatus.running).length,
-        queued: _tasks.values.where((t) => t.status == TaskStatus.queued).length,
-        completed:
-            _tasks.values.where((t) => t.status == TaskStatus.completed).length,
-        failed: _tasks.values.where((t) => t.status == TaskStatus.failed).length,
-        cancelled:
-            _tasks.values.where((t) => t.status == TaskStatus.cancelled).length,
-        maxConcurrent: maxConcurrent,
-      );
+    total: _tasks.length,
+    running: _tasks.values.where((t) => t.status == TaskStatus.running).length,
+    queued: _tasks.values.where((t) => t.status == TaskStatus.queued).length,
+    completed: _tasks.values
+        .where((t) => t.status == TaskStatus.completed)
+        .length,
+    failed: _tasks.values.where((t) => t.status == TaskStatus.failed).length,
+    cancelled: _tasks.values
+        .where((t) => t.status == TaskStatus.cancelled)
+        .length,
+    maxConcurrent: maxConcurrent,
+  );
 
   /// Dispose the task manager. Cancels all running tasks.
   void dispose() {

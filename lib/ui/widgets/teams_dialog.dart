@@ -1,4 +1,4 @@
-// TeamsDialog — faithful port of openneomclaw/src/components/teams/
+// TeamsDialog — faithful port of neom_claw/src/components/teams/
 // Ports: TeamsDialog.tsx (teammate list + detail view), TeamStatus.tsx
 // (footer status indicator).
 //
@@ -176,10 +176,7 @@ class TeamsDialogController extends SintController {
   final List<TeamSummary>? initialTeams;
   final VoidCallback onDone;
 
-  TeamsDialogController({
-    this.initialTeams,
-    required this.onDone,
-  });
+  TeamsDialogController({this.initialTeams, required this.onDone});
 
   late final Rx<_DialogLevel> dialogLevel;
   final selectedIndex = 0.obs;
@@ -202,13 +199,10 @@ class TeamsDialogController extends SintController {
 
     // Periodically refresh to pick up mode changes from teammates.
     // Port of useInterval(() => setRefreshKey(...), 1000)
-    _refreshTimer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        refreshKey.value++;
-        _loadTeammateStatuses();
-      },
-    );
+    _refreshTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      refreshKey.value++;
+      _loadTeammateStatuses();
+    });
   }
 
   @override
@@ -226,9 +220,9 @@ class TeamsDialogController extends SintController {
     final level = dialogLevel.value;
     if (level.type != _DialogLevelType.teammateDetail) return null;
     return teammateStatuses.cast<TeammateStatus?>().firstWhere(
-          (t) => t!.name == level.memberName,
-          orElse: () => null,
-        );
+      (t) => t!.name == level.memberName,
+      orElse: () => null,
+    );
   }
 
   void goBackToList() {
@@ -264,8 +258,9 @@ class TeamsDialogController extends SintController {
   }
 
   void _cycleTeammateMode(TeammateStatus teammate) {
-    final currentMode =
-        teammate.mode != null ? permissionModeFromString(teammate.mode!) : PermissionMode.defaultMode;
+    final currentMode = teammate.mode != null
+        ? permissionModeFromString(teammate.mode!)
+        : PermissionMode.defaultMode;
     final nextMode = currentMode.next;
     // In production: setMemberMode(teammate.name, teamName, nextMode)
     debugPrint('Cycle mode for ${teammate.name}: $currentMode -> $nextMode');
@@ -336,8 +331,8 @@ class TeamsDialogController extends SintController {
       case 'k':
         final target = level.type == _DialogLevelType.teammateList
             ? (teammateStatuses.isNotEmpty
-                ? teammateStatuses[selectedIndex.value]
-                : null)
+                  ? teammateStatuses[selectedIndex.value]
+                  : null)
             : currentTeammate;
         if (target != null) {
           killTeammate(target);
@@ -349,8 +344,8 @@ class TeamsDialogController extends SintController {
       case 's':
         final shutdownTarget = level.type == _DialogLevelType.teammateList
             ? (teammateStatuses.isNotEmpty
-                ? teammateStatuses[selectedIndex.value]
-                : null)
+                  ? teammateStatuses[selectedIndex.value]
+                  : null)
             : currentTeammate;
         if (shutdownTarget != null) {
           shutdownTeammate(shutdownTarget);
@@ -362,8 +357,8 @@ class TeamsDialogController extends SintController {
       case 'h':
         final hideTarget = level.type == _DialogLevelType.teammateList
             ? (teammateStatuses.isNotEmpty
-                ? teammateStatuses[selectedIndex.value]
-                : null)
+                  ? teammateStatuses[selectedIndex.value]
+                  : null)
             : currentTeammate;
         if (hideTarget != null) {
           toggleTeammateVisibility(hideTarget);
@@ -387,19 +382,12 @@ class TeamsDialog extends StatelessWidget {
   final List<TeamSummary>? initialTeams;
   final VoidCallback onDone;
 
-  const TeamsDialog({
-    super.key,
-    this.initialTeams,
-    required this.onDone,
-  });
+  const TeamsDialog({super.key, this.initialTeams, required this.onDone});
 
   @override
   Widget build(BuildContext context) {
     final controller = Sint.put(
-      TeamsDialogController(
-        initialTeams: initialTeams,
-        onDone: onDone,
-      ),
+      TeamsDialogController(initialTeams: initialTeams, onDone: onDone),
     );
 
     return Focus(
@@ -485,14 +473,16 @@ class _TeamDetailView extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Obx(() => Text(
-                            '${controller.teammateStatuses.length} '
-                            '${controller.teammateStatuses.length == 1 ? "teammate" : "teammates"}',
-                            style: TextStyle(
-                              color: theme.colorScheme.onSurfaceVariant,
-                              fontSize: 13,
-                            ),
-                          )),
+                      Obx(
+                        () => Text(
+                          '${controller.teammateStatuses.length} '
+                          '${controller.teammateStatuses.length == 1 ? "teammate" : "teammates"}',
+                          style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -523,8 +513,7 @@ class _TeamDetailView extends StatelessWidget {
                   itemCount: controller.teammateStatuses.length,
                   itemBuilder: (context, index) {
                     final teammate = controller.teammateStatuses[index];
-                    final isSelected =
-                        index == controller.selectedIndex.value;
+                    final isSelected = index == controller.selectedIndex.value;
 
                     return _TeammateListItem(
                       teammate: teammate,
@@ -691,10 +680,7 @@ class _TeammateDetailView extends StatelessWidget {
   final TeamsDialogController controller;
   final TeammateStatus teammate;
 
-  const _TeammateDetailView({
-    required this.controller,
-    required this.teammate,
-  });
+  const _TeammateDetailView({required this.controller, required this.teammate});
 
   @override
   Widget build(BuildContext context) {
@@ -707,7 +693,8 @@ class _TeammateDetailView extends StatelessWidget {
     if (teammate.model != null) subtitleParts.add(teammate.model!);
     if (workingPath != null) {
       subtitleParts.add(
-          teammate.worktreePath != null ? 'worktree: $workingPath' : workingPath);
+        teammate.worktreePath != null ? 'worktree: $workingPath' : workingPath,
+      );
     }
 
     return Dialog(
@@ -766,10 +753,14 @@ class _TeammateDetailView extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: _statusColor(teammate.status).withValues(alpha: 0.15),
+                    color: _statusColor(
+                      teammate.status,
+                    ).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -796,22 +787,25 @@ class _TeammateDetailView extends StatelessWidget {
 
             // ── Current task ──
             if (teammate.currentTask != null) ...[
-              Text('Current Task:',
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
               Text(
-                teammate.currentTask!,
-                style: const TextStyle(fontSize: 13),
+                'Current Task:',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
+              const SizedBox(height: 4),
+              Text(teammate.currentTask!, style: const TextStyle(fontSize: 13)),
               const SizedBox(height: 12),
             ],
 
             // ── Prompt ──
             if (teammate.prompt != null) ...[
-              Text('Prompt:',
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
+              Text(
+                'Prompt:',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 4),
               Container(
                 width: double.infinity,
@@ -836,39 +830,46 @@ class _TeammateDetailView extends StatelessWidget {
 
             // ── Tasks ──
             if (teammate.tasks.isNotEmpty) ...[
-              Text('Tasks (${teammate.tasks.length}):',
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
+              Text(
+                'Tasks (${teammate.tasks.length}):',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 4),
-              ...teammate.tasks.take(5).map((task) => Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Row(
-                      children: [
-                        Icon(
-                          task.status == 'completed'
-                              ? Icons.check_circle
-                              : task.status == 'running'
-                                  ? Icons.play_circle
-                                  : Icons.circle_outlined,
-                          size: 14,
-                          color: task.status == 'completed'
-                              ? ClawColors.success
-                              : task.status == 'running'
-                                  ? ClawColors.info
-                                  : theme.colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            task.title,
-                            style: const TextStyle(fontSize: 13),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+              ...teammate.tasks
+                  .take(5)
+                  .map(
+                    (task) => Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Row(
+                        children: [
+                          Icon(
+                            task.status == 'completed'
+                                ? Icons.check_circle
+                                : task.status == 'running'
+                                ? Icons.play_circle
+                                : Icons.circle_outlined,
+                            size: 14,
+                            color: task.status == 'completed'
+                                ? ClawColors.success
+                                : task.status == 'running'
+                                ? ClawColors.info
+                                : theme.colorScheme.onSurfaceVariant,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              task.title,
+                              style: const TextStyle(fontSize: 13),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  )),
+                  ),
               const SizedBox(height: 12),
             ],
 
@@ -929,10 +930,7 @@ class _KeyHint extends StatelessWidget {
           ),
           child: Text(
             shortcut,
-            style: const TextStyle(
-              fontSize: 11,
-              fontFamily: 'monospace',
-            ),
+            style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
           ),
         ),
         const SizedBox(width: 3),

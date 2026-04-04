@@ -2,7 +2,6 @@
 // Terminal output display with ANSI colors, scrollback, copy support.
 
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -84,9 +83,22 @@ class AnsiColors {
   static const brightWhite = Color(0xFFFFFFFF);
 
   static const standard = [
-    black, red, green, yellow, blue, magenta, cyan, white,
-    brightBlack, brightRed, brightGreen, brightYellow,
-    brightBlue, brightMagenta, brightCyan, brightWhite,
+    black,
+    red,
+    green,
+    yellow,
+    blue,
+    magenta,
+    cyan,
+    white,
+    brightBlack,
+    brightRed,
+    brightGreen,
+    brightYellow,
+    brightBlue,
+    brightMagenta,
+    brightCyan,
+    brightWhite,
   ];
 
   /// Get color for 256-color palette.
@@ -197,21 +209,29 @@ List<StyledSpan> parseAnsi(String input) {
                   break;
                 case >= 30 && <= 37:
                   style = style.copyWith(
-                      foreground: AnsiColors.standard[p - 30]);
+                    foreground: AnsiColors.standard[p - 30],
+                  );
                   break;
                 case 38:
                   // Extended foreground
-                  if (j + 1 < params.length && params[j + 1] == 5 &&
+                  if (j + 1 < params.length &&
+                      params[j + 1] == 5 &&
                       j + 2 < params.length) {
                     style = style.copyWith(
-                        foreground: AnsiColors.color256(params[j + 2]));
+                      foreground: AnsiColors.color256(params[j + 2]),
+                    );
                     j += 2;
                   } else if (j + 1 < params.length &&
                       params[j + 1] == 2 &&
                       j + 4 < params.length) {
                     style = style.copyWith(
-                        foreground: Color.fromARGB(
-                            255, params[j + 2], params[j + 3], params[j + 4]));
+                      foreground: Color.fromARGB(
+                        255,
+                        params[j + 2],
+                        params[j + 3],
+                        params[j + 4],
+                      ),
+                    );
                     j += 4;
                   }
                   break;
@@ -220,21 +240,29 @@ List<StyledSpan> parseAnsi(String input) {
                   break;
                 case >= 40 && <= 47:
                   style = style.copyWith(
-                      background: AnsiColors.standard[p - 40]);
+                    background: AnsiColors.standard[p - 40],
+                  );
                   break;
                 case 48:
                   // Extended background
-                  if (j + 1 < params.length && params[j + 1] == 5 &&
+                  if (j + 1 < params.length &&
+                      params[j + 1] == 5 &&
                       j + 2 < params.length) {
                     style = style.copyWith(
-                        background: AnsiColors.color256(params[j + 2]));
+                      background: AnsiColors.color256(params[j + 2]),
+                    );
                     j += 2;
                   } else if (j + 1 < params.length &&
                       params[j + 1] == 2 &&
                       j + 4 < params.length) {
                     style = style.copyWith(
-                        background: Color.fromARGB(
-                            255, params[j + 2], params[j + 3], params[j + 4]));
+                      background: Color.fromARGB(
+                        255,
+                        params[j + 2],
+                        params[j + 3],
+                        params[j + 4],
+                      ),
+                    );
                     j += 4;
                   }
                   break;
@@ -243,11 +271,13 @@ List<StyledSpan> parseAnsi(String input) {
                   break;
                 case >= 90 && <= 97:
                   style = style.copyWith(
-                      foreground: AnsiColors.standard[p - 90 + 8]);
+                    foreground: AnsiColors.standard[p - 90 + 8],
+                  );
                   break;
                 case >= 100 && <= 107:
                   style = style.copyWith(
-                      background: AnsiColors.standard[p - 100 + 8]);
+                    background: AnsiColors.standard[p - 100 + 8],
+                  );
                   break;
               }
               j++;
@@ -284,8 +314,8 @@ class TerminalLine {
     required this.rawText,
     this.type = TerminalLineType.stdout,
     DateTime? timestamp,
-  })  : _parsed = null,
-        timestamp = timestamp ?? DateTime.now();
+  }) : _parsed = null,
+       timestamp = timestamp ?? DateTime.now();
 
   List<StyledSpan> get spans => _parsed ?? parseAnsi(rawText);
 
@@ -409,14 +439,13 @@ class _TerminalViewState extends State<TerminalView> {
   void _prevMatch() {
     if (_searchMatches.isEmpty) return;
     setState(() {
-      _currentMatch = (_currentMatch - 1 + _searchMatches.length) %
-          _searchMatches.length;
+      _currentMatch =
+          (_currentMatch - 1 + _searchMatches.length) % _searchMatches.length;
     });
   }
 
   void _copyAll() {
-    final text =
-        widget.lines.map((l) => l.plainText).join('\n');
+    final text = widget.lines.map((l) => l.plainText).join('\n');
     Clipboard.setData(ClipboardData(text: text));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -446,10 +475,12 @@ class _TerminalViewState extends State<TerminalView> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = widget.backgroundColor ??
+    final bgColor =
+        widget.backgroundColor ??
         (isDark ? const Color(0xFF0D0D1A) : const Color(0xFFF8F8FB));
 
-    final baseStyle = widget.baseStyle ??
+    final baseStyle =
+        widget.baseStyle ??
         TextStyle(
           fontFamily: 'monospace',
           fontSize: 13,
@@ -463,9 +494,7 @@ class _TerminalViewState extends State<TerminalView> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: isDark
-                ? const Color(0xFF141428)
-                : const Color(0xFFF0F0F5),
+            color: isDark ? const Color(0xFF141428) : const Color(0xFFF0F0F5),
             border: Border(
               bottom: BorderSide(
                 color: isDark
@@ -492,8 +521,11 @@ class _TerminalViewState extends State<TerminalView> {
                       fontSize: 12,
                       color: isDark ? Colors.white30 : Colors.black26,
                     ),
-                    prefixIcon:
-                        Icon(Icons.search, size: 14, color: Colors.grey),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      size: 14,
+                      color: Colors.grey,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(4),
                       borderSide: BorderSide.none,
@@ -520,15 +552,19 @@ class _TerminalViewState extends State<TerminalView> {
                   onPressed: _prevMatch,
                   icon: const Icon(Icons.keyboard_arrow_up, size: 16),
                   padding: EdgeInsets.zero,
-                  constraints:
-                      const BoxConstraints(minWidth: 24, minHeight: 24),
+                  constraints: const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
                 ),
                 IconButton(
                   onPressed: _nextMatch,
                   icon: const Icon(Icons.keyboard_arrow_down, size: 16),
                   padding: EdgeInsets.zero,
-                  constraints:
-                      const BoxConstraints(minWidth: 24, minHeight: 24),
+                  constraints: const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
                 ),
               ],
 
@@ -550,8 +586,7 @@ class _TerminalViewState extends State<TerminalView> {
                 icon: const Icon(Icons.copy, size: 14),
                 tooltip: 'Copy all',
                 padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints(minWidth: 28, minHeight: 28),
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               ),
 
               // Scroll to bottom
@@ -560,8 +595,7 @@ class _TerminalViewState extends State<TerminalView> {
                 icon: const Icon(Icons.arrow_downward, size: 14),
                 tooltip: 'Scroll to bottom',
                 padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints(minWidth: 28, minHeight: 28),
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               ),
             ],
           ),
@@ -577,8 +611,8 @@ class _TerminalViewState extends State<TerminalView> {
               itemCount: widget.lines.length,
               itemBuilder: (context, index) {
                 final line = widget.lines[index];
-                final isMatch = _searchQuery != null &&
-                    _searchMatches.contains(index);
+                final isMatch =
+                    _searchQuery != null && _searchMatches.contains(index);
                 final isCurrentMatch =
                     _currentMatch >= 0 &&
                     _currentMatch < _searchMatches.length &&
@@ -588,8 +622,8 @@ class _TerminalViewState extends State<TerminalView> {
                   color: isCurrentMatch
                       ? Colors.yellow.withValues(alpha: 0.2)
                       : isMatch
-                          ? Colors.yellow.withValues(alpha: 0.08)
-                          : null,
+                      ? Colors.yellow.withValues(alpha: 0.08)
+                      : null,
                   padding: const EdgeInsets.symmetric(vertical: 1),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -601,16 +635,13 @@ class _TerminalViewState extends State<TerminalView> {
                           child: Text(
                             '${index + 1}',
                             style: baseStyle.copyWith(
-                              color: isDark
-                                  ? Colors.white24
-                                  : Colors.black12,
+                              color: isDark ? Colors.white24 : Colors.black12,
                               fontSize: 11,
                             ),
                             textAlign: TextAlign.right,
                           ),
                         ),
-                      if (widget.showLineNumbers)
-                        const SizedBox(width: 8),
+                      if (widget.showLineNumbers) const SizedBox(width: 8),
 
                       // Timestamp
                       if (widget.showTimestamps)
@@ -619,17 +650,14 @@ class _TerminalViewState extends State<TerminalView> {
                           '${line.timestamp.minute.toString().padLeft(2, '0')}:'
                           '${line.timestamp.second.toString().padLeft(2, '0')} ',
                           style: baseStyle.copyWith(
-                            color: isDark
-                                ? Colors.white24
-                                : Colors.black12,
+                            color: isDark ? Colors.white24 : Colors.black12,
                             fontSize: 11,
                           ),
                         ),
 
                       // Content
                       Expanded(
-                        child: _buildStyledLine(
-                            line, baseStyle, isDark),
+                        child: _buildStyledLine(line, baseStyle, isDark),
                       ),
                     ],
                   ),
@@ -654,9 +682,7 @@ class _TerminalViewState extends State<TerminalView> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 11,
-                  color: isDark
-                      ? Colors.blue.shade300
-                      : Colors.blue.shade700,
+                  color: isDark ? Colors.blue.shade300 : Colors.blue.shade700,
                 ),
               ),
             ),
@@ -665,8 +691,7 @@ class _TerminalViewState extends State<TerminalView> {
     );
   }
 
-  Widget _buildStyledLine(
-      TerminalLine line, TextStyle baseStyle, bool isDark) {
+  Widget _buildStyledLine(TerminalLine line, TextStyle baseStyle, bool isDark) {
     if (line.type == TerminalLineType.separator) {
       return Divider(
         height: 1,
@@ -679,9 +704,7 @@ class _TerminalViewState extends State<TerminalView> {
       // Simple unstyled text
       return Text(
         spans[0].text,
-        style: baseStyle.copyWith(
-          color: _lineTypeColor(line.type, isDark),
-        ),
+        style: baseStyle.copyWith(color: _lineTypeColor(line.type, isDark)),
       );
     }
 
@@ -689,8 +712,7 @@ class _TerminalViewState extends State<TerminalView> {
     return RichText(
       text: TextSpan(
         children: spans.map((span) {
-          var fg = span.style.foreground ??
-              _lineTypeColor(line.type, isDark);
+          var fg = span.style.foreground ?? _lineTypeColor(line.type, isDark);
           var bg = span.style.background;
 
           if (span.style.inverse) {
@@ -708,14 +730,13 @@ class _TerminalViewState extends State<TerminalView> {
             style: baseStyle.copyWith(
               color: fg,
               backgroundColor: bg,
-              fontWeight:
-                  span.style.bold ? FontWeight.bold : FontWeight.normal,
-              fontStyle:
-                  span.style.italic ? FontStyle.italic : FontStyle.normal,
+              fontWeight: span.style.bold ? FontWeight.bold : FontWeight.normal,
+              fontStyle: span.style.italic
+                  ? FontStyle.italic
+                  : FontStyle.normal,
               decoration: TextDecoration.combine([
                 if (span.style.underline) TextDecoration.underline,
-                if (span.style.strikethrough)
-                  TextDecoration.lineThrough,
+                if (span.style.strikethrough) TextDecoration.lineThrough,
               ]),
             ),
           );
@@ -740,8 +761,7 @@ class TerminalBuffer {
   Stream<TerminalLine> get onLineAdded => _lineAdded.stream;
   int get length => _lines.length;
 
-  void addLine(String text,
-      {TerminalLineType type = TerminalLineType.stdout}) {
+  void addLine(String text, {TerminalLineType type = TerminalLineType.stdout}) {
     final line = TerminalLine(rawText: text, type: type);
     _lines.add(line);
     if (_lines.length > maxLines) {
@@ -750,8 +770,10 @@ class TerminalBuffer {
     _lineAdded.add(line);
   }
 
-  void addLines(String text,
-      {TerminalLineType type = TerminalLineType.stdout}) {
+  void addLines(
+    String text, {
+    TerminalLineType type = TerminalLineType.stdout,
+  }) {
     for (final line in text.split('\n')) {
       addLine(line, type: type);
     }
@@ -766,10 +788,7 @@ class TerminalBuffer {
   }
 
   void addSeparator() {
-    _lines.add(TerminalLine(
-      rawText: '',
-      type: TerminalLineType.separator,
-    ));
+    _lines.add(TerminalLine(rawText: '', type: TerminalLineType.separator));
   }
 
   void clear() {

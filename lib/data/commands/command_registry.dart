@@ -244,13 +244,15 @@ class CommandRegistry {
     reg.lastExecutedAt = DateTime.now();
 
     // Emit event.
-    _executionController.add(CommandExecutionEvent(
-      commandName: reg.name,
-      category: reg.category,
-      args: args,
-      isError: isError,
-      timestamp: DateTime.now(),
-    ));
+    _executionController.add(
+      CommandExecutionEvent(
+        commandName: reg.name,
+        category: reg.category,
+        args: args,
+        isError: isError,
+        timestamp: DateTime.now(),
+      ),
+    );
 
     return result;
   }
@@ -343,15 +345,15 @@ class CommandRegistry {
   }
 
   static String _categoryLabel(CommandCategory cat) => switch (cat) {
-        CommandCategory.navigation => 'Navigation',
-        CommandCategory.session => 'Session',
-        CommandCategory.config => 'Configuration',
-        CommandCategory.tools => 'Tools',
-        CommandCategory.git => 'Git',
-        CommandCategory.debug => 'Debug',
-        CommandCategory.system => 'System',
-        CommandCategory.help => 'Help',
-      };
+    CommandCategory.navigation => 'Navigation',
+    CommandCategory.session => 'Session',
+    CommandCategory.config => 'Configuration',
+    CommandCategory.tools => 'Tools',
+    CommandCategory.git => 'Git',
+    CommandCategory.debug => 'Debug',
+    CommandCategory.system => 'System',
+    CommandCategory.help => 'Help',
+  };
 
   // ── Builtin Registration ─────────────────────────────────────────────────
 

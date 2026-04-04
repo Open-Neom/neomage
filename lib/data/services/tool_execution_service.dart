@@ -1,11 +1,10 @@
-// Tool execution service — faithful port of openneomclaw/src/services/tools/.
+// Tool execution service — faithful port of neom_claw/src/services/tools/.
 // Covers: toolExecution.ts, toolHooks.ts, StreamingToolExecutor.ts,
 //         toolOrchestration.ts.
 //
 // All classes, methods, types, and concurrency control are ported.
 
 import 'dart:async';
-import 'dart:math';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -76,11 +75,11 @@ class ToolResultBlock {
   });
 
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'tool_use_id': toolUseId,
-        'content': content,
-        'is_error': isError,
-      };
+    'type': type,
+    'tool_use_id': toolUseId,
+    'content': content,
+    'is_error': isError,
+  };
 }
 
 /// Permission decision result.
@@ -146,7 +145,8 @@ class ToolDefinition {
   final Future<ToolMessage> Function(
     Map<String, dynamic> input,
     ToolUseContext context,
-  ) execute;
+  )
+  execute;
   final bool Function(Map<String, dynamic>)? validateInput;
 
   const ToolDefinition({
@@ -186,7 +186,7 @@ class ToolUseContext {
   final bool requireCanUseTool;
   final AbortController abortController;
   final void Function(Set<String> Function(Set<String>) updater)?
-      setInProgressToolUseIDs;
+  setInProgressToolUseIDs;
   final void Function(bool)? setHasInterruptibleToolInProgress;
   final void Function(String)? setStreamMode;
   final void Function(int Function(int))? setResponseLength;
@@ -318,11 +318,7 @@ class MessageUpdate {
   final ToolUseContext? newContext;
   final ContextModifier? contextModifier;
 
-  const MessageUpdate({
-    this.message,
-    this.newContext,
-    this.contextModifier,
-  });
+  const MessageUpdate({this.message, this.newContext, this.contextModifier});
 }
 
 /// A context modifier attached to a message update.
@@ -330,10 +326,7 @@ class ContextModifier {
   final String toolUseID;
   final ToolUseContext Function(ToolUseContext context) modifyContext;
 
-  const ContextModifier({
-    required this.toolUseID,
-    required this.modifyContext,
-  });
+  const ContextModifier({required this.toolUseID, required this.modifyContext});
 }
 
 // ---------------------------------------------------------------------------
@@ -385,14 +378,15 @@ String decisionReasonToOTelSource(
 // ---------------------------------------------------------------------------
 
 /// Type for the canUseTool callback.
-typedef CanUseToolFn = Future<PermissionResult> Function(
-  ToolDefinition tool,
-  Map<String, dynamic> input,
-  ToolUseContext context,
-  AssistantMessage assistantMessage,
-  String toolUseID, [
-  PermissionResult? forceDecision,
-]);
+typedef CanUseToolFn =
+    Future<PermissionResult> Function(
+      ToolDefinition tool,
+      Map<String, dynamic> input,
+      ToolUseContext context,
+      AssistantMessage assistantMessage,
+      String toolUseID, [
+      PermissionResult? forceDecision,
+    ]);
 
 /// Run a single tool use block — checks permissions and executes the tool.
 Stream<MessageUpdate> runToolUse(
@@ -435,10 +429,7 @@ Stream<MessageUpdate> runToolUse(
       message: ToolMessage(
         type: 'user',
         toolResults: [
-          ToolResultBlock(
-            toolUseId: toolUse.id,
-            content: cancelMessage,
-          ),
+          ToolResultBlock(toolUseId: toolUse.id, content: cancelMessage),
         ],
         toolUseResult: cancelMessage,
         sourceToolAssistantUUID: assistantMessage.uuid,
@@ -510,7 +501,7 @@ Stream<MessageUpdate> runToolUse(
 /// Encapsulates the invariant that hook 'allow' does NOT bypass
 /// settings.json deny/ask rules.
 Future<({PermissionResult decision, Map<String, dynamic> input})>
-    resolveHookPermissionDecision({
+resolveHookPermissionDecision({
   required PermissionResult? hookPermissionResult,
   required ToolDefinition tool,
   required Map<String, dynamic> input,
@@ -519,8 +510,11 @@ Future<({PermissionResult decision, Map<String, dynamic> input})>
   required AssistantMessage assistantMessage,
   required String toolUseID,
   Future<PermissionResult?> Function(
-          ToolDefinition, Map<String, dynamic>, ToolUseContext)?
-      checkRuleBasedPermissions,
+    ToolDefinition,
+    Map<String, dynamic>,
+    ToolUseContext,
+  )?
+  checkRuleBasedPermissions,
 }) async {
   final requiresInteraction = tool.requiresUserInteraction?.call() ?? false;
   final requireCanUseTool = toolUseContext.requireCanUseTool;
@@ -530,8 +524,7 @@ Future<({PermissionResult decision, Map<String, dynamic> input})>
     final interactionSatisfied =
         requiresInteraction && hookPermissionResult.updatedInput != null;
 
-    if ((requiresInteraction && !interactionSatisfied) ||
-        requireCanUseTool) {
+    if ((requiresInteraction && !interactionSatisfied) || requireCanUseTool) {
       return (
         decision: await canUseTool(
           tool,
@@ -577,15 +570,14 @@ Future<({PermissionResult decision, Map<String, dynamic> input})>
   }
 
   // No hook decision or 'ask' — normal permission flow
-  final forceDecision =
-      hookPermissionResult?.behavior == PermissionBehavior.ask
-          ? hookPermissionResult
-          : null;
+  final forceDecision = hookPermissionResult?.behavior == PermissionBehavior.ask
+      ? hookPermissionResult
+      : null;
   final askInput =
       (hookPermissionResult?.behavior == PermissionBehavior.ask &&
-              hookPermissionResult?.updatedInput != null)
-          ? hookPermissionResult!.updatedInput!
-          : input;
+          hookPermissionResult?.updatedInput != null)
+      ? hookPermissionResult!.updatedInput!
+      : input;
 
   return (
     decision: await canUseTool(
@@ -611,10 +603,7 @@ class ToolBatch {
   final bool isConcurrencySafe;
   final List<ToolUseBlock> blocks;
 
-  const ToolBatch({
-    required this.isConcurrencySafe,
-    required this.blocks,
-  });
+  const ToolBatch({required this.isConcurrencySafe, required this.blocks});
 }
 
 /// Partition tool calls into batches for orchestration.
@@ -641,10 +630,9 @@ List<ToolBatch> partitionToolCalls(
       // Mutable list — extend the last batch
       batches.last.blocks.add(toolUse);
     } else {
-      batches.add(ToolBatch(
-        isConcurrencySafe: isConcurrencySafe,
-        blocks: [toolUse],
-      ));
+      batches.add(
+        ToolBatch(isConcurrencySafe: isConcurrencySafe, blocks: [toolUse]),
+      );
     }
   }
 
@@ -675,17 +663,18 @@ Stream<MessageUpdate> runTools(
 
         final assistantMsg = assistantMessages.firstWhere(
           (a) => a.content.any(
-            (c) =>
-                c is Map &&
-                c['type'] == 'tool_use' &&
-                c['id'] == toolUse.id,
+            (c) => c is Map && c['type'] == 'tool_use' && c['id'] == toolUse.id,
           ),
           orElse: () => assistantMessages.first,
         );
 
         futures.add(
-          runToolUse(toolUse, assistantMsg, canUseTool, currentContext)
-              .toList(),
+          runToolUse(
+            toolUse,
+            assistantMsg,
+            canUseTool,
+            currentContext,
+          ).toList(),
         );
       }
 
@@ -712,10 +701,7 @@ Stream<MessageUpdate> runTools(
 
         final assistantMsg = assistantMessages.firstWhere(
           (a) => a.content.any(
-            (c) =>
-                c is Map &&
-                c['type'] == 'tool_use' &&
-                c['id'] == toolUse.id,
+            (c) => c is Map && c['type'] == 'tool_use' && c['id'] == toolUse.id,
           ),
           orElse: () => assistantMessages.first,
         );
@@ -727,8 +713,9 @@ Stream<MessageUpdate> runTools(
           currentContext,
         )) {
           if (update.contextModifier != null) {
-            currentContext =
-                update.contextModifier!.modifyContext(currentContext);
+            currentContext = update.contextModifier!.modifyContext(
+              currentContext,
+            );
           }
           yield MessageUpdate(
             message: update.message,
@@ -775,10 +762,8 @@ class _TrackedTool {
     required this.assistantMessage,
     required this.status,
     required this.isConcurrencySafe,
-    this.promise,
     this.results,
     List<ToolMessage>? pendingProgress,
-    this.contextModifiers,
   }) : pendingProgress = pendingProgress ?? [];
 }
 
@@ -801,11 +786,12 @@ class StreamingToolExecutor {
     required List<ToolDefinition> toolDefinitions,
     required CanUseToolFn canUseTool,
     required ToolUseContext toolUseContext,
-  })  : _toolDefinitions = toolDefinitions,
-        _canUseTool = canUseTool,
-        _toolUseContext = toolUseContext {
-    _siblingAbortController =
-        createChildAbortController(toolUseContext.abortController);
+  }) : _toolDefinitions = toolDefinitions,
+       _canUseTool = canUseTool,
+       _toolUseContext = toolUseContext {
+    _siblingAbortController = createChildAbortController(
+      toolUseContext.abortController,
+    );
   }
 
   /// Discards all pending and in-progress tools.
@@ -819,29 +805,30 @@ class StreamingToolExecutor {
     final toolDefinition = findToolByName(_toolDefinitions, block.name);
 
     if (toolDefinition == null) {
-      _tools.add(_TrackedTool(
-        id: block.id,
-        block: block,
-        assistantMessage: assistantMessage,
-        status: ToolStatus.completed,
-        isConcurrencySafe: true,
-        results: [
-          ToolMessage(
-            type: 'user',
-            toolResults: [
-              ToolResultBlock(
-                toolUseId: block.id,
-                content:
-                    '<tool_use_error>Error: No such tool available: ${block.name}</tool_use_error>',
-                isError: true,
-              ),
-            ],
-            toolUseResult:
-                'Error: No such tool available: ${block.name}',
-            sourceToolAssistantUUID: assistantMessage.uuid,
-          ),
-        ],
-      ));
+      _tools.add(
+        _TrackedTool(
+          id: block.id,
+          block: block,
+          assistantMessage: assistantMessage,
+          status: ToolStatus.completed,
+          isConcurrencySafe: true,
+          results: [
+            ToolMessage(
+              type: 'user',
+              toolResults: [
+                ToolResultBlock(
+                  toolUseId: block.id,
+                  content:
+                      '<tool_use_error>Error: No such tool available: ${block.name}</tool_use_error>',
+                  isError: true,
+                ),
+              ],
+              toolUseResult: 'Error: No such tool available: ${block.name}',
+              sourceToolAssistantUUID: assistantMessage.uuid,
+            ),
+          ],
+        ),
+      );
       return;
     }
 
@@ -852,24 +839,26 @@ class StreamingToolExecutor {
       isConcurrencySafe = false;
     }
 
-    _tools.add(_TrackedTool(
-      id: block.id,
-      block: block,
-      assistantMessage: assistantMessage,
-      status: ToolStatus.queued,
-      isConcurrencySafe: isConcurrencySafe,
-    ));
+    _tools.add(
+      _TrackedTool(
+        id: block.id,
+        block: block,
+        assistantMessage: assistantMessage,
+        status: ToolStatus.queued,
+        isConcurrencySafe: isConcurrencySafe,
+      ),
+    );
 
     _processQueue();
   }
 
   /// Check if a tool can execute based on current concurrency state.
   bool _canExecuteTool(bool isConcurrencySafe) {
-    final executingTools =
-        _tools.where((t) => t.status == ToolStatus.executing);
+    final executingTools = _tools.where(
+      (t) => t.status == ToolStatus.executing,
+    );
     return executingTools.isEmpty ||
-        (isConcurrencySafe &&
-            executingTools.every((t) => t.isConcurrencySafe));
+        (isConcurrencySafe && executingTools.every((t) => t.isConcurrencySafe));
   }
 
   /// Process the queue, starting tools when concurrency conditions allow.
@@ -887,24 +876,25 @@ class StreamingToolExecutor {
   /// Execute a tool and collect its results.
   void _executeTool(_TrackedTool tool) {
     tool.status = ToolStatus.executing;
-    _toolUseContext.setInProgressToolUseIDs?.call(
-      (prev) => {...prev, tool.id},
-    );
+    _toolUseContext.setInProgressToolUseIDs?.call((prev) => {...prev, tool.id});
 
     final messages = <ToolMessage>[];
     final contextModifiers = <ContextModifier>[];
 
     tool.promise = () async {
       // Check abort
-      if (_discarded || _hasErrored || _toolUseContext.abortController.isAborted) {
+      if (_discarded ||
+          _hasErrored ||
+          _toolUseContext.abortController.isAborted) {
         messages.add(_createSyntheticErrorMessage(tool));
         tool.results = messages;
         tool.status = ToolStatus.completed;
         return;
       }
 
-      final toolAbortController =
-          createChildAbortController(_siblingAbortController);
+      final toolAbortController = createChildAbortController(
+        _siblingAbortController,
+      );
 
       await for (final update in runToolUse(
         tool.block,
@@ -928,9 +918,8 @@ class StreamingToolExecutor {
             messages.add(update.message!);
 
             // Check for Bash errors
-            final isError = update.message!.toolResults?.any(
-                    (r) => r.isError) ??
-                false;
+            final isError =
+                update.message!.toolResults?.any((r) => r.isError) ?? false;
             if (isError && tool.block.name == 'Bash') {
               _hasErrored = true;
               _erroredToolDescription = _getToolDescription(tool);
@@ -1007,8 +996,9 @@ class StreamingToolExecutor {
     final summary =
         input['command'] ?? input['file_path'] ?? input['pattern'] ?? '';
     if (summary is String && summary.isNotEmpty) {
-      final truncated =
-          summary.length > 40 ? '${summary.substring(0, 40)}...' : summary;
+      final truncated = summary.length > 40
+          ? '${summary.substring(0, 40)}...'
+          : summary;
       return '${tool.block.name}($truncated)';
     }
     return tool.block.name;
@@ -1022,20 +1012,21 @@ class StreamingToolExecutor {
     for (final tool in _tools) {
       // Yield pending progress
       while (tool.pendingProgress.isNotEmpty) {
-        results.add(MessageUpdate(
-          message: tool.pendingProgress.removeAt(0),
-          newContext: _toolUseContext,
-        ));
+        results.add(
+          MessageUpdate(
+            message: tool.pendingProgress.removeAt(0),
+            newContext: _toolUseContext,
+          ),
+        );
       }
 
       if (tool.status == ToolStatus.yielded) continue;
       if (tool.status == ToolStatus.completed && tool.results != null) {
         tool.status = ToolStatus.yielded;
         for (final message in tool.results!) {
-          results.add(MessageUpdate(
-            message: message,
-            newContext: _toolUseContext,
-          ));
+          results.add(
+            MessageUpdate(message: message, newContext: _toolUseContext),
+          );
         }
         _markToolUseAsComplete(_toolUseContext, tool.id);
       } else if (tool.status == ToolStatus.executing &&
@@ -1060,8 +1051,7 @@ class StreamingToolExecutor {
       // Wait for any executing tool to complete or progress to be available
       if (_tools.any((t) => t.status == ToolStatus.executing)) {
         final executingPromises = _tools
-            .where(
-                (t) => t.status == ToolStatus.executing && t.promise != null)
+            .where((t) => t.status == ToolStatus.executing && t.promise != null)
             .map((t) => t.promise!)
             .toList();
 

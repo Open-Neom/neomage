@@ -1,20 +1,12 @@
 // MCP Panel Screen — port of neom_claw/src/components/McpPanel/.
 // Shows MCP server status, tools, resources, prompts.
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 // ─── Types ───
 
 /// MCP server status for display.
-enum McpServerStatus {
-  disconnected,
-  connecting,
-  connected,
-  error,
-  restarting,
-}
+enum McpServerStatus { disconnected, connecting, connected, error, restarting }
 
 /// MCP server display info.
 class McpServerDisplayInfo {
@@ -97,7 +89,7 @@ class McpPanelScreen extends StatefulWidget {
   final VoidCallback? onAddServer;
   final ValueChanged<String>? onRemoveServer;
   final void Function(String server, String tool, Map<String, dynamic> input)?
-      onTestTool;
+  onTestTool;
 
   const McpPanelScreen({
     super.key,
@@ -169,23 +161,20 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.dns_outlined,
-                      size: 64, color: Colors.grey.shade400),
+                  Icon(
+                    Icons.dns_outlined,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'No MCP servers configured',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade500,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade500),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Add servers in settings or via /mcp command',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade400,
-                    ),
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
                   ),
                   const SizedBox(height: 24),
                   if (widget.onAddServer != null)
@@ -206,14 +195,11 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 8),
-                  color: isDark
-                      ? const Color(0xFF1E1E36)
-                      : Colors.white,
+                  color: isDark ? const Color(0xFF1E1E36) : Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                     side: BorderSide(
-                      color: _statusColor(server.status)
-                          .withValues(alpha: 0.3),
+                      color: _statusColor(server.status).withValues(alpha: 0.3),
                     ),
                   ),
                   child: Column(
@@ -223,12 +209,12 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                       InkWell(
                         onTap: () {
                           setState(() {
-                            _expandedServer =
-                                isExpanded ? null : server.name;
+                            _expandedServer = isExpanded ? null : server.name;
                           });
                         },
                         borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(10)),
+                          top: Radius.circular(10),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(12),
                           child: Row(
@@ -246,8 +232,7 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                               // Name
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       server.name,
@@ -266,8 +251,7 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                                           _statusLabel(server.status),
                                           style: TextStyle(
                                             fontSize: 11,
-                                            color: _statusColor(
-                                                server.status),
+                                            color: _statusColor(server.status),
                                           ),
                                         ),
                                         if (server.transport != null) ...[
@@ -299,8 +283,7 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                               ),
                               // Stats
                               Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
                                     '${server.tools.length} tools',
@@ -331,16 +314,13 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                                       widget.onRestart?.call(server.name);
                                       break;
                                     case 'disconnect':
-                                      widget.onDisconnect
-                                          ?.call(server.name);
+                                      widget.onDisconnect?.call(server.name);
                                       break;
                                     case 'connect':
-                                      widget.onConnect
-                                          ?.call(server.name);
+                                      widget.onConnect?.call(server.name);
                                       break;
                                     case 'remove':
-                                      widget.onRemoveServer
-                                          ?.call(server.name);
+                                      widget.onRemoveServer?.call(server.name);
                                       break;
                                   }
                                 },
@@ -385,18 +365,21 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                                     value: 'remove',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.delete_outline,
-                                            size: 16, color: Colors.red),
+                                        Icon(
+                                          Icons.delete_outline,
+                                          size: 16,
+                                          color: Colors.red,
+                                        ),
                                         SizedBox(width: 8),
-                                        Text('Remove',
-                                            style: TextStyle(
-                                                color: Colors.red)),
+                                        Text(
+                                          'Remove',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
                                       ],
                                     ),
                                   ),
                                 ],
-                                icon: const Icon(Icons.more_vert,
-                                    size: 18),
+                                icon: const Icon(Icons.more_vert, size: 18),
                               ),
                             ],
                           ),
@@ -408,7 +391,9 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           color: Colors.red.withValues(alpha: 0.1),
                           child: Text(
                             server.errorMessage!,
@@ -427,23 +412,19 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                         Row(
                           children: [
                             _tab('Tools (${server.tools.length})', 0),
-                            _tab(
-                                'Resources (${server.resources.length})',
-                                1),
-                            _tab(
-                                'Prompts (${server.prompts.length})', 2),
+                            _tab('Resources (${server.resources.length})', 1),
+                            _tab('Prompts (${server.prompts.length})', 2),
                           ],
                         ),
                         const Divider(height: 1),
                         // Tab content
                         ConstrainedBox(
-                          constraints:
-                              const BoxConstraints(maxHeight: 300),
+                          constraints: const BoxConstraints(maxHeight: 300),
                           child: _selectedTab == 0
                               ? _buildToolsList(server)
                               : _selectedTab == 1
-                                  ? _buildResourcesList(server)
-                                  : _buildPromptsList(server),
+                              ? _buildResourcesList(server)
+                              : _buildPromptsList(server),
                         ),
                       ],
                     ],
@@ -490,8 +471,10 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
     if (server.tools.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16),
-        child: Text('No tools exposed by this server.',
-            style: TextStyle(color: Colors.grey)),
+        child: Text(
+          'No tools exposed by this server.',
+          style: TextStyle(color: Colors.grey),
+        ),
       );
     }
 
@@ -505,9 +488,11 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
 
         return ListTile(
           dense: true,
-          leading: Icon(Icons.build_outlined,
-              size: 16,
-              color: isDark ? Colors.white54 : Colors.black45),
+          leading: Icon(
+            Icons.build_outlined,
+            size: 16,
+            color: isDark ? Colors.white54 : Colors.black45,
+          ),
           title: Text(
             tool.name,
             style: TextStyle(
@@ -545,8 +530,10 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
     if (server.resources.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16),
-        child: Text('No resources exposed by this server.',
-            style: TextStyle(color: Colors.grey)),
+        child: Text(
+          'No resources exposed by this server.',
+          style: TextStyle(color: Colors.grey),
+        ),
       );
     }
 
@@ -560,9 +547,11 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
 
         return ListTile(
           dense: true,
-          leading: Icon(Icons.storage_outlined,
-              size: 16,
-              color: isDark ? Colors.white54 : Colors.black45),
+          leading: Icon(
+            Icons.storage_outlined,
+            size: 16,
+            color: isDark ? Colors.white54 : Colors.black45,
+          ),
           title: Text(
             resource.name,
             style: TextStyle(
@@ -596,8 +585,10 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
     if (server.prompts.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16),
-        child: Text('No prompts exposed by this server.',
-            style: TextStyle(color: Colors.grey)),
+        child: Text(
+          'No prompts exposed by this server.',
+          style: TextStyle(color: Colors.grey),
+        ),
       );
     }
 
@@ -611,9 +602,11 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
 
         return ListTile(
           dense: true,
-          leading: Icon(Icons.chat_outlined,
-              size: 16,
-              color: isDark ? Colors.white54 : Colors.black45),
+          leading: Icon(
+            Icons.chat_outlined,
+            size: 16,
+            color: isDark ? Colors.white54 : Colors.black45,
+          ),
           title: Text(
             prompt.name,
             style: TextStyle(

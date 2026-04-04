@@ -41,19 +41,18 @@ class ApiError extends ClawError {
 
   @override
   Map<String, dynamic> get context => {
-        if (statusCode != null) 'statusCode': statusCode,
-        if (errorType != null) 'errorType': errorType,
-      };
+    if (statusCode != null) 'statusCode': statusCode,
+    if (errorType != null) 'errorType': errorType,
+  };
 
   /// Create from HTTP status code.
   factory ApiError.fromStatus(int statusCode, {String? body}) {
-    final parsed =
-        body != null ? _tryParseJson(body) : null;
-    final msg = parsed?['error']?['message'] as String? ??
-        _defaultMessage(statusCode);
+    final parsed = body != null ? _tryParseJson(body) : null;
+    final msg =
+        parsed?['error']?['message'] as String? ?? _defaultMessage(statusCode);
     return ApiError(
       message: msg,
-      errorId: 'api_${statusCode}',
+      errorId: 'api_$statusCode',
       statusCode: statusCode,
       errorType: parsed?['error']?['type'] as String?,
       responseBody: parsed,
@@ -62,30 +61,27 @@ class ApiError extends ClawError {
   }
 
   static String _defaultMessage(int code) => switch (code) {
-        400 => 'Bad request — check your input.',
-        401 => 'Authentication failed.',
-        403 => 'Access forbidden.',
-        404 => 'Resource not found.',
-        429 => 'Rate limited.',
-        500 => 'Internal server error.',
-        502 => 'Bad gateway.',
-        503 => 'Service unavailable.',
-        529 => 'API overloaded.',
-        _ => 'HTTP error $code.',
-      };
+    400 => 'Bad request — check your input.',
+    401 => 'Authentication failed.',
+    403 => 'Access forbidden.',
+    404 => 'Resource not found.',
+    429 => 'Rate limited.',
+    500 => 'Internal server error.',
+    502 => 'Bad gateway.',
+    503 => 'Service unavailable.',
+    529 => 'API overloaded.',
+    _ => 'HTTP error $code.',
+  };
 
   static String? _suggestion(int code) => switch (code) {
-        401 => 'Check your API key with /login or set ANTHROPIC_API_KEY.',
-        429 =>
-          'You\'re being rate limited. Wait a moment and try again.',
-        529 =>
-          'The API is temporarily overloaded. Please try again shortly.',
-        _ => null,
-      };
+    401 => 'Check your API key with /login or set ANTHROPIC_API_KEY.',
+    429 => 'You\'re being rate limited. Wait a moment and try again.',
+    529 => 'The API is temporarily overloaded. Please try again shortly.',
+    _ => null,
+  };
 
   bool get isRetryable =>
-      statusCode != null &&
-      {429, 500, 502, 503, 529}.contains(statusCode);
+      statusCode != null && {429, 500, 502, 503, 529}.contains(statusCode);
 }
 
 /// Tool execution errors.
@@ -108,10 +104,7 @@ class ToolError extends ClawError {
   });
 
   @override
-  Map<String, dynamic> get context => {
-        'toolName': toolName,
-        'input': input,
-      };
+  Map<String, dynamic> get context => {'toolName': toolName, 'input': input};
 }
 
 /// Permission errors.
@@ -155,34 +148,31 @@ class FileSystemError extends ClawError {
   });
 
   @override
-  Map<String, dynamic> get context => {
-        'path': path,
-        'operation': operation,
-      };
+  Map<String, dynamic> get context => {'path': path, 'operation': operation};
 
   factory FileSystemError.notFound(String path) => FileSystemError(
-        message: 'File not found: $path',
-        path: path,
-        operation: 'read',
-        errorId: 'file_not_found',
-        suggestion: 'Check the file path and try again.',
-      );
+    message: 'File not found: $path',
+    path: path,
+    operation: 'read',
+    errorId: 'file_not_found',
+    suggestion: 'Check the file path and try again.',
+  );
 
   factory FileSystemError.accessDenied(String path) => FileSystemError(
-        message: 'Access denied: $path',
-        path: path,
-        operation: 'access',
-        errorId: 'access_denied',
-        suggestion: 'Check file permissions.',
-      );
+    message: 'Access denied: $path',
+    path: path,
+    operation: 'access',
+    errorId: 'access_denied',
+    suggestion: 'Check file permissions.',
+  );
 
   factory FileSystemError.tooLarge(String path, int size) => FileSystemError(
-        message: 'File too large: $path (${_formatBytes(size)})',
-        path: path,
-        operation: 'read',
-        errorId: 'file_too_large',
-        suggestion: 'Read specific sections with offset and limit.',
-      );
+    message: 'File too large: $path (${_formatBytes(size)})',
+    path: path,
+    operation: 'read',
+    errorId: 'file_too_large',
+    suggestion: 'Read specific sections with offset and limit.',
+  );
 }
 
 /// Configuration errors.
@@ -204,8 +194,8 @@ class ConfigError extends ClawError {
 
   @override
   Map<String, dynamic> get context => {
-        if (configPath != null) 'configPath': configPath,
-      };
+    if (configPath != null) 'configPath': configPath,
+  };
 }
 
 /// Network errors.
@@ -226,9 +216,7 @@ class NetworkError extends ClawError {
   });
 
   @override
-  Map<String, dynamic> get context => {
-        if (url != null) 'url': url,
-      };
+  Map<String, dynamic> get context => {if (url != null) 'url': url};
 }
 
 /// Session errors.
@@ -250,8 +238,8 @@ class SessionError extends ClawError {
 
   @override
   Map<String, dynamic> get context => {
-        if (sessionId != null) 'sessionId': sessionId,
-      };
+    if (sessionId != null) 'sessionId': sessionId,
+  };
 }
 
 /// Sandbox violation.
@@ -274,10 +262,7 @@ class SandboxError extends ClawError {
   });
 
   @override
-  Map<String, dynamic> get context => {
-        'command': command,
-        'reason': reason,
-      };
+  Map<String, dynamic> get context => {'command': command, 'reason': reason};
 }
 
 // ─── Error handler ───
@@ -438,16 +423,15 @@ class ErrorReport {
   });
 
   Map<String, dynamic> toJson() => {
-        'error': error.toString(),
-        'type': error.runtimeType.toString(),
-        'timestamp': timestamp.toIso8601String(),
-        'severity': severity.name,
-        'recovery': recovery.label,
-        if (error is ClawError) 'errorId': (error as ClawError).errorId,
-        if (error is ClawError)
-          'context': (error as ClawError).context,
-        if (stackTrace != null) 'stackTrace': stackTrace.toString(),
-      };
+    'error': error.toString(),
+    'type': error.runtimeType.toString(),
+    'timestamp': timestamp.toIso8601String(),
+    'severity': severity.name,
+    'recovery': recovery.label,
+    if (error is ClawError) 'errorId': (error as ClawError).errorId,
+    if (error is ClawError) 'context': (error as ClawError).context,
+    if (stackTrace != null) 'stackTrace': stackTrace.toString(),
+  };
 }
 
 /// Recovery action suggestion.
@@ -528,7 +512,10 @@ Future<List<DiagnosticCheck>> runDiagnostics() async {
 }
 
 Future<DiagnosticCheck> _checkCommand(
-    String cmd, List<String> args, String label) async {
+  String cmd,
+  List<String> args,
+  String label,
+) async {
   final sw = Stopwatch()..start();
   try {
     final result = await Process.run(cmd, args);
@@ -562,14 +549,13 @@ Future<DiagnosticCheck> _checkCommand(
 Future<DiagnosticCheck> _checkNetwork() async {
   final sw = Stopwatch()..start();
   try {
-    final result = await InternetAddress.lookup('api.anthropic.com')
-        .timeout(const Duration(seconds: 5));
+    final result = await InternetAddress.lookup(
+      'api.anthropic.com',
+    ).timeout(const Duration(seconds: 5));
     sw.stop();
     return DiagnosticCheck(
       name: 'Network',
-      status: result.isNotEmpty
-          ? DiagnosticStatus.pass
-          : DiagnosticStatus.fail,
+      status: result.isNotEmpty ? DiagnosticStatus.pass : DiagnosticStatus.fail,
       detail: result.isNotEmpty
           ? 'Connected (${result.first.address})'
           : 'Cannot resolve api.anthropic.com',
@@ -626,8 +612,8 @@ Future<DiagnosticCheck> _checkDiskSpace() async {
         status: pct > 95
             ? DiagnosticStatus.fail
             : pct > 85
-                ? DiagnosticStatus.warn
-                : DiagnosticStatus.pass,
+            ? DiagnosticStatus.warn
+            : DiagnosticStatus.pass,
         detail: '$available available ($usePercent used)',
       );
     }
@@ -692,19 +678,16 @@ Map<String, dynamic>? _tryParseJson(String input) {
 /// Install a global error handler for uncaught errors.
 void installGlobalErrorHandler(ErrorHandler handler) {
   // Zone-based error catching — use runZonedGuarded to intercept uncaught errors.
-  runZonedGuarded(
-    () {},
-    (Object error, StackTrace stackTrace) {
-      handler.handle(error, stackTrace);
-    },
-  );
+  runZonedGuarded(() {}, (Object error, StackTrace stackTrace) {
+    handler.handle(error, stackTrace);
+  });
 }
 
 /// Format a diagnostic report for display.
 String formatDiagnosticReport(List<DiagnosticCheck> checks) {
   final buffer = StringBuffer();
   buffer.writeln('System Diagnostics');
-  buffer.writeln('${'=' * 40}');
+  buffer.writeln('=' * 40);
 
   for (final check in checks) {
     final icon = switch (check.status) {
@@ -727,7 +710,7 @@ String formatDiagnosticReport(List<DiagnosticCheck> checks) {
   final warned = checks.where((c) => c.status == DiagnosticStatus.warn).length;
   final failed = checks.where((c) => c.status == DiagnosticStatus.fail).length;
 
-  buffer.writeln('${'=' * 40}');
+  buffer.writeln('=' * 40);
   buffer.writeln('$passed passed, $warned warnings, $failed failed');
 
   return buffer.toString();

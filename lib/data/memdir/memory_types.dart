@@ -16,12 +16,12 @@ enum MemoryType {
   reference;
 
   static MemoryType? tryParse(String raw) => switch (raw.toLowerCase().trim()) {
-        'user' => MemoryType.user,
-        'feedback' => MemoryType.feedback,
-        'project' => MemoryType.project,
-        'reference' => MemoryType.reference,
-        _ => null,
-      };
+    'user' => MemoryType.user,
+    'feedback' => MemoryType.feedback,
+    'project' => MemoryType.project,
+    'reference' => MemoryType.reference,
+    _ => null,
+  };
 }
 
 /// Parsed frontmatter from a memory file.
@@ -76,9 +76,5 @@ MemoryFrontmatter? parseFrontmatter(String content) {
 
   if (name == null || description == null) return null;
 
-  return MemoryFrontmatter(
-    name: name,
-    description: description,
-    type: type,
-  );
+  return MemoryFrontmatter(name: name, description: description, type: type);
 }

@@ -34,9 +34,7 @@ class FileReadInput {
     if (filePath.isEmpty) {
       errors.add('Missing required parameter: file_path');
     } else if (!p.isAbsolute(filePath)) {
-      errors.add(
-        'file_path must be an absolute path, got: $filePath',
-      );
+      errors.add('file_path must be an absolute path, got: $filePath');
     }
     if (offset != null && offset! < 1) {
       errors.add('offset must be >= 1 (1-based line number)');
@@ -69,13 +67,13 @@ class FileReadOutput {
   });
 
   Map<String, dynamic> toMetadata() => {
-        'lineCount': lineCount,
-        'truncated': truncated,
-        'binary': binary,
-        'encoding': encoding,
-        'size': size,
-        if (modified != null) 'modified': modified!.toIso8601String(),
-      };
+    'lineCount': lineCount,
+    'truncated': truncated,
+    'binary': binary,
+    'encoding': encoding,
+    'size': size,
+    if (modified != null) 'modified': modified!.toIso8601String(),
+  };
 }
 
 /// Magic byte signatures for binary file detection.
@@ -157,33 +155,33 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'file_path': {
-            'type': 'string',
-            'description': 'The absolute path to the file to read',
-          },
-          'offset': {
-            'type': 'integer',
-            'description':
-                'The line number to start reading from (1-based). '
-                    'Only provide if the file is too large to read at once.',
-          },
-          'limit': {
-            'type': 'integer',
-            'description':
-                'The number of lines to read. Only provide if the file '
-                    'is too large to read at once.',
-          },
-          'pages': {
-            'type': 'string',
-            'description':
-                'Page range for PDF files (e.g., "1-5", "3", "10-20"). '
-                    'Only applicable to PDF files. Maximum 20 pages per request.',
-          },
-        },
-        'required': ['file_path'],
-      };
+    'type': 'object',
+    'properties': {
+      'file_path': {
+        'type': 'string',
+        'description': 'The absolute path to the file to read',
+      },
+      'offset': {
+        'type': 'integer',
+        'description':
+            'The line number to start reading from (1-based). '
+            'Only provide if the file is too large to read at once.',
+      },
+      'limit': {
+        'type': 'integer',
+        'description':
+            'The number of lines to read. Only provide if the file '
+            'is too large to read at once.',
+      },
+      'pages': {
+        'type': 'string',
+        'description':
+            'Page range for PDF files (e.g., "1-5", "3", "10-20"). '
+            'Only applicable to PDF files. Maximum 20 pages per request.',
+      },
+    },
+    'required': ['file_path'],
+  };
 
   @override
   bool get isAvailable =>
@@ -253,13 +251,7 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
     // Check for binary file
     final binaryInfo = await _detectBinaryFile(file);
     if (binaryInfo != null) {
-      return _handleBinaryFile(
-        file,
-        parsed,
-        binaryInfo,
-        fileSize,
-        modified,
-      );
+      return _handleBinaryFile(file, parsed, binaryInfo, fileSize, modified);
     }
 
     // Handle special file types by extension
@@ -389,10 +381,7 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
       modified: modified,
     );
 
-    return ToolResult.success(
-      output.content,
-      metadata: output.toMetadata(),
-    );
+    return ToolResult.success(output.content, metadata: output.toMetadata());
   }
 
   /// Handle image files — return metadata.
@@ -415,8 +404,9 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
     buf.writeln('Modified: ${modified.toIso8601String()}');
     buf.writeln();
     buf.writeln(
-        'This is an image file. When reading an image file the contents '
-        'are presented visually as NeomClaw is a multimodal LLM.');
+      'This is an image file. When reading an image file the contents '
+      'are presented visually as NeomClaw is a multimodal LLM.',
+    );
 
     final output = FileReadOutput(
       content: buf.toString(),
@@ -440,21 +430,16 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
   /// Try to extract image dimensions from file header.
   Future<(int, int)?> _getImageDimensions(File file, String format) async {
     try {
-      final bytes = await file.openRead(0, 32).fold<List<int>>(
-        [],
-        (prev, chunk) => prev..addAll(chunk),
-      );
+      final bytes = await file
+          .openRead(0, 32)
+          .fold<List<int>>([], (prev, chunk) => prev..addAll(chunk));
       final data = Uint8List.fromList(bytes);
 
       if (format == 'image/png' && data.length >= 24) {
-        final width = (data[16] << 24) |
-            (data[17] << 16) |
-            (data[18] << 8) |
-            data[19];
-        final height = (data[20] << 24) |
-            (data[21] << 16) |
-            (data[22] << 8) |
-            data[23];
+        final width =
+            (data[16] << 24) | (data[17] << 16) | (data[18] << 8) | data[19];
+        final height =
+            (data[20] << 24) | (data[21] << 16) | (data[22] << 8) | data[23];
         return (width, height);
       }
 
@@ -465,14 +450,10 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
       }
 
       if (format == 'image/bmp' && data.length >= 26) {
-        final width = data[18] |
-            (data[19] << 8) |
-            (data[20] << 16) |
-            (data[21] << 24);
-        final height = data[22] |
-            (data[23] << 8) |
-            (data[24] << 16) |
-            (data[25] << 24);
+        final width =
+            data[18] | (data[19] << 8) | (data[20] << 16) | (data[21] << 24);
+        final height =
+            data[22] | (data[23] << 8) | (data[24] << 16) | (data[25] << 24);
         return (width, height.abs());
       }
     } catch (_) {
@@ -524,7 +505,7 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
               'size': fileSize,
               'lineCount': lines.length,
               'modified': modified.toIso8601String(),
-              if (pageRange != null) 'pages': pageRange,
+              'pages': ?pageRange,
             },
           );
         }
@@ -560,8 +541,7 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
         final last = int.tryParse(parts[1].trim());
         if (first != null && last != null && first > 0 && last >= first) {
           // Enforce max 20 pages per request
-          final clampedLast =
-              (last - first > 19) ? first + 19 : last;
+          final clampedLast = (last - first > 19) ? first + 19 : last;
           return (first, clampedLast);
         }
       }
@@ -586,9 +566,9 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
 
       final cells = notebook['cells'] as List<dynamic>? ?? [];
       final metadata = notebook['metadata'] as Map<String, dynamic>? ?? {};
-      final kernelSpec =
-          metadata['kernelspec'] as Map<String, dynamic>? ?? {};
-      final language = kernelSpec['language'] as String? ??
+      final kernelSpec = metadata['kernelspec'] as Map<String, dynamic>? ?? {};
+      final language =
+          kernelSpec['language'] as String? ??
           (metadata['language_info'] as Map<String, dynamic>?)?['name']
               as String? ??
           'unknown';
@@ -683,9 +663,7 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
 
   /// Strip ANSI escape codes from a string.
   String _stripAnsi(dynamic s) {
-    return s
-        .toString()
-        .replaceAll(RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), '');
+    return s.toString().replaceAll(RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), '');
   }
 
   /// Read a text file with line numbers.
@@ -746,7 +724,8 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
 
     // Truncate extremely long output
     if (result.length > maxOutputChars) {
-      result = '${result.substring(0, maxOutputChars)}\n\n'
+      result =
+          '${result.substring(0, maxOutputChars)}\n\n'
           '... output truncated (exceeded $maxOutputChars chars). '
           'Use offset/limit to read specific sections.';
     }
@@ -760,10 +739,7 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
       modified: modified,
     );
 
-    return ToolResult.success(
-      output.content,
-      metadata: output.toMetadata(),
-    );
+    return ToolResult.success(output.content, metadata: output.toMetadata());
   }
 
   /// Format lines with line numbers in cat -n format.

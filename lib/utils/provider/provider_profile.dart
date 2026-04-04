@@ -1,13 +1,11 @@
 // Provider profile management — port of:
-//   openneomclaw/src/utils/providerProfile.ts (314 LOC)
-//   openneomclaw/src/utils/providerRecommendation.ts (317 LOC)
-//   openneomclaw/src/utils/api.ts (718 LOC)
+//   neom_claw/src/utils/providerProfile.ts (314 LOC)
+//   neom_claw/src/utils/providerRecommendation.ts (317 LOC)
+//   neom_claw/src/utils/api.ts (718 LOC)
 //
 // Provider profile building for OpenAI/Ollama/Codex/Gemini,
 // Ollama model recommendation and ranking, API schema generation,
 // system prompt splitting, tool input normalization, and context helpers.
-
-import 'dart:math';
 
 // ═══════════════════════════════════════════════════════════════════
 // Provider Profile Types
@@ -41,28 +39,28 @@ class ProfileEnv {
   });
 
   factory ProfileEnv.fromJson(Map<String, dynamic> json) => ProfileEnv(
-        openaiBaseUrl: json['OPENAI_BASE_URL'] as String?,
-        openaiModel: json['OPENAI_MODEL'] as String?,
-        openaiApiKey: json['OPENAI_API_KEY'] as String?,
-        codexApiKey: json['CODEX_API_KEY'] as String?,
-        chatgptAccountId: json['CHATGPT_ACCOUNT_ID'] as String?,
-        codexAccountId: json['CODEX_ACCOUNT_ID'] as String?,
-        geminiApiKey: json['GEMINI_API_KEY'] as String?,
-        geminiModel: json['GEMINI_MODEL'] as String?,
-        geminiBaseUrl: json['GEMINI_BASE_URL'] as String?,
-      );
+    openaiBaseUrl: json['OPENAI_BASE_URL'] as String?,
+    openaiModel: json['OPENAI_MODEL'] as String?,
+    openaiApiKey: json['OPENAI_API_KEY'] as String?,
+    codexApiKey: json['CODEX_API_KEY'] as String?,
+    chatgptAccountId: json['CHATGPT_ACCOUNT_ID'] as String?,
+    codexAccountId: json['CODEX_ACCOUNT_ID'] as String?,
+    geminiApiKey: json['GEMINI_API_KEY'] as String?,
+    geminiModel: json['GEMINI_MODEL'] as String?,
+    geminiBaseUrl: json['GEMINI_BASE_URL'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {
-        if (openaiBaseUrl != null) 'OPENAI_BASE_URL': openaiBaseUrl,
-        if (openaiModel != null) 'OPENAI_MODEL': openaiModel,
-        if (openaiApiKey != null) 'OPENAI_API_KEY': openaiApiKey,
-        if (codexApiKey != null) 'CODEX_API_KEY': codexApiKey,
-        if (chatgptAccountId != null) 'CHATGPT_ACCOUNT_ID': chatgptAccountId,
-        if (codexAccountId != null) 'CODEX_ACCOUNT_ID': codexAccountId,
-        if (geminiApiKey != null) 'GEMINI_API_KEY': geminiApiKey,
-        if (geminiModel != null) 'GEMINI_MODEL': geminiModel,
-        if (geminiBaseUrl != null) 'GEMINI_BASE_URL': geminiBaseUrl,
-      };
+    if (openaiBaseUrl != null) 'OPENAI_BASE_URL': openaiBaseUrl,
+    if (openaiModel != null) 'OPENAI_MODEL': openaiModel,
+    if (openaiApiKey != null) 'OPENAI_API_KEY': openaiApiKey,
+    if (codexApiKey != null) 'CODEX_API_KEY': codexApiKey,
+    if (chatgptAccountId != null) 'CHATGPT_ACCOUNT_ID': chatgptAccountId,
+    if (codexAccountId != null) 'CODEX_ACCOUNT_ID': codexAccountId,
+    if (geminiApiKey != null) 'GEMINI_API_KEY': geminiApiKey,
+    if (geminiModel != null) 'GEMINI_MODEL': geminiModel,
+    if (geminiBaseUrl != null) 'GEMINI_BASE_URL': geminiBaseUrl,
+  };
 }
 
 /// Persisted profile file structure.
@@ -78,19 +76,19 @@ class ProfileFile {
   });
 
   factory ProfileFile.fromJson(Map<String, dynamic> json) => ProfileFile(
-        profile: ProviderProfile.values.firstWhere(
-          (e) => e.name == json['profile'],
-          orElse: () => ProviderProfile.openai,
-        ),
-        env: ProfileEnv.fromJson(json['env'] as Map<String, dynamic>? ?? {}),
-        createdAt: json['createdAt'] as String? ?? '',
-      );
+    profile: ProviderProfile.values.firstWhere(
+      (e) => e.name == json['profile'],
+      orElse: () => ProviderProfile.openai,
+    ),
+    env: ProfileEnv.fromJson(json['env'] as Map<String, dynamic>? ?? {}),
+    createdAt: json['createdAt'] as String? ?? '',
+  );
 
   Map<String, dynamic> toJson() => {
-        'profile': profile.name,
-        'env': env.toJson(),
-        'createdAt': createdAt,
-      };
+    'profile': profile.name,
+    'env': env.toJson(),
+    'createdAt': createdAt,
+  };
 }
 
 /// Resolved codex credentials.
@@ -101,17 +99,19 @@ class CodexCredentials {
 }
 
 /// Callback type for resolving provider transport.
-typedef ProviderRequestResolver = String Function({
-  String? model,
-  String? baseUrl,
-  required String fallbackModel,
-});
+typedef ProviderRequestResolver =
+    String Function({
+      String? model,
+      String? baseUrl,
+      required String fallbackModel,
+    });
 
 /// Callback type for resolving codex API credentials.
-typedef CodexCredentialResolver = CodexCredentials? Function({
-  String? codexApiKey,
-  Map<String, String>? processEnv,
-});
+typedef CodexCredentialResolver =
+    CodexCredentials? Function({
+      String? codexApiKey,
+      Map<String, String>? processEnv,
+    });
 
 // ═══════════════════════════════════════════════════════════════════
 // Constants
@@ -165,10 +165,7 @@ ProfileEnv? buildGeminiProfileEnv({
   return ProfileEnv(
     geminiModel: model ?? env['GEMINI_MODEL'] ?? _defaultGeminiModel,
     geminiApiKey: key,
-    geminiBaseUrl: _firstNonEmpty([
-      baseUrl,
-      env['GEMINI_BASE_URL'],
-    ]),
+    geminiBaseUrl: _firstNonEmpty([baseUrl, env['GEMINI_BASE_URL']]),
   );
 }
 
@@ -196,12 +193,14 @@ ProfileEnv? buildOpenAIProfileEnv({
   final useShellOpenAIConfig = resolvedTransport == 'chat_completions';
 
   return ProfileEnv(
-    openaiBaseUrl: _firstNonEmpty([
+    openaiBaseUrl:
+        _firstNonEmpty([
           baseUrl,
           useShellOpenAIConfig ? env['OPENAI_BASE_URL'] : null,
         ]) ??
         _defaultOpenaiBaseUrl,
-    openaiModel: _firstNonEmpty([
+    openaiModel:
+        _firstNonEmpty([
           model,
           useShellOpenAIConfig ? env['OPENAI_MODEL'] : null,
         ]) ??
@@ -252,9 +251,7 @@ ProfileFile createProfileFile({
 }
 
 /// Select auto profile based on recommended Ollama model availability.
-ProviderProfile selectAutoProfile({
-  required String? recommendedOllamaModel,
-}) {
+ProviderProfile selectAutoProfile({required String? recommendedOllamaModel}) {
   return recommendedOllamaModel != null
       ? ProviderProfile.ollama
       : ProviderProfile.openai;
@@ -276,11 +273,13 @@ Future<Map<String, String>> buildLaunchEnv({
   bool Function(String url)? isCodexBaseUrl,
 }) async {
   final env = Map<String, String>.from(processEnv ?? {});
-  final persistedEnv =
-      (persisted?.profile == profile) ? persisted!.env : const ProfileEnv();
+  final persistedEnv = (persisted?.profile == profile)
+      ? persisted!.env
+      : const ProfileEnv();
 
-  final shellGeminiKey =
-      sanitizeApiKey(env['GEMINI_API_KEY'] ?? env['GOOGLE_API_KEY']);
+  final shellGeminiKey = sanitizeApiKey(
+    env['GEMINI_API_KEY'] ?? env['GOOGLE_API_KEY'],
+  );
   final persistedGeminiKey = sanitizeApiKey(persistedEnv.geminiApiKey);
 
   // ── Gemini ──
@@ -289,7 +288,8 @@ Future<Map<String, String>> buildLaunchEnv({
     env.remove('NEOMCLAW_USE_OPENAI');
     env['GEMINI_MODEL'] =
         env['GEMINI_MODEL'] ?? persistedEnv.geminiModel ?? _defaultGeminiModel;
-    env['GEMINI_BASE_URL'] = env['GEMINI_BASE_URL'] ??
+    env['GEMINI_BASE_URL'] =
+        env['GEMINI_BASE_URL'] ??
         persistedEnv.geminiBaseUrl ??
         _defaultGeminiBaseUrl;
     final geminiKey = shellGeminiKey ?? persistedGeminiKey;
@@ -299,8 +299,12 @@ Future<Map<String, String>> buildLaunchEnv({
       env.remove('GEMINI_API_KEY');
     }
     _removeKeys(env, [
-      'GOOGLE_API_KEY', 'OPENAI_BASE_URL', 'OPENAI_MODEL',
-      'OPENAI_API_KEY', 'CODEX_API_KEY', 'CHATGPT_ACCOUNT_ID',
+      'GOOGLE_API_KEY',
+      'OPENAI_BASE_URL',
+      'OPENAI_MODEL',
+      'OPENAI_API_KEY',
+      'CODEX_API_KEY',
+      'CHATGPT_ACCOUNT_ID',
       'CODEX_ACCOUNT_ID',
     ]);
     return env;
@@ -309,8 +313,11 @@ Future<Map<String, String>> buildLaunchEnv({
   // ── OpenAI-compatible profiles ──
   env['NEOMCLAW_USE_OPENAI'] = '1';
   _removeKeys(env, [
-    'NEOMCLAW_USE_GEMINI', 'GEMINI_API_KEY', 'GEMINI_MODEL',
-    'GEMINI_BASE_URL', 'GOOGLE_API_KEY',
+    'NEOMCLAW_USE_GEMINI',
+    'GEMINI_API_KEY',
+    'GEMINI_MODEL',
+    'GEMINI_BASE_URL',
+    'GOOGLE_API_KEY',
   ]);
 
   if (profile == ProviderProfile.ollama) {
@@ -321,7 +328,9 @@ Future<Map<String, String>> buildLaunchEnv({
     env['OPENAI_BASE_URL'] = persistedEnv.openaiBaseUrl ?? getBaseUrl(null);
     env['OPENAI_MODEL'] = persistedEnv.openaiModel ?? await resolveModel(goal);
     _removeKeys(env, [
-      'OPENAI_API_KEY', 'CODEX_API_KEY', 'CHATGPT_ACCOUNT_ID',
+      'OPENAI_API_KEY',
+      'CODEX_API_KEY',
+      'CHATGPT_ACCOUNT_ID',
       'CODEX_ACCOUNT_ID',
     ]);
     return env;
@@ -329,16 +338,19 @@ Future<Map<String, String>> buildLaunchEnv({
 
   if (profile == ProviderProfile.codex) {
     final isCodex = isCodexBaseUrl ?? (_) => false;
-    env['OPENAI_BASE_URL'] = (persistedEnv.openaiBaseUrl != null &&
+    env['OPENAI_BASE_URL'] =
+        (persistedEnv.openaiBaseUrl != null &&
             isCodex(persistedEnv.openaiBaseUrl!))
         ? persistedEnv.openaiBaseUrl!
         : _defaultCodexBaseUrl;
     env['OPENAI_MODEL'] = persistedEnv.openaiModel ?? 'codexplan';
     env.remove('OPENAI_API_KEY');
 
-    final codexKey = sanitizeApiKey(env['CODEX_API_KEY']) ??
+    final codexKey =
+        sanitizeApiKey(env['CODEX_API_KEY']) ??
         sanitizeApiKey(persistedEnv.codexApiKey);
-    final codexAccountId = env['CHATGPT_ACCOUNT_ID'] ??
+    final codexAccountId =
+        env['CHATGPT_ACCOUNT_ID'] ??
         env['CODEX_ACCOUNT_ID'] ??
         persistedEnv.chatgptAccountId ??
         persistedEnv.codexAccountId;
@@ -369,17 +381,17 @@ Future<Map<String, String>> buildLaunchEnv({
   final useShellConfig = shellTransport == 'chat_completions';
   final usePersistedConfig =
       (persistedEnv.openaiModel == null &&
-              persistedEnv.openaiBaseUrl == null) ||
-          persistedTransport == 'chat_completions';
+          persistedEnv.openaiBaseUrl == null) ||
+      persistedTransport == 'chat_completions';
 
   env['OPENAI_BASE_URL'] =
       (useShellConfig ? env['OPENAI_BASE_URL'] : null) ??
-          (usePersistedConfig ? persistedEnv.openaiBaseUrl : null) ??
-          _defaultOpenaiBaseUrl;
+      (usePersistedConfig ? persistedEnv.openaiBaseUrl : null) ??
+      _defaultOpenaiBaseUrl;
   env['OPENAI_MODEL'] =
       (useShellConfig ? env['OPENAI_MODEL'] : null) ??
-          (usePersistedConfig ? persistedEnv.openaiModel : null) ??
-          defaultOpenAIModel;
+      (usePersistedConfig ? persistedEnv.openaiModel : null) ??
+      defaultOpenAIModel;
   env['OPENAI_API_KEY'] =
       env['OPENAI_API_KEY'] ?? persistedEnv.openaiApiKey ?? '';
   _removeKeys(env, ['CODEX_API_KEY', 'CHATGPT_ACCOUNT_ID', 'CODEX_ACCOUNT_ID']);
@@ -462,13 +474,18 @@ class BenchmarkedOllamaModel extends RankedOllamaModel {
 // ── Recommendation Constants ──
 
 const _codingHints = [
-  'coder', 'codellama', 'codegemma', 'codestral', 'devstral',
-  'starcoder', 'deepseek-coder', 'qwen2.5-coder', 'qwen-coder',
+  'coder',
+  'codellama',
+  'codegemma',
+  'codestral',
+  'devstral',
+  'starcoder',
+  'deepseek-coder',
+  'qwen2.5-coder',
+  'qwen-coder',
 ];
 
-const _generalHints = [
-  'llama', 'qwen', 'mistral', 'gemma', 'phi', 'deepseek',
-];
+const _generalHints = ['llama', 'qwen', 'mistral', 'gemma', 'phi', 'deepseek'];
 
 const _instructHints = ['instruct', 'chat', 'assistant'];
 const _nonChatHints = ['embed', 'embedding', 'rerank', 'bge', 'whisper'];
@@ -498,7 +515,8 @@ bool isViableOllamaChatModel(OllamaModelDescriptor model) {
 
 /// Select the first viable chat model from a list.
 T? selectRecommendedOllamaModel<T extends OllamaModelDescriptor>(
-    List<T> models) {
+  List<T> models,
+) {
   for (final model in models) {
     if (isViableOllamaChatModel(model)) return model;
   }
@@ -535,27 +553,60 @@ double _scoreSizeTier(
   }
 
   if (goal == RecommendationGoal.latency) {
-    if (paramsB <= 4) { reasons.add('tiny model for low latency'); return 32; }
-    if (paramsB <= 8) { reasons.add('small model for fast responses'); return 26; }
-    if (paramsB <= 14) { reasons.add('mid-sized model with acceptable latency'); return 16; }
-    if (paramsB <= 24) { reasons.add('larger model may be slower'); return 8; }
+    if (paramsB <= 4) {
+      reasons.add('tiny model for low latency');
+      return 32;
+    }
+    if (paramsB <= 8) {
+      reasons.add('small model for fast responses');
+      return 26;
+    }
+    if (paramsB <= 14) {
+      reasons.add('mid-sized model with acceptable latency');
+      return 16;
+    }
+    if (paramsB <= 24) {
+      reasons.add('larger model may be slower');
+      return 8;
+    }
     reasons.add('large model likely slower locally');
     return paramsB <= 40 ? 0 : -8;
   }
 
   if (goal == RecommendationGoal.coding) {
-    if (paramsB >= 7 && paramsB <= 14) { reasons.add('strong coding size tier'); return 24; }
-    if (paramsB > 14 && paramsB <= 34) { reasons.add('large coding-capable size tier'); return 28; }
-    if (paramsB > 34) { reasons.add('very large model with higher quality potential'); return 18; }
+    if (paramsB >= 7 && paramsB <= 14) {
+      reasons.add('strong coding size tier');
+      return 24;
+    }
+    if (paramsB > 14 && paramsB <= 34) {
+      reasons.add('large coding-capable size tier');
+      return 28;
+    }
+    if (paramsB > 34) {
+      reasons.add('very large model with higher quality potential');
+      return 18;
+    }
     reasons.add('compact model may trade off coding depth');
     return 12;
   }
 
   // Balanced goal.
-  if (paramsB >= 7 && paramsB <= 14) { reasons.add('great balanced size tier'); return 26; }
-  if (paramsB >= 3 && paramsB < 7) { reasons.add('compact balanced size tier'); return 18; }
-  if (paramsB > 14 && paramsB <= 24) { reasons.add('high quality balanced size tier'); return 20; }
-  if (paramsB > 24) { reasons.add('large model for quality-first usage'); return 10; }
+  if (paramsB >= 7 && paramsB <= 14) {
+    reasons.add('great balanced size tier');
+    return 26;
+  }
+  if (paramsB >= 3 && paramsB < 7) {
+    reasons.add('compact balanced size tier');
+    return 18;
+  }
+  if (paramsB > 14 && paramsB <= 24) {
+    reasons.add('high quality balanced size tier');
+    return 20;
+  }
+  if (paramsB > 24) {
+    reasons.add('large model for quality-first usage');
+    return 10;
+  }
   reasons.add('very small model for general usage');
   return 8;
 }
@@ -603,19 +654,24 @@ int _compareRankedModels(
 /// Normalize a recommendation goal string to enum.
 RecommendationGoal normalizeRecommendationGoal(String? goal) {
   switch (goal?.trim().toLowerCase()) {
-    case 'latency': return RecommendationGoal.latency;
-    case 'coding': return RecommendationGoal.coding;
+    case 'latency':
+      return RecommendationGoal.latency;
+    case 'coding':
+      return RecommendationGoal.coding;
     case 'balanced':
-    default: return RecommendationGoal.balanced;
+    default:
+      return RecommendationGoal.balanced;
   }
 }
 
 /// Get the default OpenAI model for a goal.
 String getGoalDefaultOpenAIModel(RecommendationGoal goal) {
   switch (goal) {
-    case RecommendationGoal.latency: return 'gpt-4o-mini';
+    case RecommendationGoal.latency:
+      return 'gpt-4o-mini';
     case RecommendationGoal.coding:
-    case RecommendationGoal.balanced: return 'gpt-4o';
+    case RecommendationGoal.balanced:
+      return 'gpt-4o';
   }
 }
 
@@ -635,12 +691,18 @@ List<RankedOllamaModel> rankOllamaModels({
     }
     if (_includesAny(haystack, _codingHints)) {
       score += goal == RecommendationGoal.coding
-          ? 24 : goal == RecommendationGoal.balanced ? 10 : 4;
+          ? 24
+          : goal == RecommendationGoal.balanced
+          ? 10
+          : 4;
       reasons.add('coding-oriented model family');
     }
     if (_includesAny(haystack, _generalHints)) {
       score += goal == RecommendationGoal.latency
-          ? 4 : goal == RecommendationGoal.coding ? 6 : 8;
+          ? 4
+          : goal == RecommendationGoal.coding
+          ? 6
+          : 8;
       reasons.add('strong general-purpose model family');
     }
     if (_includesAny(haystack, _instructHints)) {
@@ -691,8 +753,8 @@ List<BenchmarkedOllamaModel> applyBenchmarkLatency({
   final divisor = goal == RecommendationGoal.latency
       ? 120.0
       : goal == RecommendationGoal.coding
-          ? 500.0
-          : 240.0;
+      ? 500.0
+      : 240.0;
 
   final scoredModels = models.map((model) {
     final latency = benchmarkMs[model.name];
@@ -721,7 +783,9 @@ List<BenchmarkedOllamaModel> applyBenchmarkLatency({
     return scoredModels;
   }
 
-  final unbenchmarked = scoredModels.where((m) => m.benchmarkMs == null).toList();
+  final unbenchmarked = scoredModels
+      .where((m) => m.benchmarkMs == null)
+      .toList();
   benchmarked.sort((a, b) => _compareRankedModels(a, b, goal));
   return [...benchmarked, ...unbenchmarked];
 }
@@ -819,7 +883,9 @@ List<SystemPromptBlock> splitSysPromptPrefix({
           SystemPromptBlock(text: systemPromptPrefix, cacheScope: null),
         if (staticBlocks.isNotEmpty)
           SystemPromptBlock(
-              text: staticBlocks.join('\n\n'), cacheScope: CacheScope.global),
+            text: staticBlocks.join('\n\n'),
+            cacheScope: CacheScope.global,
+          ),
         if (dynamicBlocks.isNotEmpty)
           SystemPromptBlock(text: dynamicBlocks.join('\n\n'), cacheScope: null),
       ];
@@ -846,8 +912,7 @@ List<SystemPromptBlock> splitSysPromptPrefix({
     if (attributionHeader != null)
       SystemPromptBlock(text: attributionHeader, cacheScope: null),
     if (systemPromptPrefix != null)
-      SystemPromptBlock(
-          text: systemPromptPrefix, cacheScope: CacheScope.org),
+      SystemPromptBlock(text: systemPromptPrefix, cacheScope: CacheScope.org),
     if (rest.isNotEmpty)
       SystemPromptBlock(text: rest.join('\n\n'), cacheScope: CacheScope.org),
   ];
@@ -875,17 +940,18 @@ List<Map<String, dynamic>> prependUserContext({
 }) {
   if (context.isEmpty) return messages;
 
-  final contextStr =
-      context.entries.map((e) => '# ${e.key}\n${e.value}').join('\n');
+  final contextStr = context.entries
+      .map((e) => '# ${e.key}\n${e.value}')
+      .join('\n');
 
   final reminderMessage = <String, dynamic>{
     'type': 'user',
     'content':
         '<system-reminder>\nAs you answer the user\'s questions, you can use '
-            'the following context:\n$contextStr\n\n'
-            '      IMPORTANT: this context may or may not be relevant to your '
-            'tasks. You should not respond to this context unless it is highly '
-            'relevant to your task.\n</system-reminder>\n',
+        'the following context:\n$contextStr\n\n'
+        '      IMPORTANT: this context may or may not be relevant to your '
+        'tasks. You should not respond to this context unless it is highly '
+        'relevant to your task.\n</system-reminder>\n',
     'isMeta': true,
   };
 
@@ -945,8 +1011,10 @@ Map<String, dynamic> normalizeToolInput({
     case 'FileWrite':
       final filePath = input['file_path'] as String? ?? '';
       final content = input['content'] as String? ?? '';
-      final isMarkdown =
-          RegExp(r'\.(md|mdx)$', caseSensitive: false).hasMatch(filePath);
+      final isMarkdown = RegExp(
+        r'\.(md|mdx)$',
+        caseSensitive: false,
+      ).hasMatch(filePath);
       return {
         'file_path': filePath,
         'content': isMarkdown ? content : _stripTrailingWhitespace(content),
@@ -955,7 +1023,8 @@ Map<String, dynamic> normalizeToolInput({
     case 'TaskOutput':
       final taskId =
           input['task_id'] ?? input['agentId'] ?? input['bash_id'] ?? '';
-      final timeout = input['timeout'] ??
+      final timeout =
+          input['timeout'] ??
           ((input['wait_up_to'] is num)
               ? (input['wait_up_to'] as num).toInt() * 1000
               : 30000);

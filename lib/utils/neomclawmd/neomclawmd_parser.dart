@@ -1,6 +1,6 @@
 /// NEOMCLAW.md file parsing, loading, merging.
 ///
-/// Ported from openneomclaw/src/utils/neomclawmd.ts (1479 LOC).
+/// Ported from neom_claw/src/utils/neomclawmd.ts (1479 LOC).
 ///
 /// Files are loaded in the following order:
 ///
@@ -97,14 +97,7 @@ const Set<String> _textFileExtensions = {
 // ---------------------------------------------------------------------------
 
 /// The type of a memory file.
-enum MemoryType {
-  managed,
-  user,
-  project,
-  local,
-  autoMem,
-  teamMem,
-}
+enum MemoryType { managed, user, project, local, autoMem, teamMem }
 
 // ---------------------------------------------------------------------------
 // MemoryFileInfo
@@ -182,10 +175,7 @@ class _FrontmatterResult {
   final Map<String, dynamic> frontmatter;
   final String content;
 
-  const _FrontmatterResult({
-    required this.frontmatter,
-    required this.content,
-  });
+  const _FrontmatterResult({required this.frontmatter, required this.content});
 }
 
 /// Parses YAML-like frontmatter from markdown content.
@@ -227,7 +217,8 @@ List<String> _splitPathInFrontmatter(String paths) {
 
 /// Parses raw content to extract both content and glob patterns from frontmatter.
 ({String content, List<String>? paths}) _parseFrontmatterPaths(
-    String rawContent) {
+  String rawContent,
+) {
   final result = _parseFrontmatter(rawContent);
 
   final pathsValue = result.frontmatter['paths'];
@@ -237,7 +228,9 @@ List<String> _splitPathInFrontmatter(String paths) {
 
   final patterns = _splitPathInFrontmatter(pathsValue as String)
       .map((pattern) {
-        return pattern.endsWith('/**') ? pattern.substring(0, pattern.length - 3) : pattern;
+        return pattern.endsWith('/**')
+            ? pattern.substring(0, pattern.length - 3)
+            : pattern;
       })
       .where((p) => p.isNotEmpty)
       .toList();
@@ -311,7 +304,8 @@ List<String> _extractIncludePaths(String content, String basePath) {
       path = path.replaceAll(r'\ ', ' ');
 
       // Accept @path, @./path, @~/path, or @/path
-      final isValidPath = path.startsWith('./') ||
+      final isValidPath =
+          path.startsWith('./') ||
           path.startsWith('~/') ||
           (path.startsWith('/') && path != '/') ||
           (!path.startsWith('@') &&
@@ -343,8 +337,9 @@ String _expandPath(String path, String basePath) {
   if (path.startsWith('./')) path = path.substring(2);
 
   // Relative to basePath's directory
-  final baseDir =
-      basePath.endsWith('/') ? basePath : basePath.substring(0, basePath.lastIndexOf('/'));
+  final baseDir = basePath.endsWith('/')
+      ? basePath
+      : basePath.substring(0, basePath.lastIndexOf('/'));
   return '$baseDir/$path';
 }
 
@@ -358,34 +353,37 @@ class NeomClawMdParser extends SintController {
   final RxList<MemoryFileInfo> _cachedFiles = <MemoryFileInfo>[].obs;
 
   /// Whether initial load has been logged.
-  bool _hasLoggedInitialLoad = false;
+  // ignore: unused_field
+  final bool _hasLoggedInitialLoad = false;
 
   /// Hook fire control.
+  // ignore: unused_field
   bool _shouldFireHook = true;
+  // ignore: unused_field
   String _nextEagerLoadReason = 'session_start';
 
   /// Callback for getting the original CWD.
   String Function() _getOriginalCwd = () => Directory.current.path;
 
   /// Callback for getting the claude config home dir.
-  String Function() _getNeomClawConfigHomeDir =
-      () => '${Platform.environment['HOME'] ?? ''}/.neomclaw';
+  String Function() _getNeomClawConfigHomeDir = () =>
+      '${Platform.environment['HOME'] ?? ''}/.neomclaw';
 
   /// Callback for getting managed NEOMCLAW.md path.
-  String Function() _getManagedNeomClawMdPath =
-      () => '/etc/neom-claw/NEOMCLAW.md';
+  String Function() _getManagedNeomClawMdPath = () =>
+      '/etc/neom-claw/NEOMCLAW.md';
 
   /// Callback for getting user NEOMCLAW.md path.
-  String Function() _getUserNeomClawMdPath =
-      () => '${Platform.environment['HOME'] ?? ''}/.neomclaw/NEOMCLAW.md';
+  String Function() _getUserNeomClawMdPath = () =>
+      '${Platform.environment['HOME'] ?? ''}/.neomclaw/NEOMCLAW.md';
 
   /// Callback for getting managed rules dir.
-  String Function() _getManagedNeomClawRulesDir =
-      () => '/etc/neom-claw/.neomclaw/rules';
+  String Function() _getManagedNeomClawRulesDir = () =>
+      '/etc/neom-claw/.neomclaw/rules';
 
   /// Callback for getting user rules dir.
-  String Function() _getUserNeomClawRulesDir =
-      () => '${Platform.environment['HOME'] ?? ''}/.neomclaw/rules';
+  String Function() _getUserNeomClawRulesDir = () =>
+      '${Platform.environment['HOME'] ?? ''}/.neomclaw/rules';
 
   /// Callback for finding git root.
   String? Function(String) _findGitRoot = (_) => null;
@@ -404,6 +402,7 @@ class NeomClawMdParser extends SintController {
   List<String> Function() _getNeomClawMdExcludes = () => [];
 
   /// Logging callback.
+  // ignore: unused_field
   void Function(String message, {String? level}) _logForDebugging =
       (message, {level}) {};
 
@@ -437,7 +436,9 @@ class NeomClawMdParser extends SintController {
     if (getManagedNeomClawMdPath != null) {
       _getManagedNeomClawMdPath = getManagedNeomClawMdPath;
     }
-    if (getUserNeomClawMdPath != null) _getUserNeomClawMdPath = getUserNeomClawMdPath;
+    if (getUserNeomClawMdPath != null) {
+      _getUserNeomClawMdPath = getUserNeomClawMdPath;
+    }
     if (getManagedNeomClawRulesDir != null) {
       _getManagedNeomClawRulesDir = getManagedNeomClawRulesDir;
     }
@@ -452,7 +453,9 @@ class NeomClawMdParser extends SintController {
     if (isSettingSourceEnabled != null) {
       _isSettingSourceEnabled = isSettingSourceEnabled;
     }
-    if (getNeomClawMdExcludes != null) _getNeomClawMdExcludes = getNeomClawMdExcludes;
+    if (getNeomClawMdExcludes != null) {
+      _getNeomClawMdExcludes = getNeomClawMdExcludes;
+    }
     if (logForDebugging != null) _logForDebugging = logForDebugging;
     if (logEvent != null) _logEvent = logEvent;
   }
@@ -463,7 +466,7 @@ class NeomClawMdParser extends SintController {
 
   /// Parses raw memory file content into a MemoryFileInfo. Pure function -- no I/O.
   static ({MemoryFileInfo? info, List<String> includePaths})
-      parseMemoryFileContent(
+  parseMemoryFileContent(
     String rawContent,
     String filePath,
     MemoryType type, {
@@ -504,7 +507,7 @@ class NeomClawMdParser extends SintController {
 
   /// Safely reads and parses a memory file async.
   Future<({MemoryFileInfo? info, List<String> includePaths})>
-      _safelyReadMemoryFileAsync(
+  _safelyReadMemoryFileAsync(
     String filePath,
     MemoryType type, {
     String? includeBasePath,
@@ -533,8 +536,7 @@ class NeomClawMdParser extends SintController {
     if (message.contains('permission denied')) {
       _logEvent('tengu_neomclaw_md_permission_error', {
         'is_access_error': 1,
-        'has_home_dir':
-            filePath.contains(_getNeomClawConfigHomeDir()) ? 1 : 0,
+        'has_home_dir': filePath.contains(_getNeomClawConfigHomeDir()) ? 1 : 0,
       });
     }
   }
@@ -601,14 +603,17 @@ class NeomClawMdParser extends SintController {
     final memoryFile = readResult.info;
     if (memoryFile == null || memoryFile.content.trim().isEmpty) return [];
 
-    final withParent =
-        parent != null ? memoryFile.copyWith(parent: parent) : memoryFile;
+    final withParent = parent != null
+        ? memoryFile.copyWith(parent: parent)
+        : memoryFile;
 
     final result = <MemoryFileInfo>[withParent];
 
     for (final resolvedIncludePath in readResult.includePaths) {
-      final isExternal =
-          !_pathInWorkingPath(resolvedIncludePath, _getOriginalCwd());
+      final isExternal = !_pathInWorkingPath(
+        resolvedIncludePath,
+        _getOriginalCwd(),
+      );
       if (isExternal && !includeExternal) continue;
 
       final includedFiles = await processMemoryFile(
@@ -646,14 +651,16 @@ class NeomClawMdParser extends SintController {
 
       await for (final entry in dir.list()) {
         if (entry is Directory) {
-          result.addAll(await processMdRules(
-            rulesDir: entry.path,
-            type: type,
-            processedPaths: processedPaths,
-            includeExternal: includeExternal,
-            conditionalRule: conditionalRule,
-            visitedDirs: visitedDirs,
-          ));
+          result.addAll(
+            await processMdRules(
+              rulesDir: entry.path,
+              type: type,
+              processedPaths: processedPaths,
+              includeExternal: includeExternal,
+              conditionalRule: conditionalRule,
+              visitedDirs: visitedDirs,
+            ),
+          );
         } else if (entry is File && entry.path.endsWith('.md')) {
           final files = await processMemoryFile(
             entry.path,
@@ -662,7 +669,9 @@ class NeomClawMdParser extends SintController {
             includeExternal,
           );
           result.addAll(
-            files.where((f) => conditionalRule ? f.globs != null : f.globs == null),
+            files.where(
+              (f) => conditionalRule ? f.globs != null : f.globs == null,
+            ),
           );
         }
       }
@@ -691,35 +700,43 @@ class NeomClawMdParser extends SintController {
     final includeExternal = forceIncludeExternal;
 
     // 1. Managed memory
-    result.addAll(await processMemoryFile(
-      _getManagedNeomClawMdPath(),
-      MemoryType.managed,
-      processedPaths,
-      includeExternal,
-    ));
-    result.addAll(await processMdRules(
-      rulesDir: _getManagedNeomClawRulesDir(),
-      type: MemoryType.managed,
-      processedPaths: processedPaths,
-      includeExternal: includeExternal,
-      conditionalRule: false,
-    ));
+    result.addAll(
+      await processMemoryFile(
+        _getManagedNeomClawMdPath(),
+        MemoryType.managed,
+        processedPaths,
+        includeExternal,
+      ),
+    );
+    result.addAll(
+      await processMdRules(
+        rulesDir: _getManagedNeomClawRulesDir(),
+        type: MemoryType.managed,
+        processedPaths: processedPaths,
+        includeExternal: includeExternal,
+        conditionalRule: false,
+      ),
+    );
 
     // 2. User memory
     if (_isSettingSourceEnabled('userSettings')) {
-      result.addAll(await processMemoryFile(
-        _getUserNeomClawMdPath(),
-        MemoryType.user,
-        processedPaths,
-        true,
-      ));
-      result.addAll(await processMdRules(
-        rulesDir: _getUserNeomClawRulesDir(),
-        type: MemoryType.user,
-        processedPaths: processedPaths,
-        includeExternal: true,
-        conditionalRule: false,
-      ));
+      result.addAll(
+        await processMemoryFile(
+          _getUserNeomClawMdPath(),
+          MemoryType.user,
+          processedPaths,
+          true,
+        ),
+      );
+      result.addAll(
+        await processMdRules(
+          rulesDir: _getUserNeomClawRulesDir(),
+          type: MemoryType.user,
+          processedPaths: processedPaths,
+          includeExternal: true,
+          conditionalRule: false,
+        ),
+      );
     }
 
     // 3. Project and Local files (traverse from CWD up to root)
@@ -728,8 +745,7 @@ class NeomClawMdParser extends SintController {
     var currentDir = originalCwd;
     while (true) {
       dirs.add(currentDir);
-      final parent =
-          currentDir.substring(0, currentDir.lastIndexOf('/'));
+      final parent = currentDir.substring(0, currentDir.lastIndexOf('/'));
       if (parent == currentDir || parent.isEmpty) break;
       currentDir = parent;
     }
@@ -737,48 +753,58 @@ class NeomClawMdParser extends SintController {
     // Detect nested worktree to skip duplicated Project files
     final gitRoot = _findGitRoot(originalCwd);
     final canonicalRoot = _findCanonicalGitRoot(originalCwd);
-    final isNestedWorktree = gitRoot != null &&
+    final isNestedWorktree =
+        gitRoot != null &&
         canonicalRoot != null &&
         gitRoot.toLowerCase() != canonicalRoot.toLowerCase() &&
         _pathInWorkingPath(gitRoot, canonicalRoot);
 
     // Process from root downward to CWD
     for (final dir in dirs.reversed) {
-      final skipProject = isNestedWorktree &&
-          _pathInWorkingPath(dir, canonicalRoot!) &&
-          !_pathInWorkingPath(dir, gitRoot!);
+      final skipProject =
+          isNestedWorktree &&
+          _pathInWorkingPath(dir, canonicalRoot) &&
+          !_pathInWorkingPath(dir, gitRoot);
 
       // Project memory
       if (_isSettingSourceEnabled('projectSettings') && !skipProject) {
-        result.addAll(await processMemoryFile(
-          '$dir/NEOMCLAW.md',
-          MemoryType.project,
-          processedPaths,
-          includeExternal,
-        ));
-        result.addAll(await processMemoryFile(
-          '$dir/.neomclaw/NEOMCLAW.md',
-          MemoryType.project,
-          processedPaths,
-          includeExternal,
-        ));
-        result.addAll(await processMdRules(
-          rulesDir: '$dir/.neomclaw/rules',
-          type: MemoryType.project,
-          processedPaths: processedPaths,
-          includeExternal: includeExternal,
-          conditionalRule: false,
-        ));
+        result.addAll(
+          await processMemoryFile(
+            '$dir/NEOMCLAW.md',
+            MemoryType.project,
+            processedPaths,
+            includeExternal,
+          ),
+        );
+        result.addAll(
+          await processMemoryFile(
+            '$dir/.neomclaw/NEOMCLAW.md',
+            MemoryType.project,
+            processedPaths,
+            includeExternal,
+          ),
+        );
+        result.addAll(
+          await processMdRules(
+            rulesDir: '$dir/.neomclaw/rules',
+            type: MemoryType.project,
+            processedPaths: processedPaths,
+            includeExternal: includeExternal,
+            conditionalRule: false,
+          ),
+        );
       }
 
       // Local memory
       if (_isSettingSourceEnabled('localSettings')) {
-        result.addAll(await processMemoryFile(
-          '$dir/NEOMCLAW.local.md',
-          MemoryType.local,
-          processedPaths,
-          includeExternal,
-        ));
+        result.addAll(
+          await processMemoryFile(
+            '$dir/NEOMCLAW.local.md',
+            MemoryType.local,
+            processedPaths,
+            includeExternal,
+          ),
+        );
       }
     }
 
@@ -813,22 +839,26 @@ class NeomClawMdParser extends SintController {
   ) async {
     final result = <MemoryFileInfo>[];
 
-    result.addAll(await _processConditionedMdRules(
-      targetPath,
-      _getManagedNeomClawRulesDir(),
-      MemoryType.managed,
-      processedPaths,
-      false,
-    ));
+    result.addAll(
+      await _processConditionedMdRules(
+        targetPath,
+        _getManagedNeomClawRulesDir(),
+        MemoryType.managed,
+        processedPaths,
+        false,
+      ),
+    );
 
     if (_isSettingSourceEnabled('userSettings')) {
-      result.addAll(await _processConditionedMdRules(
-        targetPath,
-        _getUserNeomClawRulesDir(),
-        MemoryType.user,
-        processedPaths,
-        true,
-      ));
+      result.addAll(
+        await _processConditionedMdRules(
+          targetPath,
+          _getUserNeomClawRulesDir(),
+          MemoryType.user,
+          processedPaths,
+          true,
+        ),
+      );
     }
 
     return result;
@@ -843,49 +873,59 @@ class NeomClawMdParser extends SintController {
     final result = <MemoryFileInfo>[];
 
     if (_isSettingSourceEnabled('projectSettings')) {
-      result.addAll(await processMemoryFile(
-        '$dir/NEOMCLAW.md',
-        MemoryType.project,
-        processedPaths,
-        false,
-      ));
-      result.addAll(await processMemoryFile(
-        '$dir/.neomclaw/NEOMCLAW.md',
-        MemoryType.project,
-        processedPaths,
-        false,
-      ));
+      result.addAll(
+        await processMemoryFile(
+          '$dir/NEOMCLAW.md',
+          MemoryType.project,
+          processedPaths,
+          false,
+        ),
+      );
+      result.addAll(
+        await processMemoryFile(
+          '$dir/.neomclaw/NEOMCLAW.md',
+          MemoryType.project,
+          processedPaths,
+          false,
+        ),
+      );
     }
 
     if (_isSettingSourceEnabled('localSettings')) {
-      result.addAll(await processMemoryFile(
-        '$dir/NEOMCLAW.local.md',
-        MemoryType.local,
-        processedPaths,
-        false,
-      ));
+      result.addAll(
+        await processMemoryFile(
+          '$dir/NEOMCLAW.local.md',
+          MemoryType.local,
+          processedPaths,
+          false,
+        ),
+      );
     }
 
     final rulesDir = '$dir/.neomclaw/rules';
 
     // Unconditional rules
     final unconditionalPaths = Set<String>.from(processedPaths);
-    result.addAll(await processMdRules(
-      rulesDir: rulesDir,
-      type: MemoryType.project,
-      processedPaths: unconditionalPaths,
-      includeExternal: false,
-      conditionalRule: false,
-    ));
+    result.addAll(
+      await processMdRules(
+        rulesDir: rulesDir,
+        type: MemoryType.project,
+        processedPaths: unconditionalPaths,
+        includeExternal: false,
+        conditionalRule: false,
+      ),
+    );
 
     // Conditional rules
-    result.addAll(await _processConditionedMdRules(
-      targetPath,
-      rulesDir,
-      MemoryType.project,
-      processedPaths,
-      false,
-    ));
+    result.addAll(
+      await _processConditionedMdRules(
+        targetPath,
+        rulesDir,
+        MemoryType.project,
+        processedPaths,
+        false,
+      ),
+    );
 
     for (final path in unconditionalPaths) {
       processedPaths.add(path);
@@ -955,11 +995,9 @@ class NeomClawMdParser extends SintController {
           description =
               " (user's private project instructions, not checked in)";
         case MemoryType.autoMem:
-          description =
-              " (user's auto-memory, persists across conversations)";
+          description = " (user's auto-memory, persists across conversations)";
         case MemoryType.teamMem:
-          description =
-              ' (shared team memory, synced across the organization)';
+          description = ' (shared team memory, synced across the organization)';
         case MemoryType.user:
           description =
               " (user's private global instructions for all projects)";
@@ -981,7 +1019,9 @@ class NeomClawMdParser extends SintController {
 
   /// Returns memory files whose content exceeds the max character count.
   List<MemoryFileInfo> getLargeMemoryFiles(List<MemoryFileInfo> files) {
-    return files.where((f) => f.content.length > maxMemoryCharacterCount).toList();
+    return files
+        .where((f) => f.content.length > maxMemoryCharacterCount)
+        .toList();
   }
 
   /// Gets external @include references.
@@ -1044,11 +1084,6 @@ class NeomClawMdParser extends SintController {
   @override
   void onInit() {
     super.onInit();
-  }
-
-  @override
-  void onClose() {
-    super.onClose();
   }
 }
 

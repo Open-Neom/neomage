@@ -6,7 +6,14 @@ import '../api/api_provider.dart';
 
 /// Tools whose results can be safely cleared during microcompaction.
 const Set<String> compactableTools = {
-  'Read', 'Bash', 'Grep', 'Glob', 'WebSearch', 'WebFetch', 'Edit', 'Write',
+  'Read',
+  'Bash',
+  'Grep',
+  'Glob',
+  'WebSearch',
+  'WebFetch',
+  'Edit',
+  'Write',
 };
 
 /// Cleared content replacement marker.
@@ -131,12 +138,12 @@ class CompactionService {
   }
 
   int _estimateBlockTokens(ContentBlock block) => switch (block) {
-        TextBlock(text: final t) => _roughTokenCount(t),
-        ToolUseBlock(name: final n, input: final i) =>
-          _roughTokenCount(n) + _roughTokenCount(i.toString()),
-        ToolResultBlock(content: final c) => _roughTokenCount(c),
-        ImageBlock() => imageMaxTokenSize,
-      };
+    TextBlock(text: final t) => _roughTokenCount(t),
+    ToolUseBlock(name: final n, input: final i) =>
+      _roughTokenCount(n) + _roughTokenCount(i.toString()),
+    ToolResultBlock(content: final c) => _roughTokenCount(c),
+    ImageBlock() => imageMaxTokenSize,
+  };
 
   /// Rough token estimate: ~4 chars per token.
   int _roughTokenCount(String text) => (text.length / 4).ceil();
@@ -157,9 +164,7 @@ class CompactionService {
         systemPrompt: systemPrompt,
       );
 
-      final compactedMessages = [
-        Message.user(_formatCompactSummary(summary)),
-      ];
+      final compactedMessages = [Message.user(_formatCompactSummary(summary))];
 
       _consecutiveFailures = 0;
 

@@ -1,8 +1,7 @@
-// Configuration manager — port of openneomclaw/src/utils/config.ts.
+// Configuration manager — port of neom_claw/src/utils/config.ts.
 // Global and project config persistence, trust dialog, config caching,
 // migration, and project-scoped settings.
 
-import 'dart:async';
 import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 
@@ -38,22 +37,21 @@ class PastedContent {
       mediaType: json['mediaType'] as String?,
       filename: json['filename'] as String?,
       dimensions: json['dimensions'] != null
-          ? ImageDimensions.fromJson(
-              json['dimensions'] as Map<String, dynamic>)
+          ? ImageDimensions.fromJson(json['dimensions'] as Map<String, dynamic>)
           : null,
       sourcePath: json['sourcePath'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type,
-        'content': content,
-        if (mediaType != null) 'mediaType': mediaType,
-        if (filename != null) 'filename': filename,
-        if (dimensions != null) 'dimensions': dimensions!.toJson(),
-        if (sourcePath != null) 'sourcePath': sourcePath,
-      };
+    'id': id,
+    'type': type,
+    'content': content,
+    if (mediaType != null) 'mediaType': mediaType,
+    if (filename != null) 'filename': filename,
+    if (dimensions != null) 'dimensions': dimensions!.toJson(),
+    if (sourcePath != null) 'sourcePath': sourcePath,
+  };
 }
 
 /// Image dimensions.
@@ -80,11 +78,11 @@ class ImageDimensions {
   }
 
   Map<String, dynamic> toJson() => {
-        'width': width,
-        'height': height,
-        if (originalWidth != null) 'originalWidth': originalWidth,
-        if (originalHeight != null) 'originalHeight': originalHeight,
-      };
+    'width': width,
+    'height': height,
+    if (originalWidth != null) 'originalWidth': originalWidth,
+    if (originalHeight != null) 'originalHeight': originalHeight,
+  };
 }
 
 /// History entry for prompt history.
@@ -92,18 +90,16 @@ class HistoryEntry {
   final String display;
   final Map<int, PastedContent> pastedContents;
 
-  const HistoryEntry({
-    required this.display,
-    this.pastedContents = const {},
-  });
+  const HistoryEntry({required this.display, this.pastedContents = const {}});
 
   factory HistoryEntry.fromJson(Map<String, dynamic> json) {
     final pastedContentsRaw =
         json['pastedContents'] as Map<String, dynamic>? ?? {};
     final pastedContents = <int, PastedContent>{};
     for (final entry in pastedContentsRaw.entries) {
-      pastedContents[int.parse(entry.key)] =
-          PastedContent.fromJson(entry.value as Map<String, dynamic>);
+      pastedContents[int.parse(entry.key)] = PastedContent.fromJson(
+        entry.value as Map<String, dynamic>,
+      );
     }
     return HistoryEntry(
       display: json['display'] as String,
@@ -175,20 +171,20 @@ class AccountInfo {
   }
 
   Map<String, dynamic> toJson() => {
-        'accountUuid': accountUuid,
-        'emailAddress': emailAddress,
-        if (organizationUuid != null) 'organizationUuid': organizationUuid,
-        if (organizationName != null) 'organizationName': organizationName,
-        if (organizationRole != null) 'organizationRole': organizationRole,
-        if (workspaceRole != null) 'workspaceRole': workspaceRole,
-        if (displayName != null) 'displayName': displayName,
-        if (hasExtraUsageEnabled != null)
-          'hasExtraUsageEnabled': hasExtraUsageEnabled,
-        if (billingType != null) 'billingType': billingType,
-        if (accountCreatedAt != null) 'accountCreatedAt': accountCreatedAt,
-        if (subscriptionCreatedAt != null)
-          'subscriptionCreatedAt': subscriptionCreatedAt,
-      };
+    'accountUuid': accountUuid,
+    'emailAddress': emailAddress,
+    if (organizationUuid != null) 'organizationUuid': organizationUuid,
+    if (organizationName != null) 'organizationName': organizationName,
+    if (organizationRole != null) 'organizationRole': organizationRole,
+    if (workspaceRole != null) 'workspaceRole': workspaceRole,
+    if (displayName != null) 'displayName': displayName,
+    if (hasExtraUsageEnabled != null)
+      'hasExtraUsageEnabled': hasExtraUsageEnabled,
+    if (billingType != null) 'billingType': billingType,
+    if (accountCreatedAt != null) 'accountCreatedAt': accountCreatedAt,
+    if (subscriptionCreatedAt != null)
+      'subscriptionCreatedAt': subscriptionCreatedAt,
+  };
 }
 
 // ─── Project Config ───
@@ -242,11 +238,9 @@ class ProjectConfig {
   factory ProjectConfig.fromJson(Map<String, dynamic> json) {
     return ProjectConfig(
       allowedTools: (json['allowedTools'] as List?)?.cast<String>() ?? [],
-      mcpContextUris:
-          (json['mcpContextUris'] as List?)?.cast<String>() ?? [],
+      mcpContextUris: (json['mcpContextUris'] as List?)?.cast<String>() ?? [],
       mcpServers: json['mcpServers'] as Map<String, dynamic>?,
-      hasTrustDialogAccepted:
-          json['hasTrustDialogAccepted'] as bool? ?? false,
+      hasTrustDialogAccepted: json['hasTrustDialogAccepted'] as bool? ?? false,
       hasCompletedProjectOnboarding:
           json['hasCompletedProjectOnboarding'] as bool? ?? false,
       projectOnboardingSeenCount:
@@ -259,15 +253,15 @@ class ProjectConfig {
   }
 
   Map<String, dynamic> toJson() => {
-        'allowedTools': allowedTools,
-        'mcpContextUris': mcpContextUris,
-        if (mcpServers != null) 'mcpServers': mcpServers,
-        'hasTrustDialogAccepted': hasTrustDialogAccepted,
-        'hasCompletedProjectOnboarding': hasCompletedProjectOnboarding,
-        'projectOnboardingSeenCount': projectOnboardingSeenCount,
-        if (lastCost != null) 'lastCost': lastCost,
-        if (lastSessionId != null) 'lastSessionId': lastSessionId,
-      };
+    'allowedTools': allowedTools,
+    'mcpContextUris': mcpContextUris,
+    if (mcpServers != null) 'mcpServers': mcpServers,
+    'hasTrustDialogAccepted': hasTrustDialogAccepted,
+    'hasCompletedProjectOnboarding': hasCompletedProjectOnboarding,
+    'projectOnboardingSeenCount': projectOnboardingSeenCount,
+    if (lastCost != null) 'lastCost': lastCost,
+    if (lastSessionId != null) 'lastSessionId': lastSessionId,
+  };
 }
 
 // ─── Global Config ───
@@ -355,8 +349,9 @@ class GlobalConfig {
     if (projectsRaw != null) {
       projects = {};
       for (final entry in projectsRaw.entries) {
-        projects[entry.key] =
-            ProjectConfig.fromJson(entry.value as Map<String, dynamic>);
+        projects[entry.key] = ProjectConfig.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
       }
     }
 
@@ -368,25 +363,25 @@ class GlobalConfig {
       hasCompletedOnboarding: json['hasCompletedOnboarding'] as bool?,
       lastReleaseNotesSeen: json['lastReleaseNotesSeen'] as String?,
       mcpServers: json['mcpServers'] as Map<String, dynamic>?,
-      preferredNotifChannel:
-          _parseNotifChannel(json['preferredNotifChannel'] as String?),
+      preferredNotifChannel: _parseNotifChannel(
+        json['preferredNotifChannel'] as String?,
+      ),
       verbose: json['verbose'] as bool? ?? false,
       primaryApiKey: json['primaryApiKey'] as String?,
       oauthAccount: json['oauthAccount'] != null
-          ? AccountInfo.fromJson(
-              json['oauthAccount'] as Map<String, dynamic>)
+          ? AccountInfo.fromJson(json['oauthAccount'] as Map<String, dynamic>)
           : null,
       editorMode: _parseEditorMode(json['editorMode'] as String?),
       autoCompactEnabled: json['autoCompactEnabled'] as bool? ?? true,
       showTurnDuration: json['showTurnDuration'] as bool? ?? true,
-      env: (json['env'] as Map<String, dynamic>?)?.cast<String, String>() ??
-          {},
+      env: (json['env'] as Map<String, dynamic>?)?.cast<String, String>() ?? {},
       hasSeenTasksHint: json['hasSeenTasksHint'] as bool? ?? false,
       diffTool: _parseDiffTool(json['diffTool'] as String?),
       tipsHistory:
-          (json['tipsHistory'] as Map<String, dynamic>?)
-                  ?.map((k, v) => MapEntry(k, v as int)) ??
-              {},
+          (json['tipsHistory'] as Map<String, dynamic>?)?.map(
+            (k, v) => MapEntry(k, v as int),
+          ) ??
+          {},
       memoryUsageCount: json['memoryUsageCount'] as int? ?? 0,
       promptQueueUseCount: json['promptQueueUseCount'] as int? ?? 0,
       btwUseCount: json['btwUseCount'] as int? ?? 0,
@@ -395,8 +390,7 @@ class GlobalConfig {
       messageIdleNotifThresholdMs:
           json['messageIdleNotifThresholdMs'] as int? ?? 60000,
       autoConnectIde: json['autoConnectIde'] as bool? ?? false,
-      autoInstallIdeExtension:
-          json['autoInstallIdeExtension'] as bool? ?? true,
+      autoInstallIdeExtension: json['autoInstallIdeExtension'] as bool? ?? true,
       fileCheckpointingEnabled:
           json['fileCheckpointingEnabled'] as bool? ?? true,
       terminalProgressBarEnabled:
@@ -405,9 +399,10 @@ class GlobalConfig {
       copyFullResponse: json['copyFullResponse'] as bool? ?? false,
       projects: projects,
       cachedStatsigGates:
-          (json['cachedStatsigGates'] as Map<String, dynamic>?)
-                  ?.map((k, v) => MapEntry(k, v as bool)) ??
-              {},
+          (json['cachedStatsigGates'] as Map<String, dynamic>?)?.map(
+            (k, v) => MapEntry(k, v as bool),
+          ) ??
+          {},
       cachedGrowthBookFeatures:
           json['cachedGrowthBookFeatures'] as Map<String, dynamic>?,
       customApiKeyResponses:
@@ -441,8 +436,7 @@ class GlobalConfig {
         'cachedGrowthBookFeatures': cachedGrowthBookFeatures,
     };
     if (projects != null) {
-      result['projects'] =
-          projects!.map((k, v) => MapEntry(k, v.toJson()));
+      result['projects'] = projects!.map((k, v) => MapEntry(k, v.toJson()));
     }
     return result;
   }
@@ -497,6 +491,7 @@ class ConfigManager {
   GlobalConfig? _cache;
 
   /// Cache modification time.
+  // ignore: unused_field
   DateTime? _cacheMtime;
 
   /// Write count for diagnostics.
@@ -505,10 +500,7 @@ class ConfigManager {
   /// Trust dialog accepted cache (only transitions false -> true).
   bool _trustAccepted = false;
 
-  ConfigManager({
-    required this.configFilePath,
-    required this.cwd,
-  });
+  ConfigManager({required this.configFilePath, required this.cwd});
 
   /// Get the write count for diagnostics.
   int get writeCount => _writeCount;
@@ -535,10 +527,7 @@ class ConfigManager {
         return _cache!;
       }
 
-      _cache = _migrateConfigFields(
-        GlobalConfig.fromJson(parsed),
-        parsed,
-      );
+      _cache = _migrateConfigFields(GlobalConfig.fromJson(parsed), parsed);
       final stat = file.statSync();
       _cacheMtime = stat.modified;
       return _cache!;
@@ -565,9 +554,9 @@ class ConfigManager {
       final toWrite = updated.toJson();
       _removeProjectHistory(toWrite);
 
-      File(configFilePath).writeAsStringSync(
-        const JsonEncoder.withIndent('  ').convert(toWrite),
-      );
+      File(
+        configFilePath,
+      ).writeAsStringSync(const JsonEncoder.withIndent('  ').convert(toWrite));
       _cache = updated;
       _cacheMtime = DateTime.now();
       _writeCount++;
@@ -589,9 +578,7 @@ class ConfigManager {
   ) {
     final projectPath = _getProjectPathForConfig();
     saveGlobalConfig((current) {
-      final projects = Map<String, ProjectConfig>.from(
-        current.projects ?? {},
-      );
+      final projects = Map<String, ProjectConfig>.from(current.projects ?? {});
       final currentProject = projects[projectPath] ?? ProjectConfig();
       projects[projectPath] = updater(currentProject);
       current.projects = projects;
@@ -614,8 +601,9 @@ class ConfigManager {
       if (config.projects?[currentPath]?.hasTrustDialogAccepted == true) {
         return true;
       }
-      final parentPath =
-          _normalizePathForConfigKey(p.normalize(p.join(currentPath, '..')));
+      final parentPath = _normalizePathForConfigKey(
+        p.normalize(p.join(currentPath, '..')),
+      );
       if (parentPath == currentPath) return false;
       currentPath = parentPath;
     }
@@ -663,11 +651,10 @@ class ConfigManager {
   }
 
   bool _wouldLoseAuthState(GlobalConfig cached, GlobalConfig fresh) {
-    final lostOauth =
-        cached.oauthAccount != null && fresh.oauthAccount == null;
+    final lostOauth = cached.oauthAccount != null && fresh.oauthAccount == null;
     final lostOnboarding =
         cached.hasCompletedOnboarding == true &&
-            fresh.hasCompletedOnboarding != true;
+        fresh.hasCompletedOnboarding != true;
     return lostOauth || lostOnboarding;
   }
 
@@ -736,9 +723,7 @@ ThemeSetting _parseTheme(String? value) {
 
 NotificationChannel _parseNotifChannel(String? value) {
   if (value == null) return NotificationChannel.auto;
-  return NotificationChannel.values
-          .where((e) => e.name == value)
-          .firstOrNull ??
+  return NotificationChannel.values.where((e) => e.name == value).firstOrNull ??
       NotificationChannel.auto;
 }
 

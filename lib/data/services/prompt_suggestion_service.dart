@@ -10,20 +10,11 @@ class SuggestionResult {
   final SuggestionOutcome outcome;
   final String? reason;
 
-  const SuggestionResult({
-    this.suggestion,
-    required this.outcome,
-    this.reason,
-  });
+  const SuggestionResult({this.suggestion, required this.outcome, this.reason});
 }
 
 /// Outcome of a suggestion attempt.
-enum SuggestionOutcome {
-  generated,
-  suppressed,
-  filtered,
-  error,
-}
+enum SuggestionOutcome { generated, suppressed, filtered, error }
 
 /// Why a suggestion was suppressed.
 enum SuppressionReason {
@@ -55,10 +46,7 @@ class PromptSuggestionService {
   final ApiProvider provider;
   bool enabled;
 
-  PromptSuggestionService({
-    required this.provider,
-    this.enabled = true,
-  });
+  PromptSuggestionService({required this.provider, this.enabled = true});
 
   /// Generate a suggestion based on conversation context.
   Future<SuggestionResult> generateSuggestion({
@@ -124,8 +112,9 @@ class PromptSuggestionService {
     required bool isRateLimited,
   }) {
     // Need at least 2 assistant turns
-    final assistantCount =
-        messages.where((m) => m.role == MessageRole.assistant).length;
+    final assistantCount = messages
+        .where((m) => m.role == MessageRole.assistant)
+        .length;
     if (assistantCount < 2) return SuppressionReason.earlyConversation;
 
     if (isPlanMode) return SuppressionReason.planMode;
@@ -159,11 +148,31 @@ class PromptSuggestionService {
     if (wordCount < 2) {
       // Allow single words from approved list
       const allowed = {
-        'yes', 'no', 'push', 'commit', 'continue', 'stop',
-        'skip', 'next', 'done', 'exit', 'help', 'undo',
-        'retry', 'approve', 'deny', 'cancel', 'run',
-        'test', 'build', 'deploy', 'merge', 'revert',
-        'reset', 'save', 'delete',
+        'yes',
+        'no',
+        'push',
+        'commit',
+        'continue',
+        'stop',
+        'skip',
+        'next',
+        'done',
+        'exit',
+        'help',
+        'undo',
+        'retry',
+        'approve',
+        'deny',
+        'cancel',
+        'run',
+        'test',
+        'build',
+        'deploy',
+        'merge',
+        'revert',
+        'reset',
+        'save',
+        'delete',
       };
       if (!allowed.contains(lower)) return FilterReason.singleWord;
     }

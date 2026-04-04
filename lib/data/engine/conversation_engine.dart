@@ -5,11 +5,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../api/api_provider.dart';
-import '../api/streaming.dart';
 import '../tools/tool.dart';
 import '../tools/tool_registry.dart';
 import '../../domain/models/message.dart';
-import '../../domain/models/permissions.dart';
 import '../../domain/models/tool_definition.dart';
 
 // ─── Types ───
@@ -132,16 +130,24 @@ class TokenUsageUpdated extends ConversationEvent {
   final int outputTokens;
   final int cacheReadTokens;
   final int cacheCreationTokens;
-  const TokenUsageUpdated(this.inputTokens, this.outputTokens,
-      this.cacheReadTokens, this.cacheCreationTokens);
+  const TokenUsageUpdated(
+    this.inputTokens,
+    this.outputTokens,
+    this.cacheReadTokens,
+    this.cacheCreationTokens,
+  );
 }
 
 /// Permission decision from user.
 enum PermissionDecision { allow, allowAlways, deny }
 
 /// Permission checker callback.
-typedef PermissionChecker = Future<PermissionDecision> Function(
-    String toolName, Map<String, dynamic> input, String? description);
+typedef PermissionChecker =
+    Future<PermissionDecision> Function(
+      String toolName,
+      Map<String, dynamic> input,
+      String? description,
+    );
 
 /// Configuration for the conversation engine.
 class ConversationConfig {
@@ -230,10 +236,10 @@ class ConversationEngine {
     required ToolRegistry toolRegistry,
     required PermissionChecker permissionChecker,
     required ConversationConfig config,
-  })  : _provider = provider,
-        _toolRegistry = toolRegistry,
-        _permissionChecker = permissionChecker,
-        _config = config;
+  }) : _provider = provider,
+       _toolRegistry = toolRegistry,
+       _permissionChecker = permissionChecker,
+       _config = config;
 
   /// Event stream for UI updates.
   Stream<ConversationEvent> get events => _events.stream;
@@ -268,8 +274,10 @@ class ConversationEngine {
   }
 
   /// Send a user message and run the agentic loop.
-  Future<ConversationTurn> sendMessage(String text,
-      {List<Map<String, dynamic>>? attachments}) async {
+  Future<ConversationTurn> sendMessage(
+    String text, {
+    List<Map<String, dynamic>>? attachments,
+  }) async {
     _cancelled = false;
     final stopwatch = Stopwatch()..start();
 
@@ -306,10 +314,7 @@ class ConversationEngine {
         turnOutputTokens += response.outputTokens;
 
         // Add assistant message to history
-        _messages.add({
-          'role': 'assistant',
-          'content': response.contentBlocks,
-        });
+        _messages.add({'role': 'assistant', 'content': response.contentBlocks});
 
         // Check if there are tool_use blocks
         final toolUseBlocks = response.contentBlocks
@@ -330,8 +335,7 @@ class ConversationEngine {
 
           final toolName = toolBlock['name'] as String;
           final toolId = toolBlock['id'] as String;
-          final toolInput =
-              toolBlock['input'] as Map<String, dynamic>? ?? {};
+          final toolInput = toolBlock['input'] as Map<String, dynamic>? ?? {};
 
           _events.add(ToolUseRequested(toolName, toolId, toolInput));
 
@@ -344,15 +348,17 @@ class ConversationEngine {
               'content': 'Permission denied by user.',
               'is_error': true,
             });
-            toolExecutions.add(ToolExecution(
-              toolName: toolName,
-              toolUseId: toolId,
-              input: toolInput,
-              output: 'Permission denied by user.',
-              isError: true,
-              duration: Duration.zero,
-              permissionGranted: false,
-            ));
+            toolExecutions.add(
+              ToolExecution(
+                toolName: toolName,
+                toolUseId: toolId,
+                input: toolInput,
+                output: 'Permission denied by user.',
+                isError: true,
+                duration: Duration.zero,
+                permissionGranted: false,
+              ),
+            );
             continue;
           }
 
@@ -412,14 +418,16 @@ class ConversationEngine {
                   'Tool execution timed out after ${_config.toolTimeout.inSeconds}s.',
               'is_error': true,
             });
-            toolExecutions.add(ToolExecution(
-              toolName: toolName,
-              toolUseId: toolId,
-              input: toolInput,
-              output: 'Timeout',
-              isError: true,
-              duration: execStopwatch.elapsed,
-            ));
+            toolExecutions.add(
+              ToolExecution(
+                toolName: toolName,
+                toolUseId: toolId,
+                input: toolInput,
+                output: 'Timeout',
+                isError: true,
+                duration: execStopwatch.elapsed,
+              ),
+            );
           } catch (e) {
             execStopwatch.stop();
             toolResults.add({
@@ -428,22 +436,21 @@ class ConversationEngine {
               'content': 'Error: $e',
               'is_error': true,
             });
-            toolExecutions.add(ToolExecution(
-              toolName: toolName,
-              toolUseId: toolId,
-              input: toolInput,
-              output: 'Error: $e',
-              isError: true,
-              duration: execStopwatch.elapsed,
-            ));
+            toolExecutions.add(
+              ToolExecution(
+                toolName: toolName,
+                toolUseId: toolId,
+                input: toolInput,
+                output: 'Error: $e',
+                isError: true,
+                duration: execStopwatch.elapsed,
+              ),
+            );
           }
         }
 
         // Add tool results as user message
-        _messages.add({
-          'role': 'user',
-          'content': toolResults,
-        });
+        _messages.add({'role': 'user', 'content': toolResults});
 
         // Continue the loop (next API call will see tool results)
         _setState(ConversationState.streaming);
@@ -477,12 +484,14 @@ class ConversationEngine {
       _totalInputTokens += turnInputTokens;
       _totalOutputTokens += turnOutputTokens;
 
-      _events.add(TokenUsageUpdated(
-        _totalInputTokens,
-        _totalOutputTokens,
-        _totalCacheReadTokens,
-        _totalCacheCreationTokens,
-      ));
+      _events.add(
+        TokenUsageUpdated(
+          _totalInputTokens,
+          _totalOutputTokens,
+          _totalCacheReadTokens,
+          _totalCacheCreationTokens,
+        ),
+      );
       _events.add(TurnCompleted(turn));
       _setState(ConversationState.idle);
 
@@ -526,11 +535,13 @@ class ConversationEngine {
 
     return tools
         .where((t) => allowed == null || allowed.contains(t.name))
-        .map((t) => ToolDefinition(
-              name: t.name,
-              description: t.description,
-              inputSchema: t.inputSchema,
-            ).toApiMap())
+        .map(
+          (t) => ToolDefinition(
+            name: t.name,
+            description: t.description,
+            inputSchema: t.inputSchema,
+          ).toApiMap(),
+        )
         .toList();
   }
 
@@ -551,7 +562,7 @@ class ConversationEngine {
     );
 
     final textBuffer = StringBuffer();
-    final thinkingBuffer = StringBuffer();
+    final _thinkingBuffer = StringBuffer();
     final accumulators = <int, Map<String, dynamic>>{};
     var blockIndex = 0;
 
@@ -570,7 +581,12 @@ class ConversationEngine {
           case TextBlock():
             blockMap = {'type': 'text', 'text': ''};
           case ToolUseBlock(:final id, :final name, :final input):
-            blockMap = {'type': 'tool_use', 'id': id, 'name': name, 'input': input};
+            blockMap = {
+              'type': 'tool_use',
+              'id': id,
+              'name': name,
+              'input': input,
+            };
           case ToolResultBlock():
             blockMap = {'type': 'tool_result'};
           case ImageBlock():
@@ -594,11 +610,9 @@ class ConversationEngine {
       } else if (event is ContentBlockStopEvent) {
         final acc = accumulators[event.index];
         if (acc != null) {
-          if (acc['type'] == 'tool_use' &&
-              acc['_partial_json'] != null) {
+          if (acc['type'] == 'tool_use' && acc['_partial_json'] != null) {
             try {
-              acc['input'] =
-                  jsonDecode(acc['_partial_json'] as String);
+              acc['input'] = jsonDecode(acc['_partial_json'] as String);
             } catch (_) {
               acc['input'] = <String, dynamic>{};
             }
@@ -629,10 +643,17 @@ class ConversationEngine {
 
   /// Check permission for a tool call.
   Future<bool> _checkPermission(
-      String toolName, Map<String, dynamic> input) async {
+    String toolName,
+    Map<String, dynamic> input,
+  ) async {
     // Some tools are always allowed
     const alwaysAllowed = {
-      'Read', 'Glob', 'Grep', 'ToolSearch', 'TodoWrite', 'TaskOutput',
+      'Read',
+      'Glob',
+      'Grep',
+      'ToolSearch',
+      'TodoWrite',
+      'TaskOutput',
     };
     if (alwaysAllowed.contains(toolName)) return true;
 
@@ -699,8 +720,7 @@ class ConversationEngine {
   }
 
   /// Get total cost.
-  double get totalCost =>
-      _estimateCost(_totalInputTokens, _totalOutputTokens);
+  double get totalCost => _estimateCost(_totalInputTokens, _totalOutputTokens);
 
   /// Clear conversation history.
   void clear() {
@@ -724,7 +744,7 @@ class ConversationEngine {
           'type': 'text',
           'text':
               '[Conversation compacted. Summary of previous context:]\n\n$summary',
-        }
+        },
       ],
     });
     _messages.add({
@@ -734,7 +754,7 @@ class ConversationEngine {
           'type': 'text',
           'text':
               'I understand. I have the context from the conversation summary. How can I continue helping you?',
-        }
+        },
       ],
     });
     _setState(ConversationState.idle);
@@ -773,7 +793,8 @@ Future<ToolResult> executeToolSafe(
     return await tool.execute(input).timeout(timeout);
   } on TimeoutException {
     return ToolResult.error(
-        'Tool execution timed out after ${timeout.inSeconds}s.');
+      'Tool execution timed out after ${timeout.inSeconds}s.',
+    );
   } catch (e) {
     return ToolResult.error('$e');
   }
@@ -827,9 +848,11 @@ String buildSystemPromptWithContext({
   }
 
   if (planMode) {
-    buffer.writeln('\n\nYou are currently in PLAN MODE. '
-        'Analyze the request and create a detailed plan. '
-        'Do not execute any changes yet — only plan.');
+    buffer.writeln(
+      '\n\nYou are currently in PLAN MODE. '
+      'Analyze the request and create a detailed plan. '
+      'Do not execute any changes yet — only plan.',
+    );
   }
 
   return buffer.toString();

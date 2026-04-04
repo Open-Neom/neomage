@@ -26,7 +26,8 @@ class PowerShellInput {
     final timeoutMs = map['timeout'] as num?;
     return PowerShellInput(
       command: map['command'] as String? ?? '',
-      workDir: map['work_dir'] as String? ?? map['working_directory'] as String?,
+      workDir:
+          map['work_dir'] as String? ?? map['working_directory'] as String?,
       timeout: timeoutMs != null
           ? Duration(milliseconds: timeoutMs.toInt())
           : const Duration(minutes: 2),
@@ -81,11 +82,11 @@ class PowerShellOutput {
   bool get isSuccess => exitCode == 0;
 
   Map<String, dynamic> toMetadata() => {
-        'exitCode': exitCode,
-        'durationMs': duration.inMilliseconds,
-        'stdoutLength': stdout.length,
-        'stderrLength': stderr.length,
-      };
+    'exitCode': exitCode,
+    'durationMs': duration.inMilliseconds,
+    'stdoutLength': stdout.length,
+    'stderrLength': stderr.length,
+  };
 
   @override
   String toString() {
@@ -182,42 +183,42 @@ class PowerShellTool extends Tool with ShellToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'command': {
-            'type': 'string',
-            'description': 'The PowerShell command to execute',
-          },
-          'work_dir': {
-            'type': 'string',
-            'description':
-                'Working directory for command execution. '
-                    'Uses current directory if not specified.',
-          },
-          'timeout': {
-            'type': 'number',
-            'description':
-                'Timeout in milliseconds (max 600000 / 10 minutes). '
-                    'Default is 120000 (2 minutes).',
-          },
-          'execution_policy': {
-            'type': 'string',
-            'enum': [
-              'Bypass',
-              'Restricted',
-              'AllSigned',
-              'RemoteSigned',
-              'Unrestricted',
-              'Undefined',
-            ],
-            'description':
-                'PowerShell execution policy for this command. '
-                    'Default depends on system configuration.',
-          },
-        },
-        'required': ['command'],
-        'additionalProperties': false,
-      };
+    'type': 'object',
+    'properties': {
+      'command': {
+        'type': 'string',
+        'description': 'The PowerShell command to execute',
+      },
+      'work_dir': {
+        'type': 'string',
+        'description':
+            'Working directory for command execution. '
+            'Uses current directory if not specified.',
+      },
+      'timeout': {
+        'type': 'number',
+        'description':
+            'Timeout in milliseconds (max 600000 / 10 minutes). '
+            'Default is 120000 (2 minutes).',
+      },
+      'execution_policy': {
+        'type': 'string',
+        'enum': [
+          'Bypass',
+          'Restricted',
+          'AllSigned',
+          'RemoteSigned',
+          'Unrestricted',
+          'Undefined',
+        ],
+        'description':
+            'PowerShell execution policy for this command. '
+            'Default depends on system configuration.',
+      },
+    },
+    'required': ['command'],
+    'additionalProperties': false,
+  };
 
   @override
   bool get isAvailable => _findPowerShell() != null;
@@ -276,16 +277,14 @@ class PowerShellTool extends Tool with ShellToolMixin {
 
     // Build arguments.
     final args = <String>[];
-    final policy =
-        parsed.executionPolicy ?? defaultExecutionPolicy;
+    final policy = parsed.executionPolicy ?? defaultExecutionPolicy;
     if (policy != null) {
       args.addAll(['-ExecutionPolicy', policy]);
     }
     args.addAll(['-NoProfile', '-NonInteractive', '-Command', parsed.command]);
 
     // Resolve working directory.
-    final effectiveWorkDir =
-        parsed.workDir ?? workingDirectory;
+    final effectiveWorkDir = parsed.workDir ?? workingDirectory;
 
     // Build environment.
     final effectiveEnv = <String, String>{

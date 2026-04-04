@@ -29,9 +29,9 @@ class SystemPromptBuilder {
     required String model,
     required PlatformBridge platform,
     DateTime? now,
-  })  : _model = model,
-        _platform = platform,
-        _now = now ?? DateTime.now();
+  }) : _model = model,
+       _platform = platform,
+       _now = now ?? DateTime.now();
 
   /// Add a section.
   void addSection(PromptSection section) {
@@ -40,14 +40,17 @@ class SystemPromptBuilder {
 
   /// Add the identity section.
   void addIdentity({String? customName}) {
-    addSection(PromptSection(
-      name: 'identity',
-      content: '''
+    addSection(
+      PromptSection(
+        name: 'identity',
+        content:
+            '''
 You are ${customName ?? 'Claw'}, an AI coding assistant powered by $_model.
 You are pair programming with the user on their codebase.
 Today's date is ${_formatDate(_now)}.''',
-      priority: 0,
-    ));
+        priority: 0,
+      ),
+    );
   }
 
   /// Add environment context.
@@ -63,11 +66,13 @@ Today's date is ${_formatDate(_now)}.''',
       if (gitBranch != null) 'Git branch: $gitBranch',
     ];
 
-    addSection(PromptSection(
-      name: 'environment',
-      content: parts.join('\n'),
-      priority: 5,
-    ));
+    addSection(
+      PromptSection(
+        name: 'environment',
+        content: parts.join('\n'),
+        priority: 5,
+      ),
+    );
   }
 
   /// Add tool descriptions.
@@ -79,37 +84,35 @@ Today's date is ${_formatDate(_now)}.''',
       buf.writeln('- ${tool.name}: ${tool.description}');
     }
 
-    addSection(PromptSection(
-      name: 'tools',
-      content: buf.toString(),
-      priority: 10,
-    ));
+    addSection(
+      PromptSection(name: 'tools', content: buf.toString(), priority: 10),
+    );
   }
 
   /// Add user instructions (.neomclaw/INSTRUCTIONS.md content).
   void addUserInstructions(String instructions) {
     if (instructions.trim().isEmpty) return;
 
-    addSection(PromptSection(
-      name: 'user_instructions',
-      content: '''
+    addSection(
+      PromptSection(
+        name: 'user_instructions',
+        content: '''
 # User Instructions
 The user has provided the following project-specific instructions:
 
 $instructions''',
-      priority: 20,
-    ));
+        priority: 20,
+      ),
+    );
   }
 
   /// Add memory context.
   void addMemory(String memoryPrompt) {
     if (memoryPrompt.trim().isEmpty) return;
 
-    addSection(PromptSection(
-      name: 'memory',
-      content: memoryPrompt,
-      priority: 25,
-    ));
+    addSection(
+      PromptSection(name: 'memory', content: memoryPrompt, priority: 25),
+    );
   }
 
   /// Add coding conventions.
@@ -127,18 +130,21 @@ $instructions''',
       parts.add('- $rule');
     }
 
-    addSection(PromptSection(
-      name: 'conventions',
-      content: '# Coding Conventions\n${parts.join('\n')}',
-      priority: 30,
-    ));
+    addSection(
+      PromptSection(
+        name: 'conventions',
+        content: '# Coding Conventions\n${parts.join('\n')}',
+        priority: 30,
+      ),
+    );
   }
 
   /// Add safety guidelines.
   void addSafetyGuidelines() {
-    addSection(PromptSection(
-      name: 'safety',
-      content: '''
+    addSection(
+      PromptSection(
+        name: 'safety',
+        content: '''
 # Safety Guidelines
 - NEVER execute destructive operations without explicit user confirmation
 - NEVER commit, push, or modify git history unless specifically asked
@@ -146,36 +152,41 @@ $instructions''',
 - ALWAYS respect file permission boundaries
 - ALWAYS verify paths before file operations
 - When uncertain, ask the user rather than assuming''',
-      priority: 40,
-    ));
+        priority: 40,
+      ),
+    );
   }
 
   /// Add plan mode instructions.
   void addPlanMode() {
-    addSection(PromptSection(
-      name: 'plan_mode',
-      content: '''
+    addSection(
+      PromptSection(
+        name: 'plan_mode',
+        content: '''
 # Plan Mode (Active)
 You are in plan mode. You MUST NOT make any changes to the codebase.
 Instead, analyze the task and propose a detailed implementation plan.
 Use clear numbered steps and identify potential risks or tradeoffs.
 When the user confirms, exit plan mode to begin implementation.''',
-      priority: 1,
-      isConditional: true,
-    ));
+        priority: 1,
+        isConditional: true,
+      ),
+    );
   }
 
   /// Add compact mode context.
   void addCompactContext(String summary) {
-    addSection(PromptSection(
-      name: 'compact_context',
-      content: '''
+    addSection(
+      PromptSection(
+        name: 'compact_context',
+        content: '''
 # Compacted Context
 This conversation has been compacted. Here is the summary of prior context:
 
 $summary''',
-      priority: 3,
-    ));
+        priority: 3,
+      ),
+    );
   }
 
   /// Add MCP server context.
@@ -188,11 +199,9 @@ $summary''',
       buf.writeln('Tools: ${server.tools.join(', ')}');
     }
 
-    addSection(PromptSection(
-      name: 'mcp',
-      content: buf.toString(),
-      priority: 15,
-    ));
+    addSection(
+      PromptSection(name: 'mcp', content: buf.toString(), priority: 15),
+    );
   }
 
   /// Add skill definitions.
@@ -204,11 +213,9 @@ $summary''',
       buf.writeln('- /${skill.name}: ${skill.description}');
     }
 
-    addSection(PromptSection(
-      name: 'skills',
-      content: buf.toString(),
-      priority: 18,
-    ));
+    addSection(
+      PromptSection(name: 'skills', content: buf.toString(), priority: 18),
+    );
   }
 
   /// Build the final system prompt.
@@ -250,8 +257,18 @@ $summary''',
 
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }

@@ -55,40 +55,40 @@ class HistoryEntry {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'sessionId': sessionId,
-        'type': type.name,
-        'timestamp': timestamp.toIso8601String(),
-        'role': role,
-        'content': content,
-        if (metadata != null) 'metadata': metadata,
-        if (toolName != null) 'toolName': toolName,
-        if (toolId != null) 'toolId': toolId,
-        if (tokenCount != null) 'tokenCount': tokenCount,
-        if (cost != null) 'cost': cost,
-        if (latency != null) 'latencyMs': latency!.inMilliseconds,
-        if (parentId != null) 'parentId': parentId,
-        'turnIndex': turnIndex,
-      };
+    'id': id,
+    'sessionId': sessionId,
+    'type': type.name,
+    'timestamp': timestamp.toIso8601String(),
+    'role': role,
+    'content': content,
+    if (metadata != null) 'metadata': metadata,
+    if (toolName != null) 'toolName': toolName,
+    if (toolId != null) 'toolId': toolId,
+    if (tokenCount != null) 'tokenCount': tokenCount,
+    if (cost != null) 'cost': cost,
+    if (latency != null) 'latencyMs': latency!.inMilliseconds,
+    if (parentId != null) 'parentId': parentId,
+    'turnIndex': turnIndex,
+  };
 
   factory HistoryEntry.fromJson(Map<String, dynamic> json) => HistoryEntry(
-        id: json['id'] as String,
-        sessionId: json['sessionId'] as String,
-        type: HistoryEntryType.values.byName(json['type'] as String),
-        timestamp: DateTime.parse(json['timestamp'] as String),
-        role: json['role'] as String,
-        content: json['content'] as String,
-        metadata: json['metadata'] as Map<String, dynamic>?,
-        toolName: json['toolName'] as String?,
-        toolId: json['toolId'] as String?,
-        tokenCount: json['tokenCount'] as int?,
-        cost: json['cost'] as double?,
-        latency: json['latencyMs'] != null
-            ? Duration(milliseconds: json['latencyMs'] as int)
-            : null,
-        parentId: json['parentId'] as String?,
-        turnIndex: json['turnIndex'] as int? ?? 0,
-      );
+    id: json['id'] as String,
+    sessionId: json['sessionId'] as String,
+    type: HistoryEntryType.values.byName(json['type'] as String),
+    timestamp: DateTime.parse(json['timestamp'] as String),
+    role: json['role'] as String,
+    content: json['content'] as String,
+    metadata: json['metadata'] as Map<String, dynamic>?,
+    toolName: json['toolName'] as String?,
+    toolId: json['toolId'] as String?,
+    tokenCount: json['tokenCount'] as int?,
+    cost: json['cost'] as double?,
+    latency: json['latencyMs'] != null
+        ? Duration(milliseconds: json['latencyMs'] as int)
+        : null,
+    parentId: json['parentId'] as String?,
+    turnIndex: json['turnIndex'] as int? ?? 0,
+  );
 
   HistoryEntry copyWith({
     String? id,
@@ -105,23 +105,22 @@ class HistoryEntry {
     Duration? latency,
     String? parentId,
     int? turnIndex,
-  }) =>
-      HistoryEntry(
-        id: id ?? this.id,
-        sessionId: sessionId ?? this.sessionId,
-        type: type ?? this.type,
-        timestamp: timestamp ?? this.timestamp,
-        role: role ?? this.role,
-        content: content ?? this.content,
-        metadata: metadata ?? this.metadata,
-        toolName: toolName ?? this.toolName,
-        toolId: toolId ?? this.toolId,
-        tokenCount: tokenCount ?? this.tokenCount,
-        cost: cost ?? this.cost,
-        latency: latency ?? this.latency,
-        parentId: parentId ?? this.parentId,
-        turnIndex: turnIndex ?? this.turnIndex,
-      );
+  }) => HistoryEntry(
+    id: id ?? this.id,
+    sessionId: sessionId ?? this.sessionId,
+    type: type ?? this.type,
+    timestamp: timestamp ?? this.timestamp,
+    role: role ?? this.role,
+    content: content ?? this.content,
+    metadata: metadata ?? this.metadata,
+    toolName: toolName ?? this.toolName,
+    toolId: toolId ?? this.toolId,
+    tokenCount: tokenCount ?? this.tokenCount,
+    cost: cost ?? this.cost,
+    latency: latency ?? this.latency,
+    parentId: parentId ?? this.parentId,
+    turnIndex: turnIndex ?? this.turnIndex,
+  );
 }
 
 // ─── Session Summary ───
@@ -163,44 +162,41 @@ class SessionSummary {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        if (title != null) 'title': title,
-        'startedAt': startedAt.toIso8601String(),
-        'lastActiveAt': lastActiveAt.toIso8601String(),
-        'messageCount': messageCount,
-        'toolUseCount': toolUseCount,
-        'totalInputTokens': totalInputTokens,
-        'totalOutputTokens': totalOutputTokens,
-        'totalCost': totalCost,
-        'model': model,
-        if (gitBranch != null) 'gitBranch': gitBranch,
-        if (workingDirectory != null) 'workingDirectory': workingDirectory,
-        'toolsUsed': toolsUsed,
-        'isActive': isActive,
-        if (preview != null) 'preview': preview,
-      };
+    'id': id,
+    if (title != null) 'title': title,
+    'startedAt': startedAt.toIso8601String(),
+    'lastActiveAt': lastActiveAt.toIso8601String(),
+    'messageCount': messageCount,
+    'toolUseCount': toolUseCount,
+    'totalInputTokens': totalInputTokens,
+    'totalOutputTokens': totalOutputTokens,
+    'totalCost': totalCost,
+    'model': model,
+    if (gitBranch != null) 'gitBranch': gitBranch,
+    if (workingDirectory != null) 'workingDirectory': workingDirectory,
+    'toolsUsed': toolsUsed,
+    'isActive': isActive,
+    if (preview != null) 'preview': preview,
+  };
 
-  factory SessionSummary.fromJson(Map<String, dynamic> json) =>
-      SessionSummary(
-        id: json['id'] as String,
-        title: json['title'] as String?,
-        startedAt: DateTime.parse(json['startedAt'] as String),
-        lastActiveAt: DateTime.parse(json['lastActiveAt'] as String),
-        messageCount: json['messageCount'] as int? ?? 0,
-        toolUseCount: json['toolUseCount'] as int? ?? 0,
-        totalInputTokens: json['totalInputTokens'] as int? ?? 0,
-        totalOutputTokens: json['totalOutputTokens'] as int? ?? 0,
-        totalCost: (json['totalCost'] as num?)?.toDouble() ?? 0.0,
-        model: json['model'] as String? ?? 'unknown',
-        gitBranch: json['gitBranch'] as String?,
-        workingDirectory: json['workingDirectory'] as String?,
-        toolsUsed: (json['toolsUsed'] as List<dynamic>?)
-                ?.cast<String>()
-                .toList() ??
-            [],
-        isActive: json['isActive'] as bool? ?? false,
-        preview: json['preview'] as String?,
-      );
+  factory SessionSummary.fromJson(Map<String, dynamic> json) => SessionSummary(
+    id: json['id'] as String,
+    title: json['title'] as String?,
+    startedAt: DateTime.parse(json['startedAt'] as String),
+    lastActiveAt: DateTime.parse(json['lastActiveAt'] as String),
+    messageCount: json['messageCount'] as int? ?? 0,
+    toolUseCount: json['toolUseCount'] as int? ?? 0,
+    totalInputTokens: json['totalInputTokens'] as int? ?? 0,
+    totalOutputTokens: json['totalOutputTokens'] as int? ?? 0,
+    totalCost: (json['totalCost'] as num?)?.toDouble() ?? 0.0,
+    model: json['model'] as String? ?? 'unknown',
+    gitBranch: json['gitBranch'] as String?,
+    workingDirectory: json['workingDirectory'] as String?,
+    toolsUsed:
+        (json['toolsUsed'] as List<dynamic>?)?.cast<String>().toList() ?? [],
+    isActive: json['isActive'] as bool? ?? false,
+    preview: json['preview'] as String?,
+  );
 }
 
 // ─── Search ───
@@ -296,24 +292,24 @@ class UsageAnalytics {
   });
 
   Map<String, dynamic> toJson() => {
-        'periodStart': periodStart.toIso8601String(),
-        'periodEnd': periodEnd.toIso8601String(),
-        'totalSessions': totalSessions,
-        'totalMessages': totalMessages,
-        'totalToolUses': totalToolUses,
-        'totalInputTokens': totalInputTokens,
-        'totalOutputTokens': totalOutputTokens,
-        'totalCacheReadTokens': totalCacheReadTokens,
-        'totalCost': totalCost,
-        'totalSessionTimeMs': totalSessionTime.inMilliseconds,
-        'toolUsageCounts': toolUsageCounts,
-        'modelUsageCounts': modelUsageCounts,
-        'commandUsageCounts': commandUsageCounts,
-        'averageTokensPerMessage': averageTokensPerMessage,
-        'averageCostPerSession': averageCostPerSession,
-        'averageSessionDurationMs': averageSessionDuration.inMilliseconds,
-        'peakConcurrentAgents': peakConcurrentAgents,
-      };
+    'periodStart': periodStart.toIso8601String(),
+    'periodEnd': periodEnd.toIso8601String(),
+    'totalSessions': totalSessions,
+    'totalMessages': totalMessages,
+    'totalToolUses': totalToolUses,
+    'totalInputTokens': totalInputTokens,
+    'totalOutputTokens': totalOutputTokens,
+    'totalCacheReadTokens': totalCacheReadTokens,
+    'totalCost': totalCost,
+    'totalSessionTimeMs': totalSessionTime.inMilliseconds,
+    'toolUsageCounts': toolUsageCounts,
+    'modelUsageCounts': modelUsageCounts,
+    'commandUsageCounts': commandUsageCounts,
+    'averageTokensPerMessage': averageTokensPerMessage,
+    'averageCostPerSession': averageCostPerSession,
+    'averageSessionDurationMs': averageSessionDuration.inMilliseconds,
+    'peakConcurrentAgents': peakConcurrentAgents,
+  };
 }
 
 /// Single day usage breakdown.
@@ -362,14 +358,13 @@ class ReplayState {
     int? currentIndex,
     bool? isPlaying,
     Duration? playbackSpeed,
-  }) =>
-      ReplayState(
-        sessionId: sessionId,
-        entries: entries,
-        currentIndex: currentIndex ?? this.currentIndex,
-        isPlaying: isPlaying ?? this.isPlaying,
-        playbackSpeed: playbackSpeed ?? this.playbackSpeed,
-      );
+  }) => ReplayState(
+    sessionId: sessionId,
+    entries: entries,
+    currentIndex: currentIndex ?? this.currentIndex,
+    isPlaying: isPlaying ?? this.isPlaying,
+    playbackSpeed: playbackSpeed ?? this.playbackSpeed,
+  );
 }
 
 // ─── History Service ───
@@ -388,11 +383,11 @@ class HistoryService {
   int _idCounter = 0;
   bool _initialized = false;
 
-  HistoryService({String? baseDir})
-      : _baseDir = baseDir ?? _defaultBaseDir();
+  HistoryService({String? baseDir}) : _baseDir = baseDir ?? _defaultBaseDir();
 
   static String _defaultBaseDir() {
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '.';
     return '$home/.claw/history';
@@ -439,8 +434,7 @@ class HistoryService {
     // Append to session files.
     for (final entry in bySession.entries) {
       final file = File('$_baseDir/${entry.key}.jsonl');
-      final lines =
-          entry.value.map((e) => jsonEncode(e.toJson())).join('\n');
+      final lines = entry.value.map((e) => jsonEncode(e.toJson())).join('\n');
       await file.writeAsString('$lines\n', mode: FileMode.append);
     }
   }
@@ -505,14 +499,13 @@ class HistoryService {
     String sessionId,
     String content, {
     int turnIndex = 0,
-  }) =>
-      record(
-        sessionId: sessionId,
-        type: HistoryEntryType.message,
-        role: 'user',
-        content: content,
-        turnIndex: turnIndex,
-      );
+  }) => record(
+    sessionId: sessionId,
+    type: HistoryEntryType.message,
+    role: 'user',
+    content: content,
+    turnIndex: turnIndex,
+  );
 
   /// Record an assistant message.
   Future<HistoryEntry> recordAssistantMessage(
@@ -522,17 +515,16 @@ class HistoryService {
     double? cost,
     Duration? latency,
     int turnIndex = 0,
-  }) =>
-      record(
-        sessionId: sessionId,
-        type: HistoryEntryType.message,
-        role: 'assistant',
-        content: content,
-        tokenCount: tokenCount,
-        cost: cost,
-        latency: latency,
-        turnIndex: turnIndex,
-      );
+  }) => record(
+    sessionId: sessionId,
+    type: HistoryEntryType.message,
+    role: 'assistant',
+    content: content,
+    tokenCount: tokenCount,
+    cost: cost,
+    latency: latency,
+    turnIndex: turnIndex,
+  );
 
   /// Record a tool use.
   Future<HistoryEntry> recordToolUse(
@@ -541,16 +533,15 @@ class HistoryService {
     required String toolId,
     required Map<String, dynamic> input,
     int turnIndex = 0,
-  }) =>
-      record(
-        sessionId: sessionId,
-        type: HistoryEntryType.toolUse,
-        role: 'assistant',
-        content: jsonEncode(input),
-        toolName: toolName,
-        toolId: toolId,
-        turnIndex: turnIndex,
-      );
+  }) => record(
+    sessionId: sessionId,
+    type: HistoryEntryType.toolUse,
+    role: 'assistant',
+    content: jsonEncode(input),
+    toolName: toolName,
+    toolId: toolId,
+    turnIndex: turnIndex,
+  );
 
   /// Record a tool result.
   Future<HistoryEntry> recordToolResult(
@@ -561,18 +552,17 @@ class HistoryService {
     bool isError = false,
     Duration? latency,
     int turnIndex = 0,
-  }) =>
-      record(
-        sessionId: sessionId,
-        type: HistoryEntryType.toolResult,
-        role: 'tool',
-        content: output,
-        toolName: toolName,
-        toolId: toolId,
-        latency: latency,
-        metadata: isError ? {'isError': true} : null,
-        turnIndex: turnIndex,
-      );
+  }) => record(
+    sessionId: sessionId,
+    type: HistoryEntryType.toolResult,
+    role: 'tool',
+    content: output,
+    toolName: toolName,
+    toolId: toolId,
+    latency: latency,
+    metadata: isError ? {'isError': true} : null,
+    turnIndex: turnIndex,
+  );
 
   /// Record a slash command execution.
   Future<HistoryEntry> recordCommand(
@@ -581,15 +571,14 @@ class HistoryService {
     required String args,
     required String result,
     int turnIndex = 0,
-  }) =>
-      record(
-        sessionId: sessionId,
-        type: HistoryEntryType.command,
-        role: 'system',
-        content: result,
-        metadata: {'command': commandName, 'args': args},
-        turnIndex: turnIndex,
-      );
+  }) => record(
+    sessionId: sessionId,
+    type: HistoryEntryType.command,
+    role: 'system',
+    content: result,
+    metadata: {'command': commandName, 'args': args},
+    turnIndex: turnIndex,
+  );
 
   // ─── Read ───
 
@@ -609,9 +598,9 @@ class HistoryService {
     for (final line in lines) {
       if (line.trim().isEmpty) continue;
       try {
-        entries.add(HistoryEntry.fromJson(
-          jsonDecode(line) as Map<String, dynamic>,
-        ));
+        entries.add(
+          HistoryEntry.fromJson(jsonDecode(line) as Map<String, dynamic>),
+        );
       } catch (_) {
         // Skip malformed entries.
       }
@@ -656,13 +645,15 @@ class HistoryService {
     }
 
     if (after != null) {
-      summaries =
-          summaries.where((s) => s.lastActiveAt.isAfter(after)).toList();
+      summaries = summaries
+          .where((s) => s.lastActiveAt.isAfter(after))
+          .toList();
     }
 
     if (before != null) {
-      summaries =
-          summaries.where((s) => s.lastActiveAt.isBefore(before)).toList();
+      summaries = summaries
+          .where((s) => s.lastActiveAt.isBefore(before))
+          .toList();
     }
 
     // Sort.
@@ -676,8 +667,9 @@ class HistoryService {
         case 'cost':
           cmp = a.totalCost.compareTo(b.totalCost);
         case 'tokens':
-          cmp = (a.totalInputTokens + a.totalOutputTokens)
-              .compareTo(b.totalInputTokens + b.totalOutputTokens);
+          cmp = (a.totalInputTokens + a.totalOutputTokens).compareTo(
+            b.totalInputTokens + b.totalOutputTokens,
+          );
         default: // 'lastActive'
           cmp = a.lastActiveAt.compareTo(b.lastActiveAt);
       }
@@ -705,8 +697,10 @@ class HistoryService {
       if (await dir.exists()) {
         await for (final entity in dir.list()) {
           if (entity is File && entity.path.endsWith('.jsonl')) {
-            final sessionId =
-                entity.uri.pathSegments.last.replaceAll('.jsonl', '');
+            final sessionId = entity.uri.pathSegments.last.replaceAll(
+              '.jsonl',
+              '',
+            );
             allEntries.addAll(await getSessionHistory(sessionId));
           }
         }
@@ -724,12 +718,10 @@ class HistoryService {
       if (query.before != null && e.timestamp.isAfter(query.before!)) {
         return false;
       }
-      if (query.minTokens != null &&
-          (e.tokenCount ?? 0) < query.minTokens!) {
+      if (query.minTokens != null && (e.tokenCount ?? 0) < query.minTokens!) {
         return false;
       }
-      if (query.maxTokens != null &&
-          (e.tokenCount ?? 0) > query.maxTokens!) {
+      if (query.maxTokens != null && (e.tokenCount ?? 0) > query.maxTokens!) {
         return false;
       }
       if (query.text != null && query.text!.isNotEmpty) {
@@ -741,9 +733,11 @@ class HistoryService {
     }).toList();
 
     // Sort.
-    filtered.sort((a, b) => query.sortDescending
-        ? b.timestamp.compareTo(a.timestamp)
-        : a.timestamp.compareTo(b.timestamp));
+    filtered.sort(
+      (a, b) => query.sortDescending
+          ? b.timestamp.compareTo(a.timestamp)
+          : a.timestamp.compareTo(b.timestamp),
+    );
 
     sw.stop();
 
@@ -775,8 +769,7 @@ class HistoryService {
     if (await dir.exists()) {
       await for (final entity in dir.list()) {
         if (entity is File && entity.path.endsWith('.jsonl')) {
-          final sid =
-              entity.uri.pathSegments.last.replaceAll('.jsonl', '');
+          final sid = entity.uri.pathSegments.last.replaceAll('.jsonl', '');
           final entries = await getSessionHistory(sid);
           final inRange = entries.where(
             (e) => e.timestamp.isAfter(start) && e.timestamp.isBefore(end),
@@ -826,7 +819,8 @@ class HistoryService {
       dailyMap[dayKey] = DailyUsage(
         date: DateTime(e.timestamp.year, e.timestamp.month, e.timestamp.day),
         sessions: existing?.sessions ?? 0,
-        messages: (existing?.messages ?? 0) +
+        messages:
+            (existing?.messages ?? 0) +
             (e.type == HistoryEntryType.message ? 1 : 0),
         tokens: (existing?.tokens ?? 0) + (e.tokenCount ?? 0),
         cost: (existing?.cost ?? 0) + (e.cost ?? 0),
@@ -845,10 +839,10 @@ class HistoryService {
       toolUsageCounts: toolCounts,
       modelUsageCounts: modelCounts,
       commandUsageCounts: commandCounts,
-      averageTokensPerMessage:
-          messages > 0 ? totalInput / messages : 0,
-      averageCostPerSession:
-          sessionIds.isNotEmpty ? totalCost / sessionIds.length : 0,
+      averageTokensPerMessage: messages > 0 ? totalInput / messages : 0,
+      averageCostPerSession: sessionIds.isNotEmpty
+          ? totalCost / sessionIds.length
+          : 0,
       dailyBreakdown: dailyMap.values.toList()
         ..sort((a, b) => a.date.compareTo(b.date)),
     );
@@ -907,11 +901,9 @@ class HistoryService {
     required int fromTurnIndex,
   }) async {
     final entries = await getSessionHistory(sessionId);
-    final forked =
-        entries.where((e) => e.turnIndex <= fromTurnIndex).toList();
+    final forked = entries.where((e) => e.turnIndex <= fromTurnIndex).toList();
 
-    final newId =
-        'fork_${DateTime.now().millisecondsSinceEpoch}';
+    final newId = 'fork_${DateTime.now().millisecondsSinceEpoch}';
 
     // Write forked entries.
     for (final entry in forked) {
@@ -980,9 +972,10 @@ class HistoryService {
             buffer.writeln('#### Result');
             buffer.writeln('```');
             buffer.writeln(
-                e.content.length > 500
-                    ? '${e.content.substring(0, 500)}...'
-                    : e.content);
+              e.content.length > 500
+                  ? '${e.content.substring(0, 500)}...'
+                  : e.content,
+            );
             buffer.writeln('```');
           }
           buffer.writeln();
@@ -1007,8 +1000,7 @@ class HistoryService {
         final stat = await entity.stat();
         if (stat.modified.isBefore(cutoff)) {
           await entity.delete();
-          final sid =
-              entity.uri.pathSegments.last.replaceAll('.jsonl', '');
+          final sid = entity.uri.pathSegments.last.replaceAll('.jsonl', '');
           _sessionCache.remove(sid);
           _summaryCache.remove(sid);
           deleted++;
@@ -1036,9 +1028,11 @@ class HistoryService {
       title: existing?.title,
       startedAt: existing?.startedAt ?? entry.timestamp,
       lastActiveAt: entry.timestamp,
-      messageCount: (existing?.messageCount ?? 0) +
+      messageCount:
+          (existing?.messageCount ?? 0) +
           (entry.type == HistoryEntryType.message ? 1 : 0),
-      toolUseCount: (existing?.toolUseCount ?? 0) +
+      toolUseCount:
+          (existing?.toolUseCount ?? 0) +
           (entry.type == HistoryEntryType.toolUse ? 1 : 0),
       totalInputTokens:
           (existing?.totalInputTokens ?? 0) + (entry.tokenCount ?? 0),
@@ -1046,19 +1040,19 @@ class HistoryService {
       model: existing?.model ?? 'unknown',
       toolsUsed: toolsUsed,
       isActive: true,
-      preview: existing?.preview ??
+      preview:
+          existing?.preview ??
           (entry.role == 'user' && entry.type == HistoryEntryType.message
               ? (entry.content.length > 100
-                  ? '${entry.content.substring(0, 100)}...'
-                  : entry.content)
+                    ? '${entry.content.substring(0, 100)}...'
+                    : entry.content)
               : null),
     );
 
     _sessionStream.add(_summaryCache[sid]!);
   }
 
-  SessionSummary _buildSummary(
-      String sessionId, List<HistoryEntry> entries) {
+  SessionSummary _buildSummary(String sessionId, List<HistoryEntry> entries) {
     final toolsUsed = <String>{};
     int messages = 0;
     int toolUses = 0;
@@ -1106,8 +1100,7 @@ class HistoryService {
       final content = await indexFile.readAsString();
       final list = jsonDecode(content) as List<dynamic>;
       for (final item in list) {
-        final summary =
-            SessionSummary.fromJson(item as Map<String, dynamic>);
+        final summary = SessionSummary.fromJson(item as Map<String, dynamic>);
         _summaryCache[summary.id] = summary;
       }
     } catch (_) {

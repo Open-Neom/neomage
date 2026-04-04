@@ -15,13 +15,10 @@ Map<String, Map<String, dynamic>> getAllToolSchemas() =>
 List<String> getAllToolNames() => _schemas.keys.toList();
 
 Map<String, dynamic> _unknownToolSchema(String name) => {
-      'name': name,
-      'description': 'Unknown tool: $name',
-      'input_schema': {
-        'type': 'object',
-        'properties': {},
-      },
-    };
+  'name': name,
+  'description': 'Unknown tool: $name',
+  'input_schema': {'type': 'object', 'properties': {}},
+};
 
 final _schemas = <String, Map<String, dynamic>>{
   // ── Read ──
@@ -51,7 +48,8 @@ final _schemas = <String, Map<String, dynamic>>{
         },
         'pages': {
           'type': 'string',
-          'description': 'Page range for PDF files (e.g., "1-5", "3", "10-20").',
+          'description':
+              'Page range for PDF files (e.g., "1-5", "3", "10-20").',
         },
       },
       'required': ['file_path'],
@@ -72,17 +70,16 @@ final _schemas = <String, Map<String, dynamic>>{
           'type': 'string',
           'description': 'The absolute path to the file to modify',
         },
-        'old_string': {
-          'type': 'string',
-          'description': 'The text to replace',
-        },
+        'old_string': {'type': 'string', 'description': 'The text to replace'},
         'new_string': {
           'type': 'string',
-          'description': 'The text to replace it with (must be different from old_string)',
+          'description':
+              'The text to replace it with (must be different from old_string)',
         },
         'replace_all': {
           'type': 'boolean',
-          'description': 'Replace all occurrences of old_string (default false)',
+          'description':
+              'Replace all occurrences of old_string (default false)',
           'default': false,
         },
       },
@@ -101,7 +98,8 @@ final _schemas = <String, Map<String, dynamic>>{
       'properties': {
         'file_path': {
           'type': 'string',
-          'description': 'The absolute path to the file to write (must be absolute)',
+          'description':
+              'The absolute path to the file to write (must be absolute)',
         },
         'content': {
           'type': 'string',
@@ -121,10 +119,7 @@ final _schemas = <String, Map<String, dynamic>>{
     'input_schema': {
       'type': 'object',
       'properties': {
-        'command': {
-          'type': 'string',
-          'description': 'The command to execute',
-        },
+        'command': {'type': 'string', 'description': 'The command to execute'},
         'description': {
           'type': 'string',
           'description': 'Clear, concise description of what this command does',
@@ -156,10 +151,7 @@ final _schemas = <String, Map<String, dynamic>>{
           'type': 'string',
           'description': 'The glob pattern to match files against',
         },
-        'path': {
-          'type': 'string',
-          'description': 'The directory to search in',
-        },
+        'path': {'type': 'string', 'description': 'The directory to search in'},
       },
       'required': ['pattern'],
     },
@@ -203,14 +195,8 @@ final _schemas = <String, Map<String, dynamic>>{
           'type': 'number',
           'description': 'Limit output to first N lines/entries.',
         },
-        '-i': {
-          'type': 'boolean',
-          'description': 'Case insensitive search',
-        },
-        '-n': {
-          'type': 'boolean',
-          'description': 'Show line numbers in output',
-        },
+        '-i': {'type': 'boolean', 'description': 'Case insensitive search'},
+        '-n': {'type': 'boolean', 'description': 'Show line numbers in output'},
         '-A': {
           'type': 'number',
           'description': 'Lines to show after each match',
@@ -366,15 +352,11 @@ final _schemas = <String, Map<String, dynamic>>{
   // ── WebFetch ──
   'WebFetch': {
     'name': 'WebFetch',
-    'description':
-        'Fetches content from a URL and returns it as markdown.',
+    'description': 'Fetches content from a URL and returns it as markdown.',
     'input_schema': {
       'type': 'object',
       'properties': {
-        'url': {
-          'type': 'string',
-          'description': 'The URL to fetch',
-        },
+        'url': {'type': 'string', 'description': 'The URL to fetch'},
         'prompt': {
           'type': 'string',
           'description': 'Optional prompt to apply to the fetched content',
@@ -391,10 +373,7 @@ final _schemas = <String, Map<String, dynamic>>{
     'input_schema': {
       'type': 'object',
       'properties': {
-        'query': {
-          'type': 'string',
-          'description': 'The search query',
-        },
+        'query': {'type': 'string', 'description': 'The search query'},
         'max_results': {
           'type': 'number',
           'description': 'Maximum number of results (default: 5)',
@@ -425,10 +404,7 @@ final _schemas = <String, Map<String, dynamic>>{
           'type': 'number',
           'description': 'The index of the cell to operate on',
         },
-        'content': {
-          'type': 'string',
-          'description': 'The new cell content',
-        },
+        'content': {'type': 'string', 'description': 'The new cell content'},
         'cell_type': {
           'type': 'string',
           'enum': ['code', 'markdown', 'raw'],
@@ -501,17 +477,13 @@ final _schemas = <String, Map<String, dynamic>>{
 };
 
 /// Validate tool input against schema.
-List<String> validateToolInput(
-    String toolName, Map<String, dynamic> input) {
+List<String> validateToolInput(String toolName, Map<String, dynamic> input) {
   final schema = _schemas[toolName];
   if (schema == null) return ['Unknown tool: $toolName'];
 
-  final inputSchema =
-      schema['input_schema'] as Map<String, dynamic>? ?? {};
-  final required =
-      (inputSchema['required'] as List?)?.cast<String>() ?? [];
-  final properties =
-      inputSchema['properties'] as Map<String, dynamic>? ?? {};
+  final inputSchema = schema['input_schema'] as Map<String, dynamic>? ?? {};
+  final required = (inputSchema['required'] as List?)?.cast<String>() ?? [];
+  final properties = inputSchema['properties'] as Map<String, dynamic>? ?? {};
 
   final errors = <String>[];
 
@@ -539,7 +511,8 @@ List<String> validateToolInput(
       };
       if (!valid) {
         errors.add(
-            'Field "${entry.key}" expected $expectedType but got ${entry.value.runtimeType}');
+          'Field "${entry.key}" expected $expectedType but got ${entry.value.runtimeType}',
+        );
       }
     }
 
@@ -547,7 +520,8 @@ List<String> validateToolInput(
     final enumValues = prop['enum'] as List?;
     if (enumValues != null && !enumValues.contains(entry.value)) {
       errors.add(
-          'Field "${entry.key}" must be one of: ${enumValues.join(", ")}');
+        'Field "${entry.key}" must be one of: ${enumValues.join(", ")}',
+      );
     }
   }
 
@@ -563,12 +537,9 @@ String formatToolSchema(String toolName) {
   buffer.writeln('Tool: ${schema['name']}');
   buffer.writeln('Description: ${schema['description']}');
 
-  final inputSchema =
-      schema['input_schema'] as Map<String, dynamic>? ?? {};
-  final properties =
-      inputSchema['properties'] as Map<String, dynamic>? ?? {};
-  final required =
-      (inputSchema['required'] as List?)?.cast<String>() ?? [];
+  final inputSchema = schema['input_schema'] as Map<String, dynamic>? ?? {};
+  final properties = inputSchema['properties'] as Map<String, dynamic>? ?? {};
+  final required = (inputSchema['required'] as List?)?.cast<String>() ?? [];
 
   if (properties.isNotEmpty) {
     buffer.writeln('Parameters:');

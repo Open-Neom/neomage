@@ -6,10 +6,10 @@ import 'package:neom_claw/core/platform/claw_io.dart';
 
 /// Settings sources in priority order.
 enum SettingsSource {
-  policy,   // MDM-managed (highest priority)
-  project,  // .neomclaw/settings.json
-  local,    // .neomclaw/settings.local.json (gitignored)
-  user,     // ~/.neomclaw/settings.json
+  policy, // MDM-managed (highest priority)
+  project, // .neomclaw/settings.json
+  local, // .neomclaw/settings.local.json (gitignored)
+  user, // ~/.neomclaw/settings.json
 }
 
 /// Sandbox settings.
@@ -39,12 +39,12 @@ class SandboxSettings {
       );
 
   Map<String, dynamic> toJson() => {
-        'enabled': enabled,
-        if (excludedCommands.isNotEmpty) 'excludedCommands': excludedCommands,
-        if (readPaths.isNotEmpty) 'readPaths': readPaths,
-        if (writePaths.isNotEmpty) 'writePaths': writePaths,
-        'networkEnabled': networkEnabled,
-      };
+    'enabled': enabled,
+    if (excludedCommands.isNotEmpty) 'excludedCommands': excludedCommands,
+    if (readPaths.isNotEmpty) 'readPaths': readPaths,
+    if (writePaths.isNotEmpty) 'writePaths': writePaths,
+    'networkEnabled': networkEnabled,
+  };
 }
 
 /// Hook settings entry.
@@ -86,15 +86,15 @@ class PermissionSettings {
       );
 
   Map<String, dynamic> toJson() => {
-        if (allow.isNotEmpty) 'allow': allow,
-        if (deny.isNotEmpty) 'deny': deny,
-        if (ask.isNotEmpty) 'ask': ask,
-        if (defaultMode != null) 'defaultMode': defaultMode,
-        if (disableBypassPermissionsMode == true)
-          'disableBypassPermissionsMode': 'disable',
-        if (additionalDirectories.isNotEmpty)
-          'additionalDirectories': additionalDirectories,
-      };
+    if (allow.isNotEmpty) 'allow': allow,
+    if (deny.isNotEmpty) 'deny': deny,
+    if (ask.isNotEmpty) 'ask': ask,
+    if (defaultMode != null) 'defaultMode': defaultMode,
+    if (disableBypassPermissionsMode == true)
+      'disableBypassPermissionsMode': 'disable',
+    if (additionalDirectories.isNotEmpty)
+      'additionalDirectories': additionalDirectories,
+  };
 }
 
 /// Full settings JSON structure.
@@ -134,7 +134,8 @@ class SettingsJson {
       model: json['model'] as String?,
       permissions: json['permissions'] is Map<String, dynamic>
           ? PermissionSettings.fromJson(
-              json['permissions'] as Map<String, dynamic>)
+              json['permissions'] as Map<String, dynamic>,
+            )
           : const PermissionSettings(),
       sandbox: json['sandbox'] is Map<String, dynamic>
           ? SandboxSettings.fromJson(json['sandbox'] as Map<String, dynamic>)
@@ -142,18 +143,18 @@ class SettingsJson {
       hooks: json['hooks'] as Map<String, dynamic>?,
       installedPlugins: (json['plugins'] is Map<String, dynamic>)
           ? ((json['plugins'] as Map<String, dynamic>)['installed'] as List?)
-                  ?.cast<String>() ??
-              []
+                    ?.cast<String>() ??
+                []
           : [],
       environmentVariables:
           (json['environmentVariables'] as Map<String, dynamic>?)
-                  ?.cast<String, String>() ??
-              {},
-      modelOverrides: (json['modelOverrides'] as Map<String, dynamic>?)
               ?.cast<String, String>() ??
           {},
-      availableModels:
-          (json['availableModels'] as List?)?.cast<String>() ?? [],
+      modelOverrides:
+          (json['modelOverrides'] as Map<String, dynamic>?)
+              ?.cast<String, String>() ??
+          {},
+      availableModels: (json['availableModels'] as List?)?.cast<String>() ?? [],
       allowManagedPermissionRulesOnly:
           json['allowManagedPermissionRulesOnly'] as bool? ?? false,
       syntaxHighlightingEnabled:
@@ -216,19 +217,14 @@ Future<SettingsJson> loadMergedSettings({
 }) async {
   // Load each source
   final policy = policyPath != null ? await loadSettingsFile(policyPath) : null;
-  final project =
-      await loadSettingsFile('$projectDir/.neomclaw/settings.json');
-  final local =
-      await loadSettingsFile('$projectDir/.neomclaw/settings.local.json');
+  final project = await loadSettingsFile('$projectDir/.neomclaw/settings.json');
+  final local = await loadSettingsFile(
+    '$projectDir/.neomclaw/settings.local.json',
+  );
   final user = await loadSettingsFile('$userConfigDir/settings.json');
 
   // Merge (later sources fill gaps, earlier sources take priority)
-  return mergeSettings([
-    if (policy != null) policy,
-    if (project != null) project,
-    if (local != null) local,
-    if (user != null) user,
-  ]);
+  return mergeSettings([?policy, ?project, ?local, ?user]);
 }
 
 /// Merge multiple settings (first takes priority).
@@ -306,7 +302,9 @@ SettingsJson mergeSettings(List<SettingsJson> sources) {
       additionalDirectories: allAdditionalDirs,
     ),
     sandbox: sandbox,
-    hooks: sources.firstWhere((s) => s.hooks != null, orElse: () => const SettingsJson()).hooks,
+    hooks: sources
+        .firstWhere((s) => s.hooks != null, orElse: () => const SettingsJson())
+        .hooks,
     installedPlugins: sources
         .expand((s) => s.installedPlugins)
         .toSet()
@@ -315,29 +313,26 @@ SettingsJson mergeSettings(List<SettingsJson> sources) {
     modelOverrides: modelOverrides,
     availableModels: availableModels,
     allowManagedPermissionRulesOnly: managedOnly,
-    syntaxHighlightingEnabled:
-        sources.first.syntaxHighlightingEnabled,
-    theme: sources.map((s) => s.theme).firstWhere((t) => t != null, orElse: () => null),
-    outputStyle: sources.map((s) => s.outputStyle).firstWhere((o) => o != null, orElse: () => null),
+    syntaxHighlightingEnabled: sources.first.syntaxHighlightingEnabled,
+    theme: sources
+        .map((s) => s.theme)
+        .firstWhere((t) => t != null, orElse: () => null),
+    outputStyle: sources
+        .map((s) => s.outputStyle)
+        .firstWhere((o) => o != null, orElse: () => null),
   );
 }
 
 // ── Settings Writing ──
 
 /// Write settings to a file (preserves unknown fields).
-Future<void> writeSettingsFile(
-  String path,
-  SettingsJson settings,
-) async {
+Future<void> writeSettingsFile(String path, SettingsJson settings) async {
   final file = File(path);
   await file.parent.create(recursive: true);
 
   // Merge with existing raw to preserve unknown fields
   final existing = await loadSettingsFile(path);
-  final merged = <String, dynamic>{
-    ...?existing?.raw,
-    ...settings.toJson(),
-  };
+  final merged = <String, dynamic>{...?existing?.raw, ...settings.toJson()};
 
   final encoder = const JsonEncoder.withIndent('  ');
   await file.writeAsString('${encoder.convert(merged)}\n');
@@ -369,45 +364,59 @@ List<SettingsChange> detectChanges(
   final changes = <SettingsChange>[];
 
   if (oldSettings.model != newSettings.model) {
-    changes.add(SettingsChange(
-      field: 'model',
-      oldValue: oldSettings.model,
-      newValue: newSettings.model,
-    ));
+    changes.add(
+      SettingsChange(
+        field: 'model',
+        oldValue: oldSettings.model,
+        newValue: newSettings.model,
+      ),
+    );
   }
 
   // Permission changes
   if (!_listEquals(
-      oldSettings.permissions.allow, newSettings.permissions.allow)) {
-    changes.add(SettingsChange(
-      field: 'permissions.allow',
-      oldValue: oldSettings.permissions.allow,
-      newValue: newSettings.permissions.allow,
-    ));
+    oldSettings.permissions.allow,
+    newSettings.permissions.allow,
+  )) {
+    changes.add(
+      SettingsChange(
+        field: 'permissions.allow',
+        oldValue: oldSettings.permissions.allow,
+        newValue: newSettings.permissions.allow,
+      ),
+    );
   }
   if (!_listEquals(
-      oldSettings.permissions.deny, newSettings.permissions.deny)) {
-    changes.add(SettingsChange(
-      field: 'permissions.deny',
-      oldValue: oldSettings.permissions.deny,
-      newValue: newSettings.permissions.deny,
-    ));
+    oldSettings.permissions.deny,
+    newSettings.permissions.deny,
+  )) {
+    changes.add(
+      SettingsChange(
+        field: 'permissions.deny',
+        oldValue: oldSettings.permissions.deny,
+        newValue: newSettings.permissions.deny,
+      ),
+    );
   }
 
   if (oldSettings.sandbox.enabled != newSettings.sandbox.enabled) {
-    changes.add(SettingsChange(
-      field: 'sandbox.enabled',
-      oldValue: oldSettings.sandbox.enabled,
-      newValue: newSettings.sandbox.enabled,
-    ));
+    changes.add(
+      SettingsChange(
+        field: 'sandbox.enabled',
+        oldValue: oldSettings.sandbox.enabled,
+        newValue: newSettings.sandbox.enabled,
+      ),
+    );
   }
 
   if (oldSettings.theme != newSettings.theme) {
-    changes.add(SettingsChange(
-      field: 'theme',
-      oldValue: oldSettings.theme,
-      newValue: newSettings.theme,
-    ));
+    changes.add(
+      SettingsChange(
+        field: 'theme',
+        oldValue: oldSettings.theme,
+        newValue: newSettings.theme,
+      ),
+    );
   }
 
   return changes;

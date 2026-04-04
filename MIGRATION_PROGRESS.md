@@ -1,8 +1,7 @@
 # Neom Claw — Migration Progress
 
-## Source: NeomClaw (Claude Code leaked source, ~517K LOC TypeScript, 1,921 files)
-## Target: flutter_claw (Flutter + Sint framework, Open Neom ecosystem)
-## Plan: `/Users/serzen/.claude/plans/nested-fluttering-lamport.md`
+## Source: NeomClaw TypeScript reference (~517K LOC, 1,921 files)
+## Target: neom_claw (Flutter + Sint framework, Open Neom ecosystem)
 
 ---
 

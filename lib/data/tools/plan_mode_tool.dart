@@ -20,11 +20,13 @@ class PlanModeInput {
 
   factory PlanModeInput.fromMap(Map<String, dynamic> map) {
     return PlanModeInput(
-      action: map['action'] as String? ??
+      action:
+          map['action'] as String? ??
           map['reason'] as String? ??
           map['plan_summary'] as String? ??
           '',
-      planText: map['plan_text'] as String? ??
+      planText:
+          map['plan_text'] as String? ??
           map['reason'] as String? ??
           map['plan_summary'] as String?,
     );
@@ -133,16 +135,16 @@ class EnterPlanModeTool extends Tool with ReadOnlyToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'reason': {
-            'type': 'string',
-            'description': 'Reason for entering plan mode',
-          },
-        },
-        'required': ['reason'],
-        'additionalProperties': false,
-      };
+    'type': 'object',
+    'properties': {
+      'reason': {
+        'type': 'string',
+        'description': 'Reason for entering plan mode',
+      },
+    },
+    'required': ['reason'],
+    'additionalProperties': false,
+  };
 
   @override
   bool get alwaysLoad => true;
@@ -206,16 +208,16 @@ class ExitPlanModeTool extends Tool with ReadOnlyToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'plan_summary': {
-            'type': 'string',
-            'description': 'Summary of the plan to execute',
-          },
-        },
-        'required': ['plan_summary'],
-        'additionalProperties': false,
-      };
+    'type': 'object',
+    'properties': {
+      'plan_summary': {
+        'type': 'string',
+        'description': 'Summary of the plan to execute',
+      },
+    },
+    'required': ['plan_summary'],
+    'additionalProperties': false,
+  };
 
   @override
   bool get alwaysLoad => true;
@@ -232,9 +234,7 @@ class ExitPlanModeTool extends Tool with ReadOnlyToolMixin {
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
     if (!_state.isInPlanMode) {
-      return ToolResult.error(
-        'Not in plan mode. Use EnterPlanMode first.',
-      );
+      return ToolResult.error('Not in plan mode. Use EnterPlanMode first.');
     }
 
     final summary = input['plan_summary'] as String? ?? '';

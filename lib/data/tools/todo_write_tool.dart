@@ -16,22 +16,22 @@ class TodoItem {
   });
 
   factory TodoItem.fromJson(Map<String, dynamic> json) => TodoItem(
-        content: json['content'] as String,
-        activeForm: json['activeForm'] as String? ?? json['content'] as String,
-        status: TodoStatus.fromString(json['status'] as String? ?? 'pending'),
-      );
+    content: json['content'] as String,
+    activeForm: json['activeForm'] as String? ?? json['content'] as String,
+    status: TodoStatus.fromString(json['status'] as String? ?? 'pending'),
+  );
 
   Map<String, dynamic> toJson() => {
-        'content': content,
-        'activeForm': activeForm,
-        'status': status.name,
-      };
+    'content': content,
+    'activeForm': activeForm,
+    'status': status.name,
+  };
 
   TodoItem copyWith({TodoStatus? status}) => TodoItem(
-        content: content,
-        activeForm: activeForm,
-        status: status ?? this.status,
-      );
+    content: content,
+    activeForm: activeForm,
+    status: status ?? this.status,
+  );
 }
 
 /// Status of a todo item.
@@ -41,18 +41,18 @@ enum TodoStatus {
   completed;
 
   static TodoStatus fromString(String s) => switch (s) {
-        'in_progress' => TodoStatus.inProgress,
-        'inProgress' => TodoStatus.inProgress,
-        'completed' => TodoStatus.completed,
-        _ => TodoStatus.pending,
-      };
+    'in_progress' => TodoStatus.inProgress,
+    'inProgress' => TodoStatus.inProgress,
+    'completed' => TodoStatus.completed,
+    _ => TodoStatus.pending,
+  };
 
   @override
   String toString() => switch (this) {
-        TodoStatus.pending => 'pending',
-        TodoStatus.inProgress => 'in_progress',
-        TodoStatus.completed => 'completed',
-      };
+    TodoStatus.pending => 'pending',
+    TodoStatus.inProgress => 'in_progress',
+    TodoStatus.completed => 'completed',
+  };
 }
 
 /// Callback for persisting todos.
@@ -79,33 +79,33 @@ class TodoWriteTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'todos': {
-            'type': 'array',
-            'items': {
-              'type': 'object',
-              'properties': {
-                'content': {
-                  'type': 'string',
-                  'description': 'Task description (imperative form)',
-                },
-                'activeForm': {
-                  'type': 'string',
-                  'description': 'Task description (present continuous form)',
-                },
-                'status': {
-                  'type': 'string',
-                  'enum': ['pending', 'in_progress', 'completed'],
-                  'description': 'Current task status',
-                },
-              },
-              'required': ['content', 'status'],
+    'type': 'object',
+    'properties': {
+      'todos': {
+        'type': 'array',
+        'items': {
+          'type': 'object',
+          'properties': {
+            'content': {
+              'type': 'string',
+              'description': 'Task description (imperative form)',
+            },
+            'activeForm': {
+              'type': 'string',
+              'description': 'Task description (present continuous form)',
+            },
+            'status': {
+              'type': 'string',
+              'enum': ['pending', 'in_progress', 'completed'],
+              'description': 'Current task status',
             },
           },
+          'required': ['content', 'status'],
         },
-        'required': ['todos'],
-      };
+      },
+    },
+    'required': ['todos'],
+  };
 
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
@@ -113,10 +113,7 @@ class TodoWriteTool extends Tool {
   }
 
   /// Execute with a specific todo key (session/agent ID).
-  Future<ToolResult> executeForKey(
-    Map<String, dynamic> input,
-    String todoKey,
-  ) {
+  Future<ToolResult> executeForKey(Map<String, dynamic> input, String todoKey) {
     return _executeWithKey(input, todoKey);
   }
 

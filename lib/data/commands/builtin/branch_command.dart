@@ -1,5 +1,5 @@
 // /branch command — conversation branching (fork) command.
-// Faithful port of openneomclaw/src/commands/branch/branch.ts (296 TS LOC).
+// Faithful port of neom_claw/src/commands/branch/branch.ts (296 TS LOC).
 //
 // Creates a fork of the current conversation by copying from the transcript
 // file. Preserves all original metadata (timestamps, gitBranch, etc.) while
@@ -12,7 +12,6 @@ import 'dart:math';
 
 import 'package:path/path.dart' as p;
 
-import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';
 import '../command.dart';
 
@@ -88,15 +87,12 @@ class ForkOrigin {
   final String sessionId;
   final String messageUuid;
 
-  const ForkOrigin({
-    required this.sessionId,
-    required this.messageUuid,
-  });
+  const ForkOrigin({required this.sessionId, required this.messageUuid});
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'messageUuid': messageUuid,
-      };
+    'sessionId': sessionId,
+    'messageUuid': messageUuid,
+  };
 }
 
 // ============================================================================
@@ -118,7 +114,8 @@ class ContentReplacementEntry {
   factory ContentReplacementEntry.fromJson(Map<String, dynamic> json) {
     return ContentReplacementEntry(
       sessionId: json['sessionId'] as String? ?? '',
-      replacements: (json['replacements'] as List<dynamic>?)
+      replacements:
+          (json['replacements'] as List<dynamic>?)
               ?.map((e) => Map<String, dynamic>.from(e as Map))
               .toList() ??
           [],
@@ -126,10 +123,10 @@ class ContentReplacementEntry {
   }
 
   Map<String, dynamic> toJson() => {
-        'type': 'content-replacement',
-        'sessionId': sessionId,
-        'replacements': replacements,
-      };
+    'type': 'content-replacement',
+    'sessionId': sessionId,
+    'replacements': replacements,
+  };
 }
 
 // ============================================================================
@@ -190,7 +187,8 @@ class ForkResult {
 
 /// Get the project directory for session storage.
 String getProjectDir(String cwd) {
-  final home = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
+  final home =
+      Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
   return p.join(home, '.neomclaw', 'projects', _sanitizePath(cwd));
 }
 
@@ -277,9 +275,9 @@ Future<void> saveCustomTitle(
     'forkPath': forkPath,
     'savedAt': DateTime.now().toIso8601String(),
   };
-  await File(metaPath).writeAsString(
-    const JsonEncoder.withIndent('  ').convert(meta),
-  );
+  await File(
+    metaPath,
+  ).writeAsString(const JsonEncoder.withIndent('  ').convert(meta));
 }
 
 /// Search for sessions matching a custom title pattern.
@@ -303,21 +301,17 @@ Future<List<Map<String, String>>> searchSessionsByCustomTitle(
 
         if (exact) {
           if (customTitle == pattern) {
-            final sessionId =
-                p.basenameWithoutExtension(entity.path).replaceAll('.meta', '');
-            results.add({
-              'sessionId': sessionId,
-              'customTitle': customTitle,
-            });
+            final sessionId = p
+                .basenameWithoutExtension(entity.path)
+                .replaceAll('.meta', '');
+            results.add({'sessionId': sessionId, 'customTitle': customTitle});
           }
         } else {
           if (customTitle.contains(pattern)) {
-            final sessionId =
-                p.basenameWithoutExtension(entity.path).replaceAll('.meta', '');
-            results.add({
-              'sessionId': sessionId,
-              'customTitle': customTitle,
-            });
+            final sessionId = p
+                .basenameWithoutExtension(entity.path)
+                .replaceAll('.meta', '');
+            results.add({'sessionId': sessionId, 'customTitle': customTitle});
           }
         }
       } catch (_) {
@@ -351,14 +345,15 @@ Future<String> getUniqueForkName(String projectDir, String baseName) async {
 
   // Name collision — find a unique numbered suffix.
   // Search for all sessions that start with the base pattern.
-  final existingForks =
-      await searchSessionsByCustomTitle(projectDir, '$baseName (Branch');
+  final existingForks = await searchSessionsByCustomTitle(
+    projectDir,
+    '$baseName (Branch',
+  );
 
   // Extract existing fork numbers to find the next available.
   final usedNumbers = <int>{1}; // Consider " (Branch)" as number 1
   final escapedBase = RegExp.escape(baseName);
-  final forkNumberPattern =
-      RegExp('^$escapedBase \\(Branch(?: (\\d+))?\\)\$');
+  final forkNumberPattern = RegExp('^$escapedBase \\(Branch(?: (\\d+))?\\)\$');
 
   for (final session in existingForks) {
     final title = session['customTitle'];
@@ -417,8 +412,10 @@ Future<ForkResult> createFork({
   String? customTitle,
 }) async {
   final forkSessionId = generateUuid();
-  final forkSessionPath =
-      getTranscriptPathForSession(projectDir, forkSessionId);
+  final forkSessionPath = getTranscriptPathForSession(
+    projectDir,
+    forkSessionId,
+  );
 
   // Ensure project directory exists
   await Directory(projectDir).create(recursive: true);
@@ -464,7 +461,8 @@ Future<ForkResult> createFork({
             entry['sessionId'] == originalSessionId,
       )
       .expand(
-        (entry) => (entry['replacements'] as List<dynamic>?)
+        (entry) =>
+            (entry['replacements'] as List<dynamic>?)
                 ?.map((e) => Map<String, dynamic>.from(e as Map))
                 .toList() ??
             <Map<String, dynamic>>[],
@@ -494,11 +492,13 @@ Future<ForkResult> createFork({
     final serialized = Map<String, dynamic>.from(entry);
     serialized['sessionId'] = forkSessionId;
 
-    serializedMessages.add(SerializedMessage(
-      type: entry['type'] as String? ?? '',
-      sessionId: forkSessionId,
-      rawData: serialized,
-    ));
+    serializedMessages.add(
+      SerializedMessage(
+        type: entry['type'] as String? ?? '',
+        sessionId: forkSessionId,
+        rawData: serialized,
+      ),
+    );
 
     lines.add(jsonEncode(entryData));
 
@@ -520,10 +520,9 @@ Future<ForkResult> createFork({
   }
 
   // Write the fork session file.
-  await File(forkSessionPath).writeAsString(
-    '${lines.join('\n')}\n',
-    flush: true,
-  );
+  await File(
+    forkSessionPath,
+  ).writeAsString('${lines.join('\n')}\n', flush: true);
 
   return ForkResult(
     sessionId: forkSessionId,
@@ -557,7 +556,7 @@ class BranchCommand extends LocalCommand {
   /// Callback to resume into a different session.
   /// Signature: (sessionId, forkPath, mode) => Future<void>.
   final Future<void> Function(String sessionId, String forkPath, String mode)?
-      onResume;
+  onResume;
 
   BranchCommand({
     required this.getSessionId,

@@ -223,7 +223,10 @@ Future<void> _fsList(HttpRequest request) async {
   final path = _queryParam(request, 'path');
   final recursive = request.uri.queryParameters['recursive'] == 'true';
   final dir = Directory(path);
-  final entries = await dir.list(recursive: recursive).map((e) => e.path).toList();
+  final entries = await dir
+      .list(recursive: recursive)
+      .map((e) => e.path)
+      .toList();
   _sendJson(request.response, {'entries': entries});
 }
 
@@ -293,9 +296,9 @@ Future<void> _fsWatch(HttpRequest request) async {
   final ws = await WebSocketTransformer.upgrade(request);
   print('[watch] Watching $path (recursive=$recursive)');
 
-  final subscription = Directory(path)
-      .watch(recursive: recursive)
-      .listen((event) {
+  final subscription = Directory(path).watch(recursive: recursive).listen((
+    event,
+  ) {
     final changeType = _fileChangeTypeName(event.type);
     ws.add(jsonEncode({'path': event.path, 'type': changeType}));
   });
@@ -341,16 +344,17 @@ Future<void> _processRun(HttpRequest request) async {
 
   print('[process] run: $executable ${arguments.join(' ')}');
 
-  final result = await Process.run(
-    executable,
-    arguments,
-    workingDirectory: workingDirectory,
-    environment: environment,
-    runInShell: runInShell,
-  ).timeout(
-    Duration(milliseconds: timeoutMs ?? 300000), // Default 5 min timeout
-    onTimeout: () => ProcessResult(-1, 124, '', 'Process timed out'),
-  );
+  final result =
+      await Process.run(
+        executable,
+        arguments,
+        workingDirectory: workingDirectory,
+        environment: environment,
+        runInShell: runInShell,
+      ).timeout(
+        Duration(milliseconds: timeoutMs ?? 300000), // Default 5 min timeout
+        onTimeout: () => ProcessResult(-1, 124, '', 'Process timed out'),
+      );
 
   _sendJson(request.response, {
     'exitCode': result.exitCode,
@@ -431,15 +435,15 @@ Future<void> _processStream(HttpRequest request) async {
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .listen((line) {
-    ws.add(jsonEncode({'type': 'stdout', 'data': line}));
-  });
+        ws.add(jsonEncode({'type': 'stdout', 'data': line}));
+      });
 
   final stderrSub = process.stderr
       .transform(utf8.decoder)
       .transform(const LineSplitter())
       .listen((line) {
-    ws.add(jsonEncode({'type': 'stderr', 'data': line}));
-  });
+        ws.add(jsonEncode({'type': 'stderr', 'data': line}));
+      });
 
   process.exitCode.then((code) {
     ws.add(jsonEncode({'type': 'exit', 'exitCode': code}));
@@ -482,7 +486,9 @@ Future<void> _envPaths(HttpRequest request) async {
   _sendJson(request.response, {
     'currentDirectory': Directory.current.path,
     'homeDirectory':
-        Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '',
+        Platform.environment['HOME'] ??
+        Platform.environment['USERPROFILE'] ??
+        '',
     'tempDirectory': Directory.systemTemp.path,
   });
 }

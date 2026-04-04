@@ -37,14 +37,13 @@ class ApiConfig {
     required String apiKey,
     String model = 'claude-sonnet-4-20250514',
     int maxTokens = 16384,
-  }) =>
-      ApiConfig(
-        type: ApiProviderType.anthropic,
-        baseUrl: 'https://api.anthropic.com',
-        apiKey: apiKey,
-        model: model,
-        maxTokens: maxTokens,
-      );
+  }) => ApiConfig(
+    type: ApiProviderType.anthropic,
+    baseUrl: 'https://api.anthropic.com',
+    apiKey: apiKey,
+    model: model,
+    maxTokens: maxTokens,
+  );
 
   /// OpenAI-compatible provider (OpenAI, Ollama, DeepSeek, etc).
   factory ApiConfig.openai({
@@ -52,14 +51,13 @@ class ApiConfig {
     String baseUrl = 'https://api.openai.com/v1',
     String model = 'gpt-4o',
     int maxTokens = 16384,
-  }) =>
-      ApiConfig(
-        type: ApiProviderType.openai,
-        baseUrl: baseUrl,
-        apiKey: apiKey,
-        model: model,
-        maxTokens: maxTokens,
-      );
+  }) => ApiConfig(
+    type: ApiProviderType.openai,
+    baseUrl: baseUrl,
+    apiKey: apiKey,
+    model: model,
+    maxTokens: maxTokens,
+  );
 
   /// Google Gemini.
   factory ApiConfig.gemini({
@@ -67,14 +65,13 @@ class ApiConfig {
     String baseUrl = 'https://generativelanguage.googleapis.com/v1beta',
     String model = 'gemini-2.5-flash',
     int maxTokens = 65536,
-  }) =>
-      ApiConfig(
-        type: ApiProviderType.gemini,
-        baseUrl: baseUrl,
-        apiKey: apiKey,
-        model: model,
-        maxTokens: maxTokens,
-      );
+  }) => ApiConfig(
+    type: ApiProviderType.gemini,
+    baseUrl: baseUrl,
+    apiKey: apiKey,
+    model: model,
+    maxTokens: maxTokens,
+  );
 
   /// Alibaba Qwen (DashScope).
   factory ApiConfig.qwen({
@@ -82,14 +79,13 @@ class ApiConfig {
     String baseUrl = 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     String model = 'qwen-plus',
     int maxTokens = 32768,
-  }) =>
-      ApiConfig(
-        type: ApiProviderType.qwen,
-        baseUrl: baseUrl,
-        apiKey: apiKey,
-        model: model,
-        maxTokens: maxTokens,
-      );
+  }) => ApiConfig(
+    type: ApiProviderType.qwen,
+    baseUrl: baseUrl,
+    apiKey: apiKey,
+    model: model,
+    maxTokens: maxTokens,
+  );
 
   /// DeepSeek.
   factory ApiConfig.deepseek({
@@ -97,27 +93,25 @@ class ApiConfig {
     String baseUrl = 'https://api.deepseek.com/v1',
     String model = 'deepseek-chat',
     int maxTokens = 32768,
-  }) =>
-      ApiConfig(
-        type: ApiProviderType.deepseek,
-        baseUrl: baseUrl,
-        apiKey: apiKey,
-        model: model,
-        maxTokens: maxTokens,
-      );
+  }) => ApiConfig(
+    type: ApiProviderType.deepseek,
+    baseUrl: baseUrl,
+    apiKey: apiKey,
+    model: model,
+    maxTokens: maxTokens,
+  );
 
   /// Local Ollama instance.
   factory ApiConfig.ollama({
     String baseUrl = 'http://localhost:11434/v1',
     String model = 'llama3.1',
     int maxTokens = 16384,
-  }) =>
-      ApiConfig(
-        type: ApiProviderType.ollama,
-        baseUrl: baseUrl,
-        model: model,
-        maxTokens: maxTokens,
-      );
+  }) => ApiConfig(
+    type: ApiProviderType.ollama,
+    baseUrl: baseUrl,
+    model: model,
+    maxTokens: maxTokens,
+  );
 }
 
 /// Stream event from the API — mirrors Anthropic's SSE events.

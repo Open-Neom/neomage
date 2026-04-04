@@ -1,12 +1,13 @@
 /// Statistics tracking and caching for NeomClaw sessions.
 ///
 /// Ported from:
-///   - openneomclaw/src/utils/stats.ts (1061 LOC)
-///   - openneomclaw/src/utils/statsCache.ts (434 LOC)
+///   - neom_claw/src/utils/stats.ts (1061 LOC)
+///   - neom_claw/src/utils/statsCache.ts (434 LOC)
 ///
 /// Provides aggregation of session statistics, daily activity tracking,
 /// streak calculations, model usage tracking, and a disk-persisted cache
 /// to avoid reprocessing historical data.
+library;
 
 import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
@@ -82,11 +83,11 @@ class DailyActivity {
   }
 
   Map<String, dynamic> toJson() => {
-        'date': date,
-        'messageCount': messageCount,
-        'sessionCount': sessionCount,
-        'toolCallCount': toolCallCount,
-      };
+    'date': date,
+    'messageCount': messageCount,
+    'sessionCount': sessionCount,
+    'toolCallCount': toolCallCount,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -95,10 +96,8 @@ class DailyActivity {
 
 /// Daily token usage per model for charts.
 class DailyModelTokens {
-  DailyModelTokens({
-    required this.date,
-    Map<String, int>? tokensByModel,
-  }) : tokensByModel = tokensByModel ?? {};
+  DailyModelTokens({required this.date, Map<String, int>? tokensByModel})
+    : tokensByModel = tokensByModel ?? {};
 
   /// Date in YYYY-MM-DD format.
   final String date;
@@ -110,15 +109,14 @@ class DailyModelTokens {
     final raw = json['tokensByModel'] as Map<String, dynamic>? ?? {};
     return DailyModelTokens(
       date: json['date'] as String,
-      tokensByModel:
-          raw.map((k, v) => MapEntry(k, (v as num).toInt())),
+      tokensByModel: raw.map((k, v) => MapEntry(k, (v as num).toInt())),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'date': date,
-        'tokensByModel': tokensByModel,
-      };
+    'date': date,
+    'tokensByModel': tokensByModel,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -142,12 +140,12 @@ class StreakInfo {
   final String? longestStreakEnd;
 
   Map<String, dynamic> toJson() => {
-        'currentStreak': currentStreak,
-        'longestStreak': longestStreak,
-        'currentStreakStart': currentStreakStart,
-        'longestStreakStart': longestStreakStart,
-        'longestStreakEnd': longestStreakEnd,
-      };
+    'currentStreak': currentStreak,
+    'longestStreak': longestStreak,
+    'currentStreakStart': currentStreakStart,
+    'longestStreakStart': longestStreakStart,
+    'longestStreakEnd': longestStreakEnd,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -180,11 +178,11 @@ class SessionStats {
   }
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'duration': duration,
-        'messageCount': messageCount,
-        'timestamp': timestamp,
-      };
+    'sessionId': sessionId,
+    'duration': duration,
+    'messageCount': messageCount,
+    'timestamp': timestamp,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -221,8 +219,7 @@ class ModelUsage {
           (json['cacheReadInputTokens'] as num?)?.toInt() ?? 0,
       cacheCreationInputTokens:
           (json['cacheCreationInputTokens'] as num?)?.toInt() ?? 0,
-      webSearchRequests:
-          (json['webSearchRequests'] as num?)?.toInt() ?? 0,
+      webSearchRequests: (json['webSearchRequests'] as num?)?.toInt() ?? 0,
       costUSD: (json['costUSD'] as num?)?.toDouble() ?? 0.0,
       contextWindow: (json['contextWindow'] as num?)?.toInt() ?? 0,
       maxOutputTokens: (json['maxOutputTokens'] as num?)?.toInt() ?? 0,
@@ -230,23 +227,22 @@ class ModelUsage {
   }
 
   Map<String, dynamic> toJson() => {
-        'inputTokens': inputTokens,
-        'outputTokens': outputTokens,
-        'cacheReadInputTokens': cacheReadInputTokens,
-        'cacheCreationInputTokens': cacheCreationInputTokens,
-        'webSearchRequests': webSearchRequests,
-        'costUSD': costUSD,
-        'contextWindow': contextWindow,
-        'maxOutputTokens': maxOutputTokens,
-      };
+    'inputTokens': inputTokens,
+    'outputTokens': outputTokens,
+    'cacheReadInputTokens': cacheReadInputTokens,
+    'cacheCreationInputTokens': cacheCreationInputTokens,
+    'webSearchRequests': webSearchRequests,
+    'costUSD': costUSD,
+    'contextWindow': contextWindow,
+    'maxOutputTokens': maxOutputTokens,
+  };
 
   /// Merge another [ModelUsage] into this one (additive).
   ModelUsage merge(ModelUsage other) {
     return ModelUsage(
       inputTokens: inputTokens + other.inputTokens,
       outputTokens: outputTokens + other.outputTokens,
-      cacheReadInputTokens:
-          cacheReadInputTokens + other.cacheReadInputTokens,
+      cacheReadInputTokens: cacheReadInputTokens + other.cacheReadInputTokens,
       cacheCreationInputTokens:
           cacheCreationInputTokens + other.cacheCreationInputTokens,
       webSearchRequests: webSearchRequests + other.webSearchRequests,
@@ -401,28 +397,34 @@ class PersistedStatsCache {
     return PersistedStatsCache(
       version: (json['version'] as num?)?.toInt() ?? 0,
       lastComputedDate: json['lastComputedDate'] as String?,
-      dailyActivity: (json['dailyActivity'] as List<dynamic>?)
+      dailyActivity:
+          (json['dailyActivity'] as List<dynamic>?)
               ?.map((e) => DailyActivity.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      dailyModelTokens: (json['dailyModelTokens'] as List<dynamic>?)
-              ?.map(
-                  (e) => DailyModelTokens.fromJson(e as Map<String, dynamic>))
+      dailyModelTokens:
+          (json['dailyModelTokens'] as List<dynamic>?)
+              ?.map((e) => DailyModelTokens.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      modelUsage: (json['modelUsage'] as Map<String, dynamic>?)?.map(
-              (k, v) =>
-                  MapEntry(k, ModelUsage.fromJson(v as Map<String, dynamic>))) ??
+      modelUsage:
+          (json['modelUsage'] as Map<String, dynamic>?)?.map(
+            (k, v) =>
+                MapEntry(k, ModelUsage.fromJson(v as Map<String, dynamic>)),
+          ) ??
           {},
       totalSessions: (json['totalSessions'] as num?)?.toInt() ?? 0,
       totalMessages: (json['totalMessages'] as num?)?.toInt() ?? 0,
       longestSession: json['longestSession'] != null
           ? SessionStats.fromJson(
-              json['longestSession'] as Map<String, dynamic>)
+              json['longestSession'] as Map<String, dynamic>,
+            )
           : null,
       firstSessionDate: json['firstSessionDate'] as String?,
-      hourCounts: (json['hourCounts'] as Map<String, dynamic>?)?.map(
-              (k, v) => MapEntry(int.parse(k), (v as num).toInt())) ??
+      hourCounts:
+          (json['hourCounts'] as Map<String, dynamic>?)?.map(
+            (k, v) => MapEntry(int.parse(k), (v as num).toInt()),
+          ) ??
           {},
       totalSpeculationTimeSavedMs:
           (json['totalSpeculationTimeSavedMs'] as num?)?.toInt() ?? 0,
@@ -432,24 +434,22 @@ class PersistedStatsCache {
   }
 
   Map<String, dynamic> toJson() => {
-        'version': version,
-        'lastComputedDate': lastComputedDate,
-        'dailyActivity': dailyActivity.map((e) => e.toJson()).toList(),
-        'dailyModelTokens':
-            dailyModelTokens.map((e) => e.toJson()).toList(),
-        'modelUsage':
-            modelUsage.map((k, v) => MapEntry(k, v.toJson())),
-        'totalSessions': totalSessions,
-        'totalMessages': totalMessages,
-        'longestSession': longestSession?.toJson(),
-        'firstSessionDate': firstSessionDate,
-        'hourCounts':
-            hourCounts.map((k, v) => MapEntry(k.toString(), v)),
-        'totalSpeculationTimeSavedMs': totalSpeculationTimeSavedMs,
-        if (shotDistribution != null)
-          'shotDistribution':
-              shotDistribution!.map((k, v) => MapEntry(k.toString(), v)),
-      };
+    'version': version,
+    'lastComputedDate': lastComputedDate,
+    'dailyActivity': dailyActivity.map((e) => e.toJson()).toList(),
+    'dailyModelTokens': dailyModelTokens.map((e) => e.toJson()).toList(),
+    'modelUsage': modelUsage.map((k, v) => MapEntry(k, v.toJson())),
+    'totalSessions': totalSessions,
+    'totalMessages': totalMessages,
+    'longestSession': longestSession?.toJson(),
+    'firstSessionDate': firstSessionDate,
+    'hourCounts': hourCounts.map((k, v) => MapEntry(k.toString(), v)),
+    'totalSpeculationTimeSavedMs': totalSpeculationTimeSavedMs,
+    if (shotDistribution != null)
+      'shotDistribution': shotDistribution!.map(
+        (k, v) => MapEntry(k.toString(), v),
+      ),
+  };
 
   PersistedStatsCache copyWith({
     int? version,
@@ -488,11 +488,7 @@ class PersistedStatsCache {
 // ---------------------------------------------------------------------------
 
 /// Range filter for stats aggregation.
-enum StatsDateRange {
-  sevenDays,
-  thirtyDays,
-  all,
-}
+enum StatsDateRange { sevenDays, thirtyDays, all }
 
 // ---------------------------------------------------------------------------
 // StatsManager — SintController
@@ -506,11 +502,9 @@ enum StatsDateRange {
 /// final stats = await manager.aggregateNeomClawStats();
 /// ```
 class StatsManager extends SintController {
-  StatsManager({
-    String? configHomeDir,
-    String? projectsDir,
-  })  : _configHomeDir = configHomeDir ?? _defaultConfigHome(),
-        _projectsDir = projectsDir;
+  StatsManager({String? configHomeDir, String? projectsDir})
+    : _configHomeDir = configHomeDir ?? _defaultConfigHome(),
+      _projectsDir = projectsDir;
 
   final String _configHomeDir;
   final String? _projectsDir;
@@ -555,7 +549,8 @@ class StatsManager extends SintController {
   // -------------------------------------------------------------------------
 
   static String _defaultConfigHome() {
-    final home = Platform.environment['HOME'] ??
+    final _home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '.';
     return '/.neomclaw';
@@ -581,7 +576,7 @@ class StatsManager extends SintController {
       await _statsCacheLockFuture;
     }
 
-    late void Function() releaseLock;
+    late void Function() _releaseLock;
     _statsCacheLockFuture = Future<void>(() {
       // The completer is effectively resolved when releaseLock is called.
     });
@@ -676,8 +671,7 @@ class StatsManager extends SintController {
       final cache = PersistedStatsCache.fromJson(parsed);
 
       // Basic validation.
-      if (cache.dailyActivity is! List ||
-          cache.totalSessions < 0) {
+      if (cache.totalSessions < 0) {
         return _getEmptyCache();
       }
 
@@ -703,8 +697,9 @@ class StatsManager extends SintController {
         await configDir.create(recursive: true);
       }
 
-      final content =
-          const JsonEncoder.withIndent('  ').convert(cache.toJson());
+      final content = const JsonEncoder.withIndent(
+        '  ',
+      ).convert(cache.toJson());
       final tempFile = File(tempPath);
       await tempFile.writeAsString(content, flush: true);
 
@@ -759,8 +754,9 @@ class StatsManager extends SintController {
           existing[entry.key] = (existing[entry.key] ?? 0) + entry.value;
         }
       } else {
-        dailyModelTokensMap[day.date] =
-            Map<String, int>.from(day.tokensByModel);
+        dailyModelTokensMap[day.date] = Map<String, int>.from(
+          day.tokensByModel,
+        );
       }
     }
 
@@ -784,13 +780,15 @@ class StatsManager extends SintController {
     // Update session aggregates.
     final totalSessions =
         existingCache.totalSessions + newStats.sessionStats.length;
-    final totalMessages = existingCache.totalMessages +
+    final totalMessages =
+        existingCache.totalMessages +
         newStats.sessionStats.fold<int>(0, (sum, s) => sum + s.messageCount);
 
     // Find longest session.
     SessionStats? longestSession = existingCache.longestSession;
     for (final session in newStats.sessionStats) {
-      if (longestSession == null || session.duration > longestSession.duration) {
+      if (longestSession == null ||
+          session.duration > longestSession.duration) {
         longestSession = session;
       }
     }
@@ -807,10 +805,11 @@ class StatsManager extends SintController {
     final sortedDailyActivity = dailyActivityMap.values.toList()
       ..sort((a, b) => a.date.compareTo(b.date));
 
-    final sortedDailyModelTokens = dailyModelTokensMap.entries
-        .map((e) => DailyModelTokens(date: e.key, tokensByModel: e.value))
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+    final sortedDailyModelTokens =
+        dailyModelTokensMap.entries
+            .map((e) => DailyModelTokens(date: e.key, tokensByModel: e.value))
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
 
     var result = PersistedStatsCache(
       version: statsCacheVersion,
@@ -823,13 +822,15 @@ class StatsManager extends SintController {
       longestSession: longestSession,
       firstSessionDate: firstSessionDate,
       hourCounts: hourCounts,
-      totalSpeculationTimeSavedMs: existingCache.totalSpeculationTimeSavedMs +
+      totalSpeculationTimeSavedMs:
+          existingCache.totalSpeculationTimeSavedMs +
           newStats.totalSpeculationTimeSavedMs,
     );
 
     if (shotStatsEnabled.value) {
       final shotDistribution = Map<int, int>.from(
-          existingCache.shotDistribution ?? {});
+        existingCache.shotDistribution ?? {},
+      );
       for (final entry in (newStats.shotDistribution ?? {}).entries) {
         shotDistribution[entry.key] =
             (shotDistribution[entry.key] ?? 0) + entry.value;
@@ -875,15 +876,16 @@ class StatsManager extends SintController {
         // Subagent files from session subdirectories.
         final sessionDirs = entries.whereType<Directory>();
         for (final sessionDir in sessionDirs) {
-          final subagentsDir =
-              Directory('${sessionDir.path}/subagents');
+          final subagentsDir = Directory('${sessionDir.path}/subagents');
           if (await subagentsDir.exists()) {
             final subagentEntries = await subagentsDir.list().toList();
             final subagentFiles = subagentEntries
                 .whereType<File>()
-                .where((f) =>
-                    f.path.endsWith('.jsonl') &&
-                    f.uri.pathSegments.last.startsWith('agent-'))
+                .where(
+                  (f) =>
+                      f.path.endsWith('.jsonl') &&
+                      f.uri.pathSegments.last.startsWith('agent-'),
+                )
                 .map((f) => f.path)
                 .toList();
             allFiles.addAll(subagentFiles);
@@ -917,48 +919,57 @@ class StatsManager extends SintController {
     var totalMessages = 0;
     var totalSpeculationTimeSavedMs = 0;
     final modelUsageAgg = <String, ModelUsage>{};
-    final shotDistributionMap =
-        shotStatsEnabled.value ? <int, int>{} : null;
+    final shotDistributionMap = shotStatsEnabled.value ? <int, int>{} : null;
     final sessionsWithShotCount = <String>{};
 
     // Process session files in batches.
     for (var i = 0; i < sessionFiles.length; i += _batchSize) {
       final batch = sessionFiles.sublist(
-          i, min(i + _batchSize, sessionFiles.length));
+        i,
+        min(i + _batchSize, sessionFiles.length),
+      );
 
-      final results = await Future.wait(batch.map((sessionFile) async {
-        try {
-          if (fromDate != null) {
-            try {
-              final fileStat = await File(sessionFile).stat();
-              final fileModifiedDate = toDateString(fileStat.modified);
-              if (isDateBefore(fileModifiedDate, fromDate)) {
-                return _SessionReadResult(
-                    sessionFile: sessionFile, skipped: true);
+      final results = await Future.wait(
+        batch.map((sessionFile) async {
+          try {
+            if (fromDate != null) {
+              try {
+                final fileStat = await File(sessionFile).stat();
+                final fileModifiedDate = toDateString(fileStat.modified);
+                if (isDateBefore(fileModifiedDate, fromDate)) {
+                  return _SessionReadResult(
+                    sessionFile: sessionFile,
+                    skipped: true,
+                  );
+                }
+              } catch (_) {
+                // If we can't stat the file, try to read it anyway.
               }
-            } catch (_) {
-              // If we can't stat the file, try to read it anyway.
             }
-          }
 
-          final file = File(sessionFile);
-          final content = await file.readAsString();
-          final lines = content.split('\n').where((l) => l.isNotEmpty);
-          final entries = <Map<String, dynamic>>[];
-          for (final line in lines) {
-            try {
-              entries.add(jsonDecode(line) as Map<String, dynamic>);
-            } catch (_) {
-              // Skip malformed lines.
+            final file = File(sessionFile);
+            final content = await file.readAsString();
+            final lines = content.split('\n').where((l) => l.isNotEmpty);
+            final entries = <Map<String, dynamic>>[];
+            for (final line in lines) {
+              try {
+                entries.add(jsonDecode(line) as Map<String, dynamic>);
+              } catch (_) {
+                // Skip malformed lines.
+              }
             }
+            return _SessionReadResult(
+              sessionFile: sessionFile,
+              entries: entries,
+            );
+          } catch (e) {
+            return _SessionReadResult(
+              sessionFile: sessionFile,
+              error: e.toString(),
+            );
           }
-          return _SessionReadResult(
-              sessionFile: sessionFile, entries: entries);
-        } catch (e) {
-          return _SessionReadResult(
-              sessionFile: sessionFile, error: e.toString());
-        }
-      }));
+        }),
+      );
 
       for (final result in results) {
         if (result.skipped) continue;
@@ -968,9 +979,7 @@ class StatsManager extends SintController {
         final entries = result.entries!;
         final sessionId = _basenameWithoutExtension(sessionFile, '.jsonl');
 
-        final messages = entries
-            .where((e) => _isTranscriptMessage(e))
-            .toList();
+        final messages = entries.where((e) => _isTranscriptMessage(e)).toList();
 
         if (messages.isEmpty) continue;
 
@@ -1009,10 +1018,12 @@ class StatsManager extends SintController {
         final firstMessage = mainMessages.first;
         final lastMessage = mainMessages.last;
 
-        final firstTimestamp =
-            DateTime.tryParse(firstMessage['timestamp']?.toString() ?? '');
-        final lastTimestamp =
-            DateTime.tryParse(lastMessage['timestamp']?.toString() ?? '');
+        final firstTimestamp = DateTime.tryParse(
+          firstMessage['timestamp']?.toString() ?? '',
+        );
+        final lastTimestamp = DateTime.tryParse(
+          lastMessage['timestamp']?.toString() ?? '',
+        );
 
         if (firstTimestamp == null || lastTimestamp == null) continue;
 
@@ -1021,17 +1032,21 @@ class StatsManager extends SintController {
         if (fromDate != null && isDateBefore(dateKey, fromDate)) continue;
         if (toDate != null && isDateBefore(toDate, dateKey)) continue;
 
-        final existing = dailyActivityMap[dateKey] ??
-            DailyActivity(date: dateKey);
+        final existing =
+            dailyActivityMap[dateKey] ?? DailyActivity(date: dateKey);
 
         if (!isSubagentFile) {
-          final duration = lastTimestamp.difference(firstTimestamp).inMilliseconds;
-          sessions.add(SessionStats(
-            sessionId: sessionId,
-            duration: duration,
-            messageCount: mainMessages.length,
-            timestamp: firstMessage['timestamp'] as String,
-          ));
+          final duration = lastTimestamp
+              .difference(firstTimestamp)
+              .inMilliseconds;
+          sessions.add(
+            SessionStats(
+              sessionId: sessionId,
+              duration: duration,
+              messageCount: mainMessages.length,
+              timestamp: firstMessage['timestamp'] as String,
+            ),
+          );
 
           totalMessages += mainMessages.length;
           existing.sessionCount++;
@@ -1068,19 +1083,17 @@ class StatsManager extends SintController {
 
               modelUsageAgg.putIfAbsent(model, () => ModelUsage());
               final agg = modelUsageAgg[model]!;
-              agg.inputTokens +=
-                  (usage['input_tokens'] as num?)?.toInt() ?? 0;
+              agg.inputTokens += (usage['input_tokens'] as num?)?.toInt() ?? 0;
               agg.outputTokens +=
                   (usage['output_tokens'] as num?)?.toInt() ?? 0;
               agg.cacheReadInputTokens +=
                   (usage['cache_read_input_tokens'] as num?)?.toInt() ?? 0;
               agg.cacheCreationInputTokens +=
-                  (usage['cache_creation_input_tokens'] as num?)?.toInt() ??
-                      0;
+                  (usage['cache_creation_input_tokens'] as num?)?.toInt() ?? 0;
 
               final totalTokens =
                   ((usage['input_tokens'] as num?)?.toInt() ?? 0) +
-                      ((usage['output_tokens'] as num?)?.toInt() ?? 0);
+                  ((usage['output_tokens'] as num?)?.toInt() ?? 0);
               if (totalTokens > 0) {
                 final dayTokens = dailyModelTokensMap[dateKey] ?? {};
                 dayTokens[model] = (dayTokens[model] ?? 0) + totalTokens;
@@ -1095,10 +1108,11 @@ class StatsManager extends SintController {
     final sortedDailyActivity = dailyActivityMap.values.toList()
       ..sort((a, b) => a.date.compareTo(b.date));
 
-    final sortedDailyModelTokens = dailyModelTokensMap.entries
-        .map((e) => DailyModelTokens(date: e.key, tokensByModel: e.value))
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+    final sortedDailyModelTokens =
+        dailyModelTokensMap.entries
+            .map((e) => DailyModelTokens(date: e.key, tokensByModel: e.value))
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
 
     return ProcessedStats(
       dailyActivity: sortedDailyActivity,
@@ -1142,8 +1156,7 @@ class StatsManager extends SintController {
 
     final dailyModelTokensMap = <String, Map<String, int>>{};
     for (final day in cache.dailyModelTokens) {
-      dailyModelTokensMap[day.date] =
-          Map<String, int>.from(day.tokensByModel);
+      dailyModelTokensMap[day.date] = Map<String, int>.from(day.tokensByModel);
     }
     if (todayStats != null) {
       for (final day in todayStats.dailyModelTokens) {
@@ -1153,8 +1166,9 @@ class StatsManager extends SintController {
             existing[entry.key] = (existing[entry.key] ?? 0) + entry.value;
           }
         } else {
-          dailyModelTokensMap[day.date] =
-              Map<String, int>.from(day.tokensByModel);
+          dailyModelTokensMap[day.date] = Map<String, int>.from(
+            day.tokensByModel,
+          );
         }
       }
     }
@@ -1189,10 +1203,11 @@ class StatsManager extends SintController {
       ..sort((a, b) => a.date.compareTo(b.date));
     final streaks = calculateStreaks(dailyActivityArray);
 
-    final dailyModelTokens = dailyModelTokensMap.entries
-        .map((e) => DailyModelTokens(date: e.key, tokensByModel: e.value))
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+    final dailyModelTokens =
+        dailyModelTokensMap.entries
+            .map((e) => DailyModelTokens(date: e.key, tokensByModel: e.value))
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
 
     final totalSessions =
         cache.totalSessions + (todayStats?.sessionStats.length ?? 0);
@@ -1229,26 +1244,24 @@ class StatsManager extends SintController {
 
     final peakActivityDay = dailyActivityArray.isNotEmpty
         ? dailyActivityArray
-            .reduce((m, d) => d.messageCount > m.messageCount ? d : m)
-            .date
+              .reduce((m, d) => d.messageCount > m.messageCount ? d : m)
+              .date
         : null;
 
     final peakActivityHour = hourCountsMap.isNotEmpty
-        ? hourCountsMap.entries
-            .reduce((m, e) => e.value > m.value ? e : m)
-            .key
+        ? hourCountsMap.entries.reduce((m, e) => e.value > m.value ? e : m).key
         : null;
 
     final totalDays = (firstSessionDate != null && lastSessionDate != null)
-        ? ((DateTime.parse(lastSessionDate)
-                        .difference(DateTime.parse(firstSessionDate))
-                        .inDays) +
-                1)
+        ? ((DateTime.parse(
+                lastSessionDate,
+              ).difference(DateTime.parse(firstSessionDate)).inDays) +
+              1)
         : 0;
 
     final totalSpeculationTimeSavedMs =
         cache.totalSpeculationTimeSavedMs +
-            (todayStats?.totalSpeculationTimeSavedMs ?? 0);
+        (todayStats?.totalSpeculationTimeSavedMs ?? 0);
 
     Map<int, int>? shotDistribution;
     int? oneShotRate;
@@ -1260,8 +1273,10 @@ class StatsManager extends SintController {
               (shotDistribution[entry.key] ?? 0) + entry.value;
         }
       }
-      final totalWithShots =
-          shotDistribution.values.fold<int>(0, (s, n) => s + n);
+      final totalWithShots = shotDistribution.values.fold<int>(
+        0,
+        (s, n) => s + n,
+      );
       oneShotRate = totalWithShots > 0
           ? ((shotDistribution[1] ?? 0) / totalWithShots * 100).round()
           : 0;
@@ -1416,8 +1431,8 @@ class StatsManager extends SintController {
 
     final peakActivityDay = dailyActivitySorted.isNotEmpty
         ? dailyActivitySorted
-            .reduce((m, d) => d.messageCount > m.messageCount ? d : m)
-            .date
+              .reduce((m, d) => d.messageCount > m.messageCount ? d : m)
+              .date
         : null;
 
     final hourEntries = stats.hourCounts.entries.toList();
@@ -1426,18 +1441,20 @@ class StatsManager extends SintController {
         : null;
 
     final totalDays = (firstSessionDate != null && lastSessionDate != null)
-        ? (DateTime.parse(lastSessionDate)
-                    .difference(DateTime.parse(firstSessionDate))
-                    .inDays +
-                1)
+        ? (DateTime.parse(
+                lastSessionDate,
+              ).difference(DateTime.parse(firstSessionDate)).inDays +
+              1)
         : 0;
 
     Map<int, int>? shotDistribution;
     int? oneShotRate;
     if (shotStatsEnabled.value && stats.shotDistribution != null) {
       shotDistribution = stats.shotDistribution;
-      final totalWithShots =
-          shotDistribution!.values.fold<int>(0, (s, n) => s + n);
+      final totalWithShots = shotDistribution!.values.fold<int>(
+        0,
+        (s, n) => s + n,
+      );
       oneShotRate = totalWithShots > 0
           ? ((shotDistribution[1] ?? 0) / totalWithShots * 100).round()
           : 0;
@@ -1541,7 +1558,8 @@ class StatsManager extends SintController {
 
   /// Extract the shot count from PR attribution text in a `gh pr create` call.
   static int? _extractShotCountFromMessages(
-      List<Map<String, dynamic>> messages) {
+    List<Map<String, dynamic>> messages,
+  ) {
     for (final m in messages) {
       if (m['type'] != 'assistant') continue;
       final content = m['message']?['content'];
@@ -1577,7 +1595,10 @@ class StatsManager extends SintController {
         final bytesRead = await raf.readInto(buf);
         if (bytesRead == 0) return null;
 
-        final head = utf8.decode(buf.sublist(0, bytesRead), allowMalformed: true);
+        final head = utf8.decode(
+          buf.sublist(0, bytesRead),
+          allowMalformed: true,
+        );
         final lastNewline = head.lastIndexOf('\n');
         if (lastNewline < 0) return null;
 

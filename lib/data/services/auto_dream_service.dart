@@ -1,4 +1,4 @@
-// Auto-dream service — port of openneomclaw/src/services/autoDream/.
+// Auto-dream service — port of neom_claw/src/services/autoDream/.
 // Background memory consolidation. Fires a /dream prompt as a forked
 // subagent when a time-gate passes AND enough sessions have accumulated.
 //
@@ -30,10 +30,7 @@ class AutoDreamConfig {
   /// Minimum number of sessions touched since last consolidation.
   final int minSessions;
 
-  const AutoDreamConfig({
-    this.minHours = 24,
-    this.minSessions = 5,
-  });
+  const AutoDreamConfig({this.minHours = 24, this.minSessions = 5});
 
   factory AutoDreamConfig.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const AutoDreamConfig();
@@ -41,7 +38,8 @@ class AutoDreamConfig {
       minHours: (json['minHours'] is num && (json['minHours'] as num) > 0)
           ? (json['minHours'] as num).toDouble()
           : 24,
-      minSessions: (json['minSessions'] is int && (json['minSessions'] as int) > 0)
+      minSessions:
+          (json['minSessions'] is int && (json['minSessions'] as int) > 0)
           ? json['minSessions'] as int
           : 5,
     );
@@ -174,7 +172,8 @@ class ConsolidationLockService {
       // ENOENT — no prior lock.
     }
 
-    if (mtimeMs != null && DateTime.now().millisecondsSinceEpoch - mtimeMs < _holderStaleMs) {
+    if (mtimeMs != null &&
+        DateTime.now().millisecondsSinceEpoch - mtimeMs < _holderStaleMs) {
       if (holderPid != null && isProcessRunning(holderPid)) {
         logDebug(
           '[autoDream] lock held by live PID $holderPid '
@@ -311,12 +310,7 @@ Return a brief summary of what you consolidated, updated, or pruned. If nothing 
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Status of a dream task.
-enum DreamTaskStatus {
-  running,
-  completed,
-  failed,
-  killed,
-}
+enum DreamTaskStatus { running, completed, failed, killed }
 
 /// A single turn from the dream agent.
 class DreamTurn {
@@ -348,15 +342,14 @@ class DreamTaskState {
     DreamTaskStatus? status,
     List<DreamTurn>? turns,
     List<String>? filesTouched,
-  }) =>
-      DreamTaskState(
-        taskId: taskId,
-        status: status ?? this.status,
-        sessionsReviewing: sessionsReviewing,
-        priorMtime: priorMtime,
-        turns: turns ?? this.turns,
-        filesTouched: filesTouched ?? this.filesTouched,
-      );
+  }) => DreamTaskState(
+    taskId: taskId,
+    status: status ?? this.status,
+    sessionsReviewing: sessionsReviewing,
+    priorMtime: priorMtime,
+    turns: turns ?? this.turns,
+    filesTouched: filesTouched ?? this.filesTouched,
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -439,7 +432,8 @@ class AutoDreamController extends SintController {
   final Future<DreamRunResult> Function({
     required String prompt,
     required void Function(DreamMessage) onMessage,
-  }) runDreamAgent;
+  })
+  runDreamAgent;
 
   // ── State ───────────────────────────────────────────────────────────
 
@@ -505,7 +499,8 @@ class AutoDreamController extends SintController {
     if (hoursSince < cfg.minHours) return;
 
     // --- Scan throttle ---
-    final sinceScanMs = DateTime.now().millisecondsSinceEpoch - _lastSessionScanAt;
+    final sinceScanMs =
+        DateTime.now().millisecondsSinceEpoch - _lastSessionScanAt;
     if (sinceScanMs < _sessionScanIntervalMs) {
       logDebug(
         '[autoDream] scan throttle — time-gate passed but last scan was '
@@ -563,7 +558,8 @@ class AutoDreamController extends SintController {
     try {
       final memoryRoot = getAutoMemPath();
       final transcriptDir = getProjectDir(getOriginalCwd());
-      final extra = '''
+      final extra =
+          '''
 
 **Tool constraints for this run:** Bash is restricted to read-only commands (`ls`, `find`, `grep`, `cat`, `stat`, `wc`, `head`, `tail`, and similar). Anything that writes, redirects to a file, or modifies state will be denied.
 

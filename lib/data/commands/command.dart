@@ -17,14 +17,7 @@ enum CommandType {
 }
 
 /// Where a command was loaded from.
-enum CommandSource {
-  builtin,
-  skills,
-  plugin,
-  managed,
-  bundled,
-  mcp,
-}
+enum CommandSource { builtin, skills, plugin, managed, bundled, mcp }
 
 /// Result of a local command execution.
 sealed class CommandResult {
@@ -97,10 +90,7 @@ abstract class PromptCommand extends Command {
   String? get model => null;
 
   /// Build the prompt content for this command.
-  Future<List<ContentBlock>> getPrompt(
-    String args,
-    ToolUseContext context,
-  );
+  Future<List<ContentBlock>> getPrompt(String args, ToolUseContext context);
 }
 
 /// A command that executes locally and returns a result.
@@ -121,8 +111,5 @@ abstract class LocalUiCommand extends Command {
   CommandType get type => CommandType.localUi;
 
   /// Execute and return result via callback.
-  Future<CommandResult> execute(
-    String args,
-    ToolUseContext context,
-  );
+  Future<CommandResult> execute(String args, ToolUseContext context);
 }

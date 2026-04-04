@@ -4,7 +4,6 @@
 // macOS/Linux/Windows and a stub WebNativeBridge.
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 
 // ── Enums ──────────────────────────────────────────────────────────────────
@@ -163,14 +162,14 @@ class DesktopNativeBridge implements NativeBridge {
 
   @override
   NativeCapabilities getCapabilities() => NativeCapabilities(
-        clipboard: true,
-        notifications: true,
-        fileDialog: _platform == NativePlatform.macos ||
-            _platform == NativePlatform.linux,
-        tray: _platform == NativePlatform.macos,
-        globalHotkeys: false, // Requires native plugin — stubbed.
-        biometrics: _platform == NativePlatform.macos,
-      );
+    clipboard: true,
+    notifications: true,
+    fileDialog:
+        _platform == NativePlatform.macos || _platform == NativePlatform.linux,
+    tray: _platform == NativePlatform.macos,
+    globalHotkeys: false, // Requires native plugin — stubbed.
+    biometrics: _platform == NativePlatform.macos,
+  );
 
   // ── System info ───────────────────────────────────────────────────────
 
@@ -273,9 +272,11 @@ class DesktopNativeBridge implements NativeBridge {
       return (await _runSimple('pbpaste', [])).trimRight();
     }
     if (_platform == NativePlatform.linux) {
-      return (await _runSimple(
-              'xclip', ['-selection', 'clipboard', '-o']))
-          .trimRight();
+      return (await _runSimple('xclip', [
+        '-selection',
+        'clipboard',
+        '-o',
+      ])).trimRight();
     }
     return null;
   }
@@ -347,8 +348,7 @@ class DesktopNativeBridge implements NativeBridge {
   // ── Environment ───────────────────────────────────────────────────────
 
   @override
-  String? getEnvironmentVariable(String name) =>
-      Platform.environment[name];
+  String? getEnvironmentVariable(String name) => Platform.environment[name];
 
   // ── Process ───────────────────────────────────────────────────────────
 
@@ -396,8 +396,11 @@ class DesktopNativeBridge implements NativeBridge {
     }
   }
 
-  Future<void> _runPiped(String cmd, String input,
-      {List<String> args = const []}) async {
+  Future<void> _runPiped(
+    String cmd,
+    String input, {
+    List<String> args = const [],
+  }) async {
     final process = await Process.start(cmd, args);
     process.stdin.write(input);
     await process.stdin.close();
@@ -417,7 +420,9 @@ class DesktopNativeBridge implements NativeBridge {
       script.write('choose file');
     }
     if (title != null) script.write(' with prompt "$title"');
-    if (multiple && !directory) script.write(' with multiple selections allowed');
+    if (multiple && !directory) {
+      script.write(' with multiple selections allowed');
+    }
     if (filters != null && filters.isNotEmpty && !directory) {
       final types = filters.map((f) => '"$f"').join(', ');
       script.write(' of type {$types}');
@@ -465,24 +470,24 @@ class WebNativeBridge implements NativeBridge {
 
   @override
   NativeCapabilities getCapabilities() => const NativeCapabilities(
-        clipboard: true, // navigator.clipboard available in browsers.
-        notifications: true, // Notification API.
-        fileDialog: false,
-        tray: false,
-        globalHotkeys: false,
-        biometrics: false,
-      );
+    clipboard: true, // navigator.clipboard available in browsers.
+    notifications: true, // Notification API.
+    fileDialog: false,
+    tray: false,
+    globalHotkeys: false,
+    biometrics: false,
+  );
 
   @override
   Future<SystemInfo> getSystemInfo() async => const SystemInfo(
-        os: 'web',
-        version: 'unknown',
-        arch: 'unknown',
-        hostname: 'browser',
-        cpuCores: 0,
-        memoryBytes: 0,
-        shell: 'none',
-      );
+    os: 'web',
+    version: 'unknown',
+    arch: 'unknown',
+    hostname: 'browser',
+    cpuCores: 0,
+    memoryBytes: 0,
+    shell: 'none',
+  );
 
   @override
   Future<List<String>?> showFileDialog({
@@ -490,16 +495,14 @@ class WebNativeBridge implements NativeBridge {
     List<String>? filters,
     bool multiple = false,
     bool directory = false,
-  }) async =>
-      null;
+  }) async => null;
 
   @override
   Future<String?> showSaveDialog({
     String? title,
     String? defaultName,
     List<String>? filters,
-  }) async =>
-      null;
+  }) async => null;
 
   @override
   Future<void> setClipboard(String text) async {

@@ -49,14 +49,14 @@ class PaletteEntry {
 /// Palette mode determines what kind of entries to show.
 enum PaletteMode {
   commands, // / prefix — slash commands
-  files,    // no prefix — file search
-  symbols,  // @ prefix — symbol search
-  actions,  // > prefix — actions
+  files, // no prefix — file search
+  symbols, // @ prefix — symbol search
+  actions, // > prefix — actions
 }
 
 /// Provider of palette entries.
-typedef PaletteProvider = Future<List<PaletteEntry>> Function(
-    String query, PaletteMode mode);
+typedef PaletteProvider =
+    Future<List<PaletteEntry>> Function(String query, PaletteMode mode);
 
 // ─── CommandPalette widget ───
 
@@ -113,7 +113,9 @@ class _CommandPaletteState extends State<CommandPalette> {
   }
 
   String _stripPrefix(String query) {
-    if (query.startsWith('/') || query.startsWith('@') || query.startsWith('>')) {
+    if (query.startsWith('/') ||
+        query.startsWith('@') ||
+        query.startsWith('>')) {
       return query.substring(1);
     }
     return query;
@@ -136,14 +138,15 @@ class _CommandPaletteState extends State<CommandPalette> {
     if (!mounted) return;
 
     // Fuzzy filter + sort
-    final filtered = query.isEmpty
-        ? results
-        : results.where((e) => _fuzzyMatch(e.label, query)).toList()
-      ..sort((a, b) {
-        final aScore = _fuzzyScore(a.label, query) + a.priority;
-        final bScore = _fuzzyScore(b.label, query) + b.priority;
-        return bScore.compareTo(aScore);
-      });
+    final filtered =
+        query.isEmpty
+              ? results
+              : results.where((e) => _fuzzyMatch(e.label, query)).toList()
+          ..sort((a, b) {
+            final aScore = _fuzzyScore(a.label, query) + a.priority;
+            final bScore = _fuzzyScore(b.label, query) + b.priority;
+            return bScore.compareTo(aScore);
+          });
 
     setState(() {
       _entries = filtered;
@@ -213,7 +216,8 @@ class _CommandPaletteState extends State<CommandPalette> {
       setState(() {
         _selectedIndex =
             ((_selectedIndex - 1 + max(1, _entries.length)) %
-                max(1, _entries.length)) as int;
+                    max(1, _entries.length))
+                as int;
       });
       return KeyEventResult.handled;
     }
@@ -295,23 +299,25 @@ class _CommandPaletteState extends State<CommandPalette> {
                             child: SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                           )
                         : null,
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 16),
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                   ),
                 ),
               ),
 
               Divider(
-                  height: 1,
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.1)),
+                height: 1,
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.1),
+              ),
 
               // Results list
               Flexible(
@@ -323,8 +329,7 @@ class _CommandPaletteState extends State<CommandPalette> {
                               ? 'Type to search...'
                               : 'No results found.',
                           style: TextStyle(
-                            color:
-                                isDark ? Colors.white38 : Colors.black38,
+                            color: isDark ? Colors.white38 : Colors.black38,
                           ),
                         ),
                       )
@@ -340,17 +345,18 @@ class _CommandPaletteState extends State<CommandPalette> {
                             onTap: () => _select(entry),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 10),
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
                               color: isSelected
                                   ? (isDark
-                                      ? Colors.white.withValues(alpha: 0.08)
-                                      : Colors.blue.withValues(alpha: 0.08))
+                                        ? Colors.white.withValues(alpha: 0.08)
+                                        : Colors.blue.withValues(alpha: 0.08))
                                   : null,
                               child: Row(
                                 children: [
                                   Icon(
-                                    entry.icon ??
-                                        _defaultIcon(entry.type),
+                                    entry.icon ?? _defaultIcon(entry.type),
                                     size: 18,
                                     color: isDark
                                         ? Colors.white54
@@ -384,8 +390,7 @@ class _CommandPaletteState extends State<CommandPalette> {
                                                   : Colors.black38,
                                             ),
                                             maxLines: 1,
-                                            overflow:
-                                                TextOverflow.ellipsis,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                       ],
                                     ),
@@ -393,15 +398,18 @@ class _CommandPaletteState extends State<CommandPalette> {
                                   if (entry.shortcut != null)
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: isDark
-                                            ? Colors.white
-                                                .withValues(alpha: 0.08)
-                                            : Colors.black
-                                                .withValues(alpha: 0.06),
-                                        borderRadius:
-                                            BorderRadius.circular(4),
+                                            ? Colors.white.withValues(
+                                                alpha: 0.08,
+                                              )
+                                            : Colors.black.withValues(
+                                                alpha: 0.06,
+                                              ),
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
                                         entry.shortcut!,
@@ -424,8 +432,10 @@ class _CommandPaletteState extends State<CommandPalette> {
 
               // Footer
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   border: Border(
                     top: BorderSide(

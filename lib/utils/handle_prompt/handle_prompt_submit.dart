@@ -4,10 +4,10 @@
 /// classification for analytics.
 ///
 /// Port of:
-///   openneomclaw/src/utils/handlePromptSubmit.ts (610 LOC)
-///   openneomclaw/src/utils/promptEditor.ts (188 LOC)
-///   openneomclaw/src/utils/promptShellExecution.ts (183 LOC)
-///   openneomclaw/src/utils/promptCategory.ts (49 LOC)
+///   neom_claw/src/utils/handlePromptSubmit.ts (610 LOC)
+///   neom_claw/src/utils/promptEditor.ts (188 LOC)
+///   neom_claw/src/utils/promptShellExecution.ts (183 LOC)
+///   neom_claw/src/utils/promptCategory.ts (49 LOC)
 library;
 
 import 'dart:async';
@@ -212,56 +212,64 @@ class ProcessUserInputResult {
 
 typedef GracefulShutdownFn = void Function(int code);
 
-typedef ProcessUserInputFn = Future<ProcessUserInputResult> Function({
-  required String input,
-  String? preExpansionInput,
-  required PromptInputMode mode,
-  Map<int, PastedContent>? pastedContents,
-  required List<Map<String, dynamic>> messages,
-  required QuerySource querySource,
-  Map<String, dynamic>? ideSelection,
-  bool? skipSlashCommands,
-  String? uuid,
-  bool? skipAttachments,
-  bool? isAlreadyProcessing,
-  void Function(String? prompt)? setUserInputOnProcessing,
-  bool Function(String toolName)? canUseTool,
-  String? bridgeOrigin,
-  bool? isMeta,
-});
+typedef ProcessUserInputFn =
+    Future<ProcessUserInputResult> Function({
+      required String input,
+      String? preExpansionInput,
+      required PromptInputMode mode,
+      Map<int, PastedContent>? pastedContents,
+      required List<Map<String, dynamic>> messages,
+      required QuerySource querySource,
+      Map<String, dynamic>? ideSelection,
+      bool? skipSlashCommands,
+      String? uuid,
+      bool? skipAttachments,
+      bool? isAlreadyProcessing,
+      void Function(String? prompt)? setUserInputOnProcessing,
+      bool Function(String toolName)? canUseTool,
+      String? bridgeOrigin,
+      bool? isMeta,
+    });
 
 typedef EnqueueFn = void Function(QueuedCommand command);
 
-typedef OnQueryFn = Future<void> Function(
-  List<Map<String, dynamic>> newMessages,
-  Object abortController,
-  bool shouldQuery,
-  List<String> additionalAllowedTools,
-  String mainLoopModel,
-  Future<bool> Function(String input, List<Map<String, dynamic>> newMessages)?
+typedef OnQueryFn =
+    Future<void> Function(
+      List<Map<String, dynamic>> newMessages,
+      Object abortController,
+      bool shouldQuery,
+      List<String> additionalAllowedTools,
+      String mainLoopModel,
+      Future<bool> Function(
+        String input,
+        List<Map<String, dynamic>> newMessages,
+      )?
       onBeforeQuery,
-  String? input,
-  EffortValue? effort,
-);
+      String? input,
+      EffortValue? effort,
+    );
 
-typedef SetToolJSXFn = void Function({
-  dynamic jsx,
-  bool shouldHidePromptInput,
-  bool? clearLocalJSX,
-  bool? isLocalJSXCommand,
-  bool? isImmediate,
-});
+typedef SetToolJSXFn =
+    void Function({
+      dynamic jsx,
+      bool shouldHidePromptInput,
+      bool? clearLocalJSX,
+      bool? isLocalJSXCommand,
+      bool? isImmediate,
+    });
 
-typedef GetToolUseContextFn = Map<String, dynamic> Function(
-  List<Map<String, dynamic>> messages,
-  List<Map<String, dynamic>> newMessages,
-  Object abortController,
-  String mainLoopModel,
-);
+typedef GetToolUseContextFn =
+    Map<String, dynamic> Function(
+      List<Map<String, dynamic>> messages,
+      List<Map<String, dynamic>> newMessages,
+      Object abortController,
+      String mainLoopModel,
+    );
 
-typedef SetAppStateFn = void Function(
-  Map<String, dynamic> Function(Map<String, dynamic> prev) updater,
-);
+typedef SetAppStateFn =
+    void Function(
+      Map<String, dynamic> Function(Map<String, dynamic> prev) updater,
+    );
 
 // ===================================================================
 // Base Execution Parameters
@@ -283,7 +291,10 @@ class BaseExecutionParams {
   final OnQueryFn onQuery;
   final SetAppStateFn setAppState;
   final Future<bool> Function(
-      String input, List<Map<String, dynamic>> newMessages)? onBeforeQuery;
+    String input,
+    List<Map<String, dynamic>> newMessages,
+  )?
+  onBeforeQuery;
   final bool Function(String toolName)? canUseTool;
 
   const BaseExecutionParams({
@@ -351,8 +362,9 @@ class HandlePromptSubmitParams extends BaseExecutionParams {
   final void Function(AppNotification notification)? addNotification;
   final void Function(
     List<Map<String, dynamic>> Function(List<Map<String, dynamic>> prev)
-        updater,
-  )? setMessages;
+    updater,
+  )?
+  setMessages;
   final SpinnerMode? streamMode;
   final bool? hasInterruptibleToolInProgress;
   final String? uuid;
@@ -405,8 +417,7 @@ const _exitInputs = ['exit', 'quit', ':q', ':q!', ':wq', ':wq!'];
 final _imageRefPattern = RegExp(r'\[Image #(\d+)\]');
 
 /// Pasted text reference pattern: [Pasted Text #N (M lines)].
-final _pastedTextRefPattern =
-    RegExp(r'\[Pasted Text #(\d+) \((\d+) lines\)\]');
+final _pastedTextRefPattern = RegExp(r'\[Pasted Text #(\d+) \((\d+) lines\)\]');
 
 /// Parse inline references from prompt text.
 List<ParsedReference> parseReferences(String input) {
@@ -528,8 +539,7 @@ Future<void> handlePromptSubmit({
   // Handle exit commands — skip for remote bridge messages.
   final skipSlashCommands = params.skipSlashCommands ?? false;
   if (!skipSlashCommands && _exitInputs.contains(input.trim())) {
-    final exitCommand =
-        commands.where((cmd) => cmd.name == 'exit').firstOrNull;
+    final exitCommand = commands.where((cmd) => cmd.name == 'exit').firstOrNull;
     if (exitCommand != null) {
       await handlePromptSubmit(
         params: HandlePromptSubmitParams(
@@ -562,11 +572,11 @@ Future<void> handlePromptSubmit({
   // Parse references and replace with actual content early, before queueing
   // or immediate-command dispatch.
   final finalInput = expandPastedTextRefs(input, pastedContents);
-  final pastedTextRefs = parseReferences(input)
-      .where((r) => pastedContents[r.id]?.type == 'text')
-      .toList();
-  final pastedTextCount = pastedTextRefs.length;
-  final pastedTextBytes = pastedTextRefs.fold<int>(
+  final pastedTextRefs = parseReferences(
+    input,
+  ).where((r) => pastedContents[r.id]?.type == 'text').toList();
+  final _pastedTextCount = pastedTextRefs.length;
+  final _pastedTextBytes = pastedTextRefs.fold<int>(
     0,
     (sum, r) => sum + (pastedContents[r.id]?.content.length ?? 0),
   );
@@ -599,7 +609,7 @@ Future<void> handlePromptSubmit({
       setPastedContents({});
       helpers.clearBuffer();
 
-      final context = params.getToolUseContext(
+      final _context = params.getToolUseContext(
         params.messages,
         [],
         Object(), // placeholder abort controller
@@ -611,20 +621,22 @@ Future<void> handlePromptSubmit({
       // immediateCommand.load() and then impl.call(onDone, context, args).
       // Simplified here since Flutter uses a different UI layer.
 
-      bool doneWasCalled = false;
+      bool _doneWasCalled = false;
       void onDone(String? result, {String? nextInput, bool? submitNextInput}) {
-        doneWasCalled = true;
+        _doneWasCalled = true;
         params.setToolJSX(
           jsx: null,
           shouldHidePromptInput: false,
           clearLocalJSX: true,
         );
         if (result != null && params.addNotification != null) {
-          params.addNotification!(AppNotification(
-            key: 'immediate-${immediateCommand.name}',
-            text: result,
-            priority: 'immediate',
-          ));
+          params.addNotification!(
+            AppNotification(
+              key: 'immediate-${immediateCommand.name}',
+              text: result,
+              priority: 'immediate',
+            ),
+          );
         }
         if (nextInput != null) {
           if (submitNextInput == true) {
@@ -659,14 +671,16 @@ Future<void> handlePromptSubmit({
 
     // Enqueue with string value + raw pastedContents. Images will be resized
     // at execution time when processUserInput runs.
-    enqueue(QueuedCommand(
-      value: finalInput.trim(),
-      preExpansionValue: input.trim(),
-      mode: mode,
-      pastedContents: hasImages ? pastedContents : null,
-      skipSlashCommands: skipSlashCommands ? true : null,
-      uuid: params.uuid,
-    ));
+    enqueue(
+      QueuedCommand(
+        value: finalInput.trim(),
+        preExpansionValue: input.trim(),
+        mode: mode,
+        pastedContents: hasImages ? pastedContents : null,
+        skipSlashCommands: skipSlashCommands ? true : null,
+        uuid: params.uuid,
+      ),
+    );
 
     onInputChange('');
     helpers.setCursorOffset(0);
@@ -748,7 +762,8 @@ Future<void> _executeUserInput({
     // Compute workload tag. Only tag when EVERY command agrees on the same
     // non-null workload.
     final firstWorkload = commands.isNotEmpty ? commands[0].workload : null;
-    final turnWorkload = firstWorkload != null &&
+    final _turnWorkload =
+        firstWorkload != null &&
             commands.every((c) => c.workload == firstWorkload)
         ? firstWorkload
         : null;
@@ -769,15 +784,17 @@ Future<void> _executeUserInput({
         uuid: cmd.uuid,
         skipAttachments: !isFirst,
         isAlreadyProcessing: !isFirst,
-        setUserInputOnProcessing:
-            isFirst ? params.setUserInputOnProcessing : null,
+        setUserInputOnProcessing: isFirst
+            ? params.setUserInputOnProcessing
+            : null,
         canUseTool: params.canUseTool,
         bridgeOrigin: cmd.bridgeOrigin,
         isMeta: cmd.isMeta,
       );
 
       // Stamp origin for task-notification messages.
-      final origin = cmd.origin ??
+      final origin =
+          cmd.origin ??
           (cmd.mode == PromptInputMode.taskNotification
               ? const TaskNotificationOrigin()
               : null);
@@ -814,8 +831,7 @@ Future<void> _executeUserInput({
       final primaryCmd = commands.isNotEmpty ? commands[0] : null;
       final primaryMode = primaryCmd?.mode ?? PromptInputMode.prompt;
       final primaryInput = primaryCmd?.value;
-      final shouldCallBeforeQuery =
-          primaryMode == PromptInputMode.prompt;
+      final shouldCallBeforeQuery = primaryMode == PromptInputMode.prompt;
 
       await params.onQuery(
         newMessages,
@@ -868,14 +884,12 @@ class EditorResult {
 
 /// Map of editor command overrides (e.g. to add wait flags).
 const _editorOverrides = <String, String>{
-  'code': 'code -w',    // VS Code: wait for file to be closed
+  'code': 'code -w', // VS Code: wait for file to be closed
   'subl': 'subl --wait', // Sublime Text: wait for file to be closed
 };
 
 /// GUI editors that open in a separate window.
-const _guiEditorNames = {
-  'code', 'subl', 'atom', 'mate', 'webstorm', 'idea',
-};
+const _guiEditorNames = {'code', 'subl', 'atom', 'mate', 'webstorm', 'idea'};
 
 /// Check if an editor is a GUI editor (opens a separate window).
 bool _isGuiEditor(String editor) {
@@ -903,11 +917,10 @@ EditorResult editFileInEditor({
   final editorCommand = _editorOverrides[editor] ?? editor;
 
   try {
-    final result = Process.runSync(
-      'sh',
-      ['-c', '$editorCommand "$filePath"'],
-      runInShell: false,
-    );
+    final result = Process.runSync('sh', [
+      '-c',
+      '$editorCommand "$filePath"',
+    ], runInShell: false);
 
     if (result.exitCode != 0) {
       return EditorResult(
@@ -941,7 +954,8 @@ String recollapsePastedContent({
       if (contentIndex != -1) {
         final numLines = getPastedTextRefNumLines(contentStr);
         final ref = formatPastedTextRef(pasteId, numLines);
-        collapsed = collapsed.substring(0, contentIndex) +
+        collapsed =
+            collapsed.substring(0, contentIndex) +
             ref +
             collapsed.substring(contentIndex + contentStr.length);
       }
@@ -973,10 +987,7 @@ EditorResult editPromptInEditor({
 
     tempFile.writeAsStringSync(expandedPrompt);
 
-    final result = editFileInEditor(
-      filePath: tempFile.path,
-      editor: editor,
-    );
+    final result = editFileInEditor(filePath: tempFile.path, editor: editor);
 
     if (result.content == null) return result;
 
@@ -1053,8 +1064,8 @@ class ShellCommandResult {
 }
 
 /// Callback for executing a shell command.
-typedef ShellCommandExecutor = Future<ShellCommandResult> Function(
-    String command);
+typedef ShellCommandExecutor =
+    Future<ShellCommandResult> Function(String command);
 
 /// Callback for checking shell permissions.
 typedef ShellPermissionChecker = Future<bool> Function(String command);
@@ -1086,35 +1097,37 @@ Future<String> executeShellCommandsInPrompt({
 
   final allMatches = [...blockMatches, ...inlineMatches];
 
-  await Future.wait(allMatches.map((match) async {
-    final command = match.group(1)?.trim();
-    if (command == null || command.isEmpty) return;
+  await Future.wait(
+    allMatches.map((match) async {
+      final command = match.group(1)?.trim();
+      if (command == null || command.isEmpty) return;
 
-    try {
-      final permitted = await hasPermission(command);
-      if (!permitted) {
-        throw MalformedCommandError(
-          'Shell command permission check failed for pattern '
-          '"${match.group(0)}": Permission denied',
+      try {
+        final permitted = await hasPermission(command);
+        if (!permitted) {
+          throw MalformedCommandError(
+            'Shell command permission check failed for pattern '
+            '"${match.group(0)}": Permission denied',
+          );
+        }
+
+        final shellResult = await executeCommand(command);
+        final output = formatBashOutput(
+          stdout: shellResult.stdout,
+          stderr: shellResult.stderr,
         );
+        // Use function-based replacement to avoid $ interpolation issues.
+        result = result.replaceFirst(match.group(0)!, output);
+      } on MalformedCommandError {
+        rethrow;
+      } on ShellError catch (e) {
+        formatBashError(e: e, pattern: match.group(0)!);
+      } catch (e) {
+        final message = e.toString();
+        throw MalformedCommandError('[Error]\n$message');
       }
-
-      final shellResult = await executeCommand(command);
-      final output = formatBashOutput(
-        stdout: shellResult.stdout,
-        stderr: shellResult.stderr,
-      );
-      // Use function-based replacement to avoid $ interpolation issues.
-      result = result.replaceFirst(match.group(0)!, output);
-    } on MalformedCommandError {
-      rethrow;
-    } on ShellError catch (e) {
-      formatBashError(e: e, pattern: match.group(0)!);
-    } catch (e) {
-      final message = e.toString();
-      throw MalformedCommandError('[Error]\n$message');
-    }
-  }));
+    }),
+  );
 
   return result;
 }
@@ -1187,9 +1200,7 @@ QuerySource getQuerySourceForAgent({
   required bool isBuiltInAgent,
 }) {
   if (isBuiltInAgent) {
-    return agentType != null
-        ? 'agent:builtin:$agentType'
-        : 'agent:default';
+    return agentType != null ? 'agent:builtin:$agentType' : 'agent:default';
   } else {
     return 'agent:custom';
   }
@@ -1198,9 +1209,7 @@ QuerySource getQuerySourceForAgent({
 /// Determines the query source based on output style settings (analytics).
 ///
 /// Used for analytics to track different output style usage.
-QuerySource getQuerySourceForREPL({
-  String? outputStyle,
-}) {
+QuerySource getQuerySourceForREPL({String? outputStyle}) {
   final style = outputStyle ?? defaultOutputStyleName;
 
   if (style == defaultOutputStyleName) {

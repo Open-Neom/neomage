@@ -376,19 +376,18 @@ class DiffService {
       final oldFile = File(oldPath);
       final newFile = File(newPath);
 
-      final oldText = await oldFile.exists() ? await oldFile.readAsString() : '';
-      final newText = await newFile.exists() ? await newFile.readAsString() : '';
+      final oldText = await oldFile.exists()
+          ? await oldFile.readAsString()
+          : '';
+      final newText = await newFile.exists()
+          ? await newFile.readAsString()
+          : '';
 
       if (oldText == newText) continue;
 
       final hunks = computeDiff(oldText, newText);
       final stats = _computeStats(hunks);
-      diffs.add(FileDiff(
-        path: rel,
-        oldPath: rel,
-        hunks: hunks,
-        stats: stats,
-      ));
+      diffs.add(FileDiff(path: rel, oldPath: rel, hunks: hunks, stats: stats));
     }
     return diffs;
   }
@@ -566,27 +565,33 @@ class DiffService {
               !lines[i].startsWith('--- ')) {
             final raw = lines[i];
             if (raw.startsWith('+')) {
-              hunkLines.add(DiffLine(
-                type: DiffLineType.add,
-                content: raw.substring(1),
-                newLineNumber: newLine,
-              ));
+              hunkLines.add(
+                DiffLine(
+                  type: DiffLineType.add,
+                  content: raw.substring(1),
+                  newLineNumber: newLine,
+                ),
+              );
               newLine++;
             } else if (raw.startsWith('-')) {
-              hunkLines.add(DiffLine(
-                type: DiffLineType.remove,
-                content: raw.substring(1),
-                oldLineNumber: oldLine,
-              ));
+              hunkLines.add(
+                DiffLine(
+                  type: DiffLineType.remove,
+                  content: raw.substring(1),
+                  oldLineNumber: oldLine,
+                ),
+              );
               oldLine++;
             } else if (raw.startsWith(' ') || raw.isEmpty) {
               final content = raw.isEmpty ? '' : raw.substring(1);
-              hunkLines.add(DiffLine(
-                type: DiffLineType.context,
-                content: content,
-                oldLineNumber: oldLine,
-                newLineNumber: newLine,
-              ));
+              hunkLines.add(
+                DiffLine(
+                  type: DiffLineType.context,
+                  content: content,
+                  oldLineNumber: oldLine,
+                  newLineNumber: newLine,
+                ),
+              );
               oldLine++;
               newLine++;
             } else {
@@ -595,22 +600,21 @@ class DiffService {
             i++;
           }
 
-          hunks.add(DiffHunk(
-            oldStart: header.oldStart,
-            oldCount: header.oldCount,
-            newStart: header.newStart,
-            newCount: header.newCount,
-            lines: hunkLines,
-          ));
+          hunks.add(
+            DiffHunk(
+              oldStart: header.oldStart,
+              oldCount: header.oldCount,
+              newStart: header.newStart,
+              newCount: header.newCount,
+              lines: hunkLines,
+            ),
+          );
         }
 
         final stats = _computeStats(hunks);
-        diffs.add(FileDiff(
-          path: newPath,
-          oldPath: oldPath,
-          hunks: hunks,
-          stats: stats,
-        ));
+        diffs.add(
+          FileDiff(path: newPath, oldPath: oldPath, hunks: hunks, stats: stats),
+        );
       } else {
         i++;
       }
@@ -695,12 +699,14 @@ class DiffService {
       if (!theirDel) theirBlock.add(baseLines[baseIdx]);
       if (theirIns != null) theirBlock.addAll(theirIns);
 
-      conflicts.add(ConflictRegion(
-        base: [baseLines[baseIdx]],
-        ours: ourBlock,
-        theirs: theirBlock,
-        startLine: startLine,
-      ));
+      conflicts.add(
+        ConflictRegion(
+          base: [baseLines[baseIdx]],
+          ours: ourBlock,
+          theirs: theirBlock,
+          startLine: startLine,
+        ),
+      );
 
       merged.add('<<<<<<< ours');
       merged.addAll(ourBlock);
@@ -740,14 +746,22 @@ class DiffService {
     for (final edit in edits) {
       switch (edit.type) {
         case _EditType.equal:
-          oldSpans.add(InlineSpan(text: oldTokens[edit.oldIndex], isChanged: false));
-          newSpans.add(InlineSpan(text: newTokens[edit.newIndex], isChanged: false));
+          oldSpans.add(
+            InlineSpan(text: oldTokens[edit.oldIndex], isChanged: false),
+          );
+          newSpans.add(
+            InlineSpan(text: newTokens[edit.newIndex], isChanged: false),
+          );
           break;
         case _EditType.delete:
-          oldSpans.add(InlineSpan(text: oldTokens[edit.oldIndex], isChanged: true));
+          oldSpans.add(
+            InlineSpan(text: oldTokens[edit.oldIndex], isChanged: true),
+          );
           break;
         case _EditType.insert:
-          newSpans.add(InlineSpan(text: newTokens[edit.newIndex], isChanged: true));
+          newSpans.add(
+            InlineSpan(text: newTokens[edit.newIndex], isChanged: true),
+          );
           break;
       }
     }
@@ -809,41 +823,49 @@ class DiffService {
 
         switch (edit.type) {
           case _EditType.equal:
-            hunkLines.add(DiffLine(
-              type: DiffLineType.context,
-              content: oldLines[edit.oldIndex],
-              oldLineNumber: edit.oldIndex + 1,
-              newLineNumber: edit.newIndex + 1,
-            ));
+            hunkLines.add(
+              DiffLine(
+                type: DiffLineType.context,
+                content: oldLines[edit.oldIndex],
+                oldLineNumber: edit.oldIndex + 1,
+                newLineNumber: edit.newIndex + 1,
+              ),
+            );
             oldCount++;
             newCount++;
             break;
           case _EditType.delete:
-            hunkLines.add(DiffLine(
-              type: DiffLineType.remove,
-              content: oldLines[edit.oldIndex],
-              oldLineNumber: edit.oldIndex + 1,
-            ));
+            hunkLines.add(
+              DiffLine(
+                type: DiffLineType.remove,
+                content: oldLines[edit.oldIndex],
+                oldLineNumber: edit.oldIndex + 1,
+              ),
+            );
             oldCount++;
             break;
           case _EditType.insert:
-            hunkLines.add(DiffLine(
-              type: DiffLineType.add,
-              content: newLines[edit.newIndex],
-              newLineNumber: edit.newIndex + 1,
-            ));
+            hunkLines.add(
+              DiffLine(
+                type: DiffLineType.add,
+                content: newLines[edit.newIndex],
+                newLineNumber: edit.newIndex + 1,
+              ),
+            );
             newCount++;
             break;
         }
       }
 
-      hunks.add(DiffHunk(
-        oldStart: hunkOldStart ?? 1,
-        oldCount: oldCount,
-        newStart: hunkNewStart ?? 1,
-        newCount: newCount,
-        lines: hunkLines,
-      ));
+      hunks.add(
+        DiffHunk(
+          oldStart: hunkOldStart ?? 1,
+          oldCount: oldCount,
+          newStart: hunkNewStart ?? 1,
+          newCount: newCount,
+          lines: hunkLines,
+        ),
+      );
     }
     return hunks;
   }

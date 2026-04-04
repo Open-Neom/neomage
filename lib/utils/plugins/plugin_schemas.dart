@@ -1,6 +1,6 @@
 /// Plugin Schemas and Validation
 ///
-/// Ported from openneomclaw/src/utils/plugins/schemas.ts and validatePlugin.ts
+/// Ported from neom_claw/src/utils/plugins/schemas.ts and validatePlugin.ts
 ///
 /// This module provides:
 /// - Plugin manifest schema definitions and validation
@@ -9,6 +9,7 @@
 /// - Hooks.json validation
 /// - Official marketplace name impersonation detection
 /// - Path traversal security checks
+library;
 
 import 'dart:convert' show jsonDecode;
 import 'package:neom_claw/core/platform/claw_io.dart';
@@ -70,10 +71,7 @@ bool isBlockedOfficialName(String name) {
 const String officialGithubOrg = 'anthropics';
 
 /// Validate that a marketplace with a reserved name comes from the official source.
-String? validateOfficialNameSource(
-  String name,
-  PluginSourceConfig source,
-) {
+String? validateOfficialNameSource(String name, PluginSourceConfig source) {
   final normalizedName = name.toLowerCase();
   if (!allowedOfficialMarketplaceNames.contains(normalizedName)) {
     return null;
@@ -113,11 +111,7 @@ class PluginSourceConfig {
   final String? repo;
   final String? url;
 
-  const PluginSourceConfig({
-    required this.type,
-    this.repo,
-    this.url,
-  });
+  const PluginSourceConfig({required this.type, this.repo, this.url});
 }
 
 /// Plugin author information.
@@ -126,11 +120,7 @@ class PluginAuthor {
   final String? email;
   final String? url;
 
-  const PluginAuthor({
-    required this.name,
-    this.email,
-    this.url,
-  });
+  const PluginAuthor({required this.name, this.email, this.url});
 
   factory PluginAuthor.fromJson(Map<String, dynamic> json) {
     return PluginAuthor(
@@ -141,10 +131,10 @@ class PluginAuthor {
   }
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        if (email != null) 'email': email,
-        if (url != null) 'url': url,
-      };
+    'name': name,
+    if (email != null) 'email': email,
+    if (url != null) 'url': url,
+  };
 }
 
 /// User-configurable option in plugin manifest.
@@ -186,18 +176,24 @@ class PluginUserConfigOption {
   }
 
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'title': title,
-        'description': description,
-        if (required != null) 'required': required,
-        if (defaultValue != null) 'default': defaultValue,
-        if (multiple != null) 'multiple': multiple,
-        if (sensitive != null) 'sensitive': sensitive,
-        if (min != null) 'min': min,
-        if (max != null) 'max': max,
-      };
+    'type': type,
+    'title': title,
+    'description': description,
+    if (required != null) 'required': required,
+    if (defaultValue != null) 'default': defaultValue,
+    if (multiple != null) 'multiple': multiple,
+    if (sensitive != null) 'sensitive': sensitive,
+    if (min != null) 'min': min,
+    if (max != null) 'max': max,
+  };
 
-  static const validTypes = ['string', 'number', 'boolean', 'directory', 'file'];
+  static const validTypes = [
+    'string',
+    'number',
+    'boolean',
+    'directory',
+    'file',
+  ];
 }
 
 /// Command metadata for plugin manifest or marketplace entry.
@@ -230,13 +226,13 @@ class CommandMetadata {
   }
 
   Map<String, dynamic> toJson() => {
-        if (source != null) 'source': source,
-        if (content != null) 'content': content,
-        if (description != null) 'description': description,
-        if (argumentHint != null) 'argumentHint': argumentHint,
-        if (model != null) 'model': model,
-        if (allowedTools != null) 'allowedTools': allowedTools,
-      };
+    if (source != null) 'source': source,
+    if (content != null) 'content': content,
+    if (description != null) 'description': description,
+    if (argumentHint != null) 'argumentHint': argumentHint,
+    if (model != null) 'model': model,
+    if (allowedTools != null) 'allowedTools': allowedTools,
+  };
 
   /// Validate that exactly one of source or content is present.
   bool get isValid =>
@@ -306,7 +302,10 @@ class PluginManifest {
       userConfig: json['userConfig'] is Map<String, dynamic>
           ? (json['userConfig'] as Map<String, dynamic>).map(
               (k, v) => MapEntry(
-                  k, PluginUserConfigOption.fromJson(v as Map<String, dynamic>)))
+                k,
+                PluginUserConfigOption.fromJson(v as Map<String, dynamic>),
+              ),
+            )
           : null,
       channels: (json['channels'] as List?)
           ?.map((e) => Map<String, dynamic>.from(e as Map))
@@ -369,14 +368,18 @@ class PluginMarketplace {
   factory PluginMarketplace.fromJson(Map<String, dynamic> json) {
     return PluginMarketplace(
       name: json['name'] as String? ?? '',
-      plugins: (json['plugins'] as List?)
-              ?.map((e) =>
-                  PluginMarketplaceEntry.fromJson(e as Map<String, dynamic>))
+      plugins:
+          (json['plugins'] as List?)
+              ?.map(
+                (e) =>
+                    PluginMarketplaceEntry.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
       metadata: json['metadata'] is Map<String, dynamic>
           ? MarketplaceMetadata.fromJson(
-              json['metadata'] as Map<String, dynamic>)
+              json['metadata'] as Map<String, dynamic>,
+            )
           : null,
     );
   }
@@ -410,11 +413,7 @@ class ValidationError {
   final String message;
   final String? code;
 
-  const ValidationError({
-    required this.path,
-    required this.message,
-    this.code,
-  });
+  const ValidationError({required this.path, required this.message, this.code});
 
   @override
   String toString() => '$path: $message';
@@ -425,10 +424,7 @@ class ValidationWarning {
   final String path;
   final String message;
 
-  const ValidationWarning({
-    required this.path,
-    required this.message,
-  });
+  const ValidationWarning({required this.path, required this.message});
 
   @override
   String toString() => '$path: $message';
@@ -476,12 +472,14 @@ void _checkPathTraversal(
   String? hint,
 }) {
   if (p.contains('..')) {
-    errors.add(ValidationError(
-      path: field,
-      message: hint != null
-          ? 'Path contains "..": $p. $hint'
-          : 'Path contains ".." which could be a path traversal attempt: $p',
-    ));
+    errors.add(
+      ValidationError(
+        path: field,
+        message: hint != null
+            ? 'Path contains "..": $p. $hint'
+            : 'Path contains ".." which could be a path traversal attempt: $p',
+      ),
+    );
   }
 }
 
@@ -503,53 +501,65 @@ List<ValidationError> validateMarketplaceName(String name) {
   final errors = <ValidationError>[];
 
   if (name.isEmpty) {
-    errors.add(const ValidationError(
-      path: 'name',
-      message: 'Marketplace must have a name',
-    ));
+    errors.add(
+      const ValidationError(
+        path: 'name',
+        message: 'Marketplace must have a name',
+      ),
+    );
     return errors;
   }
 
   if (name.contains(' ')) {
-    errors.add(const ValidationError(
-      path: 'name',
-      message:
-          'Marketplace name cannot contain spaces. Use kebab-case (e.g., "my-marketplace")',
-    ));
+    errors.add(
+      const ValidationError(
+        path: 'name',
+        message:
+            'Marketplace name cannot contain spaces. Use kebab-case (e.g., "my-marketplace")',
+      ),
+    );
   }
 
   if (name.contains('/') ||
       name.contains(r'\') ||
       name.contains('..') ||
       name == '.') {
-    errors.add(const ValidationError(
-      path: 'name',
-      message:
-          'Marketplace name cannot contain path separators (/ or \\), ".." sequences, or be "."',
-    ));
+    errors.add(
+      const ValidationError(
+        path: 'name',
+        message:
+            'Marketplace name cannot contain path separators (/ or \\), ".." sequences, or be "."',
+      ),
+    );
   }
 
   if (isBlockedOfficialName(name)) {
-    errors.add(const ValidationError(
-      path: 'name',
-      message:
-          'Marketplace name impersonates an official Anthropic/NeomClaw marketplace',
-    ));
+    errors.add(
+      const ValidationError(
+        path: 'name',
+        message:
+            'Marketplace name impersonates an official Anthropic/NeomClaw marketplace',
+      ),
+    );
   }
 
   if (name.toLowerCase() == 'inline') {
-    errors.add(const ValidationError(
-      path: 'name',
-      message:
-          'Marketplace name "inline" is reserved for --plugin-dir session plugins',
-    ));
+    errors.add(
+      const ValidationError(
+        path: 'name',
+        message:
+            'Marketplace name "inline" is reserved for --plugin-dir session plugins',
+      ),
+    );
   }
 
   if (name.toLowerCase() == 'builtin') {
-    errors.add(const ValidationError(
-      path: 'name',
-      message: 'Marketplace name "builtin" is reserved for built-in plugins',
-    ));
+    errors.add(
+      const ValidationError(
+        path: 'name',
+        message: 'Marketplace name "builtin" is reserved for built-in plugins',
+      ),
+    );
   }
 
   return errors;
@@ -591,7 +601,9 @@ Future<ValidationResult> validatePluginManifest(String filePath) async {
         success: false,
         errors: [
           const ValidationError(
-              path: 'json', message: 'Root must be a JSON object')
+            path: 'json',
+            message: 'Root must be a JSON object',
+          ),
         ],
         warnings: [],
         filePath: absolutePath,
@@ -603,7 +615,7 @@ Future<ValidationResult> validatePluginManifest(String filePath) async {
     return ValidationResult(
       success: false,
       errors: [
-        ValidationError(path: 'json', message: 'Invalid JSON syntax: $e')
+        ValidationError(path: 'json', message: 'Invalid JSON syntax: $e'),
       ],
       warnings: [],
       filePath: absolutePath,
@@ -615,74 +627,91 @@ Future<ValidationResult> validatePluginManifest(String filePath) async {
   _checkPathTraversalInManifest(parsed, errors);
 
   // Strip marketplace-only fields and warn
-  final strayKeys =
-      parsed.keys.where(_marketplaceOnlyManifestFields.contains).toList();
+  final strayKeys = parsed.keys
+      .where(_marketplaceOnlyManifestFields.contains)
+      .toList();
   for (final key in strayKeys) {
-    warnings.add(ValidationWarning(
-      path: key,
-      message:
-          "Field '$key' belongs in the marketplace entry (marketplace.json), "
-          "not plugin.json. It's harmless here but unused -- NeomClaw "
-          "ignores it at load time.",
-    ));
+    warnings.add(
+      ValidationWarning(
+        path: key,
+        message:
+            "Field '$key' belongs in the marketplace entry (marketplace.json), "
+            "not plugin.json. It's harmless here but unused -- NeomClaw "
+            "ignores it at load time.",
+      ),
+    );
   }
 
   // Validate required fields
   if (!parsed.containsKey('name') || parsed['name'] is! String) {
-    errors.add(const ValidationError(
-      path: 'name',
-      message: 'Plugin name is required and must be a string',
-    ));
+    errors.add(
+      const ValidationError(
+        path: 'name',
+        message: 'Plugin name is required and must be a string',
+      ),
+    );
   } else {
     final name = parsed['name'] as String;
     if (name.isEmpty) {
-      errors.add(const ValidationError(
-        path: 'name',
-        message: 'Plugin name cannot be empty',
-      ));
+      errors.add(
+        const ValidationError(
+          path: 'name',
+          message: 'Plugin name cannot be empty',
+        ),
+      );
     }
     if (name.contains(' ')) {
-      errors.add(const ValidationError(
-        path: 'name',
-        message:
-            'Plugin name cannot contain spaces. Use kebab-case (e.g., "my-plugin")',
-      ));
+      errors.add(
+        const ValidationError(
+          path: 'name',
+          message:
+              'Plugin name cannot contain spaces. Use kebab-case (e.g., "my-plugin")',
+        ),
+      );
     }
     // Kebab-case warning
     if (!RegExp(r'^[a-z0-9]+(-[a-z0-9]+)*$').hasMatch(name)) {
-      warnings.add(ValidationWarning(
-        path: 'name',
-        message:
-            'Plugin name "$name" is not kebab-case. NeomClaw accepts '
-            'it, but the NeomClaw.ai marketplace sync requires kebab-case '
-            '(lowercase letters, digits, and hyphens only, e.g., "my-plugin").',
-      ));
+      warnings.add(
+        ValidationWarning(
+          path: 'name',
+          message:
+              'Plugin name "$name" is not kebab-case. NeomClaw accepts '
+              'it, but the NeomClaw.ai marketplace sync requires kebab-case '
+              '(lowercase letters, digits, and hyphens only, e.g., "my-plugin").',
+        ),
+      );
     }
   }
 
   // Warn for missing optional fields
   if (!parsed.containsKey('version') || parsed['version'] == null) {
-    warnings.add(const ValidationWarning(
-      path: 'version',
-      message:
-          'No version specified. Consider adding a version following semver (e.g., "1.0.0")',
-    ));
+    warnings.add(
+      const ValidationWarning(
+        path: 'version',
+        message:
+            'No version specified. Consider adding a version following semver (e.g., "1.0.0")',
+      ),
+    );
   }
 
   if (!parsed.containsKey('description') || parsed['description'] == null) {
-    warnings.add(const ValidationWarning(
-      path: 'description',
-      message:
-          'No description provided. Adding a description helps users understand what your plugin does',
-    ));
+    warnings.add(
+      const ValidationWarning(
+        path: 'description',
+        message:
+            'No description provided. Adding a description helps users understand what your plugin does',
+      ),
+    );
   }
 
   if (!parsed.containsKey('author') || parsed['author'] == null) {
-    warnings.add(const ValidationWarning(
-      path: 'author',
-      message:
-          'No author information provided. Consider adding author details for plugin attribution',
-    ));
+    warnings.add(
+      const ValidationWarning(
+        path: 'author',
+        message:
+            'No author information provided. Consider adding author details for plugin attribution',
+      ),
+    );
   }
 
   return ValidationResult(
@@ -701,7 +730,9 @@ void _checkPathTraversalInManifest(
 ) {
   void checkArray(String fieldName) {
     if (!obj.containsKey(fieldName)) return;
-    final items = obj[fieldName] is List ? obj[fieldName] as List : [obj[fieldName]];
+    final items = obj[fieldName] is List
+        ? obj[fieldName] as List
+        : [obj[fieldName]];
     for (var i = 0; i < items.length; i++) {
       if (items[i] is String) {
         _checkPathTraversal(items[i] as String, '$fieldName[$i]', errors);
@@ -751,7 +782,9 @@ Future<ValidationResult> validateMarketplaceManifest(String filePath) async {
         success: false,
         errors: [
           const ValidationError(
-              path: 'json', message: 'Root must be a JSON object')
+            path: 'json',
+            message: 'Root must be a JSON object',
+          ),
         ],
         warnings: [],
         filePath: absolutePath,
@@ -763,7 +796,7 @@ Future<ValidationResult> validateMarketplaceManifest(String filePath) async {
     return ValidationResult(
       success: false,
       errors: [
-        ValidationError(path: 'json', message: 'Invalid JSON syntax: $e')
+        ValidationError(path: 'json', message: 'Invalid JSON syntax: $e'),
       ],
       warnings: [],
       filePath: absolutePath,
@@ -786,7 +819,9 @@ Future<ValidationResult> validateMarketplaceManifest(String filePath) async {
             hint: _marketplaceSourceHint(source),
           );
         }
-        if (source is Map && source.containsKey('path') && source['path'] is String) {
+        if (source is Map &&
+            source.containsKey('path') &&
+            source['path'] is String) {
           _checkPathTraversal(
             source['path'] as String,
             'plugins[$i].source.path',
@@ -801,33 +836,42 @@ Future<ValidationResult> validateMarketplaceManifest(String filePath) async {
   if (parsed.containsKey('name') && parsed['name'] is String) {
     errors.addAll(validateMarketplaceName(parsed['name'] as String));
   } else {
-    errors.add(const ValidationError(
-      path: 'name',
-      message: 'Marketplace must have a name',
-    ));
+    errors.add(
+      const ValidationError(
+        path: 'name',
+        message: 'Marketplace must have a name',
+      ),
+    );
   }
 
   // Validate plugins array
   if (!parsed.containsKey('plugins') || parsed['plugins'] is! List) {
-    warnings.add(const ValidationWarning(
-      path: 'plugins',
-      message: 'Marketplace has no plugins defined',
-    ));
+    warnings.add(
+      const ValidationWarning(
+        path: 'plugins',
+        message: 'Marketplace has no plugins defined',
+      ),
+    );
   } else {
     final plugins = (parsed['plugins'] as List)
-        .map((e) => PluginMarketplaceEntry.fromJson(
-            Map<String, dynamic>.from(e as Map)))
+        .map(
+          (e) => PluginMarketplaceEntry.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
         .toList();
 
     // Check for duplicates
     for (var i = 0; i < plugins.length; i++) {
       final duplicates = plugins.where((p) => p.name == plugins[i].name);
       if (duplicates.length > 1) {
-        errors.add(ValidationError(
-          path: 'plugins[$i].name',
-          message:
-              'Duplicate plugin name "${plugins[i].name}" found in marketplace',
-        ));
+        errors.add(
+          ValidationError(
+            path: 'plugins[$i].name',
+            message:
+                'Duplicate plugin name "${plugins[i].name}" found in marketplace',
+          ),
+        );
       }
     }
   }
@@ -835,11 +879,13 @@ Future<ValidationResult> validateMarketplaceManifest(String filePath) async {
   // Warn if no description in metadata
   if (parsed['metadata'] is! Map ||
       (parsed['metadata'] as Map?)?['description'] == null) {
-    warnings.add(const ValidationWarning(
-      path: 'metadata.description',
-      message:
-          'No marketplace description provided. Adding a description helps users understand what this marketplace offers',
-    ));
+    warnings.add(
+      const ValidationWarning(
+        path: 'metadata.description',
+        message:
+            'No marketplace description provided. Adding a description helps users understand what this marketplace offers',
+      ),
+    );
   }
 
   return ValidationResult(
@@ -869,12 +915,14 @@ ValidationResult validateComponentFile(
 
   final match = _frontmatterRegex.firstMatch(content);
   if (match == null) {
-    warnings.add(ValidationWarning(
-      path: 'frontmatter',
-      message:
-          'No frontmatter block found. Add YAML frontmatter between --- delimiters '
-          'at the top of the file to set description and other metadata.',
-    ));
+    warnings.add(
+      ValidationWarning(
+        path: 'frontmatter',
+        message:
+            'No frontmatter block found. Add YAML frontmatter between --- delimiters '
+            'at the top of the file to set description and other metadata.',
+      ),
+    );
     return ValidationResult(
       success: true,
       errors: errors,
@@ -901,22 +949,27 @@ ValidationResult validateComponentFile(
   // Check description
   if (!fields.containsKey('description')) {
     final typeStr = fileType.name;
-    warnings.add(ValidationWarning(
-      path: 'description',
-      message:
-          'No description in frontmatter. A description helps users and NeomClaw '
-          'understand when to use this $typeStr.',
-    ));
+    warnings.add(
+      ValidationWarning(
+        path: 'description',
+        message:
+            'No description in frontmatter. A description helps users and NeomClaw '
+            'understand when to use this $typeStr.',
+      ),
+    );
   }
 
   // Check shell field
   if (fields.containsKey('shell')) {
     final sh = fields['shell']!.trim().toLowerCase();
     if (sh != 'bash' && sh != 'powershell') {
-      errors.add(ValidationError(
-        path: 'shell',
-        message: "shell must be 'bash' or 'powershell', got '${fields['shell']}'.",
-      ));
+      errors.add(
+        ValidationError(
+          path: 'shell',
+          message:
+              "shell must be 'bash' or 'powershell', got '${fields['shell']}'.",
+        ),
+      );
     }
   }
 
@@ -952,7 +1005,10 @@ Future<ValidationResult> validateHooksJson(String filePath) async {
     return ValidationResult(
       success: false,
       errors: [
-        ValidationError(path: 'file', message: 'Failed to read file: ${e.message}')
+        ValidationError(
+          path: 'file',
+          message: 'Failed to read file: ${e.message}',
+        ),
       ],
       warnings: const [],
       filePath: filePath,
@@ -967,7 +1023,9 @@ Future<ValidationResult> validateHooksJson(String filePath) async {
         success: false,
         errors: [
           const ValidationError(
-              path: 'json', message: 'hooks.json root must be a JSON object')
+            path: 'json',
+            message: 'hooks.json root must be a JSON object',
+          ),
         ],
         warnings: const [],
         filePath: filePath,
@@ -980,7 +1038,9 @@ Future<ValidationResult> validateHooksJson(String filePath) async {
         success: false,
         errors: [
           const ValidationError(
-              path: 'hooks', message: 'hooks.json must contain a "hooks" field')
+            path: 'hooks',
+            message: 'hooks.json must contain a "hooks" field',
+          ),
         ],
         warnings: const [],
         filePath: filePath,
@@ -993,9 +1053,10 @@ Future<ValidationResult> validateHooksJson(String filePath) async {
       errors: [
         ValidationError(
           path: 'json',
-          message: 'Invalid JSON syntax: $e. '
+          message:
+              'Invalid JSON syntax: $e. '
               'At runtime this breaks the entire plugin load.',
-        )
+        ),
       ],
       warnings: const [],
       filePath: filePath,
@@ -1044,8 +1105,7 @@ Future<List<String>> _collectMarkdown(String dir, bool isSkillsDir) async {
 }
 
 /// Validate the content files inside a plugin directory.
-Future<List<ValidationResult>> validatePluginContents(
-    String pluginDir) async {
+Future<List<ValidationResult>> validatePluginContents(String pluginDir) async {
   final results = <ValidationResult>[];
 
   final dirs = <PluginFileType, String>{
@@ -1057,24 +1117,27 @@ Future<List<ValidationResult>> validatePluginContents(
   for (final entry in dirs.entries) {
     final fileType = entry.key;
     final dir = entry.value;
-    final files =
-        await _collectMarkdown(dir, fileType == PluginFileType.skill);
+    final files = await _collectMarkdown(dir, fileType == PluginFileType.skill);
     for (final filePath in files) {
       String content;
       try {
         content = await File(filePath).readAsString();
       } on FileSystemException catch (e) {
         if (e.osError?.errorCode == 2) continue; // ENOENT expected for skills
-        results.add(ValidationResult(
-          success: false,
-          errors: [
-            ValidationError(
-                path: 'file', message: 'Failed to read: ${e.message}')
-          ],
-          warnings: const [],
-          filePath: filePath,
-          fileType: fileType,
-        ));
+        results.add(
+          ValidationResult(
+            success: false,
+            errors: [
+              ValidationError(
+                path: 'file',
+                message: 'Failed to read: ${e.message}',
+              ),
+            ],
+            warnings: const [],
+            filePath: filePath,
+            fileType: fileType,
+          ),
+        );
         continue;
       }
       final r = validateComponentFile(filePath, content, fileType);
@@ -1084,8 +1147,9 @@ Future<List<ValidationResult>> validatePluginContents(
     }
   }
 
-  final hooksResult =
-      await validateHooksJson(path.join(pluginDir, 'hooks', 'hooks.json'));
+  final hooksResult = await validateHooksJson(
+    path.join(pluginDir, 'hooks', 'hooks.json'),
+  );
   if (hooksResult.errors.isNotEmpty || hooksResult.warnings.isNotEmpty) {
     results.add(hooksResult);
   }
@@ -1117,17 +1181,24 @@ Future<ValidationResult> validateManifest(String filePath) async {
   final entityType = await FileSystemEntity.type(absolutePath);
   if (entityType == FileSystemEntityType.directory) {
     // Look for manifest files in .neomclaw-plugin directory
-    final marketplacePath =
-        path.join(absolutePath, '.neomclaw-plugin', 'marketplace.json');
-    final marketplaceResult =
-        await validateMarketplaceManifest(marketplacePath);
+    final marketplacePath = path.join(
+      absolutePath,
+      '.neomclaw-plugin',
+      'marketplace.json',
+    );
+    final marketplaceResult = await validateMarketplaceManifest(
+      marketplacePath,
+    );
     if (marketplaceResult.errors.isEmpty ||
         marketplaceResult.errors.first.code != 'ENOENT') {
       return marketplaceResult;
     }
 
-    final pluginPath =
-        path.join(absolutePath, '.neomclaw-plugin', 'plugin.json');
+    final pluginPath = path.join(
+      absolutePath,
+      '.neomclaw-plugin',
+      'plugin.json',
+    );
     final pluginResult = await validatePluginManifest(pluginPath);
     if (pluginResult.errors.isEmpty ||
         pluginResult.errors.first.code != 'ENOENT') {
@@ -1171,7 +1242,9 @@ Future<ValidationResult> validateManifest(String filePath) async {
             success: false,
             errors: [
               ValidationError(
-                  path: 'file', message: 'File not found: $absolutePath'),
+                path: 'file',
+                message: 'File not found: $absolutePath',
+              ),
             ],
             warnings: const [],
             filePath: absolutePath,

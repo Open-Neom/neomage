@@ -10,10 +10,7 @@ class ModelCommand extends LocalCommand {
   final ModelChanger onModelChange;
   final String Function() getCurrentModel;
 
-  ModelCommand({
-    required this.onModelChange,
-    required this.getCurrentModel,
-  });
+  ModelCommand({required this.onModelChange, required this.getCurrentModel});
 
   @override
   String get name => 'model';

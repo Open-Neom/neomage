@@ -1,6 +1,6 @@
 /// IDE detection, integration helpers, path conversion.
 ///
-/// Ported from openneomclaw/src/utils/ide.ts (1494 LOC).
+/// Ported from neom_claw/src/utils/ide.ts (1494 LOC).
 library;
 
 import 'dart:async';
@@ -309,18 +309,20 @@ class WindowsToWSLConverter {
   /// Convert a Windows path to a WSL local path.
   String toLocalPath(String windowsPath) {
     // Handle UNC paths for WSL (\\wsl$\distro\...)
-    final wslUncMatch =
-        RegExp(r'^\\\\wsl\$\\([^\\]+)\\(.*)$', caseSensitive: false)
-            .firstMatch(windowsPath);
+    final wslUncMatch = RegExp(
+      r'^\\\\wsl\$\\([^\\]+)\\(.*)$',
+      caseSensitive: false,
+    ).firstMatch(windowsPath);
     if (wslUncMatch != null) {
       final path = wslUncMatch.group(2)!.replaceAll('\\', '/');
       return '/$path';
     }
 
     // Handle \\wsl.localhost\ paths
-    final wslLocalhostMatch =
-        RegExp(r'^\\\\wsl\.localhost\\([^\\]+)\\(.*)$', caseSensitive: false)
-            .firstMatch(windowsPath);
+    final wslLocalhostMatch = RegExp(
+      r'^\\\\wsl\.localhost\\([^\\]+)\\(.*)$',
+      caseSensitive: false,
+    ).firstMatch(windowsPath);
     if (wslLocalhostMatch != null) {
       final path = wslLocalhostMatch.group(2)!.replaceAll('\\', '/');
       return '/$path';
@@ -341,16 +343,19 @@ class WindowsToWSLConverter {
 /// Check if a WSL path belongs to a specific distro.
 bool checkWSLDistroMatch(String path, String distroName) {
   // Check \\wsl$\distro paths
-  final wslMatch =
-      RegExp(r'^\\\\wsl\$\\([^\\]+)', caseSensitive: false).firstMatch(path);
+  final wslMatch = RegExp(
+    r'^\\\\wsl\$\\([^\\]+)',
+    caseSensitive: false,
+  ).firstMatch(path);
   if (wslMatch != null) {
     return wslMatch.group(1)!.toLowerCase() == distroName.toLowerCase();
   }
 
   // Check \\wsl.localhost\distro paths
-  final localhostMatch =
-      RegExp(r'^\\\\wsl\.localhost\\([^\\]+)', caseSensitive: false)
-          .firstMatch(path);
+  final localhostMatch = RegExp(
+    r'^\\\\wsl\.localhost\\([^\\]+)',
+    caseSensitive: false,
+  ).firstMatch(path);
   if (localhostMatch != null) {
     return localhostMatch.group(1)!.toLowerCase() == distroName.toLowerCase();
   }
@@ -420,13 +425,14 @@ class IdeUtils extends SintController {
   Completer<void>? _currentSearchAbort;
 
   /// Path to the neomclaw config home directory.
-  String Function() _getNeomClawConfigHomeDir =
-      () => '${Platform.environment['HOME'] ?? ''}/.neomclaw';
+  String Function() _getNeomClawConfigHomeDir = () =>
+      '${Platform.environment['HOME'] ?? ''}/.neomclaw';
 
   /// Get the original CWD for workspace matching.
   String Function() _getOriginalCwd = () => Directory.current.path;
 
   /// Logging callback.
+  // ignore: unused_field
   void Function(String message, {String? level}) _logForDebugging =
       (message, {level}) {};
 
@@ -476,8 +482,12 @@ class IdeUtils extends SintController {
             await for (final user in usersDir.list()) {
               if (user is! Directory) continue;
               final name = user.path.split('/').last;
-              if (['Public', 'Default', 'Default User', 'All Users']
-                  .contains(name)) {
+              if ([
+                'Public',
+                'Default',
+                'Default User',
+                'All Users',
+              ].contains(name)) {
                 continue;
               }
               paths.add('${user.path}/.neomclaw/ide');
@@ -617,8 +627,10 @@ class IdeUtils extends SintController {
           continue;
         }
 
-        final host =
-            await detectHostIP(lockfileInfo.runningInWindows, lockfileInfo.port);
+        final host = await detectHostIP(
+          lockfileInfo.runningInWindows,
+          lockfileInfo.port,
+        );
         bool shouldDelete = false;
 
         if (lockfileInfo.pid != null) {
@@ -626,8 +638,10 @@ class IdeUtils extends SintController {
             shouldDelete = true;
           }
         } else {
-          final isResponding =
-              await checkIdeConnection(host, lockfileInfo.port);
+          final isResponding = await checkIdeConnection(
+            host,
+            lockfileInfo.port,
+          );
           if (!isResponding) {
             shouldDelete = true;
           }
@@ -659,8 +673,7 @@ class IdeUtils extends SintController {
     try {
       final cwd = _getOriginalCwd();
       final lockfiles = await getSortedIdeLockfiles();
-      final lockfileInfos =
-          await Future.wait(lockfiles.map(readIdeLockfile));
+      final lockfileInfos = await Future.wait(lockfiles.map(readIdeLockfile));
 
       for (final lockfileInfo in lockfileInfos) {
         if (lockfileInfo == null) continue;
@@ -686,15 +699,17 @@ class IdeUtils extends SintController {
             ? 'ws://$host:${lockfileInfo.port}'
             : 'http://$host:${lockfileInfo.port}/sse';
 
-        detectedIDEs.add(DetectedIDEInfo(
-          url: url,
-          name: lockfileInfo.ideName ?? 'IDE',
-          workspaceFolders: lockfileInfo.workspaceFolders,
-          port: lockfileInfo.port,
-          isValid: isValid,
-          authToken: lockfileInfo.authToken,
-          ideRunningInWindows: lockfileInfo.runningInWindows,
-        ));
+        detectedIDEs.add(
+          DetectedIDEInfo(
+            url: url,
+            name: lockfileInfo.ideName ?? 'IDE',
+            workspaceFolders: lockfileInfo.workspaceFolders,
+            port: lockfileInfo.port,
+            isValid: isValid,
+            authToken: lockfileInfo.authToken,
+            ideRunningInWindows: lockfileInfo.runningInWindows,
+          ),
+        );
       }
     } catch (e) {
       _logError(e);
@@ -858,8 +873,10 @@ class IdeUtils extends SintController {
   /// Get the installed VSCode extension version.
   Future<String?> getInstalledVSCodeExtensionVersion(String command) async {
     try {
-      final result =
-          await Process.run(command, ['--list-extensions', '--show-versions']);
+      final result = await Process.run(command, [
+        '--list-extensions',
+        '--show-versions',
+      ]);
       final lines = (result.stdout as String?)?.split('\n') ?? [];
       for (final line in lines) {
         final parts = line.split('@');
@@ -879,10 +896,11 @@ class IdeUtils extends SintController {
       if (isVSCodeIde(ideType)) {
         final command = getVSCodeIDECommand(ideType);
         if (command != null) {
-          final result = await Process.run(
-            command,
-            ['--force', '--install-extension', 'anthropic.neom-claw'],
-          );
+          final result = await Process.run(command, [
+            '--force',
+            '--install-extension',
+            'anthropic.neom-claw',
+          ]);
           if (result.exitCode != 0) {
             throw Exception('${result.exitCode}: ${result.stderr}');
           }
@@ -914,8 +932,7 @@ class IdeUtils extends SintController {
     List<Map<String, dynamic>> mcpClients,
   ) {
     return mcpClients.any(
-      (client) =>
-          client['type'] == 'connected' && client['name'] == 'ide',
+      (client) => client['type'] == 'connected' && client['name'] == 'ide',
     );
   }
 
@@ -947,8 +964,7 @@ class IdeUtils extends SintController {
     if (mcpClients == null) return null;
     try {
       return mcpClients.firstWhere(
-        (client) =>
-            client['type'] == 'connected' && client['name'] == 'ide',
+        (client) => client['type'] == 'connected' && client['name'] == 'ide',
       );
     } catch (_) {
       return null;
@@ -988,8 +1004,9 @@ class IdeUtils extends SintController {
           'ip route show | grep -i default',
         ]);
         if (result.exitCode == 0) {
-          final match = RegExp(r'default via (\d+\.\d+\.\d+\.\d+)')
-              .firstMatch(result.stdout as String);
+          final match = RegExp(
+            r'default via (\d+\.\d+\.\d+\.\d+)',
+          ).firstMatch(result.stdout as String);
           if (match != null) {
             final gatewayIP = match.group(1)!;
             if (await checkIdeConnection(gatewayIP, port)) {
@@ -1014,7 +1031,8 @@ class IdeUtils extends SintController {
     required void Function(DetectedIDEInfo?) onIdeDetected,
     IdeType? ideToInstallExtension,
     required void Function() onShowIdeOnboarding,
-    required void Function(IDEExtensionInstallationStatus?) onInstallationComplete,
+    required void Function(IDEExtensionInstallationStatus?)
+    onInstallationComplete,
   }) async {
     // Don't await so we don't block startup
     unawaited(findAvailableIDE().then(onIdeDetected));

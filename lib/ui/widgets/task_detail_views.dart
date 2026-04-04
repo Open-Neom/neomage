@@ -1,4 +1,4 @@
-// TaskDetailViews — faithful port of openneomclaw/src/components/tasks/
+// TaskDetailViews — faithful port of neom_claw/src/components/tasks/
 // Ports: ShellDetailDialog, AsyncAgentDetailDialog, RemoteSessionDetailDialog,
 // InProcessTeammateDetailDialog, DreamDetailDialog, ShellProgress,
 // RemoteSessionProgress, renderToolActivity, and related types.
@@ -27,10 +27,7 @@ class ToolActivity {
   final String toolName;
   final Map<String, dynamic> input;
 
-  const ToolActivity({
-    required this.toolName,
-    this.input = const {},
-  });
+  const ToolActivity({required this.toolName, this.input = const {}});
 }
 
 /// Format a tool use activity into a human-readable string.
@@ -43,8 +40,9 @@ String renderToolActivity(ToolActivity activity) {
   for (final v in input.values) {
     if (v is String && v.trim().isNotEmpty) {
       final oneLine = v.replaceAll(RegExp(r'\s+'), ' ').trim();
-      final truncated =
-          oneLine.length > 60 ? '${oneLine.substring(0, 57)}...' : oneLine;
+      final truncated = oneLine.length > 60
+          ? '${oneLine.substring(0, 57)}...'
+          : oneLine;
       return '$name $truncated';
     }
   }
@@ -66,18 +64,20 @@ String formatToolUseSummary(String name, dynamic input) {
       final q = qs[0]['question'] as String? ?? qs[0]['header'] as String?;
       if (q != null && q.isNotEmpty) {
         final oneLine = q.replaceAll(RegExp(r'\s+'), ' ').trim();
-        final truncated =
-            oneLine.length > 50 ? '${oneLine.substring(0, 47)}...' : oneLine;
+        final truncated = oneLine.length > 50
+            ? '${oneLine.substring(0, 47)}...'
+            : oneLine;
         return 'Answer in browser: $truncated';
       }
     }
   }
 
-  for (final v in (input as Map).values) {
+  for (final v in (input).values) {
     if (v is String && v.trim().isNotEmpty) {
       final oneLine = v.replaceAll(RegExp(r'\s+'), ' ').trim();
-      final truncated =
-          oneLine.length > 60 ? '${oneLine.substring(0, 57)}...' : oneLine;
+      final truncated = oneLine.length > 60
+          ? '${oneLine.substring(0, 57)}...'
+          : oneLine;
       return '$name $truncated';
     }
   }
@@ -90,10 +90,7 @@ class TaskOutputResult {
   final String content;
   final int bytesTotal;
 
-  const TaskOutputResult({
-    required this.content,
-    required this.bytesTotal,
-  });
+  const TaskOutputResult({required this.content, required this.bytesTotal});
 
   static const empty = TaskOutputResult(content: '', bytesTotal: 0);
 }
@@ -150,13 +147,19 @@ class ShellProgressWidget extends StatelessWidget {
     switch (shell.status) {
       case TaskStatus.completed:
         return const TaskStatusTextWidget(
-            status: TaskStatus.completed, label: 'done');
+          status: TaskStatus.completed,
+          label: 'done',
+        );
       case TaskStatus.failed:
         return const TaskStatusTextWidget(
-            status: TaskStatus.failed, label: 'error');
+          status: TaskStatus.failed,
+          label: 'error',
+        );
       case TaskStatus.killed:
         return const TaskStatusTextWidget(
-            status: TaskStatus.killed, label: 'stopped');
+          status: TaskStatus.killed,
+          label: 'stopped',
+        );
       case TaskStatus.running:
       case TaskStatus.pending:
         return const TaskStatusTextWidget(status: TaskStatus.running);
@@ -298,12 +301,10 @@ class ShellDetailDialog extends StatelessWidget {
     );
 
     final theme = Theme.of(context);
-    final displayCommand =
-        shell.kind == 'monitor'
-            ? shell.description
-            : (shell.command ?? shell.description);
-    final elapsedDuration =
-        DateTime.now().difference(shell.startTime);
+    final displayCommand = shell.kind == 'monitor'
+        ? shell.description
+        : (shell.command ?? shell.description);
+    final elapsedDuration = DateTime.now().difference(shell.startTime);
     final elapsedText = _formatDuration(elapsedDuration);
 
     return Dialog(
@@ -441,8 +442,7 @@ class ShellDetailDialog extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (shell.status == TaskStatus.running &&
-                    onKillShell != null)
+                if (shell.status == TaskStatus.running && onKillShell != null)
                   TextButton.icon(
                     icon: const Icon(Icons.stop, size: 16),
                     label: const Text('Stop'),
@@ -452,10 +452,7 @@ class ShellDetailDialog extends StatelessWidget {
                     onPressed: onKillShell,
                   ),
                 const SizedBox(width: 8),
-                TextButton(
-                  onPressed: onDone,
-                  child: const Text('Close'),
-                ),
+                TextButton(onPressed: onDone, child: const Text('Close')),
               ],
             ),
           ],
@@ -553,21 +550,24 @@ class AsyncAgentDetailDialog extends StatelessWidget {
 
     final theme = Theme.of(context);
     final agentType = 'agent';
-    final displayPrompt =
-        agent.description.length > 300
-            ? '${agent.description.substring(0, 297)}...'
-            : agent.description;
+    final displayPrompt = agent.description.length > 300
+        ? '${agent.description.substring(0, 297)}...'
+        : agent.description;
 
-    final statusIcon = getTaskStatusIcon(agent.status,
-        hasError: agent.hasError,
-        awaitingApproval: agent.awaitingApproval,
-        shutdownRequested: agent.shutdownRequested,
-        isIdle: agent.isIdle);
-    final statusColor = getTaskStatusColor(agent.status,
-        hasError: agent.hasError,
-        awaitingApproval: agent.awaitingApproval,
-        shutdownRequested: agent.shutdownRequested,
-        isIdle: agent.isIdle);
+    final statusIcon = getTaskStatusIcon(
+      agent.status,
+      hasError: agent.hasError,
+      awaitingApproval: agent.awaitingApproval,
+      shutdownRequested: agent.shutdownRequested,
+      isIdle: agent.isIdle,
+    );
+    final statusColor = getTaskStatusColor(
+      agent.status,
+      hasError: agent.hasError,
+      awaitingApproval: agent.awaitingApproval,
+      shutdownRequested: agent.shutdownRequested,
+      isIdle: agent.isIdle,
+    );
 
     return Dialog(
       child: Container(
@@ -617,20 +617,21 @@ class AsyncAgentDetailDialog extends StatelessWidget {
                     agent.status == TaskStatus.completed
                         ? 'Completed'
                         : agent.status == TaskStatus.failed
-                            ? 'Failed'
-                            : 'Stopped',
+                        ? 'Failed'
+                        : 'Stopped',
                     style: TextStyle(color: statusColor, fontSize: 13),
                   ),
-                  const Text(' \u00B7 ',
-                      style: TextStyle(fontSize: 13)),
+                  const Text(' \u00B7 ', style: TextStyle(fontSize: 13)),
                 ],
-                Obx(() => Text(
-                      controller.elapsedTime.value,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 13,
-                      ),
-                    )),
+                Obx(
+                  () => Text(
+                    controller.elapsedTime.value,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
               ],
             ),
 
@@ -666,16 +667,15 @@ class AsyncAgentDetailDialog extends StatelessWidget {
             // ── Progress info ──
             if (agent.progress != null) ...[
               _buildProgressRow(
-                  'Last activity',
-                  agent.progress!.lastActivityDescription ??
-                      'working'),
+                'Last activity',
+                agent.progress!.lastActivityDescription ?? 'working',
+              ),
               if (agent.progress!.recentActivities != null &&
                   agent.progress!.recentActivities!.isNotEmpty)
                 _buildProgressRow(
-                    'Recent',
-                    agent.progress!.recentActivities!
-                        .take(3)
-                        .join(', ')),
+                  'Recent',
+                  agent.progress!.recentActivities!.take(3).join(', '),
+                ),
             ],
 
             const Spacer(),
@@ -684,8 +684,7 @@ class AsyncAgentDetailDialog extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                if (agent.status == TaskStatus.running &&
-                    onKillAgent != null)
+                if (agent.status == TaskStatus.running && onKillAgent != null)
                   TextButton.icon(
                     icon: const Icon(Icons.stop, size: 16),
                     label: const Text('Stop'),
@@ -695,10 +694,7 @@ class AsyncAgentDetailDialog extends StatelessWidget {
                     onPressed: onKillAgent,
                   ),
                 const SizedBox(width: 8),
-                TextButton(
-                  onPressed: onDone,
-                  child: const Text('Close'),
-                ),
+                TextButton(onPressed: onDone, child: const Text('Close')),
               ],
             ),
           ],
@@ -717,10 +713,7 @@ class AsyncAgentDetailDialog extends StatelessWidget {
             width: 100,
             child: Text(
               '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
           ),
           Expanded(
@@ -815,10 +808,9 @@ class RemoteSessionDetailDialog extends StatelessWidget {
         session.status == TaskStatus.running ||
         session.status == TaskStatus.pending;
     final diamond = running ? _diamondOpen : _diamondFilled;
-    final displayTitle =
-        (session.title ?? session.description).length > 60
-            ? '${(session.title ?? session.description).substring(0, 57)}...'
-            : (session.title ?? session.description);
+    final displayTitle = (session.title ?? session.description).length > 60
+        ? '${(session.title ?? session.description).substring(0, 57)}...'
+        : (session.title ?? session.description);
 
     return Dialog(
       child: Container(
@@ -871,13 +863,15 @@ class RemoteSessionDetailDialog extends StatelessWidget {
               children: [
                 RemoteSessionProgressWidget(session: session),
                 const SizedBox(width: 8),
-                Obx(() => Text(
-                      controller.elapsedTime.value,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 13,
-                      ),
-                    )),
+                Obx(
+                  () => Text(
+                    controller.elapsedTime.value,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
               ],
             ),
 
@@ -921,8 +915,7 @@ class RemoteSessionDetailDialog extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.rate_review,
-                        size: 16, color: ClawColors.info),
+                    Icon(Icons.rate_review, size: 16, color: ClawColors.info),
                     const SizedBox(width: 8),
                     const Text(
                       'Remote review session',
@@ -947,8 +940,11 @@ class RemoteSessionDetailDialog extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.account_tree,
-                          size: 16, color: ClawColors.warning),
+                      Icon(
+                        Icons.account_tree,
+                        size: 16,
+                        color: ClawColors.warning,
+                      ),
                       const SizedBox(width: 8),
                       const Text(
                         'Ultraplan session',
@@ -975,10 +971,7 @@ class RemoteSessionDetailDialog extends StatelessWidget {
                     onPressed: onKill,
                   ),
                 const SizedBox(width: 8),
-                TextButton(
-                  onPressed: onDone,
-                  child: const Text('Close'),
-                ),
+                TextButton(onPressed: onDone, child: const Text('Close')),
               ],
             ),
           ],
@@ -1091,8 +1084,10 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
                   ),
                 if (onBack != null) const SizedBox(width: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: agentColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(4),
@@ -1131,23 +1126,25 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
                   teammate.isIdle
                       ? Icons.more_horiz
                       : teammate.awaitingApproval
-                          ? Icons.help_outline
-                          : Icons.play_arrow,
+                      ? Icons.help_outline
+                      : Icons.play_arrow,
                   size: 16,
                   color: teammate.isIdle
                       ? theme.colorScheme.onSurfaceVariant
                       : teammate.awaitingApproval
-                          ? ClawColors.warning
-                          : ClawColors.success,
+                      ? ClawColors.warning
+                      : ClawColors.success,
                 ),
                 const SizedBox(width: 6),
-                Obx(() => Text(
-                      '${controller.elapsedTime.value} \u00B7 $activity',
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 13,
-                      ),
-                    )),
+                Obx(
+                  () => Text(
+                    '${controller.elapsedTime.value} \u00B7 $activity',
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
               ],
             ),
 
@@ -1157,11 +1154,15 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
             if (teammate.progress != null) ...[
               if (teammate.progress!.lastActivityDescription != null)
                 _buildInfoRow(
-                    'Current', teammate.progress!.lastActivityDescription!),
+                  'Current',
+                  teammate.progress!.lastActivityDescription!,
+                ),
               if (teammate.progress!.recentActivities != null &&
                   teammate.progress!.recentActivities!.isNotEmpty)
                 ..._buildRecentActivities(
-                    teammate.progress!.recentActivities!, theme),
+                  teammate.progress!.recentActivities!,
+                  theme,
+                ),
             ],
 
             const Spacer(),
@@ -1190,10 +1191,7 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(width: 8),
-                TextButton(
-                  onPressed: onDone,
-                  child: const Text('Close'),
-                ),
+                TextButton(onPressed: onDone, child: const Text('Close')),
               ],
             ),
           ],
@@ -1212,10 +1210,7 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
             width: 80,
             child: Text(
               '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
           ),
           Expanded(
@@ -1232,7 +1227,9 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
   }
 
   List<Widget> _buildRecentActivities(
-      List<String> activities, ThemeData theme) {
+    List<String> activities,
+    ThemeData theme,
+  ) {
     return [
       Padding(
         padding: const EdgeInsets.only(top: 8, bottom: 4),
@@ -1243,23 +1240,26 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
           ),
         ),
       ),
-      ...activities.take(5).map((a) => Padding(
-            padding: const EdgeInsets.only(left: 8, bottom: 2),
-            child: Row(
-              children: [
-                const Text('\u2022 ',
-                    style: TextStyle(fontSize: 13)),
-                Expanded(
-                  child: Text(
-                    a,
-                    style: const TextStyle(fontSize: 13),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+      ...activities
+          .take(5)
+          .map(
+            (a) => Padding(
+              padding: const EdgeInsets.only(left: 8, bottom: 2),
+              child: Row(
+                children: [
+                  const Text('\u2022 ', style: TextStyle(fontSize: 13)),
+                  Expanded(
+                    child: Text(
+                      a,
+                      style: const TextStyle(fontSize: 13),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          )),
+          ),
     ];
   }
 }
@@ -1284,8 +1284,7 @@ class DreamDetailDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final running = task.status == TaskStatus.running;
-    final elapsed =
-        _formatDuration(DateTime.now().difference(task.startTime));
+    final elapsed = _formatDuration(DateTime.now().difference(task.startTime));
 
     return Dialog(
       child: Container(
@@ -1326,10 +1325,7 @@ class DreamDetailDialog extends StatelessWidget {
             const SizedBox(height: 12),
 
             // ── Description ──
-            Text(
-              task.description,
-              style: const TextStyle(fontSize: 14),
-            ),
+            Text(task.description, style: const TextStyle(fontSize: 14)),
 
             const SizedBox(height: 12),
 
@@ -1376,10 +1372,7 @@ class DreamDetailDialog extends StatelessWidget {
                     onPressed: onKill,
                   ),
                 const SizedBox(width: 8),
-                TextButton(
-                  onPressed: onDone,
-                  child: const Text('Close'),
-                ),
+                TextButton(onPressed: onDone, child: const Text('Close')),
               ],
             ),
           ],
@@ -1451,11 +1444,10 @@ String _describeTeammateActivity(BackgroundTaskState t) {
   if (t.isIdle) return 'idle';
 
   if (t.progress != null) {
-    final recentSummary = (t.progress!.recentActivities != null &&
+    final recentSummary =
+        (t.progress!.recentActivities != null &&
             t.progress!.recentActivities!.isNotEmpty)
-        ? t.progress!.recentActivities!
-            .take(3)
-            .join(', ')
+        ? t.progress!.recentActivities!.take(3).join(', ')
         : null;
     if (recentSummary != null && recentSummary.isNotEmpty) {
       return recentSummary;
@@ -1473,7 +1465,9 @@ String _describeTeammateActivity(BackgroundTaskState t) {
 /// spinner tree is active and every visible background task is an in-process
 /// teammate. Port of shouldHideTasksFooter() from taskStatusUtils.tsx.
 bool shouldHideTasksFooter(
-    Map<String, BackgroundTaskState> tasks, bool showSpinnerTree) {
+  Map<String, BackgroundTaskState> tasks,
+  bool showSpinnerTree,
+) {
   if (!showSpinnerTree) return false;
   bool hasVisibleTask = false;
   for (final t in tasks.values) {

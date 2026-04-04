@@ -1,10 +1,9 @@
-// Effort manager — port of openneomclaw/src/utils/effort.ts, thinking.ts,
+// Effort manager — port of neom_claw/src/utils/effort.ts, thinking.ts,
 // tokenBudget.ts, words.ts.
 // Effort level management, thinking configuration, token budget parsing,
 // and random word slug generation.
 
 import 'dart:math';
-import 'dart:typed_data';
 
 // ============================================================================
 // Part 1: Effort levels (from effort.ts)
@@ -103,7 +102,7 @@ class EffortConfig {
 
   /// Get 3P model capability override.
   final bool? Function(String model, String capability)
-      get3PModelCapabilityOverride;
+  get3PModelCapabilityOverride;
 
   /// Get the canonical name for a model.
   final String Function(String model) getCanonicalName;
@@ -116,7 +115,7 @@ class EffortConfig {
 
   /// Get settings with errors.
   final ({Map<String, dynamic> settings, List<String> errors}) Function()
-      getSettingsWithErrors;
+  getSettingsWithErrors;
 
   /// Get a cached feature value from remote config.
   final T Function<T>(String key, T defaultValue) getFeatureValue;
@@ -172,8 +171,7 @@ class EffortManager {
     if (_config.isEnvTruthy('NEOMCLAW_ALWAYS_ENABLE_EFFORT')) {
       return true;
     }
-    final supported3P =
-        _config.get3PModelCapabilityOverride(model, 'effort');
+    final supported3P = _config.get3PModelCapabilityOverride(model, 'effort');
     if (supported3P != null) return supported3P;
 
     // Supported by a subset of NeomClaw 4 models.
@@ -190,8 +188,10 @@ class EffortManager {
 
   /// Check if a model supports 'max' effort (Opus 4.6 only for public models).
   bool modelSupportsMaxEffort(String model) {
-    final supported3P =
-        _config.get3PModelCapabilityOverride(model, 'max_effort');
+    final supported3P = _config.get3PModelCapabilityOverride(
+      model,
+      'max_effort',
+    );
     if (supported3P != null) return supported3P;
     if (model.toLowerCase().contains('opus-4-6')) return true;
     if (_isAnt) {
@@ -249,7 +249,8 @@ class EffortManager {
     if (level == null) return null;
     final parsed = EffortLevel.tryParse(level);
     return toPersistableEffort(
-        parsed != null ? EffortLevelValue(parsed) : null);
+      parsed != null ? EffortLevelValue(parsed) : null,
+    );
   }
 
   /// Decide what effort level to persist when the user selects a model
@@ -268,8 +269,10 @@ class EffortManager {
   /// Returns null for 'unset'/'auto', or the parsed value.
   /// Returns a special sentinel for "env not set".
   EffortValue? getEffortEnvOverride() {
-    final envOverride =
-        const String.fromEnvironment('NEOMCLAW_EFFORT_LEVEL', defaultValue: '');
+    final envOverride = const String.fromEnvironment(
+      'NEOMCLAW_EFFORT_LEVEL',
+      defaultValue: '',
+    );
     if (envOverride.isEmpty) return null;
     final lower = envOverride.toLowerCase();
     if (lower == 'unset' || lower == 'auto') {
@@ -280,8 +283,10 @@ class EffortManager {
 
   /// Check if the env override is explicitly set to 'unset' or 'auto'.
   bool get isEffortEnvUnset {
-    final envOverride =
-        const String.fromEnvironment('NEOMCLAW_EFFORT_LEVEL', defaultValue: '');
+    final envOverride = const String.fromEnvironment(
+      'NEOMCLAW_EFFORT_LEVEL',
+      defaultValue: '',
+    );
     if (envOverride.isEmpty) return false;
     final lower = envOverride.toLowerCase();
     return lower == 'unset' || lower == 'auto';
@@ -365,9 +370,11 @@ class EffortManager {
     );
     return OpusDefaultEffortConfig(
       enabled: config?['enabled'] as bool? ?? true,
-      dialogTitle: config?['dialogTitle'] as String? ??
+      dialogTitle:
+          config?['dialogTitle'] as String? ??
           'We recommend medium effort for Opus',
-      dialogDescription: config?['dialogDescription'] as String? ??
+      dialogDescription:
+          config?['dialogDescription'] as String? ??
           'Effort determines how long NeomClaw thinks for when completing '
               'your task. We recommend medium effort for most tasks to '
               'balance speed and intelligence and maximize rate limits. '
@@ -381,7 +388,8 @@ class EffortManager {
       final overrideConfig = _config.getAntModelOverrideConfig();
       if (overrideConfig != null) {
         final defaultModel = overrideConfig['defaultModel'] as String?;
-        final isDefaultModel = defaultModel != null &&
+        final isDefaultModel =
+            defaultModel != null &&
             model.toLowerCase() == defaultModel.toLowerCase();
         if (isDefaultModel) {
           final level = overrideConfig['defaultModelEffortLevel'] as String?;
@@ -514,8 +522,10 @@ class ThinkingManager {
     String text,
   ) {
     final positions = <({String word, int start, int end})>[];
-    final matches =
-        RegExp(r'\bultrathink\b', caseSensitive: false).allMatches(text);
+    final matches = RegExp(
+      r'\bultrathink\b',
+      caseSensitive: false,
+    ).allMatches(text);
     for (final match in matches) {
       positions.add((
         word: match.group(0)!,
@@ -528,8 +538,7 @@ class ThinkingManager {
 
   /// Check if a model supports extended thinking.
   bool modelSupportsThinking(String model) {
-    final supported3P =
-        _config.get3PModelCapabilityOverride(model, 'thinking');
+    final supported3P = _config.get3PModelCapabilityOverride(model, 'thinking');
     if (supported3P != null) return supported3P;
 
     if (_config.getUserType() == 'ant') {
@@ -550,8 +559,10 @@ class ThinkingManager {
 
   /// Check if a model supports adaptive thinking.
   bool modelSupportsAdaptiveThinking(String model) {
-    final supported3P =
-        _config.get3PModelCapabilityOverride(model, 'adaptive_thinking');
+    final supported3P = _config.get3PModelCapabilityOverride(
+      model,
+      'adaptive_thinking',
+    );
     if (supported3P != null) return supported3P;
 
     final canonical = _config.getCanonicalName(model);
@@ -570,8 +581,10 @@ class ThinkingManager {
 
   /// Check if thinking should be enabled by default.
   bool shouldEnableThinkingByDefault() {
-    final maxThinkingTokensEnv =
-        const String.fromEnvironment('MAX_THINKING_TOKENS', defaultValue: '');
+    final maxThinkingTokensEnv = const String.fromEnvironment(
+      'MAX_THINKING_TOKENS',
+      defaultValue: '',
+    );
     if (maxThinkingTokensEnv.isNotEmpty) {
       final val = int.tryParse(maxThinkingTokensEnv);
       return val != null && val > 0;
@@ -591,13 +604,16 @@ class ThinkingManager {
 // ============================================================================
 
 /// Shorthand regex (+500k) anchored to start.
-final RegExp _shorthandStartRe =
-    RegExp(r'^\s*\+(\d+(?:\.\d+)?)\s*(k|m|b)\b', caseSensitive: false);
+final RegExp _shorthandStartRe = RegExp(
+  r'^\s*\+(\d+(?:\.\d+)?)\s*(k|m|b)\b',
+  caseSensitive: false,
+);
 
 /// Shorthand regex (+500k) anchored to end.
-final RegExp _shorthandEndRe =
-    RegExp(r'\s\+(\d+(?:\.\d+)?)\s*(k|m|b)\s*[.!?]?\s*$',
-        caseSensitive: false);
+final RegExp _shorthandEndRe = RegExp(
+  r'\s\+(\d+(?:\.\d+)?)\s*(k|m|b)\s*[.!?]?\s*$',
+  caseSensitive: false,
+);
 
 /// Verbose regex (use/spend 2M tokens) matches anywhere.
 final RegExp _verboseRe = RegExp(
@@ -630,8 +646,10 @@ double _parseBudgetMatch(String value, String suffix) {
 int? parseTokenBudget(String text) {
   final startMatch = _shorthandStartRe.firstMatch(text);
   if (startMatch != null) {
-    return _parseBudgetMatch(startMatch.group(1)!, startMatch.group(2)!)
-        .round();
+    return _parseBudgetMatch(
+      startMatch.group(1)!,
+      startMatch.group(2)!,
+    ).round();
   }
   final endMatch = _shorthandEndRe.firstMatch(text);
   if (endMatch != null) {
@@ -639,8 +657,10 @@ int? parseTokenBudget(String text) {
   }
   final verboseMatch = _verboseRe.firstMatch(text);
   if (verboseMatch != null) {
-    return _parseBudgetMatch(verboseMatch.group(1)!, verboseMatch.group(2)!)
-        .round();
+    return _parseBudgetMatch(
+      verboseMatch.group(1)!,
+      verboseMatch.group(2)!,
+    ).round();
   }
   return null;
 }
@@ -651,7 +671,8 @@ List<({int start, int end})> findTokenBudgetPositions(String text) {
 
   final startMatch = _shorthandStartRe.firstMatch(text);
   if (startMatch != null) {
-    final offset = startMatch.start +
+    final offset =
+        startMatch.start +
         startMatch.group(0)!.length -
         startMatch.group(0)!.trimLeft().length;
     positions.add((
@@ -664,8 +685,9 @@ List<({int start, int end})> findTokenBudgetPositions(String text) {
   if (endMatch != null) {
     final endStart = endMatch.start + 1; // +1: regex includes leading \s
     // Avoid double-counting when input is just "+500k".
-    final alreadyCovered =
-        positions.any((p) => endStart >= p.start && endStart < p.end);
+    final alreadyCovered = positions.any(
+      (p) => endStart >= p.start && endStart < p.end,
+    );
     if (!alreadyCovered) {
       positions.add((
         start: endStart,
@@ -813,25 +835,115 @@ const List<String> kNouns = [
 
 /// Verbs for the middle word -- whimsical action words.
 const List<String> kVerbs = [
-  'baking', 'beaming', 'booping', 'bouncing', 'brewing', 'bubbling',
-  'chasing', 'churning', 'coalescing', 'conjuring', 'cooking', 'crafting',
-  'crunching', 'cuddling', 'dancing', 'dazzling', 'discovering', 'doodling',
-  'dreaming', 'drifting', 'enchanting', 'exploring', 'finding', 'floating',
-  'fluttering', 'foraging', 'forging', 'frolicking', 'gathering', 'giggling',
-  'gliding', 'greeting', 'growing', 'hatching', 'herding', 'honking',
-  'hopping', 'hugging', 'humming', 'imagining', 'inventing', 'jingling',
-  'juggling', 'jumping', 'kindling', 'knitting', 'launching', 'leaping',
-  'mapping', 'marinating', 'meandering', 'mixing', 'moseying', 'munching',
-  'napping', 'nibbling', 'noodling', 'orbiting', 'painting', 'percolating',
-  'petting', 'plotting', 'pondering', 'popping', 'prancing', 'purring',
-  'puzzling', 'questing', 'riding', 'roaming', 'rolling', 'sauteeing',
-  'scribbling', 'seeking', 'shimmying', 'singing', 'skipping', 'sleeping',
-  'snacking', 'sniffing', 'snuggling', 'soaring', 'sparking', 'spinning',
-  'splashing', 'sprouting', 'squishing', 'stargazing', 'stirring',
-  'strolling', 'swimming', 'swinging', 'tickling', 'tinkering', 'toasting',
-  'tumbling', 'twirling', 'waddling', 'wandering', 'watching', 'weaving',
-  'whistling', 'wibbling', 'wiggling', 'wishing', 'wobbling', 'wondering',
-  'yawning', 'zooming',
+  'baking',
+  'beaming',
+  'booping',
+  'bouncing',
+  'brewing',
+  'bubbling',
+  'chasing',
+  'churning',
+  'coalescing',
+  'conjuring',
+  'cooking',
+  'crafting',
+  'crunching',
+  'cuddling',
+  'dancing',
+  'dazzling',
+  'discovering',
+  'doodling',
+  'dreaming',
+  'drifting',
+  'enchanting',
+  'exploring',
+  'finding',
+  'floating',
+  'fluttering',
+  'foraging',
+  'forging',
+  'frolicking',
+  'gathering',
+  'giggling',
+  'gliding',
+  'greeting',
+  'growing',
+  'hatching',
+  'herding',
+  'honking',
+  'hopping',
+  'hugging',
+  'humming',
+  'imagining',
+  'inventing',
+  'jingling',
+  'juggling',
+  'jumping',
+  'kindling',
+  'knitting',
+  'launching',
+  'leaping',
+  'mapping',
+  'marinating',
+  'meandering',
+  'mixing',
+  'moseying',
+  'munching',
+  'napping',
+  'nibbling',
+  'noodling',
+  'orbiting',
+  'painting',
+  'percolating',
+  'petting',
+  'plotting',
+  'pondering',
+  'popping',
+  'prancing',
+  'purring',
+  'puzzling',
+  'questing',
+  'riding',
+  'roaming',
+  'rolling',
+  'sauteeing',
+  'scribbling',
+  'seeking',
+  'shimmying',
+  'singing',
+  'skipping',
+  'sleeping',
+  'snacking',
+  'sniffing',
+  'snuggling',
+  'soaring',
+  'sparking',
+  'spinning',
+  'splashing',
+  'sprouting',
+  'squishing',
+  'stargazing',
+  'stirring',
+  'strolling',
+  'swimming',
+  'swinging',
+  'tickling',
+  'tinkering',
+  'toasting',
+  'tumbling',
+  'twirling',
+  'waddling',
+  'wandering',
+  'watching',
+  'weaving',
+  'whistling',
+  'wibbling',
+  'wiggling',
+  'wishing',
+  'wobbling',
+  'wondering',
+  'yawning',
+  'zooming',
 ];
 
 /// Generate a cryptographically random integer in the range [0, max).

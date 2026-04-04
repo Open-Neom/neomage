@@ -68,7 +68,7 @@ sealed class PluginError {
 
 class PluginNotFoundError extends PluginError {
   const PluginNotFoundError({required super.pluginName})
-      : super(message: 'Plugin not found');
+    : super(message: 'Plugin not found');
 }
 
 class PluginManifestError extends PluginError {

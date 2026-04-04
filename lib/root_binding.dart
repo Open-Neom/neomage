@@ -5,7 +5,6 @@ import 'data/api/api_provider.dart';
 import 'data/api/anthropic_client.dart';
 
 // -- Domain --
-import 'domain/models/permissions.dart' hide PermissionDecision;
 
 // -- Tools --
 import 'data/tools/tool_registry.dart';
@@ -66,177 +65,121 @@ import 'utils/constants/system.dart';
 class RootBinding extends Binding {
   @override
   List<Bind> dependencies() => [
-        // ---------------------------------------------------------------
-        // API layer
-        // ---------------------------------------------------------------
-        Bind.lazyPut<ApiProvider>(
-          () => AnthropicClient(
-            ApiConfig.anthropic(apiKey: '', model: 'claude-sonnet-4-20250514'),
-          ),
-          fenix: true,
-        ),
+    // ---------------------------------------------------------------
+    // API layer
+    // ---------------------------------------------------------------
+    Bind.lazyPut<ApiProvider>(
+      () => AnthropicClient(
+        ApiConfig.anthropic(apiKey: '', model: 'claude-sonnet-4-20250514'),
+      ),
+      fenix: true,
+    ),
 
-        // ---------------------------------------------------------------
-        // Tools
-        // ---------------------------------------------------------------
-        Bind.lazyPut<ToolRegistry>(
-          () => ToolRegistry(),
-          fenix: true,
-        ),
+    // ---------------------------------------------------------------
+    // Tools
+    // ---------------------------------------------------------------
+    Bind.lazyPut<ToolRegistry>(() => ToolRegistry(), fenix: true),
 
-        // ---------------------------------------------------------------
-        // Commands
-        // ---------------------------------------------------------------
-        Bind.lazyPut<CommandRegistry>(
-          () => CommandRegistry(),
-          fenix: true,
-        ),
+    // ---------------------------------------------------------------
+    // Commands
+    // ---------------------------------------------------------------
+    Bind.lazyPut<CommandRegistry>(() => CommandRegistry(), fenix: true),
 
-        // ---------------------------------------------------------------
-        // Engine
-        // ---------------------------------------------------------------
-        Bind.lazyPut<ConversationEngine>(
-          () => ConversationEngine(
-            provider: Sint.find<ApiProvider>(),
-            toolRegistry: Sint.find<ToolRegistry>(),
-            permissionChecker: (tool, input, context) async =>
-                PermissionDecision.allow,
-            config: ConversationConfig(model: 'claude-sonnet-4-20250514'),
-          ),
-          fenix: true,
-        ),
+    // ---------------------------------------------------------------
+    // Engine
+    // ---------------------------------------------------------------
+    Bind.lazyPut<ConversationEngine>(
+      () => ConversationEngine(
+        provider: Sint.find<ApiProvider>(),
+        toolRegistry: Sint.find<ToolRegistry>(),
+        permissionChecker: (tool, input, context) async =>
+            PermissionDecision.allow,
+        config: ConversationConfig(model: 'claude-sonnet-4-20250514'),
+      ),
+      fenix: true,
+    ),
 
-        // ---------------------------------------------------------------
-        // Session
-        // ---------------------------------------------------------------
-        Bind.lazyPut<SessionHistoryManager>(
-          () => SessionHistoryManager(baseDir: SystemConstants.sessionDir),
-          fenix: true,
-        ),
-        Bind.lazyPut<HistoryService>(
-          () => HistoryService(),
-          fenix: true,
-        ),
+    // ---------------------------------------------------------------
+    // Session
+    // ---------------------------------------------------------------
+    Bind.lazyPut<SessionHistoryManager>(
+      () => SessionHistoryManager(baseDir: SystemConstants.sessionDir),
+      fenix: true,
+    ),
+    Bind.lazyPut<HistoryService>(() => HistoryService(), fenix: true),
 
-        // ---------------------------------------------------------------
-        // Permissions / Hooks
-        // ---------------------------------------------------------------
-        Bind.lazyPut<HookExecutor>(
-          () => HookExecutor(),
-          fenix: true,
-        ),
+    // ---------------------------------------------------------------
+    // Permissions / Hooks
+    // ---------------------------------------------------------------
+    Bind.lazyPut<HookExecutor>(() => HookExecutor(), fenix: true),
 
-        // ---------------------------------------------------------------
-        // MCP
-        // ---------------------------------------------------------------
-        Bind.lazyPut<McpClient>(
-          () => McpClient(toolRegistry: Sint.find<ToolRegistry>()),
-          fenix: true,
-        ),
+    // ---------------------------------------------------------------
+    // MCP
+    // ---------------------------------------------------------------
+    Bind.lazyPut<McpClient>(
+      () => McpClient(toolRegistry: Sint.find<ToolRegistry>()),
+      fenix: true,
+    ),
 
-        // ---------------------------------------------------------------
-        // Services — core
-        // ---------------------------------------------------------------
-        Bind.lazyPut<GitService>(
-          () => GitService(),
-          fenix: true,
+    // ---------------------------------------------------------------
+    // Services — core
+    // ---------------------------------------------------------------
+    Bind.lazyPut<GitService>(() => GitService(), fenix: true),
+    Bind.lazyPut<ProjectService>(() => ProjectService(), fenix: true),
+    Bind.lazyPut<SearchService>(
+      () => SearchService(projectRoot: '.'),
+      fenix: true,
+    ),
+    Bind.lazyPut<DiffService>(() => DiffService(), fenix: true),
+    Bind.lazyPut<ClipboardService>(() => ClipboardService(), fenix: true),
+    Bind.lazyPut<VoiceService>(() => VoiceService(), fenix: true),
+    Bind.lazyPut<TelemetryService>(
+      () => TelemetryService(config: TelemetryConfig()),
+      fenix: true,
+    ),
+    Bind.lazyPut<NotificationServiceFull>(
+      () => NotificationServiceFull(),
+      fenix: true,
+    ),
+    Bind.lazyPut<AutocompleteService>(() => AutocompleteService(), fenix: true),
+    Bind.lazyPut<ConfigService>(() => ConfigService(), fenix: true),
+    Bind.lazyPut<RemoteSettingsService>(
+      () => RemoteSettingsService(
+        config: RemoteSettingsConfig(
+          endpoint: 'https://api.anthropic.com/settings',
+          cacheDir: '.',
         ),
-        Bind.lazyPut<ProjectService>(
-          () => ProjectService(),
-          fenix: true,
-        ),
-        Bind.lazyPut<SearchService>(
-          () => SearchService(projectRoot: '.'),
-          fenix: true,
-        ),
-        Bind.lazyPut<DiffService>(
-          () => DiffService(),
-          fenix: true,
-        ),
-        Bind.lazyPut<ClipboardService>(
-          () => ClipboardService(),
-          fenix: true,
-        ),
-        Bind.lazyPut<VoiceService>(
-          () => VoiceService(),
-          fenix: true,
-        ),
-        Bind.lazyPut<TelemetryService>(
-          () => TelemetryService(config: TelemetryConfig()),
-          fenix: true,
-        ),
-        Bind.lazyPut<NotificationServiceFull>(
-          () => NotificationServiceFull(),
-          fenix: true,
-        ),
-        Bind.lazyPut<AutocompleteService>(
-          () => AutocompleteService(),
-          fenix: true,
-        ),
-        Bind.lazyPut<ConfigService>(
-          () => ConfigService(),
-          fenix: true,
-        ),
-        Bind.lazyPut<RemoteSettingsService>(
-          () => RemoteSettingsService(
-            config: RemoteSettingsConfig(
-              endpoint: 'https://api.anthropic.com/settings',
-              cacheDir: '.',
-            ),
-          ),
-          fenix: true,
-        ),
-        Bind.lazyPut<MemoryExtractionService>(
-          () => MemoryExtractionService(),
-          fenix: true,
-        ),
-        Bind.lazyPut<TaskManager>(
-          () => TaskManager(),
-          fenix: true,
-        ),
-        Bind.lazyPut<BootstrapService>(
-          () => BootstrapService(),
-          fenix: true,
-        ),
-        Bind.lazyPut<RateLimitService>(
-          () => RateLimitService(
-            baseUrl: 'https://api.anthropic.com',
-            cacheDir: '.',
-          ),
-          fenix: true,
-        ),
+      ),
+      fenix: true,
+    ),
+    Bind.lazyPut<MemoryExtractionService>(
+      () => MemoryExtractionService(),
+      fenix: true,
+    ),
+    Bind.lazyPut<TaskManager>(() => TaskManager(), fenix: true),
+    Bind.lazyPut<BootstrapService>(() => BootstrapService(), fenix: true),
+    Bind.lazyPut<RateLimitService>(
+      () =>
+          RateLimitService(baseUrl: 'https://api.anthropic.com', cacheDir: '.'),
+      fenix: true,
+    ),
 
-        // ---------------------------------------------------------------
-        // State management
-        // ---------------------------------------------------------------
-        Bind.lazyPut<ThemeManager>(
-          () => ThemeManager.instance,
-          fenix: true,
-        ),
-        Bind.lazyPut<AppStateManager>(
-          () => AppStateManager(),
-          fenix: true,
-        ),
-        Bind.lazyPut<FeatureGateService>(
-          () => FeatureGateService(),
-          fenix: true,
-        ),
+    // ---------------------------------------------------------------
+    // State management
+    // ---------------------------------------------------------------
+    Bind.lazyPut<ThemeManager>(() => ThemeManager.instance, fenix: true),
+    Bind.lazyPut<AppStateManager>(() => AppStateManager(), fenix: true),
+    Bind.lazyPut<FeatureGateService>(() => FeatureGateService(), fenix: true),
 
-        // ---------------------------------------------------------------
-        // UI controllers
-        // ---------------------------------------------------------------
-        Bind.put(ChatController(), permanent: true),
-        Bind.lazyPut<BuddyService>(
-          () => BuddyService(),
-          fenix: true,
-        ),
+    // ---------------------------------------------------------------
+    // UI controllers
+    // ---------------------------------------------------------------
+    Bind.put(ChatController(), permanent: true),
+    Bind.lazyPut<BuddyService>(() => BuddyService(), fenix: true),
 
-        // ---------------------------------------------------------------
-        // Platform
-        // ---------------------------------------------------------------
-        Bind.lazyPut<NativeBridge>(
-          () => DesktopNativeBridge(),
-          fenix: true,
-        ),
-      ];
+    // ---------------------------------------------------------------
+    // Platform
+    // ---------------------------------------------------------------
+    Bind.lazyPut<NativeBridge>(() => DesktopNativeBridge(), fenix: true),
+  ];
 }

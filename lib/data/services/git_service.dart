@@ -217,8 +217,7 @@ class GitException implements Exception {
   });
 
   @override
-  String toString() =>
-      'GitException(git $command exited $exitCode): $stderr';
+  String toString() => 'GitException(git $command exited $exitCode): $stderr';
 }
 
 // ---------------------------------------------------------------------------
@@ -235,7 +234,7 @@ class GitService {
   final String _gitBinary;
 
   GitService({this.defaultWorkDir, String gitBinary = 'git'})
-      : _gitBinary = gitBinary;
+    : _gitBinary = gitBinary;
 
   // -------------------------------------------------------------------------
   // Status
@@ -247,10 +246,12 @@ class GitService {
     final workDir = path ?? defaultWorkDir;
 
     // Porcelain v2 gives machine-readable output.
-    final result = await _runGit(
-      ['status', '--porcelain=v2', '--branch', '--untracked-files=normal'],
-      workDir: workDir,
-    );
+    final result = await _runGit([
+      'status',
+      '--porcelain=v2',
+      '--branch',
+      '--untracked-files=normal',
+    ], workDir: workDir);
 
     String? branch;
     String? upstream;
@@ -273,11 +274,13 @@ class GitService {
         changes.add(_parseStatusLine(line));
       } else if (line.startsWith('? ')) {
         final filePath = line.substring(2);
-        changes.add(GitFileChange(
-          path: filePath,
-          status: GitFileStatus.untracked,
-          staged: false,
-        ));
+        changes.add(
+          GitFileChange(
+            path: filePath,
+            status: GitFileStatus.untracked,
+            staged: false,
+          ),
+        );
       }
     }
 
@@ -346,15 +349,17 @@ class GitService {
       final lines = LineSplitter.split(block.trim()).toList();
       if (lines.length < 6) continue;
 
-      commits.add(GitCommit(
-        hash: lines[0],
-        shortHash: lines[1],
-        author: lines[2],
-        email: lines[3],
-        date: DateTime.tryParse(lines[4]) ?? DateTime.now(),
-        parents: lines[5].isNotEmpty ? lines[5].split(' ') : [],
-        message: lines.length > 6 ? lines.sublist(6).join('\n') : '',
-      ));
+      commits.add(
+        GitCommit(
+          hash: lines[0],
+          shortHash: lines[1],
+          author: lines[2],
+          email: lines[3],
+          date: DateTime.tryParse(lines[4]) ?? DateTime.now(),
+          parents: lines[5].isNotEmpty ? lines[5].split(' ') : [],
+          message: lines.length > 6 ? lines.sublist(6).join('\n') : '',
+        ),
+      );
     }
 
     return commits;
@@ -391,7 +396,11 @@ class GitService {
   // -------------------------------------------------------------------------
 
   /// Returns per-line blame information for a file.
-  Future<GitBlame> blame(String filePath, {String? rev, String? workDir}) async {
+  Future<GitBlame> blame(
+    String filePath, {
+    String? rev,
+    String? workDir,
+  }) async {
     final args = <String>['blame', '--porcelain'];
     if (rev != null) args.add(rev);
     args.add(filePath);
@@ -407,7 +416,9 @@ class GitService {
 
     for (final line in LineSplitter.split(output)) {
       // Commit header: 40-char hash followed by line info.
-      final commitMatch = RegExp(r'^([0-9a-f]{40})\s+\d+\s+(\d+)').firstMatch(line);
+      final commitMatch = RegExp(
+        r'^([0-9a-f]{40})\s+\d+\s+(\d+)',
+      ).firstMatch(line);
       if (commitMatch != null) {
         currentCommit = commitMatch.group(1);
         currentLine = int.tryParse(commitMatch.group(2)!);
@@ -424,13 +435,15 @@ class GitService {
       } else if (line.startsWith('\t')) {
         // Content line.
         if (currentCommit != null && currentLine != null) {
-          blameLines.add(BlameLine(
-            commit: currentCommit,
-            author: currentAuthor ?? 'Unknown',
-            date: currentDate ?? DateTime.now(),
-            lineNumber: currentLine,
-            content: line.substring(1),
-          ));
+          blameLines.add(
+            BlameLine(
+              commit: currentCommit,
+              author: currentAuthor ?? 'Unknown',
+              date: currentDate ?? DateTime.now(),
+              lineNumber: currentLine,
+              content: line.substring(1),
+            ),
+          );
         }
       }
     }
@@ -474,14 +487,16 @@ class GitService {
       if (aheadMatch != null) ahead = int.parse(aheadMatch.group(1)!);
       if (behindMatch != null) behind = int.parse(behindMatch.group(1)!);
 
-      branchList.add(GitBranch(
-        name: name,
-        isRemote: name.startsWith('remotes/') || name.contains('/'),
-        isCurrent: isCurrent,
-        upstream: upstreamName,
-        ahead: ahead,
-        behind: behind,
-      ));
+      branchList.add(
+        GitBranch(
+          name: name,
+          isRemote: name.startsWith('remotes/') || name.contains('/'),
+          isCurrent: isCurrent,
+          upstream: upstreamName,
+          ahead: ahead,
+          behind: behind,
+        ),
+      );
     }
 
     return branchList;
@@ -561,10 +576,11 @@ class GitService {
 
   /// Lists all stash entries.
   Future<List<GitStash>> stashList({String? workDir}) async {
-    final result = await _runGit(
-      ['stash', 'list', '--format=%gd|%gs|%aI'],
-      workDir: workDir ?? defaultWorkDir,
-    );
+    final result = await _runGit([
+      'stash',
+      'list',
+      '--format=%gd|%gs|%aI',
+    ], workDir: workDir ?? defaultWorkDir);
     final output = (result.stdout as String).trim();
     if (output.isEmpty) return [];
 
@@ -578,11 +594,13 @@ class GitService {
           ? int.tryParse(indexMatch.group(1)!) ?? 0
           : stashes.length;
 
-      stashes.add(GitStash(
-        index: index,
-        message: parts.length > 1 ? parts[1] : '',
-        date: parts.length > 2 ? DateTime.tryParse(parts[2]) : null,
-      ));
+      stashes.add(
+        GitStash(
+          index: index,
+          message: parts.length > 1 ? parts[1] : '',
+          date: parts.length > 2 ? DateTime.tryParse(parts[2]) : null,
+        ),
+      );
     }
 
     return stashes;
@@ -712,7 +730,10 @@ class GitService {
 
   /// Lists tags.
   Future<List<String>> tagList({String? workDir}) async {
-    final result = await _runGit(['tag', '--list'], workDir: workDir ?? defaultWorkDir);
+    final result = await _runGit([
+      'tag',
+      '--list',
+    ], workDir: workDir ?? defaultWorkDir);
     final output = (result.stdout as String).trim();
     if (output.isEmpty) return [];
     return LineSplitter.split(output).toList();
@@ -724,10 +745,10 @@ class GitService {
 
   /// Lists configured remotes.
   Future<List<GitRemote>> remotes({String? workDir}) async {
-    final result = await _runGit(
-      ['remote', '-v'],
-      workDir: workDir ?? defaultWorkDir,
-    );
+    final result = await _runGit([
+      'remote',
+      '-v',
+    ], workDir: workDir ?? defaultWorkDir);
     final output = (result.stdout as String).trim();
     if (output.isEmpty) return [];
 
@@ -748,27 +769,34 @@ class GitService {
       }
     }
 
-    return map.entries.map((e) => GitRemote(
-      name: e.key,
-      fetchUrl: e.value.fetchUrl ?? '',
-      pushUrl: e.value.pushUrl ?? e.value.fetchUrl ?? '',
-    )).toList();
+    return map.entries
+        .map(
+          (e) => GitRemote(
+            name: e.key,
+            fetchUrl: e.value.fetchUrl ?? '',
+            pushUrl: e.value.pushUrl ?? e.value.fetchUrl ?? '',
+          ),
+        )
+        .toList();
   }
 
   /// Adds a remote.
   Future<void> remoteAdd(String name, String url, {String? workDir}) async {
-    await _runGit(
-      ['remote', 'add', name, url],
-      workDir: workDir ?? defaultWorkDir,
-    );
+    await _runGit([
+      'remote',
+      'add',
+      name,
+      url,
+    ], workDir: workDir ?? defaultWorkDir);
   }
 
   /// Removes a remote.
   Future<void> remoteRemove(String name, {String? workDir}) async {
-    await _runGit(
-      ['remote', 'remove', name],
-      workDir: workDir ?? defaultWorkDir,
-    );
+    await _runGit([
+      'remote',
+      'remove',
+      name,
+    ], workDir: workDir ?? defaultWorkDir);
   }
 
   // -------------------------------------------------------------------------
@@ -778,13 +806,11 @@ class GitService {
   /// Returns `true` if [path] is inside a git repository.
   Future<bool> isGitRepo(String path) async {
     try {
-      final result = await Process.run(
-        _gitBinary,
-        ['rev-parse', '--is-inside-work-tree'],
-        workingDirectory: path,
-      );
-      return result.exitCode == 0 &&
-          (result.stdout as String).trim() == 'true';
+      final result = await Process.run(_gitBinary, [
+        'rev-parse',
+        '--is-inside-work-tree',
+      ], workingDirectory: path);
+      return result.exitCode == 0 && (result.stdout as String).trim() == 'true';
     } catch (_) {
       return false;
     }
@@ -793,11 +819,10 @@ class GitService {
   /// Returns the root of the git repository containing [path], or `null`.
   Future<String?> getRepoRoot(String path) async {
     try {
-      final result = await Process.run(
-        _gitBinary,
-        ['rev-parse', '--show-toplevel'],
-        workingDirectory: path,
-      );
+      final result = await Process.run(_gitBinary, [
+        'rev-parse',
+        '--show-toplevel',
+      ], workingDirectory: path);
       if (result.exitCode != 0) return null;
       return (result.stdout as String).trim();
     } catch (_) {
@@ -811,10 +836,7 @@ class GitService {
 
   /// Cherry-picks a commit onto the current branch.
   Future<void> cherryPick(String commit, {String? workDir}) async {
-    await _runGit(
-      ['cherry-pick', commit],
-      workDir: workDir ?? defaultWorkDir,
-    );
+    await _runGit(['cherry-pick', commit], workDir: workDir ?? defaultWorkDir);
   }
 
   // -------------------------------------------------------------------------
@@ -834,11 +856,13 @@ class GitService {
     for (final line in LineSplitter.split(output)) {
       final match = RegExp(r'^\s*(\d+)\s+(.+?)\s+<(.+?)>\s*$').firstMatch(line);
       if (match != null) {
-        stats.add(AuthorStats(
-          name: match.group(2)!,
-          email: match.group(3)!,
-          commitCount: int.parse(match.group(1)!),
-        ));
+        stats.add(
+          AuthorStats(
+            name: match.group(2)!,
+            email: match.group(3)!,
+            commitCount: int.parse(match.group(1)!),
+          ),
+        );
       }
     }
 
@@ -852,10 +876,7 @@ class GitService {
   /// Runs a git command and returns the [ProcessResult].
   ///
   /// Throws [GitException] on non-zero exit codes.
-  Future<ProcessResult> _runGit(
-    List<String> args, {
-    String? workDir,
-  }) async {
+  Future<ProcessResult> _runGit(List<String> args, {String? workDir}) async {
     final result = await Process.run(
       _gitBinary,
       args,

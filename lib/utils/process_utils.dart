@@ -2,7 +2,6 @@
 // Process spawning, output capture, timeout handling.
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 
 /// Result of a process execution.
@@ -215,11 +214,13 @@ class ManagedProcess {
   Future<int> shutdown({Duration grace = const Duration(seconds: 5)}) async {
     _process.kill(ProcessSignal.sigterm);
 
-    final code = await _process.exitCode
-        .timeout(grace, onTimeout: () {
-      _process.kill(ProcessSignal.sigkill);
-      return -1;
-    });
+    final code = await _process.exitCode.timeout(
+      grace,
+      onTimeout: () {
+        _process.kill(ProcessSignal.sigkill);
+        return -1;
+      },
+    );
 
     await _stdoutSub.cancel();
     await _stderrSub.cancel();
@@ -233,10 +234,9 @@ class ManagedProcess {
 /// Check if a command is available on PATH.
 Future<bool> commandExists(String command) async {
   try {
-    final result = await Process.run(
-      Platform.isWindows ? 'where' : 'which',
-      [command],
-    );
+    final result = await Process.run(Platform.isWindows ? 'where' : 'which', [
+      command,
+    ]);
     return result.exitCode == 0;
   } catch (_) {
     return false;

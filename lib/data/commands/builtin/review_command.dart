@@ -18,8 +18,7 @@ class ReviewCommand extends PromptCommand {
   String get progressMessage => 'reviewing code';
 
   @override
-  Set<String> get allowedTools =>
-      const {'Bash', 'Read', 'Glob', 'Grep'};
+  Set<String> get allowedTools => const {'Bash', 'Read', 'Glob', 'Grep'};
 
   @override
   Future<List<ContentBlock>> getPrompt(

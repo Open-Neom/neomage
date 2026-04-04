@@ -3,7 +3,6 @@
 // and coordinated workflows between the main agent and sub-agents.
 
 import 'dart:async';
-import 'dart:convert';
 
 // ─── Types ───
 
@@ -17,12 +16,7 @@ enum CoordinatorMode {
 }
 
 /// Task priority.
-enum TaskPriority {
-  low,
-  normal,
-  high,
-  critical,
-}
+enum TaskPriority { low, normal, high, critical }
 
 /// Task status.
 enum TaskStatus {
@@ -97,8 +91,9 @@ class CoordinatorTask {
     this.metadata,
   });
 
-  Duration? get elapsed =>
-      startedAt != null ? (completedAt ?? DateTime.now()).difference(startedAt!) : null;
+  Duration? get elapsed => startedAt != null
+      ? (completedAt ?? DateTime.now()).difference(startedAt!)
+      : null;
 
   bool get isDone =>
       status == TaskStatus.completed ||
@@ -113,44 +108,43 @@ class CoordinatorTask {
     String? output,
     String? error,
     int? retryCount,
-  }) =>
-      CoordinatorTask(
-        id: id,
-        name: name,
-        description: description,
-        prompt: prompt,
-        priority: priority,
-        status: status ?? this.status,
-        dependencies: dependencies,
-        requiredCapabilities: requiredCapabilities,
-        assignedAgentId: assignedAgentId ?? this.assignedAgentId,
-        createdAt: createdAt,
-        startedAt: startedAt ?? this.startedAt,
-        completedAt: completedAt ?? this.completedAt,
-        timeout: timeout,
-        input: input,
-        output: output ?? this.output,
-        error: error ?? this.error,
-        retryCount: retryCount ?? this.retryCount,
-        maxRetries: maxRetries,
-        metadata: metadata,
-      );
+  }) => CoordinatorTask(
+    id: id,
+    name: name,
+    description: description,
+    prompt: prompt,
+    priority: priority,
+    status: status ?? this.status,
+    dependencies: dependencies,
+    requiredCapabilities: requiredCapabilities,
+    assignedAgentId: assignedAgentId ?? this.assignedAgentId,
+    createdAt: createdAt,
+    startedAt: startedAt ?? this.startedAt,
+    completedAt: completedAt ?? this.completedAt,
+    timeout: timeout,
+    input: input,
+    output: output ?? this.output,
+    error: error ?? this.error,
+    retryCount: retryCount ?? this.retryCount,
+    maxRetries: maxRetries,
+    metadata: metadata,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'description': description,
-        'status': status.name,
-        'priority': priority.name,
-        'assignedAgentId': assignedAgentId,
-        'createdAt': createdAt.toIso8601String(),
-        if (startedAt != null) 'startedAt': startedAt!.toIso8601String(),
-        if (completedAt != null) 'completedAt': completedAt!.toIso8601String(),
-        if (output != null) 'output': output,
-        if (error != null) 'error': error,
-        'retryCount': retryCount,
-        'dependencies': dependencies,
-      };
+    'id': id,
+    'name': name,
+    'description': description,
+    'status': status.name,
+    'priority': priority.name,
+    'assignedAgentId': assignedAgentId,
+    'createdAt': createdAt.toIso8601String(),
+    if (startedAt != null) 'startedAt': startedAt!.toIso8601String(),
+    if (completedAt != null) 'completedAt': completedAt!.toIso8601String(),
+    if (output != null) 'output': output,
+    if (error != null) 'error': error,
+    'retryCount': retryCount,
+    'dependencies': dependencies,
+  };
 }
 
 /// An agent available for task execution.
@@ -192,20 +186,19 @@ class CoordinatorAgent {
     int? completedTasks,
     int? failedTasks,
     Duration? averageLatency,
-  }) =>
-      CoordinatorAgent(
-        id: id,
-        name: name,
-        model: model,
-        capabilities: capabilities,
-        maxConcurrentTasks: maxConcurrentTasks,
-        currentTasks: currentTasks ?? this.currentTasks,
-        isAvailable: isAvailable ?? this.isAvailable,
-        registeredAt: registeredAt,
-        completedTasks: completedTasks ?? this.completedTasks,
-        failedTasks: failedTasks ?? this.failedTasks,
-        averageLatency: averageLatency ?? this.averageLatency,
-      );
+  }) => CoordinatorAgent(
+    id: id,
+    name: name,
+    model: model,
+    capabilities: capabilities,
+    maxConcurrentTasks: maxConcurrentTasks,
+    currentTasks: currentTasks ?? this.currentTasks,
+    isAvailable: isAvailable ?? this.isAvailable,
+    registeredAt: registeredAt,
+    completedTasks: completedTasks ?? this.completedTasks,
+    failedTasks: failedTasks ?? this.failedTasks,
+    averageLatency: averageLatency ?? this.averageLatency,
+  );
 }
 
 /// A workflow definition (sequence of coordinated tasks).
@@ -242,8 +235,7 @@ class Workflow {
       tasks.where((t) => t.status == TaskStatus.completed).length;
   int get failedCount =>
       tasks.where((t) => t.status == TaskStatus.failed).length;
-  int get pendingCount =>
-      tasks.where((t) => !t.isDone).length;
+  int get pendingCount => tasks.where((t) => !t.isDone).length;
 }
 
 /// Coordinator event.
@@ -300,7 +292,10 @@ class TaskDecomposer {
   }
 
   /// Decompose a prompt into tasks based on structure.
-  List<CoordinatorTask> decompose(String prompt, {CoordinatorMode mode = CoordinatorMode.sequential}) {
+  List<CoordinatorTask> decompose(
+    String prompt, {
+    CoordinatorMode mode = CoordinatorMode.sequential,
+  }) {
     final tasks = <CoordinatorTask>[];
     final now = DateTime.now();
 
@@ -314,17 +309,20 @@ class TaskDecomposer {
         final taskPrompt = match.group(1)!.trim();
         final taskId = _nextId();
 
-        tasks.add(CoordinatorTask(
-          id: taskId,
-          name: _extractTaskName(taskPrompt),
-          description: taskPrompt,
-          prompt: taskPrompt,
-          createdAt: now,
-          dependencies: mode == CoordinatorMode.sequential && previousId != null
-              ? [previousId]
-              : [],
-          requiredCapabilities: _inferCapabilities(taskPrompt).toList(),
-        ));
+        tasks.add(
+          CoordinatorTask(
+            id: taskId,
+            name: _extractTaskName(taskPrompt),
+            description: taskPrompt,
+            prompt: taskPrompt,
+            createdAt: now,
+            dependencies:
+                mode == CoordinatorMode.sequential && previousId != null
+                ? [previousId]
+                : [],
+            requiredCapabilities: _inferCapabilities(taskPrompt).toList(),
+          ),
+        );
 
         previousId = taskId;
       }
@@ -338,20 +336,27 @@ class TaskDecomposer {
     if (bulletMatches.length >= 2) {
       for (final match in bulletMatches) {
         final taskPrompt = match.group(1)!.trim();
-        tasks.add(CoordinatorTask(
-          id: _nextId(),
-          name: _extractTaskName(taskPrompt),
-          description: taskPrompt,
-          prompt: taskPrompt,
-          createdAt: now,
-          requiredCapabilities: _inferCapabilities(taskPrompt).toList(),
-        ));
+        tasks.add(
+          CoordinatorTask(
+            id: _nextId(),
+            name: _extractTaskName(taskPrompt),
+            description: taskPrompt,
+            prompt: taskPrompt,
+            createdAt: now,
+            requiredCapabilities: _inferCapabilities(taskPrompt).toList(),
+          ),
+        );
       }
       return tasks;
     }
 
     // Check for "then"/"after"/"next" sequential markers.
-    final sequentialParts = prompt.split(RegExp(r'\.\s+(?:Then|After that|Next|Finally|Lastly)', caseSensitive: false));
+    final sequentialParts = prompt.split(
+      RegExp(
+        r'\.\s+(?:Then|After that|Next|Finally|Lastly)',
+        caseSensitive: false,
+      ),
+    );
     if (sequentialParts.length >= 2) {
       String? previousId;
       for (final part in sequentialParts) {
@@ -359,15 +364,17 @@ class TaskDecomposer {
         if (taskPrompt.isEmpty) continue;
         final taskId = _nextId();
 
-        tasks.add(CoordinatorTask(
-          id: taskId,
-          name: _extractTaskName(taskPrompt),
-          description: taskPrompt,
-          prompt: taskPrompt,
-          createdAt: now,
-          dependencies: previousId != null ? [previousId] : [],
-          requiredCapabilities: _inferCapabilities(taskPrompt).toList(),
-        ));
+        tasks.add(
+          CoordinatorTask(
+            id: taskId,
+            name: _extractTaskName(taskPrompt),
+            description: taskPrompt,
+            prompt: taskPrompt,
+            createdAt: now,
+            dependencies: previousId != null ? [previousId] : [],
+            requiredCapabilities: _inferCapabilities(taskPrompt).toList(),
+          ),
+        );
 
         previousId = taskId;
       }
@@ -375,14 +382,16 @@ class TaskDecomposer {
     }
 
     // Single task.
-    tasks.add(CoordinatorTask(
-      id: _nextId(),
-      name: _extractTaskName(prompt),
-      description: prompt,
-      prompt: prompt,
-      createdAt: now,
-      requiredCapabilities: _inferCapabilities(prompt).toList(),
-    ));
+    tasks.add(
+      CoordinatorTask(
+        id: _nextId(),
+        name: _extractTaskName(prompt),
+        description: prompt,
+        prompt: prompt,
+        createdAt: now,
+        requiredCapabilities: _inferCapabilities(prompt).toList(),
+      ),
+    );
 
     return tasks;
   }
@@ -404,28 +413,44 @@ class TaskDecomposer {
     if (lower.contains('review') || lower.contains('feedback')) {
       caps.add(AgentCapability.codeReview);
     }
-    if (lower.contains('document') || lower.contains('readme') || lower.contains('docs')) {
+    if (lower.contains('document') ||
+        lower.contains('readme') ||
+        lower.contains('docs')) {
       caps.add(AgentCapability.documentation);
     }
-    if (lower.contains('debug') || lower.contains('fix') || lower.contains('error')) {
+    if (lower.contains('debug') ||
+        lower.contains('fix') ||
+        lower.contains('error')) {
       caps.add(AgentCapability.debugging);
     }
-    if (lower.contains('refactor') || lower.contains('clean') || lower.contains('improve')) {
+    if (lower.contains('refactor') ||
+        lower.contains('clean') ||
+        lower.contains('improve')) {
       caps.add(AgentCapability.refactoring);
     }
-    if (lower.contains('security') || lower.contains('vulnerability') || lower.contains('audit')) {
+    if (lower.contains('security') ||
+        lower.contains('vulnerability') ||
+        lower.contains('audit')) {
       caps.add(AgentCapability.security);
     }
-    if (lower.contains('performance') || lower.contains('optimize') || lower.contains('benchmark')) {
+    if (lower.contains('performance') ||
+        lower.contains('optimize') ||
+        lower.contains('benchmark')) {
       caps.add(AgentCapability.performance);
     }
-    if (lower.contains('deploy') || lower.contains('ci') || lower.contains('docker')) {
+    if (lower.contains('deploy') ||
+        lower.contains('ci') ||
+        lower.contains('docker')) {
       caps.add(AgentCapability.devops);
     }
-    if (lower.contains('architecture') || lower.contains('design') || lower.contains('plan')) {
+    if (lower.contains('architecture') ||
+        lower.contains('design') ||
+        lower.contains('plan')) {
       caps.add(AgentCapability.architecture);
     }
-    if (lower.contains('research') || lower.contains('investigate') || lower.contains('analyze')) {
+    if (lower.contains('research') ||
+        lower.contains('investigate') ||
+        lower.contains('analyze')) {
       caps.add(AgentCapability.research);
     }
 
@@ -471,14 +496,16 @@ class TaskScheduler {
 
       // Lower latency is better.
       if (agent.averageLatency.inMilliseconds > 0) {
-        score += (10000 / (agent.averageLatency.inMilliseconds + 1)).clamp(0, 15);
+        score += (10000 / (agent.averageLatency.inMilliseconds + 1)).clamp(
+          0,
+          15,
+        );
       } else {
         score += 10;
       }
 
       return (agent: agent, score: score);
-    }).toList()
-      ..sort((a, b) => b.score.compareTo(a.score));
+    }).toList()..sort((a, b) => b.score.compareTo(a.score));
 
     return scored.first.agent;
   }
@@ -521,11 +548,15 @@ class ResultAggregator {
   /// Combine results from parallel tasks.
   String combineResults(List<CoordinatorTask> tasks) {
     final buffer = StringBuffer();
-    final completed = tasks.where((t) => t.status == TaskStatus.completed).toList();
+    final completed = tasks
+        .where((t) => t.status == TaskStatus.completed)
+        .toList();
     final failed = tasks.where((t) => t.status == TaskStatus.failed).toList();
 
     if (completed.isNotEmpty) {
-      buffer.writeln('## Completed Tasks (${completed.length}/${tasks.length})');
+      buffer.writeln(
+        '## Completed Tasks (${completed.length}/${tasks.length})',
+      );
       buffer.writeln();
       for (final task in completed) {
         buffer.writeln('### ${task.name}');
@@ -855,9 +886,7 @@ class CoordinatorServiceFull {
         startedAt: DateTime.now(),
       );
 
-      _agents[agent.id] = agent.copyWith(
-        currentTasks: agent.currentTasks + 1,
-      );
+      _agents[agent.id] = agent.copyWith(currentTasks: agent.currentTasks + 1);
 
       _eventController.add(TaskAssigned(_tasks[task.id]!, agent));
     }
@@ -890,25 +919,42 @@ class CoordinatorServiceFull {
   }
 
   Duration _updateAverageLatency(
-      Duration current, int count, Duration newLatency) {
+    Duration current,
+    int count,
+    Duration newLatency,
+  ) {
     if (count <= 0) return newLatency;
-    final totalMs =
-        current.inMilliseconds * count + newLatency.inMilliseconds;
+    final totalMs = current.inMilliseconds * count + newLatency.inMilliseconds;
     return Duration(milliseconds: totalMs ~/ (count + 1));
   }
 
   /// Get coordinator statistics.
   Map<String, dynamic> getStats() => {
-        'agents': _agents.length,
-        'availableAgents': _agents.values.where((a) => a.isAvailable && a.hasCapacity).length,
-        'totalTasks': _tasks.length,
-        'pendingTasks': _tasks.values.where((t) => t.status == TaskStatus.pending).length,
-        'runningTasks': _tasks.values.where((t) => t.status == TaskStatus.running || t.status == TaskStatus.assigned).length,
-        'completedTasks': _tasks.values.where((t) => t.status == TaskStatus.completed).length,
-        'failedTasks': _tasks.values.where((t) => t.status == TaskStatus.failed).length,
-        'workflows': _workflows.length,
-        'activeWorkflows': _workflows.values.where((w) => w.completedAt == null).length,
-      };
+    'agents': _agents.length,
+    'availableAgents': _agents.values
+        .where((a) => a.isAvailable && a.hasCapacity)
+        .length,
+    'totalTasks': _tasks.length,
+    'pendingTasks': _tasks.values
+        .where((t) => t.status == TaskStatus.pending)
+        .length,
+    'runningTasks': _tasks.values
+        .where(
+          (t) =>
+              t.status == TaskStatus.running || t.status == TaskStatus.assigned,
+        )
+        .length,
+    'completedTasks': _tasks.values
+        .where((t) => t.status == TaskStatus.completed)
+        .length,
+    'failedTasks': _tasks.values
+        .where((t) => t.status == TaskStatus.failed)
+        .length,
+    'workflows': _workflows.length,
+    'activeWorkflows': _workflows.values
+        .where((w) => w.completedAt == null)
+        .length,
+  };
 
   /// Dispose resources.
   void dispose() {

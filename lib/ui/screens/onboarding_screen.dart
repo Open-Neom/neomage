@@ -167,8 +167,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _showSnack(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   // ── API test connection ──
@@ -199,7 +198,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       }
 
       // Rudimentary validation of key format.
-      final looksValid = isLocal ||
+      final looksValid =
+          isLocal ||
           (key.startsWith('sk-') && key.length > 20) ||
           key.length > 10;
 
@@ -212,8 +212,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     } catch (e) {
       setState(() {
         _testingConnection = false;
-        _connectionTestResult =
-            _ConnectionTestResult.failure(e.toString());
+        _connectionTestResult = _ConnectionTestResult.failure(e.toString());
       });
     }
   }
@@ -245,7 +244,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       );
 
       // Persist workspace prefs via SharedPreferences (AppSettings).
-      final settings = await AppSettings.load();
+      final _settings = await AppSettings.load();
       // Permission mode is stored as a string for simplicity.
       // Workspace dir, git toggle, NEOMCLAW.md are handled by the engine.
 
@@ -270,53 +269,50 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // ── Model lists per provider ──
 
   List<String> _modelsForProvider(ApiProviderType type) => switch (type) {
-        ApiProviderType.gemini => [
-            'gemini-2.5-flash',
-            'gemini-2.5-pro',
-            'gemini-2.0-flash',
-            'gemini-1.5-pro',
-          ],
-        ApiProviderType.qwen => [
-            'qwen-plus',
-            'qwen-max',
-            'qwen-turbo',
-            'qwen-long',
-          ],
-        ApiProviderType.openai => [
-            'gpt-4o',
-            'gpt-4o-mini',
-            'gpt-4-turbo',
-            'o3-mini',
-          ],
-        ApiProviderType.deepseek => [
-            'deepseek-chat',
-            'deepseek-coder',
-            'deepseek-reasoner',
-          ],
-        ApiProviderType.anthropic => [
-            'claude-sonnet-4-20250514',
-            'claude-opus-4-20250514',
-            'claude-haiku-3-5-20241022',
-          ],
-        ApiProviderType.ollama => [
-            'llama3.1',
-            'codellama',
-            'mistral',
-            'deepseek-coder',
-          ],
-        ApiProviderType.bedrock => [
-            'anthropic.claude-sonnet-4-20250514-v1:0',
-            'anthropic.claude-haiku-3-5-20241022-v1:0',
-          ],
-        ApiProviderType.vertex => [
-            'claude-sonnet-4@20250514',
-            'claude-haiku-3-5@20241022',
-          ],
-        ApiProviderType.custom => [
-            'gpt-4o',
-            'custom-model',
-          ],
-      };
+    ApiProviderType.gemini => [
+      'gemini-2.5-flash',
+      'gemini-2.5-pro',
+      'gemini-2.0-flash',
+      'gemini-1.5-pro',
+    ],
+    ApiProviderType.qwen => [
+      'qwen-plus',
+      'qwen-max',
+      'qwen-turbo',
+      'qwen-long',
+    ],
+    ApiProviderType.openai => [
+      'gpt-4o',
+      'gpt-4o-mini',
+      'gpt-4-turbo',
+      'o3-mini',
+    ],
+    ApiProviderType.deepseek => [
+      'deepseek-chat',
+      'deepseek-coder',
+      'deepseek-reasoner',
+    ],
+    ApiProviderType.anthropic => [
+      'claude-sonnet-4-20250514',
+      'claude-opus-4-20250514',
+      'claude-haiku-3-5-20241022',
+    ],
+    ApiProviderType.ollama => [
+      'llama3.1',
+      'codellama',
+      'mistral',
+      'deepseek-coder',
+    ],
+    ApiProviderType.bedrock => [
+      'anthropic.claude-sonnet-4-20250514-v1:0',
+      'anthropic.claude-haiku-3-5-20241022-v1:0',
+    ],
+    ApiProviderType.vertex => [
+      'claude-sonnet-4@20250514',
+      'claude-haiku-3-5@20241022',
+    ],
+    ApiProviderType.custom => ['gpt-4o', 'custom-model'],
+  };
 
   // ── Build ──
 
@@ -359,10 +355,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         setState(() => _obscureApiKey = !_obscureApiKey),
                     selectedModel: _selectedModel,
                     models: _modelsForProvider(_providerType),
-                    onModelChanged: (m) =>
-                        setState(() => _selectedModel = m),
+                    onModelChanged: (m) => setState(() => _selectedModel = m),
                     baseUrlController: _baseUrlController,
-                    showBaseUrl: _providerType == ApiProviderType.custom ||
+                    showBaseUrl:
+                        _providerType == ApiProviderType.custom ||
                         _providerType == ApiProviderType.ollama,
                     testingConnection: _testingConnection,
                     testResult: _connectionTestResult,
@@ -370,8 +366,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ),
                   _PermissionStep(
                     selected: _permissionMode,
-                    onChanged: (m) =>
-                        setState(() => _permissionMode = m),
+                    onChanged: (m) => setState(() => _permissionMode = m),
                   ),
                   _WorkspaceStep(
                     dirController: _workspaceDirController,
@@ -385,13 +380,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   _FeaturesStep(
                     pageController: _featuresPageController,
                     currentPage: _featuresPage,
-                    onPageChanged: (p) =>
-                        setState(() => _featuresPage = p),
+                    onPageChanged: (p) => setState(() => _featuresPage = p),
                   ),
-                  _CompletionStep(
-                    finishing: _finishing,
-                    onStart: _finish,
-                  ),
+                  _CompletionStep(finishing: _finishing, onStart: _finish),
                 ],
               ),
             ),
@@ -406,8 +397,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               )
             else if (_currentStep == 0)
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 child: SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -485,14 +478,16 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     runSpacing: 8,
                     alignment: WrapAlignment.center,
                     children: [
+                      _FeatureChip(icon: Icons.code, label: 'Code editing'),
                       _FeatureChip(
-                          icon: Icons.code, label: 'Code editing'),
+                        icon: Icons.search,
+                        label: 'Codebase search',
+                      ),
                       _FeatureChip(
-                          icon: Icons.search, label: 'Codebase search'),
-                      _FeatureChip(
-                          icon: Icons.terminal, label: 'Shell commands'),
-                      _FeatureChip(
-                          icon: Icons.extension, label: 'MCP tools'),
+                        icon: Icons.terminal,
+                        label: 'Shell commands',
+                      ),
+                      _FeatureChip(icon: Icons.extension, label: 'MCP tools'),
                     ],
                   ),
                 ],
@@ -539,8 +534,8 @@ class _StepIndicator extends StatelessWidget {
               color: active
                   ? color
                   : completed
-                      ? color.withAlpha(150)
-                      : color.withAlpha(50),
+                  ? color.withAlpha(150)
+                  : color.withAlpha(50),
               borderRadius: BorderRadius.circular(5),
             ),
           );
@@ -655,18 +650,23 @@ class _ApiConfigStep extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('API Configuration',
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'API Configuration',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text('Connect to your preferred AI provider.',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: cs.onSurfaceVariant)),
+              Text(
+                'Connect to your preferred AI provider.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
               const SizedBox(height: 24),
 
               // Provider selector — wrap-friendly
-              Text('Provider',
-                  style: theme.textTheme.labelLarge),
+              Text('Provider', style: theme.textTheme.labelLarge),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -701,19 +701,18 @@ class _ApiConfigStep extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: Icon(obscureApiKey
-                              ? Icons.visibility_off
-                              : Icons.visibility),
+                          icon: Icon(
+                            obscureApiKey
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                           onPressed: onToggleObscure,
-                          tooltip: obscureApiKey
-                              ? 'Show key'
-                              : 'Hide key',
+                          tooltip: obscureApiKey ? 'Show key' : 'Hide key',
                         ),
                         IconButton(
                           icon: const Icon(Icons.content_paste),
                           onPressed: () async {
-                            final data =
-                                await Clipboard.getData('text/plain');
+                            final data = await Clipboard.getData('text/plain');
                             if (data?.text != null) {
                               apiKeyController.text = data!.text!;
                             }
@@ -729,7 +728,7 @@ class _ApiConfigStep extends StatelessWidget {
 
               // Model dropdown
               DropdownButtonFormField<String>(
-                value: models.contains(selectedModel)
+                initialValue: models.contains(selectedModel)
                     ? selectedModel
                     : models.first,
                 decoration: const InputDecoration(
@@ -737,8 +736,7 @@ class _ApiConfigStep extends StatelessWidget {
                   prefixIcon: Icon(Icons.smart_toy),
                 ),
                 items: models
-                    .map((m) =>
-                        DropdownMenuItem(value: m, child: Text(m)))
+                    .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                     .toList(),
                 onChanged: (v) {
                   if (v != null) onModelChanged(v);
@@ -771,9 +769,9 @@ class _ApiConfigStep extends StatelessWidget {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.wifi_tethering),
-                  label: Text(testingConnection
-                      ? 'Testing...'
-                      : 'Test Connection'),
+                  label: Text(
+                    testingConnection ? 'Testing...' : 'Test Connection',
+                  ),
                 ),
               ),
 
@@ -788,21 +786,15 @@ class _ApiConfigStep extends StatelessWidget {
                         : Colors.red.withAlpha(25),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: testResult!.success
-                          ? Colors.green
-                          : Colors.red,
+                      color: testResult!.success ? Colors.green : Colors.red,
                       width: 0.5,
                     ),
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        testResult!.success
-                            ? Icons.check_circle
-                            : Icons.error,
-                        color: testResult!.success
-                            ? Colors.green
-                            : Colors.red,
+                        testResult!.success ? Icons.check_circle : Icons.error,
+                        color: testResult!.success ? Colors.green : Colors.red,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -840,10 +832,7 @@ class _PermissionStep extends StatelessWidget {
   final _PermissionModeOption selected;
   final ValueChanged<_PermissionModeOption> onChanged;
 
-  const _PermissionStep({
-    required this.selected,
-    required this.onChanged,
-  });
+  const _PermissionStep({required this.selected, required this.onChanged});
 
   static const _modes = <_PermissionModeData>[
     _PermissionModeData(
@@ -900,24 +889,30 @@ class _PermissionStep extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Permission Mode',
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Permission Mode',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 'Choose how much autonomy the assistant has.',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: cs.onSurfaceVariant),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 20),
-              ..._modes.map((data) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _PermissionCard(
-                      data: data,
-                      isSelected: selected == data.mode,
-                      onTap: () => onChanged(data.mode),
-                    ),
-                  )),
+              ..._modes.map(
+                (data) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _PermissionCard(
+                    data: data,
+                    isSelected: selected == data.mode,
+                    onTap: () => onChanged(data.mode),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -986,14 +981,19 @@ class _PermissionCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(data.title,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15)),
+                        Text(
+                          data.title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
                         const Spacer(),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: data.riskColor.withAlpha(30),
                             borderRadius: BorderRadius.circular(8),
@@ -1060,14 +1060,18 @@ class _WorkspaceStep extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Workspace Setup',
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Workspace Setup',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 4),
               Text(
                 'Configure your project workspace.',
-                style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: cs.onSurfaceVariant),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -1090,8 +1094,9 @@ class _WorkspaceStep extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 'The root directory for file operations and search.',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: cs.onSurfaceVariant),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -1100,7 +1105,8 @@ class _WorkspaceStep extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Git Integration'),
                 subtitle: const Text(
-                    'Enable git-aware features like diff view and commit helpers'),
+                  'Enable git-aware features like diff view and commit helpers',
+                ),
                 secondary: Icon(Icons.commit, color: cs.primary),
                 value: gitEnabled,
                 onChanged: onGitChanged,
@@ -1112,9 +1118,9 @@ class _WorkspaceStep extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Create NEOMCLAW.md'),
                 subtitle: const Text(
-                    'Initialize a memory file with project context and instructions'),
-                secondary:
-                    Icon(Icons.description_outlined, color: cs.primary),
+                  'Initialize a memory file with project context and instructions',
+                ),
+                secondary: Icon(Icons.description_outlined, color: cs.primary),
                 value: createNeomClawMd,
                 onChanged: onNeomClawMdChanged,
               ),
@@ -1138,8 +1144,9 @@ class _WorkspaceStep extends StatelessWidget {
                         'NEOMCLAW.md is loaded automatically at the start of '
                         'each conversation. It can contain coding standards, '
                         'repo structure notes, and custom instructions.',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: cs.onSurfaceVariant),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
                       ),
                     ),
                   ],
@@ -1211,13 +1218,19 @@ class _FeaturesStep extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Features',
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'Features',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 4),
-              Text('Swipe to explore what you can do.',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: cs.onSurfaceVariant)),
+              Text(
+                'Swipe to explore what you can do.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
         ),
@@ -1241,19 +1254,26 @@ class _FeaturesStep extends StatelessWidget {
                         color: cs.primaryContainer,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Icon(f.icon,
-                          size: 40, color: cs.onPrimaryContainer),
+                      child: Icon(
+                        f.icon,
+                        size: 40,
+                        color: cs.onPrimaryContainer,
+                      ),
                     ),
                     const SizedBox(height: 24),
-                    Text(f.title,
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      f.title,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       f.description,
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: cs.onSurfaceVariant),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -1302,10 +1322,7 @@ class _CompletionStep extends StatelessWidget {
   final bool finishing;
   final VoidCallback onStart;
 
-  const _CompletionStep({
-    required this.finishing,
-    required this.onStart,
-  });
+  const _CompletionStep({required this.finishing, required this.onStart});
 
   @override
   Widget build(BuildContext context) {
@@ -1325,19 +1342,26 @@ class _CompletionStep extends StatelessWidget {
                 color: Colors.green.withAlpha(30),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check_rounded,
-                  size: 48, color: Colors.green),
+              child: const Icon(
+                Icons.check_rounded,
+                size: 48,
+                color: Colors.green,
+              ),
             ),
             const SizedBox(height: 24),
-            Text("You're all set!",
-                style: theme.textTheme.headlineMedium
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+            Text(
+              "You're all set!",
+              style: theme.textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               'Your assistant is configured and ready to go.',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge
-                  ?.copyWith(color: cs.onSurfaceVariant),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: cs.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 36),
             SizedBox(
@@ -1355,8 +1379,7 @@ class _CompletionStep extends StatelessWidget {
                         ),
                       )
                     : const Icon(Icons.chat_bubble_outline),
-                label:
-                    Text(finishing ? 'Initializing...' : 'Start Chatting'),
+                label: Text(finishing ? 'Initializing...' : 'Start Chatting'),
               ),
             ),
           ],

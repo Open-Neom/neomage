@@ -216,10 +216,9 @@ class _MarkdownParser {
           i++;
         }
         if (i < end) i++; // skip closing ```
-        nodes.add(_CodeBlockNode(
-          codeLines.join('\n'),
-          lang.isEmpty ? null : lang,
-        ));
+        nodes.add(
+          _CodeBlockNode(codeLines.join('\n'), lang.isEmpty ? null : lang),
+        );
         continue;
       }
 
@@ -241,12 +240,16 @@ class _MarkdownParser {
       }
 
       // Table (header | separator | rows)
-      if (line.contains('|') && i + 1 < end && _isTableSeparator(lines[i + 1])) {
+      if (line.contains('|') &&
+          i + 1 < end &&
+          _isTableSeparator(lines[i + 1])) {
         final headers = _splitTableRow(line);
         final aligns = _parseAlignments(lines[i + 1]);
         final rows = <List<String>>[];
         i += 2;
-        while (i < end && lines[i].contains('|') && lines[i].trim().isNotEmpty) {
+        while (i < end &&
+            lines[i].contains('|') &&
+            lines[i].trim().isNotEmpty) {
           rows.add(_splitTableRow(lines[i]));
           i++;
         }
@@ -258,25 +261,32 @@ class _MarkdownParser {
       if (line.trimLeft().startsWith('>')) {
         final quoteLines = <String>[];
         while (i < end && lines[i].trimLeft().startsWith('>')) {
-          quoteLines.add(lines[i].trimLeft().replaceFirst(RegExp(r'^>\s?'), ''));
+          quoteLines.add(
+            lines[i].trimLeft().replaceFirst(RegExp(r'^>\s?'), ''),
+          );
           i++;
         }
         // Check for admonition
         final firstLine = quoteLines.isNotEmpty ? quoteLines.first.trim() : '';
-        final admoMatch = RegExp(r'^\[!(NOTE|WARNING|TIP|CAUTION|IMPORTANT)\]')
-            .firstMatch(firstLine);
+        final admoMatch = RegExp(
+          r'^\[!(NOTE|WARNING|TIP|CAUTION|IMPORTANT)\]',
+        ).firstMatch(firstLine);
         if (admoMatch != null) {
           final kind = admoMatch.group(1)!;
-          quoteLines[0] = quoteLines[0].replaceFirst(admoMatch.group(0)!, '').trim();
+          quoteLines[0] = quoteLines[0]
+              .replaceFirst(admoMatch.group(0)!, '')
+              .trim();
           if (quoteLines[0].isEmpty) quoteLines.removeAt(0);
-          nodes.add(_AdmonitionNode(
-            kind,
-            _parseBlocks(quoteLines, 0, quoteLines.length),
-          ));
+          nodes.add(
+            _AdmonitionNode(
+              kind,
+              _parseBlocks(quoteLines, 0, quoteLines.length),
+            ),
+          );
         } else {
-          nodes.add(_BlockquoteNode(
-            _parseBlocks(quoteLines, 0, quoteLines.length),
-          ));
+          nodes.add(
+            _BlockquoteNode(_parseBlocks(quoteLines, 0, quoteLines.length)),
+          );
         }
         continue;
       }
@@ -321,10 +331,12 @@ class _MarkdownParser {
       // Footnote definition
       final fnDefMatch = RegExp(r'^\[\^(\w+)\]:\s*(.+)').firstMatch(line);
       if (fnDefMatch != null) {
-        nodes.add(_FootnoteDefNode(
-          fnDefMatch.group(1)!,
-          _parseInline(fnDefMatch.group(2)!),
-        ));
+        nodes.add(
+          _FootnoteDefNode(
+            fnDefMatch.group(1)!,
+            _parseInline(fnDefMatch.group(2)!),
+          ),
+        );
         i++;
         continue;
       }
@@ -376,14 +388,18 @@ class _MarkdownParser {
       // Image ![alt](url)
       if (text[i] == '!' && i + 1 < text.length && text[i + 1] == '[') {
         final altClose = text.indexOf(']', i + 2);
-        if (altClose != -1 && altClose + 1 < text.length && text[altClose + 1] == '(') {
+        if (altClose != -1 &&
+            altClose + 1 < text.length &&
+            text[altClose + 1] == '(') {
           final urlClose = text.indexOf(')', altClose + 2);
           if (urlClose != -1) {
             flushBuffer();
-            nodes.add(_ImageNode(
-              text.substring(i + 2, altClose),
-              text.substring(altClose + 2, urlClose),
-            ));
+            nodes.add(
+              _ImageNode(
+                text.substring(i + 2, altClose),
+                text.substring(altClose + 2, urlClose),
+              ),
+            );
             i = urlClose + 1;
             continue;
           }
@@ -393,14 +409,18 @@ class _MarkdownParser {
       // Link [text](url)
       if (text[i] == '[') {
         final textClose = text.indexOf(']', i + 1);
-        if (textClose != -1 && textClose + 1 < text.length && text[textClose + 1] == '(') {
+        if (textClose != -1 &&
+            textClose + 1 < text.length &&
+            text[textClose + 1] == '(') {
           final urlClose = text.indexOf(')', textClose + 2);
           if (urlClose != -1) {
             flushBuffer();
-            nodes.add(_LinkNode(
-              text.substring(i + 1, textClose),
-              text.substring(textClose + 2, urlClose),
-            ));
+            nodes.add(
+              _LinkNode(
+                text.substring(i + 1, textClose),
+                text.substring(textClose + 2, urlClose),
+              ),
+            );
             i = urlClose + 1;
             continue;
           }
@@ -446,7 +466,8 @@ class _MarkdownParser {
         if (close != -1) {
           flushBuffer();
           nodes.add(
-              _StrikethroughNode(_parseInline(text.substring(i + 2, close))));
+            _StrikethroughNode(_parseInline(text.substring(i + 2, close))),
+          );
           i = close + 2;
           continue;
         }
@@ -479,7 +500,9 @@ class _MarkdownParser {
   List<String> _splitTableRow(String line) {
     var trimmed = line.trim();
     if (trimmed.startsWith('|')) trimmed = trimmed.substring(1);
-    if (trimmed.endsWith('|')) trimmed = trimmed.substring(0, trimmed.length - 1);
+    if (trimmed.endsWith('|')) {
+      trimmed = trimmed.substring(0, trimmed.length - 1);
+    }
     return trimmed.split('|').map((c) => c.trim()).toList();
   }
 
@@ -569,12 +592,15 @@ class MarkdownPreview extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInlineSpan(node.children, TextStyle(
-            color: theme.headingColor,
-            fontSize: size,
-            fontWeight: FontWeight.bold,
-            height: 1.3,
-          )),
+          _buildInlineSpan(
+            node.children,
+            TextStyle(
+              color: theme.headingColor,
+              fontSize: size,
+              fontWeight: FontWeight.bold,
+              height: 1.3,
+            ),
+          ),
           if (node.level <= 2)
             Divider(color: theme.hrColor, height: 8, thickness: 0.5),
         ],
@@ -585,11 +611,10 @@ class MarkdownPreview extends StatelessWidget {
   Widget _buildParagraph(_ParagraphNode node) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: _buildInlineSpan(node.children, TextStyle(
-        color: theme.bodyColor,
-        fontSize: 14,
-        height: 1.6,
-      )),
+      child: _buildInlineSpan(
+        node.children,
+        TextStyle(color: theme.bodyColor, fontSize: 14, height: 1.6),
+      ),
     );
   }
 
@@ -612,8 +637,9 @@ class MarkdownPreview extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.grey.shade800,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(6)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(6),
+                ),
               ),
               child: Row(
                 children: [
@@ -782,8 +808,11 @@ class MarkdownPreview extends StatelessWidget {
     );
   }
 
-  Widget _buildListItem(_ListItemNode item,
-      {required bool bullet, required int index}) {
+  Widget _buildListItem(
+    _ListItemNode item, {
+    required bool bullet,
+    required int index,
+  }) {
     Widget leading;
     if (item.checked != null) {
       // Task list
@@ -845,8 +874,10 @@ class MarkdownPreview extends StatelessWidget {
                     ? node.alignments[e.key]
                     : null;
                 return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   child: Text(
                     e.value,
                     textAlign: align,
@@ -868,14 +899,13 @@ class MarkdownPreview extends StatelessWidget {
                       : null;
                   return Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 6),
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     child: Text(
                       e.value,
                       textAlign: align,
-                      style: TextStyle(
-                        color: theme.bodyColor,
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: theme.bodyColor, fontSize: 13),
                     ),
                   );
                 }).toList(),
@@ -956,109 +986,130 @@ class MarkdownPreview extends StatelessWidget {
   // ---- inline span builder ----
 
   Widget _wrapInline(_MarkdownNode node) {
-    return _buildInlineSpan([node], TextStyle(color: theme.bodyColor, fontSize: 14));
+    return _buildInlineSpan([
+      node,
+    ], TextStyle(color: theme.bodyColor, fontSize: 14));
   }
 
   Widget _buildInlineSpan(List<_MarkdownNode> nodes, TextStyle baseStyle) {
     final spans = _inlineToSpans(nodes, baseStyle);
-    final richText = Text.rich(
-      TextSpan(children: spans),
-      style: baseStyle,
-    );
-    return selectable ? SelectableText.rich(TextSpan(children: spans, style: baseStyle)) : richText;
+    final richText = Text.rich(TextSpan(children: spans), style: baseStyle);
+    return selectable
+        ? SelectableText.rich(TextSpan(children: spans, style: baseStyle))
+        : richText;
   }
 
   List<InlineSpan> _inlineToSpans(
-      List<_MarkdownNode> nodes, TextStyle baseStyle) {
+    List<_MarkdownNode> nodes,
+    TextStyle baseStyle,
+  ) {
     final spans = <InlineSpan>[];
     for (final node in nodes) {
       switch (node) {
         case _TextNode():
           spans.add(TextSpan(text: node.text));
         case _BoldNode():
-          spans.addAll(_inlineToSpans(
+          spans.addAll(
+            _inlineToSpans(
               node.children,
-              baseStyle.copyWith(fontWeight: FontWeight.bold)));
+              baseStyle.copyWith(fontWeight: FontWeight.bold),
+            ),
+          );
         case _ItalicNode():
-          spans.addAll(_inlineToSpans(
+          spans.addAll(
+            _inlineToSpans(
               node.children,
-              baseStyle.copyWith(fontStyle: FontStyle.italic)));
+              baseStyle.copyWith(fontStyle: FontStyle.italic),
+            ),
+          );
         case _StrikethroughNode():
-          spans.addAll(_inlineToSpans(
+          spans.addAll(
+            _inlineToSpans(
               node.children,
-              baseStyle.copyWith(
-                  decoration: TextDecoration.lineThrough)));
+              baseStyle.copyWith(decoration: TextDecoration.lineThrough),
+            ),
+          );
         case _InlineCodeNode():
-          spans.add(WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-              decoration: BoxDecoration(
-                color: theme.inlineCodeBackground,
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: Text(
-                node.code,
-                style: TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: baseStyle.fontSize != null
-                      ? baseStyle.fontSize! - 1
-                      : 13,
-                  color: theme.inlineCodeColor,
+          spans.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: BoxDecoration(
+                  color: theme.inlineCodeBackground,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Text(
+                  node.code,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: baseStyle.fontSize != null
+                        ? baseStyle.fontSize! - 1
+                        : 13,
+                    color: theme.inlineCodeColor,
+                  ),
                 ),
               ),
             ),
-          ));
+          );
         case _LinkNode():
-          spans.add(TextSpan(
-            text: node.text,
-            style: TextStyle(
-              color: theme.linkColor,
-              decoration: TextDecoration.underline,
-              decorationColor: theme.linkColor.withOpacity(0.4),
-            ),
-            // GestureRecognizer would need StatefulWidget; use onLinkTap callback
-          ));
-        case _ImageNode():
-          spans.add(WidgetSpan(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
-                child: node.url.startsWith('http')
-                    ? Image.network(
-                        node.url,
-                        errorBuilder: (_, __, ___) =>
-                            _imagePlaceholder(node.alt),
-                        loadingBuilder: (_, child, progress) {
-                          if (progress == null) return child;
-                          return _imagePlaceholder('Loading...');
-                        },
-                      )
-                    : _imagePlaceholder(node.alt),
-              ),
-            ),
-          ));
-        case _InlineMathNode():
-          spans.add(TextSpan(
-            text: node.tex,
-            style: const TextStyle(
-              fontFamily: 'serif',
-              fontStyle: FontStyle.italic,
-            ),
-          ));
-        case _FootnoteRefNode():
-          spans.add(WidgetSpan(
-            alignment: PlaceholderAlignment.top,
-            child: Text(
-              '[${node.label}]',
+          spans.add(
+            TextSpan(
+              text: node.text,
               style: TextStyle(
                 color: theme.linkColor,
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
+                decoration: TextDecoration.underline,
+                decorationColor: theme.linkColor.withOpacity(0.4),
+              ),
+              // GestureRecognizer would need StatefulWidget; use onLinkTap callback
+            ),
+          );
+        case _ImageNode():
+          spans.add(
+            WidgetSpan(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: node.url.startsWith('http')
+                      ? Image.network(
+                          node.url,
+                          errorBuilder: (_, __, ___) =>
+                              _imagePlaceholder(node.alt),
+                          loadingBuilder: (_, child, progress) {
+                            if (progress == null) return child;
+                            return _imagePlaceholder('Loading...');
+                          },
+                        )
+                      : _imagePlaceholder(node.alt),
+                ),
               ),
             ),
-          ));
+          );
+        case _InlineMathNode():
+          spans.add(
+            TextSpan(
+              text: node.tex,
+              style: const TextStyle(
+                fontFamily: 'serif',
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          );
+        case _FootnoteRefNode():
+          spans.add(
+            WidgetSpan(
+              alignment: PlaceholderAlignment.top,
+              child: Text(
+                '[${node.label}]',
+                style: TextStyle(
+                  color: theme.linkColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          );
         default:
           break;
       }
@@ -1077,8 +1128,10 @@ class MarkdownPreview extends StatelessWidget {
           children: [
             const Icon(Icons.image, color: Colors.white38, size: 32),
             const SizedBox(height: 4),
-            Text(alt,
-                style: const TextStyle(color: Colors.white38, fontSize: 11)),
+            Text(
+              alt,
+              style: const TextStyle(color: Colors.white38, fontSize: 11),
+            ),
           ],
         ),
       ),

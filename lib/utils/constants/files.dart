@@ -48,8 +48,9 @@ bool hasBinaryExtension(String filePath) {
 /// Detect binary content by checking for null bytes or >10% non-printable
 /// characters in the first [binaryCheckSize] bytes.
 bool isBinaryContent(Uint8List buffer) {
-  final checkLength =
-      buffer.length < binaryCheckSize ? buffer.length : binaryCheckSize;
+  final checkLength = buffer.length < binaryCheckSize
+      ? buffer.length
+      : binaryCheckSize;
   if (checkLength == 0) return false;
 
   int nonPrintable = 0;

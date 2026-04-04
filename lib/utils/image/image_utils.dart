@@ -1,9 +1,9 @@
 /// Image handling utilities: resizing, clipboard, storage, validation.
 ///
-/// Ported from openneomclaw/src/utils/imageResizer.ts (880 LOC),
-/// openneomclaw/src/utils/imagePaste.ts (416 LOC),
-/// openneomclaw/src/utils/imageStore.ts (167 LOC),
-/// openneomclaw/src/utils/imageValidation.ts (104 LOC).
+/// Ported from neom_claw/src/utils/imageResizer.ts (880 LOC),
+/// neom_claw/src/utils/imagePaste.ts (416 LOC),
+/// neom_claw/src/utils/imageStore.ts (167 LOC),
+/// neom_claw/src/utils/imageValidation.ts (104 LOC).
 library;
 
 import 'dart:async';
@@ -50,7 +50,10 @@ enum ImageMediaType {
 }
 
 /// Regex pattern to match supported image file extensions.
-final RegExp imageExtensionRegex = RegExp(r'\.(png|jpe?g|gif|webp)$', caseSensitive: false);
+final RegExp imageExtensionRegex = RegExp(
+  r'\.(png|jpe?g|gif|webp)$',
+  caseSensitive: false,
+);
 
 // ---------------------------------------------------------------------------
 // Error types
@@ -133,11 +136,11 @@ class ImageDimensions {
   });
 
   Map<String, dynamic> toJson() => {
-        if (originalWidth != null) 'originalWidth': originalWidth,
-        if (originalHeight != null) 'originalHeight': originalHeight,
-        if (displayWidth != null) 'displayWidth': displayWidth,
-        if (displayHeight != null) 'displayHeight': displayHeight,
-      };
+    if (originalWidth != null) 'originalWidth': originalWidth,
+    if (originalHeight != null) 'originalHeight': originalHeight,
+    if (displayWidth != null) 'displayWidth': displayWidth,
+    if (displayHeight != null) 'displayHeight': displayHeight,
+  };
 }
 
 /// Result of resizing an image.
@@ -252,10 +255,9 @@ ImageMediaType detectImageFormatFromBuffer(Uint8List buffer) {
 /// Detect image format from base64 data using magic bytes.
 ImageMediaType detectImageFormatFromBase64(String base64Data) {
   try {
-    final buffer = Uint8List.fromList(base64Decode(base64Data.substring(
-      0,
-      min(base64Data.length, 64),
-    )));
+    final buffer = Uint8List.fromList(
+      base64Decode(base64Data.substring(0, min(base64Data.length, 64))),
+    );
     return detectImageFormatFromBuffer(buffer);
   } catch (_) {
     return ImageMediaType.png;
@@ -418,8 +420,8 @@ class ImageUtils extends SintController {
   final RxMap<int, String> _storedImagePaths = <int, String>{}.obs;
 
   /// Path to the image store directory.
-  String Function() _getImageStoreDir =
-      () => '${Platform.environment['HOME'] ?? ''}/.neomclaw/image-cache';
+  String Function() _getImageStoreDir = () =>
+      '${Platform.environment['HOME'] ?? ''}/.neomclaw/image-cache';
 
   /// Session ID for image store directory.
   String Function() _getSessionId = () => 'default';
@@ -434,12 +436,14 @@ class ImageUtils extends SintController {
     int? compressionLevel,
     bool? palette,
     int? colors,
-  })? _imageProcessor;
+  })?
+  _imageProcessor;
 
   /// Image metadata reader callback.
   Future<({int? width, int? height, String? format})> Function(
     Uint8List buffer,
-  )? _getImageMetadata;
+  )?
+  _getImageMetadata;
 
   /// Logging callback.
   void Function(String message, {String? level}) _logForDebugging =
@@ -468,10 +472,12 @@ class ImageUtils extends SintController {
       int? compressionLevel,
       bool? palette,
       int? colors,
-    })? imageProcessor,
+    })?
+    imageProcessor,
     Future<({int? width, int? height, String? format})> Function(
       Uint8List buffer,
-    )? getImageMetadata,
+    )?
+    getImageMetadata,
     void Function(String, {String? level})? logForDebugging,
     void Function(Object)? logError,
     void Function(String, Map<String, dynamic>)? logEvent,
@@ -517,7 +523,10 @@ class ImageUtils extends SintController {
           );
           return ResizeResult(buffer: compressed, mediaType: 'jpeg');
         }
-        return ResizeResult(buffer: imageBuffer, mediaType: normalizedMediaType);
+        return ResizeResult(
+          buffer: imageBuffer,
+          mediaType: normalizedMediaType,
+        );
       }
 
       final originalWidth = metadata.width!;
@@ -694,12 +703,12 @@ class ImageUtils extends SintController {
       throw ImageResizeError(
         overDim
             ? 'Unable to resize image -- dimensions exceed the '
-                '${imageMaxWidth}x${imageMaxHeight}px limit and image processing failed. '
-                'Please resize the image to reduce its pixel dimensions.'
+                  '${imageMaxWidth}x${imageMaxHeight}px limit and image processing failed. '
+                  'Please resize the image to reduce its pixel dimensions.'
             : 'Unable to resize image (${formatFileSize(originalSize)} raw, '
-                '${formatFileSize(base64Size)} base64). The image exceeds the 5MB API '
-                'limit and compression failed. Please resize the image manually '
-                'or use a smaller image.',
+                  '${formatFileSize(base64Size)} base64). The image exceeds the 5MB API '
+                  'limit and compression failed. Please resize the image manually '
+                  'or use a smaller image.',
       );
     }
   }
@@ -757,7 +766,9 @@ class ImageUtils extends SintController {
     String? originalMediaType,
   }) async {
     final fallbackFormat = originalMediaType?.split('/').last ?? 'jpeg';
-    final normalizedFallback = fallbackFormat == 'jpg' ? 'jpeg' : fallbackFormat;
+    final normalizedFallback = fallbackFormat == 'jpg'
+        ? 'jpeg'
+        : fallbackFormat;
 
     if (imageBuffer.length <= maxBytes) {
       return CompressedImageResult(
@@ -780,10 +791,8 @@ class ImageUtils extends SintController {
 
       // Try progressive resizing with format preservation
       for (final scalingFactor in [1.0, 0.75, 0.5, 0.25]) {
-        final newWidth =
-            ((metadata.width ?? 2000) * scalingFactor).round();
-        final newHeight =
-            ((metadata.height ?? 2000) * scalingFactor).round();
+        final newWidth = ((metadata.width ?? 2000) * scalingFactor).round();
+        final newHeight = ((metadata.height ?? 2000) * scalingFactor).round();
 
         final resized = await _imageProcessor!(
           imageBuffer,
@@ -923,13 +932,14 @@ class ImageUtils extends SintController {
 
     try {
       // Check for image
-      final checkResult =
-          await Process.run('bash', ['-c', commands.checkImage]);
+      final checkResult = await Process.run('bash', [
+        '-c',
+        commands.checkImage,
+      ]);
       if (checkResult.exitCode != 0) return null;
 
       // Save image
-      final saveResult =
-          await Process.run('bash', ['-c', commands.saveImage]);
+      final saveResult = await Process.run('bash', ['-c', commands.saveImage]);
       if (saveResult.exitCode != 0) return null;
 
       // Read image
@@ -1162,8 +1172,9 @@ class ImageUtils extends SintController {
               'base64_size_bytes': base64Size,
               'max_bytes': apiImageMaxBase64Size,
             });
-            oversizedImages
-                .add(OversizedImage(index: imageIndex, size: base64Size));
+            oversizedImages.add(
+              OversizedImage(index: imageIndex, size: base64Size),
+            );
           }
         }
       }
@@ -1181,10 +1192,5 @@ class ImageUtils extends SintController {
   @override
   void onInit() {
     super.onInit();
-  }
-
-  @override
-  void onClose() {
-    super.onClose();
   }
 }

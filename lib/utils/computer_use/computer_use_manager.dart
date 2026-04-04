@@ -1,6 +1,6 @@
 /// Computer Use Manager
 ///
-/// Faithful port of openneomclaw/src/utils/computerUse/*.ts
+/// Faithful port of neom_claw/src/utils/computerUse/*.ts
 /// Covers: executor.ts, computerUseLock.ts, appNames.ts
 ///
 /// Provides:
@@ -8,6 +8,7 @@
 /// - Session-level computer use lock with O_EXCL atomic acquisition
 /// - App name filtering/sanitization for prompt injection hardening
 /// - macOS native module integration (Rust/enigo input, Swift screenshots)
+library;
 
 import 'dart:async';
 import 'dart:convert';
@@ -163,10 +164,7 @@ const cliCuCapabilities = ComputerUseCapabilities(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Only apps under these roots are shown (macOS).
-const List<String> pathAllowlist = [
-  '/Applications/',
-  '/System/Applications/',
-];
+const List<String> pathAllowlist = ['/Applications/', '/System/Applications/'];
 
 /// Display-name patterns that mark background services.
 final List<RegExp> namePatternBlocklist = [
@@ -223,7 +221,12 @@ const Set<String> alwaysKeepBundleIds = {
 /// Regex for allowed app name characters.
 /// \p{L}\p{M}\p{N} with Unicode — not \w (ASCII-only).
 /// Single space not \s — \s matches newlines.
-final RegExp appNameAllowed = RegExp(r'^[\p{L}\p{M}\p{N}_ .&' "'" r'()+\-]+$', unicode: true);
+final RegExp appNameAllowed = RegExp(
+  r'^[\p{L}\p{M}\p{N}_ .&'
+  "'"
+  r'()+\-]+$',
+  unicode: true,
+);
 
 /// Check if a path is a user-facing application path.
 bool _isUserFacingPath(String path, String? homeDir) {
@@ -245,18 +248,14 @@ bool _isNoisyName(String name) {
 /// Core sanitization: length cap + trim + dedupe + sort.
 List<String> _sanitizeCore(List<String> raw, bool applyCharFilter) {
   final seen = <String>{};
-  final result = raw
-      .map((name) => name.trim())
-      .where((trimmed) {
-        if (trimmed.isEmpty) return false;
-        if (trimmed.length > appNameMaxLen) return false;
-        if (applyCharFilter && !appNameAllowed.hasMatch(trimmed)) return false;
-        if (seen.contains(trimmed)) return false;
-        seen.add(trimmed);
-        return true;
-      })
-      .toList()
-    ..sort((a, b) => a.compareTo(b));
+  final result = raw.map((name) => name.trim()).where((trimmed) {
+    if (trimmed.isEmpty) return false;
+    if (trimmed.length > appNameMaxLen) return false;
+    if (applyCharFilter && !appNameAllowed.hasMatch(trimmed)) return false;
+    if (seen.contains(trimmed)) return false;
+    seen.add(trimmed);
+    return true;
+  }).toList()..sort((a, b) => a.compareTo(b));
   return result;
 }
 
@@ -318,10 +317,10 @@ class ComputerUseLock {
   });
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'pid': pid,
-        'acquiredAt': acquiredAt,
-      };
+    'sessionId': sessionId,
+    'pid': pid,
+    'acquiredAt': acquiredAt,
+  };
 
   static ComputerUseLock? fromJson(dynamic value) {
     if (value is! Map<String, dynamic>) return null;
@@ -368,8 +367,8 @@ class ComputerUseLockManager {
   ComputerUseLockManager({
     required String configHomeDir,
     required String sessionId,
-  })  : _configHomeDir = configHomeDir,
-        _sessionId = sessionId;
+  }) : _configHomeDir = configHomeDir,
+       _sessionId = sessionId;
 
   String get _lockPath => p.join(_configHomeDir, lockFilename);
 
@@ -409,7 +408,7 @@ class ComputerUseLockManager {
       await raf.close();
       return true;
     } on FileSystemException catch (e) {
-      if (e.osError?.errorCode == 17 /* EEXIST */) return false;
+      if (e.osError?.errorCode == 17 /* EEXIST */ ) return false;
       rethrow;
     } catch (_) {
       return false;
@@ -564,8 +563,13 @@ abstract class ComputerExecutor {
 
   // Mouse
   Future<void> moveMouse(double x, double y);
-  Future<void> click(double x, double y, String button, int count,
-      [List<String>? modifiers]);
+  Future<void> click(
+    double x,
+    double y,
+    String button,
+    int count, [
+    List<String>? modifiers,
+  ]);
   Future<void> mouseDown();
   Future<void> mouseUp();
   Future<Map<String, double>> getCursorPosition();
@@ -588,15 +592,16 @@ class CliComputerExecutor extends ComputerExecutor {
   final bool Function() _getMouseAnimationEnabled;
   final bool Function() _getHideBeforeActionEnabled;
   final String? _terminalBundleId;
+  // ignore: unused_field
   final String _surrogateHost;
 
   CliComputerExecutor({
     required bool Function() getMouseAnimationEnabled,
     required bool Function() getHideBeforeActionEnabled,
-  })  : _getMouseAnimationEnabled = getMouseAnimationEnabled,
-        _getHideBeforeActionEnabled = getHideBeforeActionEnabled,
-        _terminalBundleId = _detectTerminalBundleId(),
-        _surrogateHost = _detectTerminalBundleId() ?? cliHostBundleId {
+  }) : _getMouseAnimationEnabled = getMouseAnimationEnabled,
+       _getHideBeforeActionEnabled = getHideBeforeActionEnabled,
+       _terminalBundleId = _detectTerminalBundleId(),
+       _surrogateHost = _detectTerminalBundleId() ?? cliHostBundleId {
     if (!Platform.isMacOS) {
       throw UnsupportedError(
         'CliComputerExecutor is macOS-only. Current platform: ${Platform.operatingSystem}',
@@ -605,9 +610,8 @@ class CliComputerExecutor extends ComputerExecutor {
   }
 
   @override
-  ComputerUseCapabilities get capabilities => ComputerUseCapabilities(
-        hostBundleId: cliHostBundleId,
-      );
+  ComputerUseCapabilities get capabilities =>
+      ComputerUseCapabilities(hostBundleId: cliHostBundleId);
 
   /// Filter out terminal bundle ID from allowed list.
   List<String> _withoutTerminal(List<String> allowed) {
@@ -678,7 +682,9 @@ class CliComputerExecutor extends ComputerExecutor {
   Future<DisplayGeometry> getDisplaySize([int? displayId]) async {
     // Get display size via native module or system_profiler
     try {
-      final result = await Process.run('system_profiler', ['SPDisplaysDataType']);
+      final _result = await Process.run('system_profiler', [
+        'SPDisplaysDataType',
+      ]);
       // Parse display info — simplified for port
       return const DisplayGeometry(width: 1920, height: 1080, scaleFactor: 2.0);
     } catch (_) {
@@ -694,7 +700,8 @@ class CliComputerExecutor extends ComputerExecutor {
 
   @override
   Future<List<Map<String, dynamic>>> findWindowDisplays(
-      List<String> bundleIds) async {
+    List<String> bundleIds,
+  ) async {
     return [];
   }
 
@@ -706,7 +713,7 @@ class CliComputerExecutor extends ComputerExecutor {
     bool? doHide,
   }) async {
     final d = await getDisplaySize(preferredDisplayId);
-    final targetDims = _computeTargetDims(d.width, d.height, d.scaleFactor);
+    final _targetDims = _computeTargetDims(d.width, d.height, d.scaleFactor);
     // Would call Swift native module for actual capture
     return const ResolvePrepareCaptureResult();
   }
@@ -751,7 +758,11 @@ class CliComputerExecutor extends ComputerExecutor {
     final h = regionLogical['h']?.toInt() ?? 100;
     final targetDims = _computeTargetDims(w, h, d.scaleFactor);
     // Would call Swift captureRegion
-    return ScreenshotResult(base64: '', width: targetDims[0], height: targetDims[1]);
+    return ScreenshotResult(
+      base64: '',
+      width: targetDims[0],
+      height: targetDims[1],
+    );
   }
 
   // ── Keyboard ────────────────────────────────────────────────────────
@@ -801,8 +812,12 @@ class CliComputerExecutor extends ComputerExecutor {
 
   @override
   Future<void> writeClipboard(String text) async {
-    final result = await Process.run('pbcopy', [], environment: {},
-        runInShell: false);
+    final _result = await Process.run(
+      'pbcopy',
+      [],
+      environment: {},
+      runInShell: false,
+    );
     // pbcopy reads from stdin
     final proc = await Process.start('pbcopy', []);
     proc.stdin.write(text);
@@ -886,8 +901,7 @@ class CliComputerExecutor extends ComputerExecutor {
   }
 
   @override
-  Future<void> drag(
-      Map<String, double>? from, Map<String, double> to) async {
+  Future<void> drag(Map<String, double>? from, Map<String, double> to) async {
     if (from != null) {
       await moveMouse(from['x']!, from['y']!);
     }
@@ -945,10 +959,9 @@ class CliComputerExecutor extends ComputerExecutor {
     // Use mdfind (Spotlight) to list apps
     final apps = <InstalledApp>[];
     try {
-      final result = await Process.run(
-        'mdfind',
-        ['kMDItemContentType == "com.apple.application-bundle"'],
-      );
+      final result = await Process.run('mdfind', [
+        'kMDItemContentType == "com.apple.application-bundle"',
+      ]);
       if (result.exitCode == 0) {
         final lines = (result.stdout as String).trim().split('\n');
         for (final line in lines) {
@@ -956,17 +969,17 @@ class CliComputerExecutor extends ComputerExecutor {
           final name = p.basenameWithoutExtension(line);
           // Get bundle ID via mdls
           try {
-            final mdls = await Process.run(
-              'mdls',
-              ['-name', 'kMDItemCFBundleIdentifier', '-raw', line],
-            );
+            final mdls = await Process.run('mdls', [
+              '-name',
+              'kMDItemCFBundleIdentifier',
+              '-raw',
+              line,
+            ]);
             final bundleId = (mdls.stdout as String).trim();
             if (bundleId != '(null)' && bundleId.isNotEmpty) {
-              apps.add(InstalledApp(
-                bundleId: bundleId,
-                displayName: name,
-                path: line,
-              ));
+              apps.add(
+                InstalledApp(bundleId: bundleId, displayName: name, path: line),
+              );
             }
           } catch (_) {}
         }
@@ -984,7 +997,7 @@ class CliComputerExecutor extends ComputerExecutor {
   Future<List<RunningApp>> listRunningApps() async {
     final apps = <RunningApp>[];
     try {
-      final result = await Process.run('osascript', [
+      final _result = await Process.run('osascript', [
         '-e',
         'tell application "System Events" to get {bundle identifier, name} of every process whose background only is false',
       ]);
@@ -1040,10 +1053,7 @@ class ComputerUseController extends SintController {
   }
 
   /// Initialize with session info.
-  void initialize({
-    required String configHomeDir,
-    required String sessionId,
-  }) {
+  void initialize({required String configHomeDir, required String sessionId}) {
     _lockManager = ComputerUseLockManager(
       configHomeDir: configHomeDir,
       sessionId: sessionId,

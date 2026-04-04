@@ -108,13 +108,19 @@ class _PatternRule {
 final List<_PatternRule> _builtInPatterns = [
   // Coding conventions
   _PatternRule(
-    pattern: RegExp(r'\b(always|never|prefer|avoid|must|should)\b.*\b(use|import|write|name|format|indent|style)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(always|never|prefer|avoid|must|should)\b.*\b(use|import|write|name|format|indent|style)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.codingConventions,
     baseConfidence: 0.7,
     label: 'coding convention',
   ),
   _PatternRule(
-    pattern: RegExp(r'\b(naming convention|code style|lint rule|formatter)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(naming convention|code style|lint rule|formatter)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.codingConventions,
     baseConfidence: 0.75,
     label: 'coding convention (explicit)',
@@ -122,13 +128,19 @@ final List<_PatternRule> _builtInPatterns = [
 
   // Build instructions
   _PatternRule(
-    pattern: RegExp(r'\b(npm run|yarn |pnpm |make |gradle |cargo |flutter |dart |go build|mvn |bazel )\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(npm run|yarn |pnpm |make |gradle |cargo |flutter |dart |go build|mvn |bazel )\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.buildInstructions,
     baseConfidence: 0.65,
     label: 'build command',
   ),
   _PatternRule(
-    pattern: RegExp(r'\b(build step|build command|compile with|to build)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(build step|build command|compile with|to build)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.buildInstructions,
     baseConfidence: 0.7,
     label: 'build instruction',
@@ -136,13 +148,19 @@ final List<_PatternRule> _builtInPatterns = [
 
   // Test patterns
   _PatternRule(
-    pattern: RegExp(r'\b(test with|run tests|test command|pytest|jest|vitest|flutter test)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(test with|run tests|test command|pytest|jest|vitest|flutter test)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.testingGuidelines,
     baseConfidence: 0.7,
     label: 'test pattern',
   ),
   _PatternRule(
-    pattern: RegExp(r'\b(test coverage|unit test|integration test|e2e test|snapshot test)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(test coverage|unit test|integration test|e2e test|snapshot test)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.testingGuidelines,
     baseConfidence: 0.6,
     label: 'testing guideline',
@@ -150,13 +168,19 @@ final List<_PatternRule> _builtInPatterns = [
 
   // Architecture
   _PatternRule(
-    pattern: RegExp(r'\b(architecture|design pattern|layer|module|boundary|separation of concerns)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(architecture|design pattern|layer|module|boundary|separation of concerns)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.architecture,
     baseConfidence: 0.6,
     label: 'architecture note',
   ),
   _PatternRule(
-    pattern: RegExp(r'\b(monorepo|microservice|MVC|MVVM|clean architecture|hexagonal|domain.driven)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(monorepo|microservice|MVC|MVVM|clean architecture|hexagonal|domain.driven)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.architecture,
     baseConfidence: 0.7,
     label: 'architecture pattern',
@@ -164,13 +188,19 @@ final List<_PatternRule> _builtInPatterns = [
 
   // Known issues
   _PatternRule(
-    pattern: RegExp(r'\b(known issue|known bug|workaround|hack|TODO|FIXME|HACK|XXX)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(known issue|known bug|workaround|hack|TODO|FIXME|HACK|XXX)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.knownIssues,
     baseConfidence: 0.65,
     label: 'known issue',
   ),
   _PatternRule(
-    pattern: RegExp(r"\b(breaks when|fails if|do not|don\'t|careful with|watch out)\b", caseSensitive: false),
+    pattern: RegExp(
+      r"\b(breaks when|fails if|do not|don\'t|careful with|watch out)\b",
+      caseSensitive: false,
+    ),
     category: MemoryCategory.knownIssues,
     baseConfidence: 0.55,
     label: 'potential issue',
@@ -178,7 +208,10 @@ final List<_PatternRule> _builtInPatterns = [
 
   // Team preferences
   _PatternRule(
-    pattern: RegExp(r'\b(we prefer|team uses|our convention|our standard|company policy)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(we prefer|team uses|our convention|our standard|company policy)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.teamPreferences,
     baseConfidence: 0.75,
     label: 'team preference',
@@ -186,7 +219,10 @@ final List<_PatternRule> _builtInPatterns = [
 
   // Deployment
   _PatternRule(
-    pattern: RegExp(r'\b(deploy to|deployment|CI/CD|pipeline|staging|production|release process)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(deploy to|deployment|CI/CD|pipeline|staging|production|release process)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.deploymentProcess,
     baseConfidence: 0.65,
     label: 'deployment info',
@@ -194,7 +230,10 @@ final List<_PatternRule> _builtInPatterns = [
 
   // Project structure
   _PatternRule(
-    pattern: RegExp(r'\b(project structure|directory layout|folder structure|monorepo layout)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(project structure|directory layout|folder structure|monorepo layout)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.projectStructure,
     baseConfidence: 0.7,
     label: 'project structure',
@@ -202,7 +241,10 @@ final List<_PatternRule> _builtInPatterns = [
 
   // Dependencies
   _PatternRule(
-    pattern: RegExp(r'\b(depends on|dependency|required package|peer dep|version constraint)\b', caseSensitive: false),
+    pattern: RegExp(
+      r'\b(depends on|dependency|required package|peer dep|version constraint)\b',
+      caseSensitive: false,
+    ),
     category: MemoryCategory.dependencies,
     baseConfidence: 0.55,
     label: 'dependency info',
@@ -237,13 +279,15 @@ class MemoryExtractionService {
 
       // User-explicit memories.
       if (_isExplicitMemory(content)) {
-        candidates.add(MemoryCandidate(
-          content: _cleanExplicitMemory(content),
-          source: ExtractionSource.userExplicit,
-          category: classifyMemory(content).category,
-          confidence: 0.95,
-          reasoning: 'User explicitly asked to remember this.',
-        ));
+        candidates.add(
+          MemoryCandidate(
+            content: _cleanExplicitMemory(content),
+            source: ExtractionSource.userExplicit,
+            category: classifyMemory(content).category,
+            confidence: 0.95,
+            reasoning: 'User explicitly asked to remember this.',
+          ),
+        );
         continue;
       }
 
@@ -254,14 +298,10 @@ class MemoryExtractionService {
   }
 
   /// Extract from a tool's output.
-  List<MemoryCandidate> extractFromToolOutput(
-    String toolName,
-    String output,
-  ) {
+  List<MemoryCandidate> extractFromToolOutput(String toolName, String output) {
     if (output.length < 20) return [];
 
-    final candidates =
-        _matchPatterns(output, ExtractionSource.toolOutput);
+    final candidates = _matchPatterns(output, ExtractionSource.toolOutput);
 
     // Boost confidence for build/test tool output.
     if (toolName == 'bash' || toolName == 'shell') {
@@ -285,17 +325,15 @@ class MemoryExtractionService {
   }
 
   /// Extract from a code diff with an optional description.
-  List<MemoryCandidate> extractFromCodeChange(
-    String diff,
-    String description,
-  ) {
+  List<MemoryCandidate> extractFromCodeChange(String diff, String description) {
     final combined = '$description\n$diff';
-    final candidates =
-        _matchPatterns(combined, ExtractionSource.codeChange);
+    final candidates = _matchPatterns(combined, ExtractionSource.codeChange);
 
     // Try to pull the file path from the diff header.
-    final fileMatch = RegExp(r'^[+\-]{3} [ab]/(.+)$', multiLine: true)
-        .firstMatch(diff);
+    final fileMatch = RegExp(
+      r'^[+\-]{3} [ab]/(.+)$',
+      multiLine: true,
+    ).firstMatch(diff);
     final relatedFile = fileMatch?.group(1);
 
     if (relatedFile != null) {
@@ -339,8 +377,7 @@ class MemoryExtractionService {
     List<MemoryCandidate> candidates,
     List<String> existing,
   ) {
-    final normalised =
-        existing.map((e) => _normalise(e)).toSet();
+    final normalised = existing.map((e) => _normalise(e)).toSet();
 
     return candidates.where((c) {
       final norm = _normalise(c.content);
@@ -440,7 +477,13 @@ class MemoryExtractionService {
 
   String _cleanExplicitMemory(String text) {
     return text
-        .replaceFirst(RegExp(r'^(remember that|remember:|note:|please remember)\s*', caseSensitive: false), '')
+        .replaceFirst(
+          RegExp(
+            r'^(remember that|remember:|note:|please remember)\s*',
+            caseSensitive: false,
+          ),
+          '',
+        )
         .trim();
   }
 
@@ -456,13 +499,15 @@ class MemoryExtractionService {
         if (!config.isCategoryEnabled(rule.category)) continue;
         if (!rule.pattern.hasMatch(trimmed)) continue;
 
-        candidates.add(MemoryCandidate(
-          content: trimmed,
-          source: source,
-          category: rule.category,
-          confidence: rule.baseConfidence,
-          reasoning: 'Matched pattern: ${rule.label}',
-        ));
+        candidates.add(
+          MemoryCandidate(
+            content: trimmed,
+            source: source,
+            category: rule.category,
+            confidence: rule.baseConfidence,
+            reasoning: 'Matched pattern: ${rule.label}',
+          ),
+        );
         break; // One category per line.
       }
     }
@@ -478,8 +523,9 @@ class MemoryExtractionService {
     final remaining = config.maxPerSession - _sessionCount;
     if (remaining <= 0) return [];
 
-    final capped =
-        filtered.length > remaining ? filtered.sublist(0, remaining) : filtered;
+    final capped = filtered.length > remaining
+        ? filtered.sublist(0, remaining)
+        : filtered;
     _sessionCount += capped.length;
     return capped;
   }

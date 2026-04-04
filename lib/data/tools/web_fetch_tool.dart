@@ -2,10 +2,7 @@
 // Fetches URL content, converts HTML to markdown, applies prompt via secondary model.
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
-
-import 'tool.dart';
 
 /// Maximum markdown content length before truncation.
 const maxMarkdownLength = 100000;
@@ -39,9 +36,9 @@ class WebFetchInput {
   const WebFetchInput({required this.url, required this.prompt});
 
   factory WebFetchInput.fromJson(Map<String, dynamic> json) => WebFetchInput(
-        url: json['url'] as String,
-        prompt: json['prompt'] as String,
-      );
+    url: json['url'] as String,
+    prompt: json['prompt'] as String,
+  );
 }
 
 /// Web fetch output.
@@ -67,15 +64,15 @@ class WebFetchOutput {
   });
 
   Map<String, dynamic> toJson() => {
-        'bytes': bytes,
-        'code': code,
-        'codeText': codeText,
-        'result': result,
-        'durationMs': durationMs,
-        'url': url,
-        if (persistedPath != null) 'persistedPath': persistedPath,
-        if (persistedSize != null) 'persistedSize': persistedSize,
-      };
+    'bytes': bytes,
+    'code': code,
+    'codeText': codeText,
+    'result': result,
+    'durationMs': durationMs,
+    'url': url,
+    if (persistedPath != null) 'persistedPath': persistedPath,
+    if (persistedSize != null) 'persistedSize': persistedSize,
+  };
 }
 
 /// URL validation result.
@@ -142,10 +139,12 @@ bool isPermittedRedirect(Uri original, Uri redirect) {
   final origHost = original.host.toLowerCase();
   final redirHost = redirect.host.toLowerCase();
   if (origHost != redirHost) {
-    final origWithoutWww =
-        origHost.startsWith('www.') ? origHost.substring(4) : origHost;
-    final redirWithoutWww =
-        redirHost.startsWith('www.') ? redirHost.substring(4) : redirHost;
+    final origWithoutWww = origHost.startsWith('www.')
+        ? origHost.substring(4)
+        : origHost;
+    final redirWithoutWww = redirHost.startsWith('www.')
+        ? redirHost.substring(4)
+        : redirHost;
     if (origWithoutWww != redirWithoutWww) return false;
   }
 
@@ -261,8 +260,14 @@ String htmlToMarkdown(String html) {
   var text = html;
 
   // Remove scripts and styles
-  text = text.replaceAll(RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false), '');
-  text = text.replaceAll(RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false), '');
+  text = text.replaceAll(
+    RegExp(r'<script[^>]*>[\s\S]*?</script>', caseSensitive: false),
+    '',
+  );
+  text = text.replaceAll(
+    RegExp(r'<style[^>]*>[\s\S]*?</style>', caseSensitive: false),
+    '',
+  );
   text = text.replaceAll(RegExp(r'<!--[\s\S]*?-->'), '');
 
   // Convert headers
@@ -275,7 +280,11 @@ String htmlToMarkdown(String html) {
 
   // Convert links
   text = text.replaceAllMapped(
-    RegExp(r'<a\s+[^>]*href="([^"]*)"[^>]*>(.*?)</a>', caseSensitive: false, dotAll: true),
+    RegExp(
+      r'<a\s+[^>]*href="([^"]*)"[^>]*>(.*?)</a>',
+      caseSensitive: false,
+      dotAll: true,
+    ),
     (m) => '[${_stripTags(m.group(2) ?? '')}](${m.group(1)})',
   );
 
@@ -291,7 +300,11 @@ String htmlToMarkdown(String html) {
 
   // Convert code blocks
   text = text.replaceAllMapped(
-    RegExp(r'<pre[^>]*><code[^>]*>(.*?)</code></pre>', caseSensitive: false, dotAll: true),
+    RegExp(
+      r'<pre[^>]*><code[^>]*>(.*?)</code></pre>',
+      caseSensitive: false,
+      dotAll: true,
+    ),
     (m) => '\n```\n${_decodeHtmlEntities(m.group(1) ?? '')}\n```\n',
   );
   text = text.replaceAllMapped(
@@ -314,7 +327,11 @@ String htmlToMarkdown(String html) {
 
   // Convert blockquotes
   text = text.replaceAllMapped(
-    RegExp(r'<blockquote[^>]*>(.*?)</blockquote>', caseSensitive: false, dotAll: true),
+    RegExp(
+      r'<blockquote[^>]*>(.*?)</blockquote>',
+      caseSensitive: false,
+      dotAll: true,
+    ),
     (m) {
       final content = _stripTags(m.group(1) ?? '').trim();
       return content.split('\n').map((l) => '> $l').join('\n');
@@ -325,10 +342,15 @@ String htmlToMarkdown(String html) {
   text = text.replaceAllMapped(
     RegExp(r'<tr[^>]*>(.*?)</tr>', caseSensitive: false, dotAll: true),
     (m) {
-      final cells = RegExp(r'<t[dh][^>]*>(.*?)</t[dh]>', caseSensitive: false, dotAll: true)
-          .allMatches(m.group(1) ?? '')
-          .map((c) => _stripTags(c.group(1) ?? '').trim())
-          .toList();
+      final cells =
+          RegExp(
+                r'<t[dh][^>]*>(.*?)</t[dh]>',
+                caseSensitive: false,
+                dotAll: true,
+              )
+              .allMatches(m.group(1) ?? '')
+              .map((c) => _stripTags(c.group(1) ?? '').trim())
+              .toList();
       return '| ${cells.join(' | ')} |\n';
     },
   );
@@ -388,7 +410,10 @@ class _FetchCache {
   final Map<String, _CacheEntry> _entries = {};
   int _currentSize = 0;
 
-  _FetchCache({this.maxSizeBytes = maxCacheSize, this.ttl = cacheTtl});
+  _FetchCache({
+    this.maxSizeBytes = 10 * 1024 * 1024,
+    this.ttl = const Duration(minutes: 5),
+  });
 
   String? get(String url) {
     final entry = _entries[url];
@@ -421,7 +446,7 @@ class _CacheEntry {
   final int size;
   final DateTime cachedAt;
   _CacheEntry({required this.content, required this.size})
-      : cachedAt = DateTime.now();
+    : cachedAt = DateTime.now();
 }
 
 /// Global fetch cache.
@@ -430,7 +455,8 @@ final _cache = _FetchCache();
 // ── Prompt Templates ──
 
 /// Prompt for preapproved domains (allows full extraction).
-String preapprovedPrompt(String markdown, String userPrompt) => '''
+String preapprovedPrompt(String markdown, String userPrompt) =>
+    '''
 Here is the content from a documentation page:
 
 <content>
@@ -442,7 +468,8 @@ User request: $userPrompt
 Extract the relevant information from the content above. You may include code examples, API signatures, and technical details as needed.''';
 
 /// Prompt for non-preapproved domains (copyright restrictions).
-String copyrightPrompt(String markdown, String userPrompt) => '''
+String copyrightPrompt(String markdown, String userPrompt) =>
+    '''
 Here is the content from a web page:
 
 <content>
@@ -464,8 +491,7 @@ IMPORTANT COPYRIGHT GUIDELINES:
 /// Fetch and process a URL with the WebFetchTool semantics.
 Future<WebFetchOutput> fetchUrl(
   WebFetchInput input, {
-  Future<String> Function(String systemPrompt, String userPrompt)?
-      applyPrompt,
+  Future<String> Function(String systemPrompt, String userPrompt)? applyPrompt,
   HttpClient? httpClient,
 }) async {
   final sw = Stopwatch()..start();
@@ -493,7 +519,12 @@ Future<WebFetchOutput> fetchUrl(
   // Check cache
   final cached = _cache.get(uri.toString());
   if (cached != null) {
-    final result = await _processContent(cached, input.prompt, uri, applyPrompt);
+    final result = await _processContent(
+      cached,
+      input.prompt,
+      uri,
+      applyPrompt,
+    );
     sw.stop();
     return WebFetchOutput(
       bytes: cached.length,
@@ -521,14 +552,16 @@ Future<WebFetchOutput> fetchUrl(
         bytes: contentLength,
         code: response.statusCode,
         codeText: 'content_too_large',
-        result: 'Content exceeds maximum size of ${maxHttpContentLength ~/ (1024 * 1024)}MB',
+        result:
+            'Content exceeds maximum size of ${maxHttpContentLength ~/ (1024 * 1024)}MB',
         durationMs: sw.elapsedMilliseconds,
         url: uri.toString(),
       );
     }
 
     // Handle redirects
-    if (response.isRedirect || (response.statusCode >= 300 && response.statusCode < 400)) {
+    if (response.isRedirect ||
+        (response.statusCode >= 300 && response.statusCode < 400)) {
       final location = response.headers.value('location');
       if (location != null) {
         final redirectUri = Uri.parse(location);
@@ -555,8 +588,7 @@ Future<WebFetchOutput> fetchUrl(
         })
         .timeout(fetchTimeout);
 
-    final contentType =
-        response.headers.contentType?.mimeType ?? 'text/html';
+    final contentType = response.headers.contentType?.mimeType ?? 'text/html';
 
     // Handle binary content
     if (isBinaryContentType(contentType)) {
@@ -583,7 +615,8 @@ Future<WebFetchOutput> fetchUrl(
 
     // Truncate if needed
     if (text.length > maxMarkdownLength) {
-      text = '${text.substring(0, maxMarkdownLength)}\n\n[Content truncated due to length...]';
+      text =
+          '${text.substring(0, maxMarkdownLength)}\n\n[Content truncated due to length...]';
     }
 
     // Apply prompt
@@ -634,5 +667,8 @@ Future<String> _processContent(
       ? preapprovedPrompt(markdown, userPrompt)
       : copyrightPrompt(markdown, userPrompt);
 
-  return applyPrompt('You are an AI assistant extracting information from web content.', prompt);
+  return applyPrompt(
+    'You are an AI assistant extracting information from web content.',
+    prompt,
+  );
 }

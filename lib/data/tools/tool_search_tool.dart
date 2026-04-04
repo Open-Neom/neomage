@@ -34,21 +34,21 @@ class ToolSearchTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'query': {
-            'type': 'string',
-            'description':
-                'Query to find tools. Use "select:<tool_name>" for direct '
-                    'selection, or keywords to search.',
-          },
-          'max_results': {
-            'type': 'number',
-            'description': 'Maximum number of results (default: 5)',
-          },
-        },
-        'required': ['query'],
-      };
+    'type': 'object',
+    'properties': {
+      'query': {
+        'type': 'string',
+        'description':
+            'Query to find tools. Use "select:<tool_name>" for direct '
+            'selection, or keywords to search.',
+      },
+      'max_results': {
+        'type': 'number',
+        'description': 'Maximum number of results (default: 5)',
+      },
+    },
+    'required': ['query'],
+  };
 
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
@@ -59,7 +59,9 @@ class ToolSearchTool extends Tool {
       return ToolResult.error('Missing required parameter: query');
     }
 
-    final deferredTools = registry.all.where((t) => _isDeferredTool(t)).toList();
+    final deferredTools = registry.all
+        .where((t) => _isDeferredTool(t))
+        .toList();
 
     // Direct selection: "select:ToolName" or "select:A,B,C"
     if (query.startsWith('select:')) {
@@ -89,9 +91,7 @@ class ToolSearchTool extends Tool {
     }
 
     if (matched.isEmpty) {
-      return ToolResult.error(
-        'No tools found matching: ${names.join(", ")}',
-      );
+      return ToolResult.error('No tools found matching: ${names.join(", ")}');
     }
 
     final buffer = StringBuffer();
@@ -120,8 +120,10 @@ class ToolSearchTool extends Tool {
     int maxResults,
   ) {
     final terms = _parseQuery(query);
-    final requiredTerms =
-        terms.where((t) => t.startsWith('+')).map((t) => t.substring(1)).toList();
+    final requiredTerms = terms
+        .where((t) => t.startsWith('+'))
+        .map((t) => t.substring(1))
+        .toList();
     final optionalTerms = terms.where((t) => !t.startsWith('+')).toList();
 
     final scored = <_ScoredTool>[];

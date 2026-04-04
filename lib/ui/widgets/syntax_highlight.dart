@@ -102,10 +102,9 @@ List<HighlightSpan> tokenize(String code, String language) {
     if (matchType != null && matchText != null) {
       // Emit plain text before this match
       if (i > lastIndex) {
-        spans.add(HighlightSpan(
-          code.substring(lastIndex, i),
-          HighlightTokenType.plain,
-        ));
+        spans.add(
+          HighlightSpan(code.substring(lastIndex, i), HighlightTokenType.plain),
+        );
       }
       spans.add(HighlightSpan(matchText, matchType));
       i += matchText.length;
@@ -117,10 +116,9 @@ List<HighlightSpan> tokenize(String code, String language) {
 
   // Remaining plain text
   if (lastIndex < code.length) {
-    spans.add(HighlightSpan(
-      code.substring(lastIndex),
-      HighlightTokenType.plain,
-    ));
+    spans.add(
+      HighlightSpan(code.substring(lastIndex), HighlightTokenType.plain),
+    );
   }
 
   return spans;
@@ -161,38 +159,38 @@ class SyntaxColors {
   });
 
   factory SyntaxColors.light() => const SyntaxColors(
-        plain: Color(0xFF333333),
-        keyword: Color(0xFFAF00DB),
-        string: Color(0xFFA31515),
-        comment: Color(0xFF008000),
-        number: Color(0xFF098658),
-        operator_: Color(0xFF333333),
-        punctuation: Color(0xFF666666),
-        type: Color(0xFF267F99),
-        function_: Color(0xFF795E26),
-        variable: Color(0xFF001080),
-        constant: Color(0xFF0070C1),
-        annotation: Color(0xFF808000),
-        tag: Color(0xFF800000),
-        attribute: Color(0xFFFF0000),
-      );
+    plain: Color(0xFF333333),
+    keyword: Color(0xFFAF00DB),
+    string: Color(0xFFA31515),
+    comment: Color(0xFF008000),
+    number: Color(0xFF098658),
+    operator_: Color(0xFF333333),
+    punctuation: Color(0xFF666666),
+    type: Color(0xFF267F99),
+    function_: Color(0xFF795E26),
+    variable: Color(0xFF001080),
+    constant: Color(0xFF0070C1),
+    annotation: Color(0xFF808000),
+    tag: Color(0xFF800000),
+    attribute: Color(0xFFFF0000),
+  );
 
   Color colorFor(HighlightTokenType type) => switch (type) {
-        HighlightTokenType.plain => plain,
-        HighlightTokenType.keyword => keyword,
-        HighlightTokenType.string => string,
-        HighlightTokenType.comment => comment,
-        HighlightTokenType.number => number,
-        HighlightTokenType.operator => operator_,
-        HighlightTokenType.punctuation => punctuation,
-        HighlightTokenType.type => this.type,
-        HighlightTokenType.function_ => function_,
-        HighlightTokenType.variable => variable,
-        HighlightTokenType.constant => constant,
-        HighlightTokenType.annotation => annotation,
-        HighlightTokenType.tag => tag,
-        HighlightTokenType.attribute => attribute,
-      };
+    HighlightTokenType.plain => plain,
+    HighlightTokenType.keyword => keyword,
+    HighlightTokenType.string => string,
+    HighlightTokenType.comment => comment,
+    HighlightTokenType.number => number,
+    HighlightTokenType.operator => operator_,
+    HighlightTokenType.punctuation => punctuation,
+    HighlightTokenType.type => this.type,
+    HighlightTokenType.function_ => function_,
+    HighlightTokenType.variable => variable,
+    HighlightTokenType.constant => constant,
+    HighlightTokenType.annotation => annotation,
+    HighlightTokenType.tag => tag,
+    HighlightTokenType.attribute => attribute,
+  };
 }
 
 /// Widget that renders syntax-highlighted code.
@@ -216,12 +214,14 @@ class SyntaxHighlightView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = colors ??
+    final theme =
+        colors ??
         (Theme.of(context).brightness == Brightness.dark
             ? const SyntaxColors()
             : SyntaxColors.light());
 
-    final style = baseStyle ??
+    final style =
+        baseStyle ??
         TextStyle(
           fontFamily: 'monospace',
           fontSize: 13,
@@ -275,10 +275,7 @@ class SyntaxHighlightView extends StatelessWidget {
             ),
           ),
         Expanded(
-          child: RichText(
-            text: TextSpan(children: textSpans),
-            softWrap: true,
-          ),
+          child: RichText(text: TextSpan(children: textSpans), softWrap: true),
         ),
       ],
     );
@@ -302,10 +299,7 @@ List<_Rule> _getRules(String language) {
     _Rule(RegExp(r"'(?:[^'\\]|\\.)'"), HighlightTokenType.string),
     _Rule(RegExp(r'\b\d+\.?\d*([eE][+-]?\d+)?\b'), HighlightTokenType.number),
     _Rule(RegExp(r'[{}()\[\];,.]'), HighlightTokenType.punctuation),
-    _Rule(
-      RegExp(r'[+\-*/%=<>!&|^~?:]'),
-      HighlightTokenType.operator,
-    ),
+    _Rule(RegExp(r'[+\-*/%=<>!&|^~?:]'), HighlightTokenType.operator),
   ];
 
   return switch (language) {
@@ -325,19 +319,10 @@ List<_Rule> _getRules(String language) {
       ),
       _Rule(RegExp(r"r'(?:[^'\\]|\\.)*'"), HighlightTokenType.string),
       _Rule(RegExp(r'r"(?:[^"\\]|\\.)*"'), HighlightTokenType.string),
-      _Rule(
-        RegExp(r"'''[\s\S]*?'''"),
-        HighlightTokenType.string,
-      ),
-      _Rule(
-        RegExp(r'"""[\s\S]*?"""'),
-        HighlightTokenType.string,
-      ),
+      _Rule(RegExp(r"'''[\s\S]*?'''"), HighlightTokenType.string),
+      _Rule(RegExp(r'"""[\s\S]*?"""'), HighlightTokenType.string),
       _Rule(RegExp(r'@\w+'), HighlightTokenType.annotation),
-      _Rule(
-        RegExp(r'\b[A-Z][a-zA-Z0-9]*\b'),
-        HighlightTokenType.type,
-      ),
+      _Rule(RegExp(r'\b[A-Z][a-zA-Z0-9]*\b'), HighlightTokenType.type),
     ],
     'javascript' || 'typescript' => [
       ...cFamilyRules,
@@ -359,20 +344,11 @@ List<_Rule> _getRules(String language) {
     ],
     'python' => [
       _Rule(RegExp(r'#[^\n]*'), HighlightTokenType.comment),
-      _Rule(
-        RegExp(r'"""[\s\S]*?"""'),
-        HighlightTokenType.string,
-      ),
-      _Rule(
-        RegExp(r"'''[\s\S]*?'''"),
-        HighlightTokenType.string,
-      ),
+      _Rule(RegExp(r'"""[\s\S]*?"""'), HighlightTokenType.string),
+      _Rule(RegExp(r"'''[\s\S]*?'''"), HighlightTokenType.string),
       _Rule(RegExp(r'"(?:[^"\\]|\\.)*"'), HighlightTokenType.string),
       _Rule(RegExp(r"'(?:[^'\\]|\\.)*'"), HighlightTokenType.string),
-      _Rule(
-        RegExp(r'[fb]?"(?:[^"\\]|\\.)*"'),
-        HighlightTokenType.string,
-      ),
+      _Rule(RegExp(r'[fb]?"(?:[^"\\]|\\.)*"'), HighlightTokenType.string),
       _Rule(
         RegExp(
           r'\b(and|as|assert|async|await|break|class|continue|def|del|'
@@ -400,15 +376,14 @@ List<_Rule> _getRules(String language) {
         HighlightTokenType.keyword,
       ),
       _Rule(
-        RegExp(r'\b(bool|byte|complex64|complex128|error|float32|float64|'
-            r'int|int8|int16|int32|int64|rune|string|uint|uint8|uint16|'
-            r'uint32|uint64|uintptr|any)\b'),
+        RegExp(
+          r'\b(bool|byte|complex64|complex128|error|float32|float64|'
+          r'int|int8|int16|int32|int64|rune|string|uint|uint8|uint16|'
+          r'uint32|uint64|uintptr|any)\b',
+        ),
         HighlightTokenType.type,
       ),
-      _Rule(
-        RegExp(r'\b(true|false|nil|iota)\b'),
-        HighlightTokenType.constant,
-      ),
+      _Rule(RegExp(r'\b(true|false|nil|iota)\b'), HighlightTokenType.constant),
     ],
     'rust' => [
       ...cFamilyRules,
@@ -422,8 +397,10 @@ List<_Rule> _getRules(String language) {
         HighlightTokenType.keyword,
       ),
       _Rule(
-        RegExp(r'\b(i8|i16|i32|i64|i128|isize|u8|u16|u32|u64|u128|usize|'
-            r'f32|f64|bool|char|str|String|Vec|Option|Result|Box|Rc|Arc)\b'),
+        RegExp(
+          r'\b(i8|i16|i32|i64|i128|isize|u8|u16|u32|u64|u128|usize|'
+          r'f32|f64|bool|char|str|String|Vec|Option|Result|Box|Rc|Arc)\b',
+        ),
         HighlightTokenType.type,
       ),
       _Rule(RegExp(r'#\[[\s\S]*?\]'), HighlightTokenType.annotation),
@@ -448,15 +425,15 @@ List<_Rule> _getRules(String language) {
       _Rule(RegExp(r'"(?:[^"\\]|\\.)*"\s*(?=:)'), HighlightTokenType.variable),
       _Rule(RegExp(r'"(?:[^"\\]|\\.)*"'), HighlightTokenType.string),
       _Rule(RegExp(r'\b\d+\.?\d*([eE][+-]?\d+)?\b'), HighlightTokenType.number),
-      _Rule(
-        RegExp(r'\b(true|false|null)\b'),
-        HighlightTokenType.constant,
-      ),
+      _Rule(RegExp(r'\b(true|false|null)\b'), HighlightTokenType.constant),
       _Rule(RegExp(r'[{}()\[\],:]'), HighlightTokenType.punctuation),
     ],
     'yaml' => [
       _Rule(RegExp(r'#[^\n]*'), HighlightTokenType.comment),
-      _Rule(RegExp(r'^[\w.-]+(?=\s*:)', multiLine: true), HighlightTokenType.variable),
+      _Rule(
+        RegExp(r'^[\w.-]+(?=\s*:)', multiLine: true),
+        HighlightTokenType.variable,
+      ),
       _Rule(RegExp(r'"(?:[^"\\]|\\.)*"'), HighlightTokenType.string),
       _Rule(RegExp(r"'[^']*'"), HighlightTokenType.string),
       _Rule(
@@ -500,7 +477,10 @@ List<_Rule> _getRules(String language) {
       _Rule(RegExp(r'"(?:[^"\\]|\\.)*"'), HighlightTokenType.string),
       _Rule(RegExp(r"'(?:[^'\\]|\\.)*'"), HighlightTokenType.string),
       _Rule(RegExp(r'#[0-9a-fA-F]{3,8}\b'), HighlightTokenType.number),
-      _Rule(RegExp(r'\b\d+\.?\d*(px|em|rem|%|vh|vw|s|ms)?\b'), HighlightTokenType.number),
+      _Rule(
+        RegExp(r'\b\d+\.?\d*(px|em|rem|%|vh|vw|s|ms)?\b'),
+        HighlightTokenType.number,
+      ),
       _Rule(RegExp(r'[{}();:,]'), HighlightTokenType.punctuation),
       _Rule(RegExp(r'\$[\w-]+'), HighlightTokenType.variable),
       _Rule(RegExp(r'@[\w-]+'), HighlightTokenType.annotation),

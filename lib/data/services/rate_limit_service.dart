@@ -111,18 +111,16 @@ class RateLimitService {
     if (auth == null) return null;
 
     final uri = Uri.parse('$baseUrl/api/neomclaw/policy_limits');
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
+    final headers = <String, String>{'Content-Type': 'application/json'};
     if (apiKey != null) {
       headers['x-api-key'] = apiKey!;
     } else if (oauthToken != null) {
       headers['Authorization'] = 'Bearer $oauthToken';
     }
 
-    final response = await http.get(uri, headers: headers).timeout(
-          const Duration(seconds: 10),
-        );
+    final response = await http
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 304) {
       return _policies; // No change

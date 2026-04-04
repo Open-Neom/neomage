@@ -145,18 +145,16 @@ class ToolRegistry {
 
   /// Pre-execution hooks. Return false to abort execution.
   final List<Future<bool> Function(String name, Map<String, dynamic> input)>
-      _preHooks = [];
+  _preHooks = [];
 
   /// Post-execution hooks.
   final List<void Function(ToolExecutionEvent event)> _postHooks = [];
 
   /// Stream controller for execution events.
-  final _executionController =
-      StreamController<ToolExecutionEvent>.broadcast();
+  final _executionController = StreamController<ToolExecutionEvent>.broadcast();
 
   /// Stream of tool execution events.
-  Stream<ToolExecutionEvent> get onToolExecuted =>
-      _executionController.stream;
+  Stream<ToolExecutionEvent> get onToolExecuted => _executionController.stream;
 
   // ── Registration ─────────────────────────────────────────────────────────
 
@@ -192,11 +190,10 @@ class ToolRegistry {
       _tools.values.where((r) => r.isExecutable).map((r) => r.tool);
 
   /// Tool definitions for API calls (only executable tools).
-  List<ToolDefinition> get definitions =>
-      _tools.values
-          .where((r) => r.isExecutable)
-          .map((r) => r.definition)
-          .toList();
+  List<ToolDefinition> get definitions => _tools.values
+      .where((r) => r.isExecutable)
+      .map((r) => r.definition)
+      .toList();
 
   /// Get tools in a specific category.
   List<ToolRegistration> getByCategory(ToolCategory category) =>
@@ -219,9 +216,7 @@ class ToolRegistry {
       );
     }
     if (!reg.tool.isAvailable) {
-      return ToolResult.error(
-        'Tool "$name" is not available on this platform',
-      );
+      return ToolResult.error('Tool "$name" is not available on this platform');
     }
 
     // Validate input.
@@ -313,9 +308,8 @@ class ToolRegistry {
 
   /// Get all tool schemas keyed by name.
   Map<String, Map<String, dynamic>> getAllSchemas() => {
-        for (final entry in _tools.entries)
-          entry.key: entry.value.tool.inputSchema,
-      };
+    for (final entry in _tools.entries) entry.key: entry.value.tool.inputSchema,
+  };
 
   /// Validate input for a named tool against its schema.
   ValidationResult validateInput(String name, Map<String, dynamic> input) {
@@ -344,20 +338,19 @@ class ToolRegistry {
   }
 
   /// Get stats for all tools.
-  List<ToolStats> getAllStats() =>
-      _tools.values
-          .map(
-            (r) => ToolStats(
-              name: r.name,
-              category: r.category,
-              executionCount: r.executionCount,
-              avgDurationMs: r.avgDurationMs,
-              lastExecutedAt: r.lastExecutedAt,
-              enabled: r.enabled,
-              restricted: r.restricted,
-            ),
-          )
-          .toList();
+  List<ToolStats> getAllStats() => _tools.values
+      .map(
+        (r) => ToolStats(
+          name: r.name,
+          category: r.category,
+          executionCount: r.executionCount,
+          avgDurationMs: r.avgDurationMs,
+          lastExecutedAt: r.lastExecutedAt,
+          enabled: r.enabled,
+          restricted: r.restricted,
+        ),
+      )
+      .toList();
 
   // ── Fuzzy Search ─────────────────────────────────────────────────────────
 
@@ -465,9 +458,15 @@ class ToolRegistry {
     Tool? powerShellTool,
   }) {
     // File tools.
-    if (fileReadTool != null) register(fileReadTool, category: ToolCategory.file);
-    if (fileWriteTool != null) register(fileWriteTool, category: ToolCategory.file);
-    if (fileEditTool != null) register(fileEditTool, category: ToolCategory.file);
+    if (fileReadTool != null) {
+      register(fileReadTool, category: ToolCategory.file);
+    }
+    if (fileWriteTool != null) {
+      register(fileWriteTool, category: ToolCategory.file);
+    }
+    if (fileEditTool != null) {
+      register(fileEditTool, category: ToolCategory.file);
+    }
 
     // Search tools.
     if (globTool != null) register(globTool, category: ToolCategory.search);
@@ -483,8 +482,12 @@ class ToolRegistry {
     }
 
     // Web tools.
-    if (webFetchTool != null) register(webFetchTool, category: ToolCategory.web);
-    if (webSearchTool != null) register(webSearchTool, category: ToolCategory.web);
+    if (webFetchTool != null) {
+      register(webFetchTool, category: ToolCategory.web);
+    }
+    if (webSearchTool != null) {
+      register(webSearchTool, category: ToolCategory.web);
+    }
 
     // Agent tools.
     if (agentTool != null) register(agentTool, category: ToolCategory.agent);

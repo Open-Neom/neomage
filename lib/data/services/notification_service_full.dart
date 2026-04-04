@@ -80,8 +80,7 @@ class AppNotification {
     this.progressTotal,
   }) : timestamp = timestamp ?? DateTime.now();
 
-  bool get isExpired =>
-      expiresAt != null && DateTime.now().isAfter(expiresAt!);
+  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
 
   @override
   String toString() => 'AppNotification($id "$title" $type)';
@@ -437,10 +436,7 @@ class NotificationServiceFull {
   // -------------------------------------------------------------------------
 
   /// Exports notification history as JSON or CSV.
-  String exportHistory({
-    DateTime? since,
-    String format = 'json',
-  }) {
+  String exportHistory({DateTime? since, String format = 'json'}) {
     final filtered = since != null
         ? _notifications.where((n) => n.timestamp.isAfter(since)).toList()
         : List<AppNotification>.from(_notifications);
@@ -488,18 +484,22 @@ class NotificationServiceFull {
       '${_notifications.length}';
 
   String _exportJson(List<AppNotification> items) {
-    final list = items.map((n) => {
-      'id': n.id,
-      'type': n.type.name,
-      'priority': n.priority.name,
-      'title': n.title,
-      'body': n.body,
-      'timestamp': n.timestamp.toIso8601String(),
-      'read': n.read,
-      'dismissed': n.dismissed,
-      'groupKey': n.groupKey,
-      if (n.metadata.isNotEmpty) 'metadata': n.metadata,
-    }).toList();
+    final list = items
+        .map(
+          (n) => {
+            'id': n.id,
+            'type': n.type.name,
+            'priority': n.priority.name,
+            'title': n.title,
+            'body': n.body,
+            'timestamp': n.timestamp.toIso8601String(),
+            'read': n.read,
+            'dismissed': n.dismissed,
+            'groupKey': n.groupKey,
+            if (n.metadata.isNotEmpty) 'metadata': n.metadata,
+          },
+        )
+        .toList();
 
     return const JsonEncoder.withIndent('  ').convert(list);
   }

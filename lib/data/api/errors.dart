@@ -72,13 +72,13 @@ class ApiError {
   });
 
   bool get isRetryable => switch (type) {
-        ApiErrorType.rateLimited => true,
-        ApiErrorType.overloaded => true,
-        ApiErrorType.connectionTimeout => true,
-        ApiErrorType.connectionReset => true,
-        ApiErrorType.serverError => true,
-        _ => false,
-      };
+    ApiErrorType.rateLimited => true,
+    ApiErrorType.overloaded => true,
+    ApiErrorType.connectionTimeout => true,
+    ApiErrorType.connectionReset => true,
+    ApiErrorType.serverError => true,
+    _ => false,
+  };
 
   bool get isAuthError =>
       type == ApiErrorType.authenticationError ||
@@ -209,17 +209,16 @@ ApiError classifyException(Object error) {
     );
   }
 
-  if (msg.contains('certificate') || msg.contains('ssl') || msg.contains('tls')) {
+  if (msg.contains('certificate') ||
+      msg.contains('ssl') ||
+      msg.contains('tls')) {
     return ApiError(
       type: ApiErrorType.sslError,
       message: 'SSL/TLS certificate error.',
     );
   }
 
-  return ApiError(
-    type: ApiErrorType.unknown,
-    message: error.toString(),
-  );
+  return ApiError(type: ApiErrorType.unknown, message: error.toString());
 }
 
 /// Parse token gap from "prompt is too long" error messages.
@@ -234,19 +233,19 @@ int? _parseTokenGap(String body) {
 
 /// Convert an API error to an assistant-facing message.
 String getAssistantMessageFromError(ApiError error) => switch (error.type) {
-      ApiErrorType.rateLimited =>
-        'I was rate limited. Please wait a moment before sending another message.',
-      ApiErrorType.overloaded =>
-        'The API is currently overloaded. Please try again in a moment.',
-      ApiErrorType.authenticationError =>
-        'Authentication failed. Please check your API key in settings.',
-      ApiErrorType.permissionDenied =>
-        'Permission denied. Your API key may not have access to this model.',
-      ApiErrorType.promptTooLong =>
-        'The conversation is too long for this model. Try clearing the conversation or using a model with a larger context window.',
-      ApiErrorType.mediaTooLarge =>
-        'An image or PDF in the conversation exceeds the size limit.',
-      ApiErrorType.contentRefused =>
-        'The request was refused by the safety system.',
-      _ => 'An error occurred: ${error.message}',
-    };
+  ApiErrorType.rateLimited =>
+    'I was rate limited. Please wait a moment before sending another message.',
+  ApiErrorType.overloaded =>
+    'The API is currently overloaded. Please try again in a moment.',
+  ApiErrorType.authenticationError =>
+    'Authentication failed. Please check your API key in settings.',
+  ApiErrorType.permissionDenied =>
+    'Permission denied. Your API key may not have access to this model.',
+  ApiErrorType.promptTooLong =>
+    'The conversation is too long for this model. Try clearing the conversation or using a model with a larger context window.',
+  ApiErrorType.mediaTooLarge =>
+    'An image or PDF in the conversation exceeds the size limit.',
+  ApiErrorType.contentRefused =>
+    'The request was refused by the safety system.',
+  _ => 'An error occurred: ${error.message}',
+};

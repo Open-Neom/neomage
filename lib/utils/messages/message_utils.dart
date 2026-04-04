@@ -1,8 +1,6 @@
-// Message utilities — port of openneomclaw/src/utils/messages.ts.
+// Message utilities — port of neom_claw/src/utils/messages.ts.
 // Message creation, normalization, reordering, merging, lookup building,
 // tag extraction, and API preparation.
-
-import 'dart:convert';
 
 import 'package:uuid/uuid.dart';
 
@@ -70,13 +68,7 @@ final Set<String> syntheticMessages = {
 // ─── Enums & Types ───
 
 /// Message types in the conversation.
-enum MessageType {
-  user,
-  assistant,
-  attachment,
-  progress,
-  system,
-}
+enum MessageType { user, assistant, attachment, progress, system }
 
 /// System message subtypes.
 enum SystemMessageSubtype {
@@ -97,19 +89,10 @@ enum SystemMessageSubtype {
 }
 
 /// System message severity level.
-enum SystemMessageLevel {
-  info,
-  warning,
-  error,
-}
+enum SystemMessageLevel { info, warning, error }
 
 /// Permission mode for message context.
-enum PermissionMode {
-  normal,
-  auto,
-  dontAsk,
-  bypassAll,
-}
+enum PermissionMode { normal, auto, dontAsk, bypassAll }
 
 /// Origin of a message.
 enum MessageOrigin {
@@ -175,25 +158,24 @@ class ToolUseBlock extends ContentBlock {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'id': id,
-        'name': name,
-        'input': input,
-        if (caller != null) 'caller': caller,
-      };
+    'type': type,
+    'id': id,
+    'name': name,
+    'input': input,
+    if (caller != null) 'caller': caller,
+  };
 
   ToolUseBlock copyWith({
     String? id,
     String? name,
     Map<String, dynamic>? input,
     String? caller,
-  }) =>
-      ToolUseBlock(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        input: input ?? this.input,
-        caller: caller ?? this.caller,
-      );
+  }) => ToolUseBlock(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    input: input ?? this.input,
+    caller: caller ?? this.caller,
+  );
 }
 
 /// Tool result content block.
@@ -213,11 +195,11 @@ class ToolResultBlock extends ContentBlock {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'tool_use_id': toolUseId,
-        if (content != null) 'content': content,
-        if (isError) 'is_error': isError,
-      };
+    'type': type,
+    'tool_use_id': toolUseId,
+    if (content != null) 'content': content,
+    if (isError) 'is_error': isError,
+  };
 }
 
 /// Image content block.
@@ -237,13 +219,9 @@ class ImageBlock extends ContentBlock {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'source': {
-          'type': sourceType,
-          'media_type': mediaType,
-          'data': data,
-        },
-      };
+    'type': type,
+    'source': {'type': sourceType, 'media_type': mediaType, 'data': data},
+  };
 }
 
 // ─── Message Types ───
@@ -265,12 +243,12 @@ class Usage {
   });
 
   Map<String, dynamic> toJson() => {
-        'input_tokens': inputTokens,
-        'output_tokens': outputTokens,
-        'cache_creation_input_tokens': cacheCreationInputTokens,
-        'cache_read_input_tokens': cacheReadInputTokens,
-        'server_tool_use': {'web_search_requests': webSearchRequests},
-      };
+    'input_tokens': inputTokens,
+    'output_tokens': outputTokens,
+    'cache_creation_input_tokens': cacheCreationInputTokens,
+    'cache_read_input_tokens': cacheReadInputTokens,
+    'server_tool_use': {'web_search_requests': webSearchRequests},
+  };
 }
 
 /// Base message type.
@@ -316,29 +294,28 @@ class UserMessage extends Message {
     this.permissionMode,
     this.origin,
     this.summarizeMetadata,
-  })  : uuid = uuid ?? const Uuid().v4(),
-        timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String();
+  }) : uuid = uuid ?? const Uuid().v4(),
+       timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String();
 
   @override
   MessageType get type => MessageType.user;
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'user',
-        'uuid': uuid,
-        'timestamp': timestamp,
-        'message': {
-          'role': 'user',
-          'content': content is String
-              ? content
-              : (content as List).map((b) => (b as ContentBlock).toJson()).toList(),
-        },
-        if (isMeta == true) 'isMeta': true,
-        if (isVisibleInTranscriptOnly == true)
-          'isVisibleInTranscriptOnly': true,
-        if (isVirtual == true) 'isVirtual': true,
-        if (isCompactSummary == true) 'isCompactSummary': true,
-      };
+    'type': 'user',
+    'uuid': uuid,
+    'timestamp': timestamp,
+    'message': {
+      'role': 'user',
+      'content': content is String
+          ? content
+          : (content as List).map((b) => (b as ContentBlock).toJson()).toList(),
+    },
+    if (isMeta == true) 'isMeta': true,
+    if (isVisibleInTranscriptOnly == true) 'isVisibleInTranscriptOnly': true,
+    if (isVirtual == true) 'isVirtual': true,
+    if (isCompactSummary == true) 'isCompactSummary': true,
+  };
 
   UserMessage copyWith({
     String? uuid,
@@ -348,23 +325,22 @@ class UserMessage extends Message {
     bool? isVirtual,
     List<int>? imagePasteIds,
     MessageOrigin? origin,
-  }) =>
-      UserMessage(
-        uuid: uuid ?? this.uuid,
-        timestamp: timestamp ?? this.timestamp,
-        content: content ?? this.content,
-        isMeta: isMeta ?? this.isMeta,
-        isVisibleInTranscriptOnly: isVisibleInTranscriptOnly,
-        isVirtual: isVirtual ?? this.isVirtual,
-        isCompactSummary: isCompactSummary,
-        toolUseResult: toolUseResult,
-        mcpMeta: mcpMeta,
-        imagePasteIds: imagePasteIds ?? this.imagePasteIds,
-        sourceToolAssistantUUID: sourceToolAssistantUUID,
-        permissionMode: permissionMode,
-        origin: origin ?? this.origin,
-        summarizeMetadata: summarizeMetadata,
-      );
+  }) => UserMessage(
+    uuid: uuid ?? this.uuid,
+    timestamp: timestamp ?? this.timestamp,
+    content: content ?? this.content,
+    isMeta: isMeta ?? this.isMeta,
+    isVisibleInTranscriptOnly: isVisibleInTranscriptOnly,
+    isVirtual: isVirtual ?? this.isVirtual,
+    isCompactSummary: isCompactSummary,
+    toolUseResult: toolUseResult,
+    mcpMeta: mcpMeta,
+    imagePasteIds: imagePasteIds ?? this.imagePasteIds,
+    sourceToolAssistantUUID: sourceToolAssistantUUID,
+    permissionMode: permissionMode,
+    origin: origin ?? this.origin,
+    summarizeMetadata: summarizeMetadata,
+  );
 }
 
 /// Assistant message.
@@ -401,31 +377,31 @@ class AssistantMessage extends Message {
     this.error,
     this.errorDetails,
     this.advisorModel,
-  })  : uuid = uuid ?? const Uuid().v4(),
-        timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String(),
-        messageId = messageId ?? const Uuid().v4();
+  }) : uuid = uuid ?? const Uuid().v4(),
+       timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String(),
+       messageId = messageId ?? const Uuid().v4();
 
   @override
   MessageType get type => MessageType.assistant;
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'assistant',
-        'uuid': uuid,
-        'timestamp': timestamp,
-        'message': {
-          'id': messageId,
-          'model': model,
-          'role': 'assistant',
-          'stop_reason': stopReason,
-          'type': 'message',
-          'usage': usage.toJson(),
-          'content': content.map((b) => b.toJson()).toList(),
-        },
-        if (requestId != null) 'requestId': requestId,
-        if (isApiErrorMessage) 'isApiErrorMessage': true,
-        if (isVirtual == true) 'isVirtual': true,
-      };
+    'type': 'assistant',
+    'uuid': uuid,
+    'timestamp': timestamp,
+    'message': {
+      'id': messageId,
+      'model': model,
+      'role': 'assistant',
+      'stop_reason': stopReason,
+      'type': 'message',
+      'usage': usage.toJson(),
+      'content': content.map((b) => b.toJson()).toList(),
+    },
+    if (requestId != null) 'requestId': requestId,
+    if (isApiErrorMessage) 'isApiErrorMessage': true,
+    if (isVirtual == true) 'isVirtual': true,
+  };
 
   AssistantMessage copyWith({
     String? uuid,
@@ -437,22 +413,21 @@ class AssistantMessage extends Message {
     String? requestId,
     bool? isApiErrorMessage,
     bool? isVirtual,
-  }) =>
-      AssistantMessage(
-        uuid: uuid ?? this.uuid,
-        timestamp: timestamp ?? this.timestamp,
-        messageId: messageId ?? this.messageId,
-        model: model ?? this.model,
-        content: content ?? this.content,
-        usage: usage ?? this.usage,
-        requestId: requestId ?? this.requestId,
-        isApiErrorMessage: isApiErrorMessage ?? this.isApiErrorMessage,
-        isVirtual: isVirtual ?? this.isVirtual,
-        apiError: apiError,
-        error: error,
-        errorDetails: errorDetails,
-        advisorModel: advisorModel,
-      );
+  }) => AssistantMessage(
+    uuid: uuid ?? this.uuid,
+    timestamp: timestamp ?? this.timestamp,
+    messageId: messageId ?? this.messageId,
+    model: model ?? this.model,
+    content: content ?? this.content,
+    usage: usage ?? this.usage,
+    requestId: requestId ?? this.requestId,
+    isApiErrorMessage: isApiErrorMessage ?? this.isApiErrorMessage,
+    isVirtual: isVirtual ?? this.isVirtual,
+    apiError: apiError,
+    error: error,
+    errorDetails: errorDetails,
+    advisorModel: advisorModel,
+  );
 }
 
 /// Progress message for tool execution.
@@ -471,21 +446,21 @@ class ProgressMessage extends Message {
     required this.toolUseID,
     required this.parentToolUseID,
     required this.data,
-  })  : uuid = uuid ?? const Uuid().v4(),
-        timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String();
+  }) : uuid = uuid ?? const Uuid().v4(),
+       timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String();
 
   @override
   MessageType get type => MessageType.progress;
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'progress',
-        'uuid': uuid,
-        'timestamp': timestamp,
-        'toolUseID': toolUseID,
-        'parentToolUseID': parentToolUseID,
-        'data': data,
-      };
+    'type': 'progress',
+    'uuid': uuid,
+    'timestamp': timestamp,
+    'toolUseID': toolUseID,
+    'parentToolUseID': parentToolUseID,
+    'data': data,
+  };
 }
 
 /// System message.
@@ -506,22 +481,22 @@ class SystemMessage extends Message {
     this.level = SystemMessageLevel.info,
     required this.content,
     this.metadata,
-  })  : uuid = uuid ?? const Uuid().v4(),
-        timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String();
+  }) : uuid = uuid ?? const Uuid().v4(),
+       timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String();
 
   @override
   MessageType get type => MessageType.system;
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'system',
-        'uuid': uuid,
-        'timestamp': timestamp,
-        'subtype': subtype.name,
-        'level': level.name,
-        'content': content,
-        if (metadata != null) 'metadata': metadata,
-      };
+    'type': 'system',
+    'uuid': uuid,
+    'timestamp': timestamp,
+    'subtype': subtype.name,
+    'level': level.name,
+    'content': content,
+    if (metadata != null) 'metadata': metadata,
+  };
 }
 
 /// Attachment message.
@@ -532,23 +507,20 @@ class AttachmentMessage extends Message {
   final String timestamp;
   final Map<String, dynamic> attachment;
 
-  AttachmentMessage({
-    String? uuid,
-    String? timestamp,
-    required this.attachment,
-  })  : uuid = uuid ?? const Uuid().v4(),
-        timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String();
+  AttachmentMessage({String? uuid, String? timestamp, required this.attachment})
+    : uuid = uuid ?? const Uuid().v4(),
+      timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String();
 
   @override
   MessageType get type => MessageType.attachment;
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': 'attachment',
-        'uuid': uuid,
-        'timestamp': timestamp,
-        'attachment': attachment,
-      };
+    'type': 'attachment',
+    'uuid': uuid,
+    'timestamp': timestamp,
+    'attachment': attachment,
+  };
 }
 
 // ─── Normalized Message (single content block per message) ───
@@ -612,8 +584,9 @@ UserMessage createUserMessage({
   MessageOrigin? origin,
   Map<String, dynamic>? summarizeMetadata,
 }) {
-  final effectiveContent =
-      (content is String && content.isEmpty) ? noContentMessage : content;
+  final effectiveContent = (content is String && content.isEmpty)
+      ? noContentMessage
+      : content;
   return UserMessage(
     uuid: uuid,
     timestamp: timestamp,
@@ -640,9 +613,7 @@ AssistantMessage createAssistantMessage({
 }) {
   final List<ContentBlock> blocks;
   if (content is String) {
-    blocks = [
-      TextBlock(text: content.isEmpty ? noContentMessage : content),
-    ];
+    blocks = [TextBlock(text: content.isEmpty ? noContentMessage : content)];
   } else {
     blocks = content as List<ContentBlock>;
   }
@@ -661,9 +632,7 @@ AssistantMessage createAssistantAPIErrorMessage({
   String? errorDetails,
 }) {
   return AssistantMessage(
-    content: [
-      TextBlock(text: content.isEmpty ? noContentMessage : content),
-    ],
+    content: [TextBlock(text: content.isEmpty ? noContentMessage : content)],
     isApiErrorMessage: true,
     apiError: apiError,
     error: error,
@@ -674,9 +643,7 @@ AssistantMessage createAssistantAPIErrorMessage({
 /// Create a user interruption message.
 UserMessage createUserInterruptionMessage({bool toolUse = false}) {
   final text = toolUse ? interruptMessageForToolUse : interruptMessage;
-  return createUserMessage(
-    content: [TextBlock(text: text)],
-  );
+  return createUserMessage(content: [TextBlock(text: text)]);
 }
 
 /// Create a progress message.
@@ -716,8 +683,10 @@ String deriveUUID(String parentUUID, int index) {
 }
 
 /// Append a memory correction hint when auto-memory is enabled.
-String withMemoryCorrectionHint(String message,
-    {bool autoMemoryEnabled = false}) {
+String withMemoryCorrectionHint(
+  String message, {
+  bool autoMemoryEnabled = false,
+}) {
   if (autoMemoryEnabled) {
     return message + _memoryCorrectionHint;
   }
@@ -742,7 +711,7 @@ bool isClassifierDenial(String content) {
 
 /// Build a rejection message for auto mode classifier denials.
 String buildYoloRejectionMessage(String reason) {
-  return '${_autoModeRejectionPrefix}$reason. '
+  return '$_autoModeRejectionPrefix$reason. '
       "If you have other tasks that don't depend on this action, continue "
       'working on those. $denialWorkaroundGuidance '
       'To allow this type of action in the future, the user can add a '
@@ -866,7 +835,9 @@ String? getToolUseID(Message message) {
   }
   if (message is UserMessage) {
     final content = message.content;
-    if (content is List && content.isNotEmpty && content[0] is ToolResultBlock) {
+    if (content is List &&
+        content.isNotEmpty &&
+        content[0] is ToolResultBlock) {
       return (content[0] as ToolResultBlock).toolUseId;
     }
   }
@@ -949,9 +920,7 @@ AssistantMessage mergeAssistantMessages(
   AssistantMessage a,
   AssistantMessage b,
 ) {
-  return a.copyWith(
-    content: [...a.content, ...b.content],
-  );
+  return a.copyWith(content: [...a.content, ...b.content]);
 }
 
 /// Normalize user text content to a list of content blocks.
@@ -963,10 +932,7 @@ List<ContentBlock> _normalizeUserTextContent(dynamic content) {
 }
 
 /// Join two content block arrays with a newline at the text-text seam.
-List<ContentBlock> _joinTextAtSeam(
-  List<ContentBlock> a,
-  List<ContentBlock> b,
-) {
+List<ContentBlock> _joinTextAtSeam(List<ContentBlock> a, List<ContentBlock> b) {
   if (a.isEmpty || b.isEmpty) return [...a, ...b];
   final lastA = a.last;
   final firstB = b.first;
@@ -1104,8 +1070,7 @@ bool hasUnresolvedHooksFromLookup(
 ) {
   final inProgressCount =
       lookups.inProgressHookCounts[toolUseID]?[hookEvent] ?? 0;
-  final resolvedCount =
-      lookups.resolvedHookCounts[toolUseID]?[hookEvent] ?? 0;
+  final resolvedCount = lookups.resolvedHookCounts[toolUseID]?[hookEvent] ?? 0;
   return inProgressCount > resolvedCount;
 }
 
@@ -1137,10 +1102,7 @@ dynamic prepareUserContent({
   required List<ContentBlock> precedingInputBlocks,
 }) {
   if (precedingInputBlocks.isEmpty) return inputString;
-  return [
-    ...precedingInputBlocks,
-    TextBlock(text: inputString),
-  ];
+  return [...precedingInputBlocks, TextBlock(text: inputString)];
 }
 
 // ─── Utilities ───
@@ -1151,17 +1113,11 @@ String extractTextContent(Message message) {
     final content = message.content;
     if (content is String) return content;
     if (content is List) {
-      return content
-          .whereType<TextBlock>()
-          .map((b) => b.text)
-          .join('\n');
+      return content.whereType<TextBlock>().map((b) => b.text).join('\n');
     }
   }
   if (message is AssistantMessage) {
-    return message.content
-        .whereType<TextBlock>()
-        .map((b) => b.text)
-        .join('\n');
+    return message.content.whereType<TextBlock>().map((b) => b.text).join('\n');
   }
   return '';
 }

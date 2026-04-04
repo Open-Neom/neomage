@@ -51,11 +51,8 @@ class TipsService {
   final List<Tip> _tips;
   bool enabled;
 
-  TipsService({
-    required this.history,
-    List<Tip>? tips,
-    this.enabled = true,
-  }) : _tips = tips ?? defaultTips;
+  TipsService({required this.history, List<Tip>? tips, this.enabled = true})
+    : _tips = tips ?? defaultTips;
 
   /// Get a tip to show on spinner, or null if none applicable.
   Tip? getTipForSpinner() {
@@ -100,22 +97,26 @@ final List<Tip> defaultTips = [
   ),
   Tip(
     id: 'memory',
-    content: () => 'Tip: Use /memory to manage persistent memory across sessions.',
+    content: () =>
+        'Tip: Use /memory to manage persistent memory across sessions.',
     cooldownSessions: 10,
   ),
   Tip(
     id: 'compact',
-    content: () => 'Tip: Use /compact to free up context space while keeping a summary.',
+    content: () =>
+        'Tip: Use /compact to free up context space while keeping a summary.',
     cooldownSessions: 8,
   ),
   Tip(
     id: 'context',
-    content: () => 'Tip: Use /context to check how much of the context window you\'re using.',
+    content: () =>
+        'Tip: Use /context to check how much of the context window you\'re using.',
     cooldownSessions: 8,
   ),
   Tip(
     id: 'model_switch',
-    content: () => 'Tip: Use /model to switch between different models on the fly.',
+    content: () =>
+        'Tip: Use /model to switch between different models on the fly.',
     cooldownSessions: 10,
   ),
   Tip(
@@ -130,12 +131,14 @@ final List<Tip> defaultTips = [
   ),
   Tip(
     id: 'commit',
-    content: () => 'Tip: Use /commit to create a git commit with an AI-generated message.',
+    content: () =>
+        'Tip: Use /commit to create a git commit with an AI-generated message.',
     cooldownSessions: 8,
   ),
   Tip(
     id: 'review',
-    content: () => 'Tip: Use /review to get a code review of your changes or a PR.',
+    content: () =>
+        'Tip: Use /review to get a code review of your changes or a PR.',
     cooldownSessions: 10,
   ),
   Tip(

@@ -109,8 +109,7 @@ class DiffStats {
   int get totalChanges => additions + deletions + modifications;
 
   @override
-  String toString() =>
-      '+$additions -$deletions ~$modifications =$unchanged';
+  String toString() => '+$additions -$deletions ~$modifications =$unchanged';
 }
 
 // ---------------------------------------------------------------------------
@@ -250,7 +249,9 @@ class SemanticDiff {
       final b = blocks[i];
       final adds = b.lines.where((l) => l.type == DiffType.add).length;
       final dels = b.lines.where((l) => l.type == DiffType.remove).length;
-      buf.writeln('Block ${i + 1}: +$adds -$dels lines (${b.startLine}-${b.endLine})');
+      buf.writeln(
+        'Block ${i + 1}: +$adds -$dels lines (${b.startLine}-${b.endLine})',
+      );
     }
     return buf.toString().trimRight();
   }
@@ -262,11 +263,9 @@ class ChangeBlock {
 
   const ChangeBlock({required this.lines});
 
-  int get startLine =>
-      lines.isEmpty ? 0 : lines.first.lineNumber;
+  int get startLine => lines.isEmpty ? 0 : lines.first.lineNumber;
 
-  int get endLine =>
-      lines.isEmpty ? 0 : lines.last.lineNumber;
+  int get endLine => lines.isEmpty ? 0 : lines.last.lineNumber;
 
   bool get isPureAdd => lines.every((l) => l.type == DiffType.add);
   bool get isPureRemove => lines.every((l) => l.type == DiffType.remove);
@@ -402,29 +401,31 @@ List<LineDiff> computeLineDiff(String oldText, String newText) {
         ni < newLines.length &&
         oldLines[oi] == lcs[li] &&
         newLines[ni] == lcs[li]) {
-      result.add(LineDiff(
-        lineNumber: ni + 1,
-        content: newLines[ni],
-        type: DiffType.context,
-      ));
+      result.add(
+        LineDiff(
+          lineNumber: ni + 1,
+          content: newLines[ni],
+          type: DiffType.context,
+        ),
+      );
       oi++;
       ni++;
       li++;
     } else if (oi < oldLines.length &&
         (li >= lcs.length || oldLines[oi] != lcs[li])) {
-      result.add(LineDiff(
-        lineNumber: oi + 1,
-        content: oldLines[oi],
-        type: DiffType.remove,
-      ));
+      result.add(
+        LineDiff(
+          lineNumber: oi + 1,
+          content: oldLines[oi],
+          type: DiffType.remove,
+        ),
+      );
       oi++;
     } else if (ni < newLines.length &&
         (li >= lcs.length || newLines[ni] != lcs[li])) {
-      result.add(LineDiff(
-        lineNumber: ni + 1,
-        content: newLines[ni],
-        type: DiffType.add,
-      ));
+      result.add(
+        LineDiff(lineNumber: ni + 1, content: newLines[ni], type: DiffType.add),
+      );
       ni++;
     }
   }
@@ -506,11 +507,7 @@ List<CharDiff> computeCharDiff(String oldStr, String newStr) {
 /// Create a [PatchSet] from [oldText] to [newText].
 ///
 /// [contextLines] controls how many context lines surround each hunk.
-PatchSet createPatch(
-  String oldText,
-  String newText, {
-  int contextLines = 3,
-}) {
+PatchSet createPatch(String oldText, String newText, {int contextLines = 3}) {
   final diffs = computeLineDiff(oldText, newText);
   if (diffs.every((d) => d.type == DiffType.context)) {
     return const PatchSet(hunks: []);
@@ -528,7 +525,7 @@ PatchSet createPatch(
 
   // Group changes into hunks
   final hunkGroups = <List<int>>[
-    [changeIndices.first]
+    [changeIndices.first],
   ];
   for (var i = 1; i < changeIndices.length; i++) {
     if (changeIndices[i] - changeIndices[i - 1] <= contextLines * 2 + 1) {
@@ -557,13 +554,15 @@ PatchSet createPatch(
       if (l.type != DiffType.remove) newCount++;
     }
 
-    hunks.add(Hunk(
-      oldStart: oldStart,
-      oldCount: oldCount,
-      newStart: newStart,
-      newCount: newCount,
-      lines: lines,
-    ));
+    hunks.add(
+      Hunk(
+        oldStart: oldStart,
+        oldCount: oldCount,
+        newStart: newStart,
+        newCount: newCount,
+        lines: lines,
+      ),
+    );
   }
 
   return PatchSet(hunks: hunks);
@@ -596,7 +595,9 @@ PatchResult applyPatch(String text, PatchSet patch) {
     var lineIdx = pos;
     for (final hl in hunk.lines) {
       if (hl.type == DiffType.context || hl.type == DiffType.remove) {
-        if (lineIdx < 0 || lineIdx >= lines.length || lines[lineIdx] != hl.content) {
+        if (lineIdx < 0 ||
+            lineIdx >= lines.length ||
+            lines[lineIdx] != hl.content) {
           contextOk = false;
           break;
         }
@@ -693,21 +694,21 @@ PatchSet _parsePatch(String text) {
         '-' => DiffType.remove,
         _ => DiffType.context,
       };
-      hunkLines.add(LineDiff(
-        lineNumber: lineNum,
-        content: content,
-        type: type,
-      ));
+      hunkLines.add(
+        LineDiff(lineNumber: lineNum, content: content, type: type),
+      );
       i++;
     }
 
-    hunks.add(Hunk(
-      oldStart: oldStart,
-      oldCount: oldCount,
-      newStart: newStart,
-      newCount: newCount,
-      lines: hunkLines,
-    ));
+    hunks.add(
+      Hunk(
+        oldStart: oldStart,
+        oldCount: oldCount,
+        newStart: newStart,
+        newCount: newCount,
+        lines: hunkLines,
+      ),
+    );
   }
   return PatchSet(hunks: hunks);
 }
@@ -775,7 +776,9 @@ String generateSummary(List<LineDiff> diffs) {
   final parts = <String>[];
   if (adds > 0) parts.add('$adds line${adds == 1 ? '' : 's'} added');
   if (removes > 0) parts.add('$removes line${removes == 1 ? '' : 's'} removed');
-  if (context > 0) parts.add('$context line${context == 1 ? '' : 's'} unchanged');
+  if (context > 0) {
+    parts.add('$context line${context == 1 ? '' : 's'} unchanged');
+  }
 
   if (parts.isEmpty) return 'No changes';
   return parts.join(', ');

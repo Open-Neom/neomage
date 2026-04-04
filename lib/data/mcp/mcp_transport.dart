@@ -51,19 +51,15 @@ class JsonRpcRequest extends JsonRpcMessage {
   final String method;
   final Map<String, dynamic>? params;
 
-  const JsonRpcRequest({
-    required this.id,
-    required this.method,
-    this.params,
-  });
+  const JsonRpcRequest({required this.id, required this.method, this.params});
 
   @override
   Map<String, dynamic> toJson() => {
-        'jsonrpc': '2.0',
-        'id': id,
-        'method': method,
-        if (params != null) 'params': params,
-      };
+    'jsonrpc': '2.0',
+    'id': id,
+    'method': method,
+    if (params != null) 'params': params,
+  };
 }
 
 /// JSON-RPC 2.0 response (has result or error, and id).
@@ -72,21 +68,17 @@ class JsonRpcResponse extends JsonRpcMessage {
   final dynamic result;
   final JsonRpcError? error;
 
-  const JsonRpcResponse({
-    required this.id,
-    this.result,
-    this.error,
-  });
+  const JsonRpcResponse({required this.id, this.result, this.error});
 
   bool get isError => error != null;
 
   @override
   Map<String, dynamic> toJson() => {
-        'jsonrpc': '2.0',
-        'id': id,
-        if (error != null) 'error': error!.toJson(),
-        if (error == null) 'result': result,
-      };
+    'jsonrpc': '2.0',
+    'id': id,
+    if (error != null) 'error': error!.toJson(),
+    if (error == null) 'result': result,
+  };
 }
 
 /// JSON-RPC 2.0 notification (has method and params, but no id).
@@ -94,17 +86,14 @@ class JsonRpcNotification extends JsonRpcMessage {
   final String method;
   final Map<String, dynamic>? params;
 
-  const JsonRpcNotification({
-    required this.method,
-    this.params,
-  });
+  const JsonRpcNotification({required this.method, this.params});
 
   @override
   Map<String, dynamic> toJson() => {
-        'jsonrpc': '2.0',
-        'method': method,
-        if (params != null) 'params': params,
-      };
+    'jsonrpc': '2.0',
+    'method': method,
+    if (params != null) 'params': params,
+  };
 }
 
 /// JSON-RPC 2.0 error object.
@@ -113,23 +102,19 @@ class JsonRpcError {
   final String message;
   final dynamic data;
 
-  const JsonRpcError({
-    required this.code,
-    required this.message,
-    this.data,
-  });
+  const JsonRpcError({required this.code, required this.message, this.data});
 
   factory JsonRpcError.fromJson(Map<String, dynamic> json) => JsonRpcError(
-        code: json['code'] as int,
-        message: json['message'] as String? ?? '',
-        data: json['data'],
-      );
+    code: json['code'] as int,
+    message: json['message'] as String? ?? '',
+    data: json['data'],
+  );
 
   Map<String, dynamic> toJson() => {
-        'code': code,
-        'message': message,
-        if (data != null) 'data': data,
-      };
+    'code': code,
+    'message': message,
+    if (data != null) 'data': data,
+  };
 
   @override
   String toString() => 'JsonRpcError($code: $message)';
@@ -190,7 +175,9 @@ class ContentLengthCodec {
   /// Encode a JSON-RPC message into a Content-Length framed byte sequence.
   List<int> encode(JsonRpcMessage message) {
     final body = utf8.encode(jsonEncode(message.toJson()));
-    final header = utf8.encode('$_contentLengthPrefix${body.length}$_headerSeparator');
+    final header = utf8.encode(
+      '$_contentLengthPrefix${body.length}$_headerSeparator',
+    );
     return [...header, ...body];
   }
 
@@ -338,11 +325,12 @@ class StdioTransport extends McpTransport {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .map((line) {
-      // Keep last 200 lines
-      _stderrLog.add(line);
-      if (_stderrLog.length > 200) _stderrLog.removeAt(0);
-      return utf8.encode(line);
-    }).listen(null);
+          // Keep last 200 lines
+          _stderrLog.add(line);
+          if (_stderrLog.length > 200) _stderrLog.removeAt(0);
+          return utf8.encode(line);
+        })
+        .listen(null);
 
     // Detect process exit.
     _process!.exitCode.then((code) {
@@ -377,11 +365,13 @@ class StdioTransport extends McpTransport {
     if (process != null) {
       process.kill(ProcessSignal.sigterm);
       // Wait briefly for graceful exit, then force-kill.
-      final exitCode = await process.exitCode
-          .timeout(const Duration(seconds: 3), onTimeout: () {
-        process.kill(ProcessSignal.sigkill);
-        return -1;
-      });
+      final exitCode = await process.exitCode.timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          process.kill(ProcessSignal.sigkill);
+          return -1;
+        },
+      );
       _stderrLog.add('[transport] Process exited: $exitCode');
     }
 
@@ -465,16 +455,16 @@ class SseTransport extends McpTransport {
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .listen(
-        (line) => _processSseLine(line),
-        onError: (Object e) {
-          _connected = false;
-          _scheduleReconnect();
-        },
-        onDone: () {
-          _connected = false;
-          _scheduleReconnect();
-        },
-      );
+            (line) => _processSseLine(line),
+            onError: (Object e) {
+              _connected = false;
+              _scheduleReconnect();
+            },
+            onDone: () {
+              _connected = false;
+              _scheduleReconnect();
+            },
+          );
     } catch (e) {
       _connected = false;
       if (!_closing) _scheduleReconnect();
@@ -515,7 +505,7 @@ class SseTransport extends McpTransport {
         if (_sseDataBuffer.isNotEmpty) _sseDataBuffer.write('\n');
         _sseDataBuffer.write(value);
       case 'id':
-        if (!value.contains('\0')) _lastEventId = value;
+        if (!value.contains('0')) _lastEventId = value;
       case 'retry':
         // Could adjust reconnect delay here; ignored for simplicity.
         break;
@@ -549,9 +539,7 @@ class SseTransport extends McpTransport {
     if (_closing) return;
     if (_reconnectAttempts >= maxReconnectAttempts) {
       _controller.addError(
-        const McpTransportException(
-          'SSE max reconnect attempts exceeded',
-        ),
+        const McpTransportException('SSE max reconnect attempts exceeded'),
       );
       return;
     }
@@ -661,8 +649,7 @@ class HttpTransport extends McpTransport {
     headers?.forEach((k, v) => request.headers.set(k, v));
     request.write(jsonEncode(message.toJson()));
 
-    final response =
-        await request.close().timeout(requestTimeout);
+    final response = await request.close().timeout(requestTimeout);
 
     // Capture session id from response headers.
     final sid = response.headers.value('Mcp-Session-Id');
@@ -757,8 +744,8 @@ class HttpTransport extends McpTransport {
           request.headers.set('Mcp-Session-Id', _sessionId!);
           headers?.forEach((k, v) => request.headers.set(k, v));
           final response = await request.close().timeout(
-                const Duration(seconds: 5),
-              );
+            const Duration(seconds: 5),
+          );
           await response.drain<void>();
         }
       } catch (_) {
@@ -821,10 +808,7 @@ class WebSocketTransport extends McpTransport {
     if (_closing) return;
 
     try {
-      _socket = await WebSocket.connect(
-        endpoint.toString(),
-        headers: headers,
-      );
+      _socket = await WebSocket.connect(endpoint.toString(), headers: headers);
       _connected = true;
       _reconnectAttempts = 0;
 
@@ -1048,9 +1032,7 @@ class McpProtocolHandler {
   Future<void> cancelRequest(dynamic id) async {
     final completer = _pending.remove(id);
     if (completer != null && !completer.isCompleted) {
-      completer.completeError(
-        const McpTransportException('Request cancelled'),
-      );
+      completer.completeError(const McpTransportException('Request cancelled'));
     }
     // Notify the server.
     await sendNotification(
@@ -1095,7 +1077,7 @@ class McpCapabilities {
   /// Parse capabilities from a server's initialize response.
   factory McpCapabilities.fromInitializeResult(Map<String, dynamic> result) {
     final caps = result['capabilities'] as Map<String, dynamic>? ?? {};
-    final info = result['serverInfo'] as Map<String, dynamic>?;
+    final _info = result['serverInfo'] as Map<String, dynamic>?;
     return McpCapabilities(
       supportsTools: caps.containsKey('tools'),
       supportsResources: caps.containsKey('resources'),
@@ -1147,14 +1129,14 @@ class McpPrompt {
   });
 
   factory McpPrompt.fromJson(Map<String, dynamic> json) => McpPrompt(
-        name: json['name'] as String,
-        description: json['description'] as String?,
-        arguments: (json['arguments'] as List<dynamic>?)
-                ?.map((a) =>
-                    McpPromptArgument.fromJson(a as Map<String, dynamic>))
-                .toList() ??
-            const [],
-      );
+    name: json['name'] as String,
+    description: json['description'] as String?,
+    arguments:
+        (json['arguments'] as List<dynamic>?)
+            ?.map((a) => McpPromptArgument.fromJson(a as Map<String, dynamic>))
+            .toList() ??
+        const [],
+  );
 }
 
 /// An argument to an MCP prompt template.
@@ -1229,18 +1211,17 @@ class McpSamplingRequest {
     this.metadata,
   });
 
-  factory McpSamplingRequest.fromJson(Map<String, dynamic> json) =>
-      McpSamplingRequest(
-        messages: (json['messages'] as List<dynamic>)
-            .cast<Map<String, dynamic>>(),
-        modelPreferences: json['modelPreferences'] as String?,
-        systemPrompt: json['systemPrompt'] as String?,
-        maxTokens: json['maxTokens'] as int?,
-        temperature: (json['temperature'] as num?)?.toDouble(),
-        stopSequences: (json['stopSequences'] as List<dynamic>?)
-            ?.cast<String>(),
-        metadata: json['metadata'] as Map<String, dynamic>?,
-      );
+  factory McpSamplingRequest.fromJson(
+    Map<String, dynamic> json,
+  ) => McpSamplingRequest(
+    messages: (json['messages'] as List<dynamic>).cast<Map<String, dynamic>>(),
+    modelPreferences: json['modelPreferences'] as String?,
+    systemPrompt: json['systemPrompt'] as String?,
+    maxTokens: json['maxTokens'] as int?,
+    temperature: (json['temperature'] as num?)?.toDouble(),
+    stopSequences: (json['stopSequences'] as List<dynamic>?)?.cast<String>(),
+    metadata: json['metadata'] as Map<String, dynamic>?,
+  );
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1315,21 +1296,14 @@ class McpServerLifecycle {
         'initialize',
         params: {
           'protocolVersion': protocolVersion,
-          'capabilities': {
-            'sampling': {},
-          },
-          'clientInfo': {
-            'name': clientName,
-            'version': clientVersion,
-          },
+          'capabilities': {'sampling': {}},
+          'clientInfo': {'name': clientName, 'version': clientVersion},
         },
         timeout: initializeTimeout,
       );
 
       if (response.isError) {
-        throw McpTransportException(
-          'Initialize failed: ${response.error}',
-        );
+        throw McpTransportException('Initialize failed: ${response.error}');
       }
 
       _serverInfo = McpServerInfo.fromInitializeResult(
@@ -1346,10 +1320,7 @@ class McpServerLifecycle {
       _startHealthMonitor();
 
       // Listen for transport errors to trigger restart.
-      _transport!.messages.listen(
-        null,
-        onError: (_) => _handleCrash(),
-      );
+      _transport!.messages.listen(null, onError: (_) => _handleCrash());
     } catch (e) {
       _setState(McpLifecycleState.failed);
       rethrow;
@@ -1366,8 +1337,10 @@ class McpServerLifecycle {
       // Send shutdown request, but don't wait too long.
       if (_protocol != null && (_transport?.isConnected ?? false)) {
         try {
-          await _protocol!
-              .sendRequest('shutdown', timeout: const Duration(seconds: 5));
+          await _protocol!.sendRequest(
+            'shutdown',
+            timeout: const Duration(seconds: 5),
+          );
         } catch (_) {
           // Best effort.
         }
@@ -1475,29 +1448,25 @@ enum McpLifecycleState {
 
 /// Create the appropriate [McpTransport] for a given [McpServerConfig].
 McpTransport createTransport(McpServerConfig config) => switch (config) {
-      McpStdioConfig(:final command, :final args, :final env) =>
-        StdioTransport(
-          command: command,
-          args: args,
-          environment: env.isNotEmpty ? env : null,
-        ),
-      McpSseConfig(:final url, :final headers, :final env) => SseTransport(
-          endpoint: Uri.parse(url),
-          headers: {...headers, ...env},
-        ),
-      McpHttpConfig(:final url, :final headers, :final env) => HttpTransport(
-          endpoint: Uri.parse(url),
-          headers: {...headers, ...env},
-        ),
-      McpWebSocketConfig(:final url, :final headers, :final env) =>
-        WebSocketTransport(
-          endpoint: Uri.parse(url),
-          headers: {...headers, ...env},
-        ),
-      McpSdkConfig() => throw UnsupportedError(
-          'SDK transport is not supported in the Flutter runtime',
-        ),
-    };
+  McpStdioConfig(:final command, :final args, :final env) => StdioTransport(
+    command: command,
+    args: args,
+    environment: env.isNotEmpty ? env : null,
+  ),
+  McpSseConfig(:final url, :final headers, :final env) => SseTransport(
+    endpoint: Uri.parse(url),
+    headers: {...headers, ...env},
+  ),
+  McpHttpConfig(:final url, :final headers, :final env) => HttpTransport(
+    endpoint: Uri.parse(url),
+    headers: {...headers, ...env},
+  ),
+  McpWebSocketConfig(:final url, :final headers, :final env) =>
+    WebSocketTransport(endpoint: Uri.parse(url), headers: {...headers, ...env}),
+  McpSdkConfig() => throw UnsupportedError(
+    'SDK transport is not supported in the Flutter runtime',
+  ),
+};
 
 // ════════════════════════════════════════════════════════════════════════════
 // Connection pool
@@ -1507,8 +1476,7 @@ McpTransport createTransport(McpServerConfig config) => switch (config) {
 /// correct server and providing aggregate health monitoring.
 class McpConnectionPool {
   final Map<String, McpServerLifecycle> _servers = {};
-  final _stateController =
-      StreamController<McpPoolEvent>.broadcast();
+  final _stateController = StreamController<McpPoolEvent>.broadcast();
 
   /// Stream of pool-level events.
   Stream<McpPoolEvent> get events => _stateController.stream;
@@ -1539,10 +1507,7 @@ class McpConnectionPool {
     // Forward lifecycle state changes as pool events.
     lifecycle.stateChanges.listen((state) {
       if (!_stateController.isClosed) {
-        _stateController.add(McpPoolEvent(
-          serverName: name,
-          state: state,
-        ));
+        _stateController.add(McpPoolEvent(serverName: name, state: state));
       }
     });
 
@@ -1675,10 +1640,7 @@ class McpConnectionPool {
     final response = await sendRequest(
       serverName,
       'prompts/get',
-      params: {
-        'name': promptName,
-        if (arguments != null) 'arguments': arguments,
-      },
+      params: {'name': promptName, 'arguments': ?arguments},
     );
     if (response.isError) return null;
     return response.result as Map<String, dynamic>?;
@@ -1686,24 +1648,18 @@ class McpConnectionPool {
 
   /// Set the log level for a specific server.
   Future<void> setLogLevel(String serverName, String level) async {
-    await sendRequest(
-      serverName,
-      'logging/setLevel',
-      params: {'level': level},
-    );
+    await sendRequest(serverName, 'logging/setLevel', params: {'level': level});
   }
 
   /// Get all running servers and their info.
   Map<String, McpServerInfo?> get serverInfo => {
-        for (final entry in _servers.entries)
-          entry.key: entry.value.serverInfo,
-      };
+    for (final entry in _servers.entries) entry.key: entry.value.serverInfo,
+  };
 
   /// Get the health status of all servers.
   Map<String, McpLifecycleState> get healthStatus => {
-        for (final entry in _servers.entries)
-          entry.key: entry.value.state,
-      };
+    for (final entry in _servers.entries) entry.key: entry.value.state,
+  };
 
   /// Stop all servers and dispose the pool.
   Future<void> dispose() async {
@@ -1719,10 +1675,7 @@ class McpPoolEvent {
   final String serverName;
   final McpLifecycleState state;
 
-  const McpPoolEvent({
-    required this.serverName,
-    required this.state,
-  });
+  const McpPoolEvent({required this.serverName, required this.state});
 
   @override
   String toString() => 'McpPoolEvent($serverName: $state)';

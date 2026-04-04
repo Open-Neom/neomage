@@ -105,10 +105,8 @@ class OAuthClient {
   final OAuthConfig config;
   final http.Client _httpClient;
 
-  OAuthClient({
-    required this.config,
-    http.Client? httpClient,
-  }) : _httpClient = httpClient ?? http.Client();
+  OAuthClient({required this.config, http.Client? httpClient})
+    : _httpClient = httpClient ?? http.Client();
 
   /// Build the authorization URL for browser redirect.
   Uri buildAuthUrl({
@@ -127,8 +125,8 @@ class OAuthClient {
         'code_challenge': codeChallenge,
         'code_challenge_method': 'S256',
         'state': state,
-        if (orgUuid case final uuid?) 'org_uuid': uuid,
-        if (loginHint case final hint?) 'login_hint': hint,
+        'org_uuid': ?orgUuid,
+        'login_hint': ?loginHint,
       },
     );
   }

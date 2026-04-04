@@ -9,10 +9,7 @@ class BashTool extends Tool with ShellToolMixin {
   final Duration timeout;
   final String? workingDirectory;
 
-  BashTool({
-    this.timeout = const Duration(minutes: 2),
-    this.workingDirectory,
-  });
+  BashTool({this.timeout = const Duration(minutes: 2), this.workingDirectory});
 
   @override
   String get name => 'Bash';
@@ -25,19 +22,19 @@ class BashTool extends Tool with ShellToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'command': {
-            'type': 'string',
-            'description': 'The shell command to execute',
-          },
-          'timeout': {
-            'type': 'integer',
-            'description': 'Optional timeout in milliseconds',
-          },
-        },
-        'required': ['command'],
-      };
+    'type': 'object',
+    'properties': {
+      'command': {
+        'type': 'string',
+        'description': 'The shell command to execute',
+      },
+      'timeout': {
+        'type': 'integer',
+        'description': 'Optional timeout in milliseconds',
+      },
+    },
+    'required': ['command'],
+  };
 
   @override
   bool get isAvailable =>
@@ -51,24 +48,23 @@ class BashTool extends Tool with ShellToolMixin {
     }
 
     final timeoutMs = input['timeout'] as int?;
-    final effectiveTimeout =
-        timeoutMs != null ? Duration(milliseconds: timeoutMs) : timeout;
+    final effectiveTimeout = timeoutMs != null
+        ? Duration(milliseconds: timeoutMs)
+        : timeout;
 
     try {
       final ProcessResult result;
 
       if (Platform.isWindows) {
-        result = await Process.run(
-          'powershell',
-          ['-Command', command],
-          workingDirectory: workingDirectory,
-        ).timeout(effectiveTimeout);
+        result = await Process.run('powershell', [
+          '-Command',
+          command,
+        ], workingDirectory: workingDirectory).timeout(effectiveTimeout);
       } else {
-        result = await Process.run(
-          '/bin/bash',
-          ['-c', command],
-          workingDirectory: workingDirectory,
-        ).timeout(effectiveTimeout);
+        result = await Process.run('/bin/bash', [
+          '-c',
+          command,
+        ], workingDirectory: workingDirectory).timeout(effectiveTimeout);
       }
 
       final stdout = (result.stdout as String).trim();
@@ -90,7 +86,8 @@ class BashTool extends Tool with ShellToolMixin {
       return ToolResult.error('Process error: ${e.message}');
     } on TimeoutException {
       return ToolResult.error(
-          'Command timed out after ${effectiveTimeout.inSeconds}s');
+        'Command timed out after ${effectiveTimeout.inSeconds}s',
+      );
     }
   }
 }

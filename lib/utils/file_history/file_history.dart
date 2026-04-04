@@ -1,9 +1,10 @@
 /// File access history tracking with backup/restore support.
 ///
-/// Ported from openneomclaw/src/utils/fileHistory.ts (1115 LOC).
+/// Ported from neom_claw/src/utils/fileHistory.ts (1115 LOC).
 ///
 /// Provides checkpoint-based file history that tracks edits, creates backups,
 /// allows rewinding to previous snapshots, and computes diff statistics.
+library;
 
 import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
@@ -53,10 +54,10 @@ class FileHistoryBackup {
   }
 
   Map<String, dynamic> toJson() => {
-        'backupFileName': backupFileName,
-        'version': version,
-        'backupTime': backupTime.toIso8601String(),
-      };
+    'backupFileName': backupFileName,
+    'version': version,
+    'backupTime': backupTime.toIso8601String(),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -91,9 +92,13 @@ class FileHistorySnapshot {
   }
 
   factory FileHistorySnapshot.fromJson(Map<String, dynamic> json) {
-    final backups = (json['trackedFileBackups'] as Map<String, dynamic>?)
-            ?.map((k, v) =>
-                MapEntry(k, FileHistoryBackup.fromJson(v as Map<String, dynamic>))) ??
+    final backups =
+        (json['trackedFileBackups'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(
+            k,
+            FileHistoryBackup.fromJson(v as Map<String, dynamic>),
+          ),
+        ) ??
         {};
     return FileHistorySnapshot(
       messageId: json['messageId'] as String,
@@ -103,11 +108,12 @@ class FileHistorySnapshot {
   }
 
   Map<String, dynamic> toJson() => {
-        'messageId': messageId,
-        'trackedFileBackups':
-            trackedFileBackups.map((k, v) => MapEntry(k, v.toJson())),
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'messageId': messageId,
+    'trackedFileBackups': trackedFileBackups.map(
+      (k, v) => MapEntry(k, v.toJson()),
+    ),
+    'timestamp': timestamp.toIso8601String(),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -120,8 +126,8 @@ class FileHistoryState {
     List<FileHistorySnapshot>? snapshots,
     Set<String>? trackedFiles,
     this.snapshotSequence = 0,
-  })  : snapshots = snapshots ?? [],
-        trackedFiles = trackedFiles ?? {};
+  }) : snapshots = snapshots ?? [],
+       trackedFiles = trackedFiles ?? {};
 
   final List<FileHistorySnapshot> snapshots;
   final Set<String> trackedFiles;
@@ -311,52 +317,61 @@ class FileHistoryManager extends SintController {
 
     // Phase 2: do all IO async.
     final trackedFileBackups = <String, FileHistoryBackup>{};
-    final mostRecentSnapshot =
-        captured.snapshots.isNotEmpty ? captured.snapshots.last : null;
+    final mostRecentSnapshot = captured.snapshots.isNotEmpty
+        ? captured.snapshots.last
+        : null;
 
     if (mostRecentSnapshot != null) {
-      await Future.wait(captured.trackedFiles.map((trackingPath) async {
-        try {
-          final filePath = _maybeExpandFilePath(trackingPath);
-          final latestBackup =
-              mostRecentSnapshot.trackedFileBackups[trackingPath];
-          final nextVersion = latestBackup != null ? latestBackup.version + 1 : 1;
-
-          // Stat the file; ENOENT means the tracked file was deleted.
-          FileStat? fileStats;
+      await Future.wait(
+        captured.trackedFiles.map((trackingPath) async {
           try {
-            fileStats = await FileStat.stat(filePath);
-            if (fileStats.type == FileSystemEntityType.notFound) {
+            final filePath = _maybeExpandFilePath(trackingPath);
+            final latestBackup =
+                mostRecentSnapshot.trackedFileBackups[trackingPath];
+            final nextVersion = latestBackup != null
+                ? latestBackup.version + 1
+                : 1;
+
+            // Stat the file; ENOENT means the tracked file was deleted.
+            FileStat? fileStats;
+            try {
+              fileStats = await FileStat.stat(filePath);
+              if (fileStats.type == FileSystemEntityType.notFound) {
+                fileStats = null;
+              }
+            } catch (_) {
               fileStats = null;
             }
-          } catch (_) {
-            fileStats = null;
-          }
 
-          if (fileStats == null) {
-            trackedFileBackups[trackingPath] = FileHistoryBackup(
-              backupFileName: null,
-              version: nextVersion,
-              backupTime: DateTime.now(),
+            if (fileStats == null) {
+              trackedFileBackups[trackingPath] = FileHistoryBackup(
+                backupFileName: null,
+                version: nextVersion,
+                backupTime: DateTime.now(),
+              );
+              return;
+            }
+
+            // File exists — check if it needs to be backed up.
+            if (latestBackup != null &&
+                latestBackup.backupFileName != null &&
+                !(await _checkOriginFileChanged(
+                  filePath,
+                  latestBackup.backupFileName!,
+                ))) {
+              trackedFileBackups[trackingPath] = latestBackup;
+              return;
+            }
+
+            trackedFileBackups[trackingPath] = await _createBackup(
+              filePath,
+              nextVersion,
             );
-            return;
+          } catch (_) {
+            // Skip this file on error.
           }
-
-          // File exists — check if it needs to be backed up.
-          if (latestBackup != null &&
-              latestBackup.backupFileName != null &&
-              !(await _checkOriginFileChanged(
-                  filePath, latestBackup.backupFileName!))) {
-            trackedFileBackups[trackingPath] = latestBackup;
-            return;
-          }
-
-          trackedFileBackups[trackingPath] =
-              await _createBackup(filePath, nextVersion);
-        } catch (_) {
-          // Skip this file on error.
-        }
-      }));
+        }),
+      );
     }
 
     // Phase 3: commit the new snapshot.
@@ -400,8 +415,8 @@ class FileHistoryManager extends SintController {
     final captured = state.value;
     final targetSnapshot = captured.snapshots.lastWhere(
       (snapshot) => snapshot.messageId == messageId,
-      orElse: () => throw StateError(
-          'FileHistory: Snapshot for $messageId not found'),
+      orElse: () =>
+          throw StateError('FileHistory: Snapshot for $messageId not found'),
     );
 
     final filesChanged = await _applySnapshot(captured, targetSnapshot);
@@ -417,8 +432,9 @@ class FileHistoryManager extends SintController {
   /// Whether we can restore to a given message's snapshot.
   bool fileHistoryCanRestore(String messageId) {
     if (!fileHistoryEnabled()) return false;
-    return state.value.snapshots
-        .any((snapshot) => snapshot.messageId == messageId);
+    return state.value.snapshots.any(
+      (snapshot) => snapshot.messageId == messageId,
+    );
   }
 
   // -------------------------------------------------------------------------
@@ -432,46 +448,47 @@ class FileHistoryManager extends SintController {
 
     final s = state.value;
     final targetSnapshot = s.snapshots.cast<FileHistorySnapshot?>().lastWhere(
-          (snapshot) => snapshot?.messageId == messageId,
-          orElse: () => null,
-        );
+      (snapshot) => snapshot?.messageId == messageId,
+      orElse: () => null,
+    );
     if (targetSnapshot == null) return null;
 
     final filesChanged = <String>[];
     var insertions = 0;
     var deletions = 0;
 
-    await Future.wait(s.trackedFiles.map((trackingPath) async {
-      try {
-        final filePath = _maybeExpandFilePath(trackingPath);
-        final targetBackup = targetSnapshot.trackedFileBackups[trackingPath];
+    await Future.wait(
+      s.trackedFiles.map((trackingPath) async {
+        try {
+          final filePath = _maybeExpandFilePath(trackingPath);
+          final targetBackup = targetSnapshot.trackedFileBackups[trackingPath];
 
-        final backupFileName = targetBackup != null
-            ? targetBackup.backupFileName
-            : _getBackupFileNameFirstVersion(trackingPath, s);
+          final backupFileName = targetBackup != null
+              ? targetBackup.backupFileName
+              : _getBackupFileNameFirstVersion(trackingPath, s);
 
-        if (backupFileName == null && targetBackup == null) {
-          // Cannot resolve backup — skip.
-          return;
+          if (backupFileName == null && targetBackup == null) {
+            // Cannot resolve backup — skip.
+            return;
+          }
+
+          final stats = await _computeDiffStatsForFile(
+            filePath,
+            backupFileName,
+          );
+          if (stats != null && (stats.insertions > 0 || stats.deletions > 0)) {
+            filesChanged.add(filePath);
+            insertions += stats.insertions;
+            deletions += stats.deletions;
+          } else if (backupFileName == null && await File(filePath).exists()) {
+            // Zero-byte file created after snapshot.
+            filesChanged.add(filePath);
+          }
+        } catch (_) {
+          // Skip on error.
         }
-
-        final stats = await _computeDiffStatsForFile(
-          filePath,
-          backupFileName,
-        );
-        if (stats != null && (stats.insertions > 0 || stats.deletions > 0)) {
-          filesChanged.add(filePath);
-          insertions += stats.insertions;
-          deletions += stats.deletions;
-        } else if (backupFileName == null &&
-            await File(filePath).exists()) {
-          // Zero-byte file created after snapshot.
-          filesChanged.add(filePath);
-        }
-      } catch (_) {
-        // Skip on error.
-      }
-    }));
+      }),
+    );
 
     return DiffStats(
       filesChanged: filesChanged,
@@ -491,9 +508,9 @@ class FileHistoryManager extends SintController {
 
     final s = state.value;
     final targetSnapshot = s.snapshots.cast<FileHistorySnapshot?>().lastWhere(
-          (snapshot) => snapshot?.messageId == messageId,
-          orElse: () => null,
-        );
+      (snapshot) => snapshot?.messageId == messageId,
+      orElse: () => null,
+    );
     if (targetSnapshot == null) return false;
 
     for (final trackingPath in s.trackedFiles) {
@@ -627,12 +644,14 @@ class FileHistoryManager extends SintController {
     var deletions = 0;
 
     try {
-      final backupPath =
-          backupFileName != null ? _resolveBackupPath(backupFileName) : null;
+      final backupPath = backupFileName != null
+          ? _resolveBackupPath(backupFileName)
+          : null;
 
       final originalContent = await _readFileOrNull(originalFile);
-      final backupContent =
-          backupPath != null ? await _readFileOrNull(backupPath) : null;
+      final backupContent = backupPath != null
+          ? await _readFileOrNull(backupPath)
+          : null;
 
       if (originalContent == null && backupContent == null) {
         return const DiffStats();
@@ -668,10 +687,7 @@ class FileHistoryManager extends SintController {
   // -------------------------------------------------------------------------
 
   /// Creates a backup of the file at [filePath].
-  Future<FileHistoryBackup> _createBackup(
-    String filePath,
-    int version,
-  ) async {
+  Future<FileHistoryBackup> _createBackup(String filePath, int version) async {
     final backupFileName = _getBackupFileName(filePath, version);
     final backupPath = _resolveBackupPath(backupFileName);
 
@@ -698,8 +714,9 @@ class FileHistoryManager extends SintController {
     try {
       await File(filePath).copy(backupPath);
     } on FileSystemException {
-      await Directory(backupPath.substring(0, backupPath.lastIndexOf('/')))
-          .create(recursive: true);
+      await Directory(
+        backupPath.substring(0, backupPath.lastIndexOf('/')),
+      ).create(recursive: true);
       await File(filePath).copy(backupPath);
     }
 
@@ -715,10 +732,7 @@ class FileHistoryManager extends SintController {
   // -------------------------------------------------------------------------
 
   /// Restores a file from its backup path.
-  Future<void> _restoreBackup(
-    String filePath,
-    String backupFileName,
-  ) async {
+  Future<void> _restoreBackup(String filePath, String backupFileName) async {
     final backupPath = _resolveBackupPath(backupFileName);
 
     // Check backup exists.
@@ -729,8 +743,9 @@ class FileHistoryManager extends SintController {
     try {
       await backupFile.copy(filePath);
     } on FileSystemException {
-      await Directory(filePath.substring(0, filePath.lastIndexOf('/')))
-          .create(recursive: true);
+      await Directory(
+        filePath.substring(0, filePath.lastIndexOf('/')),
+      ).create(recursive: true);
       await backupFile.copy(filePath);
     }
   }
@@ -797,19 +812,20 @@ class FileHistoryManager extends SintController {
     if (previousSessionId == sessionId) return;
 
     try {
-      final newBackupDir =
-          Directory('$configHomeDir/file-history/$sessionId');
+      final newBackupDir = Directory('$configHomeDir/file-history/$sessionId');
       await newBackupDir.create(recursive: true);
 
       for (final snapshot in fileHistorySnapshots) {
-        final backupEntries = snapshot.trackedFileBackups.values
-            .where((b) => b.backupFileName != null);
+        final backupEntries = snapshot.trackedFileBackups.values.where(
+          (b) => b.backupFileName != null,
+        );
 
         for (final backup in backupEntries) {
-          final oldBackupPath =
-              _resolveBackupPath(backup.backupFileName!, previousSessionId);
-          final newBackupPath =
-              '${newBackupDir.path}/${backup.backupFileName}';
+          final oldBackupPath = _resolveBackupPath(
+            backup.backupFileName!,
+            previousSessionId,
+          );
+          final newBackupPath = '${newBackupDir.path}/${backup.backupFileName}';
 
           try {
             // Try hard link first.
@@ -865,11 +881,13 @@ class FileHistoryManager extends SintController {
   void _maybeDumpStateForDebug(FileHistoryState s) {
     if (_enableDumpState) {
       // ignore: avoid_print
-      print(jsonEncode({
-        'snapshots': s.snapshots.length,
-        'trackedFiles': s.trackedFiles.length,
-        'snapshotSequence': s.snapshotSequence,
-      }));
+      print(
+        jsonEncode({
+          'snapshots': s.snapshots.length,
+          'trackedFiles': s.trackedFiles.length,
+          'snapshotSequence': s.snapshotSequence,
+        }),
+      );
     }
   }
 }

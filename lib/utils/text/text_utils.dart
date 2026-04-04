@@ -111,15 +111,19 @@ String dedent(String text) {
   final nonEmpty = lines.where((l) => l.trimLeft().isNotEmpty);
   if (nonEmpty.isEmpty) return text;
 
-  final minIndent = nonEmpty.map((l) {
-    final stripped = l.trimLeft();
-    return l.length - stripped.length;
-  }).reduce(math.min);
+  final minIndent = nonEmpty
+      .map((l) {
+        final stripped = l.trimLeft();
+        return l.length - stripped.length;
+      })
+      .reduce(math.min);
 
-  return lines.map((l) {
-    if (l.trimLeft().isEmpty) return l.trimRight();
-    return l.substring(math.min(minIndent, l.length));
-  }).join('\n');
+  return lines
+      .map((l) {
+        if (l.trimLeft().isEmpty) return l.trimRight();
+        return l.substring(math.min(minIndent, l.length));
+      })
+      .join('\n');
 }
 
 // ---------------------------------------------------------------------------
@@ -219,7 +223,10 @@ String camelCase(String text) {
   final words = _splitWords(text);
   if (words.isEmpty) return '';
   return words.first.toLowerCase() +
-      words.skip(1).map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase()).join();
+      words
+          .skip(1)
+          .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
+          .join();
 }
 
 /// Convert to snake_case.
@@ -229,9 +236,9 @@ String snakeCase(String text) {
 
 /// Convert to PascalCase.
 String pascalCase(String text) {
-  return _splitWords(text)
-      .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
-      .join();
+  return _splitWords(
+    text,
+  ).map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase()).join();
 }
 
 /// Convert to kebab-case.
@@ -241,9 +248,9 @@ String kebabCase(String text) {
 
 /// Convert to Title Case.
 String titleCase(String text) {
-  return _splitWords(text)
-      .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
-      .join(' ');
+  return _splitWords(
+    text,
+  ).map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase()).join(' ');
 }
 
 // ---------------------------------------------------------------------------
@@ -253,11 +260,15 @@ String titleCase(String text) {
 /// Simple English pluralization.
 String pluralize(String word, int count) {
   if (count == 1) return word;
-  if (word.endsWith('s') || word.endsWith('x') || word.endsWith('z') ||
-      word.endsWith('ch') || word.endsWith('sh')) {
+  if (word.endsWith('s') ||
+      word.endsWith('x') ||
+      word.endsWith('z') ||
+      word.endsWith('ch') ||
+      word.endsWith('sh')) {
     return '${word}es';
   }
-  if (word.endsWith('y') && word.length > 1 &&
+  if (word.endsWith('y') &&
+      word.length > 1 &&
       !'aeiou'.contains(word[word.length - 2])) {
     return '${word.substring(0, word.length - 1)}ies';
   }
@@ -296,7 +307,9 @@ String humanize(String text) {
   if (words.isEmpty) return '';
   return words.first[0].toUpperCase() +
       words.first.substring(1).toLowerCase() +
-      (words.length > 1 ? ' ${words.skip(1).map((w) => w.toLowerCase()).join(' ')}' : '');
+      (words.length > 1
+          ? ' ${words.skip(1).map((w) => w.toLowerCase()).join(' ')}'
+          : '');
 }
 
 // ---------------------------------------------------------------------------
@@ -313,9 +326,7 @@ List<String> extractUrls(String text) {
   return _urlRegex.allMatches(text).map((m) => m.group(0)!).toList();
 }
 
-final _emailRegex = RegExp(
-  r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',
-);
+final _emailRegex = RegExp(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}');
 
 /// Extract all email addresses from [text].
 List<String> extractEmails(String text) {
@@ -336,9 +347,7 @@ List<({String language, String code})> extractCodeBlocks(String text) {
 // ANSI stripping
 // ---------------------------------------------------------------------------
 
-final _ansiRegex = RegExp(
-  r'\x1B\[[0-9;]*[A-Za-z]|\x1B\].*?\x07|\x1B\(B',
-);
+final _ansiRegex = RegExp(r'\x1B\[[0-9;]*[A-Za-z]|\x1B\].*?\x07|\x1B\(B');
 
 /// Remove ANSI escape codes from [text].
 String stripAnsi(String text) {
@@ -531,17 +540,20 @@ String removeComments(String text, {String? language}) {
   final lang = language?.toLowerCase();
 
   String removeLineComments(String src, String marker) {
-    return src.split('\n').map((line) {
-      // Naive: does not handle strings containing the marker
-      final idx = line.indexOf(marker);
-      if (idx == -1) return line;
-      // Check we are not inside a string (simple heuristic)
-      final beforeMarker = line.substring(0, idx);
-      final singleQuotes = "'".allMatches(beforeMarker).length;
-      final doubleQuotes = '"'.allMatches(beforeMarker).length;
-      if (singleQuotes % 2 != 0 || doubleQuotes % 2 != 0) return line;
-      return line.substring(0, idx);
-    }).join('\n');
+    return src
+        .split('\n')
+        .map((line) {
+          // Naive: does not handle strings containing the marker
+          final idx = line.indexOf(marker);
+          if (idx == -1) return line;
+          // Check we are not inside a string (simple heuristic)
+          final beforeMarker = line.substring(0, idx);
+          final singleQuotes = "'".allMatches(beforeMarker).length;
+          final doubleQuotes = '"'.allMatches(beforeMarker).length;
+          if (singleQuotes % 2 != 0 || doubleQuotes % 2 != 0) return line;
+          return line.substring(0, idx);
+        })
+        .join('\n');
   }
 
   String removeBlockComments(String src, String open, String close) {
@@ -574,8 +586,18 @@ String removeComments(String text, {String? language}) {
     case 'sql':
       result = removeLineComments(result, '--');
       result = removeBlockComments(result, '/*', '*/');
-    case 'c' || 'cpp' || 'java' || 'dart' || 'js' || 'ts' ||
-         'javascript' || 'typescript' || 'swift' || 'kotlin' || 'go' || 'rust':
+    case 'c' ||
+        'cpp' ||
+        'java' ||
+        'dart' ||
+        'js' ||
+        'ts' ||
+        'javascript' ||
+        'typescript' ||
+        'swift' ||
+        'kotlin' ||
+        'go' ||
+        'rust':
       result = removeBlockComments(result, '/*', '*/');
       result = removeLineComments(result, '//');
     default:

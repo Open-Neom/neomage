@@ -80,9 +80,9 @@ class LspServerInstance {
     required Process process,
     required StreamSubscription<String> stdoutSub,
     this.state = LspServerState.running,
-  })  : _process = process,
-        _stdoutSub = stdoutSub,
-        restartCount = 0;
+  }) : _process = process,
+       _stdoutSub = stdoutSub,
+       restartCount = 0;
 
   /// Send a JSON-RPC request and await response.
   Future<Map<String, dynamic>> sendRequest(
@@ -113,11 +113,7 @@ class LspServerInstance {
 
   /// Send a notification (no response expected).
   void sendNotification(String method, Map<String, dynamic> params) {
-    _send({
-      'jsonrpc': '2.0',
-      'method': method,
-      'params': params,
-    });
+    _send({'jsonrpc': '2.0', 'method': method, 'params': params});
   }
 
   /// Register a notification handler.
@@ -159,16 +155,16 @@ class LspServerInstance {
     if (message.containsKey('id') && message.containsKey('result')) {
       // Response
       final id = message['id'] as int;
-      _pendingRequests.remove(id)?.complete(
-            message['result'] as Map<String, dynamic>? ?? {},
-          );
+      _pendingRequests
+          .remove(id)
+          ?.complete(message['result'] as Map<String, dynamic>? ?? {});
     } else if (message.containsKey('id') && message.containsKey('error')) {
       // Error response
       final id = message['id'] as int;
       final error = message['error'] as Map<String, dynamic>;
-      _pendingRequests.remove(id)?.completeError(
-            Exception('LSP error: ${error['message']}'),
-          );
+      _pendingRequests
+          .remove(id)
+          ?.completeError(Exception('LSP error: ${error['message']}'));
     } else if (message.containsKey('method') && !message.containsKey('id')) {
       // Notification
       final method = message['method'] as String;
@@ -186,20 +182,15 @@ class LspServerManager {
   final List<LspServerConfig> _configs;
   final void Function(List<LspDiagnostic>)? onDiagnostics;
 
-  LspServerManager({
-    required List<LspServerConfig> configs,
-    this.onDiagnostics,
-  }) : _configs = configs;
+  LspServerManager({required List<LspServerConfig> configs, this.onDiagnostics})
+    : _configs = configs;
 
   /// All server instances.
-  Map<String, LspServerInstance> get servers =>
-      Map.unmodifiable(_servers);
+  Map<String, LspServerInstance> get servers => Map.unmodifiable(_servers);
 
   /// Find the config for a file based on extension.
   LspServerConfig? configForFile(String filePath) {
-    final ext = filePath.contains('.')
-        ? '.${filePath.split('.').last}'
-        : '';
+    final ext = filePath.contains('.') ? '.${filePath.split('.').last}' : '';
 
     for (final config in _configs) {
       if (config.extensionToLanguage.containsKey(ext)) {
@@ -228,9 +219,7 @@ class LspServerManager {
     if (server == null) return;
 
     final config = configForFile(filePath)!;
-    final ext = filePath.contains('.')
-        ? '.${filePath.split('.').last}'
-        : '';
+    final ext = filePath.contains('.') ? '.${filePath.split('.').last}' : '';
     final languageId = config.extensionToLanguage[ext] ?? 'plaintext';
 
     _openFiles[filePath] = config.name;
@@ -258,10 +247,7 @@ class LspServerManager {
     _fileVersions[filePath] = version;
 
     server.sendNotification('textDocument/didChange', {
-      'textDocument': {
-        'uri': _fileUri(filePath),
-        'version': version,
-      },
+      'textDocument': {'uri': _fileUri(filePath), 'version': version},
       'contentChanges': [
         {'text': content},
       ],
@@ -411,10 +397,7 @@ class LspServerManager {
             'references': {'dynamicRegistration': false},
             'publishDiagnostics': {'relatedInformation': true},
           },
-          'workspace': {
-            'workspaceFolders': true,
-            'configuration': false,
-          },
+          'workspace': {'workspaceFolders': true, 'configuration': false},
         },
         if (config.workspaceFolder != null) ...{
           'rootUri': _fileUri(config.workspaceFolder!),
@@ -500,41 +483,41 @@ class LspServerManager {
 
 /// Standard LSP server configs for common languages.
 List<LspServerConfig> defaultLspConfigs({String? workspaceFolder}) => [
-      LspServerConfig(
-        name: 'typescript',
-        command: 'typescript-language-server',
-        args: ['--stdio'],
-        extensionToLanguage: {
-          '.ts': 'typescript',
-          '.tsx': 'typescriptreact',
-          '.js': 'javascript',
-          '.jsx': 'javascriptreact',
-        },
-        workspaceFolder: workspaceFolder,
-      ),
-      LspServerConfig(
-        name: 'dart',
-        command: 'dart',
-        args: ['language-server', '--protocol=lsp'],
-        extensionToLanguage: {'.dart': 'dart'},
-        workspaceFolder: workspaceFolder,
-      ),
-      LspServerConfig(
-        name: 'python',
-        command: 'pylsp',
-        extensionToLanguage: {'.py': 'python'},
-        workspaceFolder: workspaceFolder,
-      ),
-      LspServerConfig(
-        name: 'rust',
-        command: 'rust-analyzer',
-        extensionToLanguage: {'.rs': 'rust'},
-        workspaceFolder: workspaceFolder,
-      ),
-      LspServerConfig(
-        name: 'go',
-        command: 'gopls',
-        extensionToLanguage: {'.go': 'go'},
-        workspaceFolder: workspaceFolder,
-      ),
-    ];
+  LspServerConfig(
+    name: 'typescript',
+    command: 'typescript-language-server',
+    args: ['--stdio'],
+    extensionToLanguage: {
+      '.ts': 'typescript',
+      '.tsx': 'typescriptreact',
+      '.js': 'javascript',
+      '.jsx': 'javascriptreact',
+    },
+    workspaceFolder: workspaceFolder,
+  ),
+  LspServerConfig(
+    name: 'dart',
+    command: 'dart',
+    args: ['language-server', '--protocol=lsp'],
+    extensionToLanguage: {'.dart': 'dart'},
+    workspaceFolder: workspaceFolder,
+  ),
+  LspServerConfig(
+    name: 'python',
+    command: 'pylsp',
+    extensionToLanguage: {'.py': 'python'},
+    workspaceFolder: workspaceFolder,
+  ),
+  LspServerConfig(
+    name: 'rust',
+    command: 'rust-analyzer',
+    extensionToLanguage: {'.rs': 'rust'},
+    workspaceFolder: workspaceFolder,
+  ),
+  LspServerConfig(
+    name: 'go',
+    command: 'gopls',
+    extensionToLanguage: {'.go': 'go'},
+    workspaceFolder: workspaceFolder,
+  ),
+];

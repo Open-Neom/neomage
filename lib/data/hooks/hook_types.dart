@@ -486,14 +486,7 @@ class FileHookContext extends HookContext {
 }
 
 /// File operations tracked by [FileHookContext].
-enum FileOperation {
-  read,
-  write,
-  delete,
-  create,
-  rename,
-  chmod,
-}
+enum FileOperation { read, write, delete, create, rename, chmod }
 
 /// Context for git-related hooks ([HookType.onGitOperation]).
 class GitHookContext extends HookContext {
@@ -660,11 +653,11 @@ class HookRegistration {
     this.source,
     this.tags = const {},
     DateTime? registeredAt,
-  })  : registeredAt = registeredAt ?? DateTime.now(),
-        assert(
-          handler != null || asyncHandler != null,
-          'Either handler or asyncHandler must be provided',
-        );
+  }) : registeredAt = registeredAt ?? DateTime.now(),
+       assert(
+         handler != null || asyncHandler != null,
+         'Either handler or asyncHandler must be provided',
+       );
 
   /// Whether this hook uses an async handler.
   bool get isAsync => asyncHandler != null;
@@ -691,8 +684,7 @@ class HookChain {
   HookChain({required this.type}) : _registrations = [];
 
   /// All registrations, sorted by priority.
-  List<HookRegistration> get registrations =>
-      List.unmodifiable(_registrations);
+  List<HookRegistration> get registrations => List.unmodifiable(_registrations);
 
   /// Only enabled registrations, sorted by priority.
   List<HookRegistration> get activeRegistrations =>
@@ -709,11 +701,12 @@ class HookChain {
 
   /// Add a registration, maintaining priority sort order.
   void add(HookRegistration registration) {
-    assert(registration.type == type,
-        'Registration type ${registration.type} does not match chain type $type');
+    assert(
+      registration.type == type,
+      'Registration type ${registration.type} does not match chain type $type',
+    );
     _registrations.add(registration);
-    _registrations.sort(
-        (a, b) => a.priority.value.compareTo(b.priority.value));
+    _registrations.sort((a, b) => a.priority.value.compareTo(b.priority.value));
   }
 
   /// Remove a registration by ID. Returns true if found and removed.

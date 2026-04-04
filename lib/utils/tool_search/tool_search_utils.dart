@@ -9,7 +9,6 @@
 library;
 
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:sint/sint.dart';
 
@@ -22,23 +21,14 @@ import 'package:sint/sint.dart';
 ///   - [tst]: Tool Search Tool -- deferred tools discovered via ToolSearchTool
 ///   - [tstAuto]: auto -- tools deferred only when they exceed threshold
 ///   - [standard]: tool search disabled -- all tools exposed inline
-enum ToolSearchMode {
-  tst,
-  tstAuto,
-  standard,
-}
+enum ToolSearchMode { tst, tstAuto, standard }
 
 // ---------------------------------------------------------------------------
 // Install Status (for tool pool operations)
 // ---------------------------------------------------------------------------
 
 /// Status of a tool installation or pool operation.
-enum InstallStatus {
-  success,
-  noPermissions,
-  installFailed,
-  inProgress,
-}
+enum InstallStatus { success, noPermissions, installFailed, inProgress }
 
 // ---------------------------------------------------------------------------
 // Tool Definition
@@ -104,10 +94,7 @@ class ToolPermissionContext {
   final String mode;
   final Map<String, dynamic> metadata;
 
-  const ToolPermissionContext({
-    required this.mode,
-    this.metadata = const {},
-  });
+  const ToolPermissionContext({required this.mode, this.metadata = const {}});
 }
 
 // ---------------------------------------------------------------------------
@@ -219,12 +206,12 @@ class ToolSearchController extends SintController {
   final Map<String, String> _envConfig;
 
   /// Unsupported model patterns (can be updated from remote config).
-  List<String> _unsupportedModelPatterns =
-      List.from(_defaultUnsupportedModelPatterns);
+  List<String> _unsupportedModelPatterns = List.from(
+    _defaultUnsupportedModelPatterns,
+  );
 
-  ToolSearchController({
-    Map<String, String>? envConfig,
-  }) : _envConfig = envConfig ?? {};
+  ToolSearchController({Map<String, String>? envConfig})
+    : _envConfig = envConfig ?? {};
 
   @override
   void onInit() {
@@ -415,8 +402,8 @@ class ToolSearchController extends SintController {
       final schemaStr = tool.inputJsonSchema != null
           ? jsonEncode(tool.inputJsonSchema)
           : tool.inputSchema != null
-              ? jsonEncode(tool.inputSchema)
-              : '';
+          ? jsonEncode(tool.inputSchema)
+          : '';
       total += tool.name.length + tool.description.length + schemaStr.length;
     }
     return total;
@@ -445,9 +432,7 @@ class ToolSearchController extends SintController {
     }
 
     if (!isToolSearchToolAvailable(tools)) {
-      _logDebug(
-        'Tool search disabled: ToolSearchTool is not available.',
-      );
+      _logDebug('Tool search disabled: ToolSearchTool is not available.');
       return false;
     }
 
@@ -491,8 +476,9 @@ class ToolSearchController extends SintController {
     required int contextWindow,
   }) {
     // Use character-based heuristic
-    final deferredToolDescriptionChars =
-        calculateDeferredToolDescriptionChars(tools);
+    final deferredToolDescriptionChars = calculateDeferredToolDescriptionChars(
+      tools,
+    );
     final charThreshold = getAutoToolSearchCharThreshold(
       model: model,
       contextWindow: contextWindow,
@@ -565,8 +551,7 @@ class ToolSearchController extends SintController {
         if (isToolResultBlockWithContent(block)) {
           final blockContent = block['content'] as List;
           for (final item in blockContent) {
-            if (item is Map<String, dynamic> &&
-                isToolReferenceWithName(item)) {
+            if (item is Map<String, dynamic> && isToolReferenceWithName(item)) {
               discovered.add(item['tool_name'] as String);
             }
           }
@@ -605,17 +590,17 @@ class ToolSearchController extends SintController {
     DeferredToolsDeltaScanContext? scanContext,
   }) {
     final announced = <String>{};
-    int attachmentCount = 0;
-    int dtdCount = 0;
+    int _attachmentCount = 0;
+    int _dtdCount = 0;
     final attachmentTypesSeen = <String>{};
 
     for (final msg in messages) {
       if (msg.type != 'attachment') continue;
-      attachmentCount++;
+      _attachmentCount++;
       final attachmentType = msg.attachment?['type'] as String?;
       if (attachmentType != null) attachmentTypesSeen.add(attachmentType);
       if (attachmentType != 'deferred_tools_delta') continue;
-      dtdCount++;
+      _dtdCount++;
       final addedNames = msg.attachment?['addedNames'];
       if (addedNames is List) {
         for (final n in addedNames) {
@@ -634,8 +619,7 @@ class ToolSearchController extends SintController {
     final deferredNames = deferred.map((t) => t.name).toSet();
     final poolNames = tools.map((t) => t.name).toSet();
 
-    final added =
-        deferred.where((t) => !announced.contains(t.name)).toList();
+    final added = deferred.where((t) => !announced.contains(t.name)).toList();
     final removed = <String>[];
     for (final n in announced) {
       if (deferredNames.contains(n)) continue;
@@ -756,8 +740,9 @@ String formatError(Object error) {
 
   final parts = getErrorParts(error);
   final fullMessage = parts.where((p) => p.isNotEmpty).join('\n').trim();
-  final result =
-      fullMessage.isEmpty ? 'Command failed with no output' : fullMessage;
+  final result = fullMessage.isEmpty
+      ? 'Command failed with no output'
+      : fullMessage;
 
   if (result.length <= 10000) return result;
 

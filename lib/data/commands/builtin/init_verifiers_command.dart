@@ -1,5 +1,5 @@
 // /init-verifiers command — creates verifier skills for automated verification.
-// Faithful port of openneomclaw/src/commands/init-verifiers.ts (262 TS LOC).
+// Faithful port of neom_claw/src/commands/init-verifiers.ts (262 TS LOC).
 //
 // This is a prompt command that guides the LLM through a multi-phase process:
 //   Phase 1: Auto-detection of project type, stack, and existing tools
@@ -309,16 +309,16 @@ class InitVerifiersCommand extends PromptCommand {
 
   @override
   Set<String> get allowedTools => const {
-        'Bash',
-        'Read',
-        'Glob',
-        'Grep',
-        'Write',
-        'Edit',
-        'TodoWrite',
-        'AskUserQuestion',
-        'Task',
-      };
+    'Bash',
+    'Read',
+    'Glob',
+    'Grep',
+    'Write',
+    'Edit',
+    'TodoWrite',
+    'AskUserQuestion',
+    'Task',
+  };
 
   @override
   Future<List<ContentBlock>> getPrompt(

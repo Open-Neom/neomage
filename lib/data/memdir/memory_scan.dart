@@ -49,13 +49,15 @@ Future<List<MemoryHeader>> scanMemoryFiles(String memoryDir) async {
       final content = await entity.readAsString();
       final frontmatter = parseFrontmatter(content);
 
-      headers.add(MemoryHeader(
-        filename: filename,
-        filePath: entity.path,
-        modified: stat.modified,
-        description: frontmatter?.description,
-        type: frontmatter?.type,
-      ));
+      headers.add(
+        MemoryHeader(
+          filename: filename,
+          filePath: entity.path,
+          modified: stat.modified,
+          description: frontmatter?.description,
+          type: frontmatter?.type,
+        ),
+      );
     } catch (_) {
       // Skip unreadable files
     }

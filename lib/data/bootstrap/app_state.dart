@@ -39,16 +39,16 @@ class AppState {
     required this.sessionId,
     required this.cwd,
     required this.startTime,
-  })  : totalCostUsd = 0.0,
-        totalApiDuration = Duration.zero,
-        totalApiCalls = 0,
-        linesAdded = 0,
-        linesRemoved = 0,
-        lastInteractionTime = startTime,
-        fastModeEnabled = false,
-        isInteractive = true,
-        kairosActive = false,
-        strictToolResultPairing = false;
+  }) : totalCostUsd = 0.0,
+       totalApiDuration = Duration.zero,
+       totalApiCalls = 0,
+       linesAdded = 0,
+       linesRemoved = 0,
+       lastInteractionTime = startTime,
+       fastModeEnabled = false,
+       isInteractive = true,
+       kairosActive = false,
+       strictToolResultPairing = false;
 
   /// Create initial app state.
   factory AppState.initial({String? cwd}) {
@@ -94,9 +94,7 @@ class AppState {
 
   void markInteraction() => lastInteractionTime = DateTime.now();
 
-  Duration get idleDuration =>
-      DateTime.now().difference(lastInteractionTime);
+  Duration get idleDuration => DateTime.now().difference(lastInteractionTime);
 
-  Duration get sessionDuration =>
-      DateTime.now().difference(startTime);
+  Duration get sessionDuration => DateTime.now().difference(startTime);
 }

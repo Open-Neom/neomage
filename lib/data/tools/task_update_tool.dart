@@ -1,4 +1,4 @@
-// TaskUpdateTool — port of openneomclaw/src/tools/TaskUpdateTool/.
+// TaskUpdateTool — port of neom_claw/src/tools/TaskUpdateTool/.
 // Update task status, subject, description, ownership, dependencies,
 // and metadata in the task list, with hook execution, teammate mailbox
 // notifications, and verification nudges.
@@ -61,9 +61,7 @@ class TaskUpdateStatus {
   final bool isDeleted;
 
   const TaskUpdateStatus.status(TaskStatus this.status) : isDeleted = false;
-  const TaskUpdateStatus.deleted()
-      : status = null,
-        isDeleted = true;
+  const TaskUpdateStatus.deleted() : status = null, isDeleted = true;
 
   /// Parse from string, supporting 'deleted' in addition to regular statuses.
   static TaskUpdateStatus? fromString(String s) {
@@ -102,47 +100,48 @@ class Task {
     this.metadata,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   factory Task.fromJson(Map<String, dynamic> json) => Task(
-        id: json['id'] as String,
-        subject: json['subject'] as String,
-        description: json['description'] as String?,
-        activeForm: json['activeForm'] as String?,
-        status: TaskStatus.fromString(json['status'] as String? ?? 'pending') ??
-            TaskStatus.pending,
-        owner: json['owner'] as String?,
-        blocks: (json['blocks'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList() ??
-            const [],
-        blockedBy: (json['blockedBy'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList() ??
-            const [],
-        metadata: json['metadata'] as Map<String, dynamic>?,
-        createdAt: json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'] as String)
-            : null,
-        updatedAt: json['updatedAt'] != null
-            ? DateTime.parse(json['updatedAt'] as String)
-            : null,
-      );
+    id: json['id'] as String,
+    subject: json['subject'] as String,
+    description: json['description'] as String?,
+    activeForm: json['activeForm'] as String?,
+    status:
+        TaskStatus.fromString(json['status'] as String? ?? 'pending') ??
+        TaskStatus.pending,
+    owner: json['owner'] as String?,
+    blocks:
+        (json['blocks'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+        const [],
+    blockedBy:
+        (json['blockedBy'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        const [],
+    metadata: json['metadata'] as Map<String, dynamic>?,
+    createdAt: json['createdAt'] != null
+        ? DateTime.parse(json['createdAt'] as String)
+        : null,
+    updatedAt: json['updatedAt'] != null
+        ? DateTime.parse(json['updatedAt'] as String)
+        : null,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'subject': subject,
-        if (description != null) 'description': description,
-        if (activeForm != null) 'activeForm': activeForm,
-        'status': status.toJsonString(),
-        if (owner != null) 'owner': owner,
-        'blocks': blocks,
-        'blockedBy': blockedBy,
-        if (metadata != null) 'metadata': metadata,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    'subject': subject,
+    if (description != null) 'description': description,
+    if (activeForm != null) 'activeForm': activeForm,
+    'status': status.toJsonString(),
+    if (owner != null) 'owner': owner,
+    'blocks': blocks,
+    'blockedBy': blockedBy,
+    if (metadata != null) 'metadata': metadata,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 }
 
 // ─── Task Store Interface ────────────────────────────────────────────────────
@@ -157,14 +156,20 @@ abstract class TaskStore {
 
   /// Update a task.
   Future<void> updateTask(
-      String taskListId, String taskId, Map<String, dynamic> updates);
+    String taskListId,
+    String taskId,
+    Map<String, dynamic> updates,
+  );
 
   /// Delete a task.
   Future<bool> deleteTask(String taskListId, String taskId);
 
   /// Add a blocking relationship: taskId blocks blockedTaskId.
   Future<void> blockTask(
-      String taskListId, String taskId, String blockedTaskId);
+    String taskListId,
+    String taskId,
+    String blockedTaskId,
+  );
 
   /// List all tasks.
   Future<List<Task>> listTasks(String taskListId);
@@ -184,7 +189,10 @@ class InMemoryTaskStore implements TaskStore {
 
   @override
   Future<void> updateTask(
-      String taskListId, String taskId, Map<String, dynamic> updates) async {
+    String taskListId,
+    String taskId,
+    Map<String, dynamic> updates,
+  ) async {
     final task = _lists[taskListId]?[taskId];
     if (task == null) return;
 
@@ -216,7 +224,10 @@ class InMemoryTaskStore implements TaskStore {
 
   @override
   Future<void> blockTask(
-      String taskListId, String taskId, String blockedTaskId) async {
+    String taskListId,
+    String taskId,
+    String blockedTaskId,
+  ) async {
     final blocker = _lists[taskListId]?[taskId];
     final blocked = _lists[taskListId]?[blockedTaskId];
     if (blocker != null && !blocker.blocks.contains(blockedTaskId)) {
@@ -256,16 +267,20 @@ class MailboxMessage {
   });
 
   Map<String, dynamic> toJson() => {
-        'from': from,
-        'text': text,
-        'timestamp': timestamp,
-        if (color != null) 'color': color,
-      };
+    'from': from,
+    'text': text,
+    'timestamp': timestamp,
+    if (color != null) 'color': color,
+  };
 }
 
 /// Callback type for writing to teammate mailbox.
-typedef WriteToMailboxFn = Future<void> Function(
-    String recipientName, MailboxMessage message, String taskListId);
+typedef WriteToMailboxFn =
+    Future<void> Function(
+      String recipientName,
+      MailboxMessage message,
+      String taskListId,
+    );
 
 // ─── Task Completed Hook ─────────────────────────────────────────────────────
 
@@ -277,13 +292,14 @@ class TaskCompletedHookResult {
 }
 
 /// Callback type for executing task-completed hooks.
-typedef ExecuteTaskCompletedHooksFn = Stream<TaskCompletedHookResult> Function({
-  required String taskId,
-  required String subject,
-  String? description,
-  String? agentName,
-  String? teamName,
-});
+typedef ExecuteTaskCompletedHooksFn =
+    Stream<TaskCompletedHookResult> Function({
+      required String taskId,
+      required String subject,
+      String? description,
+      String? agentName,
+      String? teamName,
+    });
 
 // ─── TaskUpdateTool Input / Output ───────────────────────────────────────────
 
@@ -348,17 +364,14 @@ class TaskUpdateToolOutput {
   });
 
   Map<String, dynamic> toJson() => {
-        'success': success,
-        'taskId': taskId,
-        'updatedFields': updatedFields,
-        if (error != null) 'error': error,
-        if (statusChange != null)
-          'statusChange': {
-            'from': statusChange!.from,
-            'to': statusChange!.to,
-          },
-        if (verificationNudgeNeeded) 'verificationNudgeNeeded': true,
-      };
+    'success': success,
+    'taskId': taskId,
+    'updatedFields': updatedFields,
+    if (error != null) 'error': error,
+    if (statusChange != null)
+      'statusChange': {'from': statusChange!.from, 'to': statusChange!.to},
+    if (verificationNudgeNeeded) 'verificationNudgeNeeded': true,
+  };
 }
 
 // ─── TaskUpdateTool Implementation ───────────────────────────────────────────
@@ -391,16 +404,16 @@ class TaskUpdateTool extends Tool {
     ExecuteTaskCompletedHooksFn? executeHooks,
     bool verificationEnabled = false,
     this.onExpandTaskView,
-  })  : _taskStore = taskStore ?? InMemoryTaskStore(),
-        _isEnabled = isEnabled,
-        _agentSwarmsEnabled = agentSwarmsEnabled,
-        _agentName = agentName,
-        _agentId = agentId,
-        _agentColor = agentColor,
-        _teamName = teamName,
-        _writeToMailbox = writeToMailbox,
-        _executeHooks = executeHooks,
-        _verificationEnabled = verificationEnabled;
+  }) : _taskStore = taskStore ?? InMemoryTaskStore(),
+       _isEnabled = isEnabled,
+       _agentSwarmsEnabled = agentSwarmsEnabled,
+       _agentName = agentName,
+       _agentId = agentId,
+       _agentColor = agentColor,
+       _teamName = teamName,
+       _writeToMailbox = writeToMailbox,
+       _executeHooks = executeHooks,
+       _verificationEnabled = verificationEnabled;
 
   @override
   String get name => taskUpdateToolName;
@@ -425,55 +438,49 @@ class TaskUpdateTool extends Tool {
 
   @override
   Map<String, dynamic> get inputSchema => {
+    'type': 'object',
+    'properties': {
+      'taskId': {
+        'type': 'string',
+        'description': 'The ID of the task to update',
+      },
+      'subject': {'type': 'string', 'description': 'New subject for the task'},
+      'description': {
+        'type': 'string',
+        'description': 'New description for the task',
+      },
+      'activeForm': {
+        'type': 'string',
+        'description':
+            'Present continuous form shown in spinner when in_progress '
+            '(e.g., "Running tests")',
+      },
+      'status': {
+        'type': 'string',
+        'description': 'New status for the task',
+        'enum': ['pending', 'in_progress', 'completed', 'deleted'],
+      },
+      'addBlocks': {
+        'type': 'array',
+        'items': {'type': 'string'},
+        'description': 'Task IDs that this task blocks',
+      },
+      'addBlockedBy': {
+        'type': 'array',
+        'items': {'type': 'string'},
+        'description': 'Task IDs that block this task',
+      },
+      'owner': {'type': 'string', 'description': 'New owner for the task'},
+      'metadata': {
         'type': 'object',
-        'properties': {
-          'taskId': {
-            'type': 'string',
-            'description': 'The ID of the task to update',
-          },
-          'subject': {
-            'type': 'string',
-            'description': 'New subject for the task',
-          },
-          'description': {
-            'type': 'string',
-            'description': 'New description for the task',
-          },
-          'activeForm': {
-            'type': 'string',
-            'description':
-                'Present continuous form shown in spinner when in_progress '
-                '(e.g., "Running tests")',
-          },
-          'status': {
-            'type': 'string',
-            'description': 'New status for the task',
-            'enum': ['pending', 'in_progress', 'completed', 'deleted'],
-          },
-          'addBlocks': {
-            'type': 'array',
-            'items': {'type': 'string'},
-            'description': 'Task IDs that this task blocks',
-          },
-          'addBlockedBy': {
-            'type': 'array',
-            'items': {'type': 'string'},
-            'description': 'Task IDs that block this task',
-          },
-          'owner': {
-            'type': 'string',
-            'description': 'New owner for the task',
-          },
-          'metadata': {
-            'type': 'object',
-            'description':
-                'Metadata keys to merge into the task. Set a key to null '
-                'to delete it.',
-          },
-        },
-        'required': ['taskId'],
-        'additionalProperties': false,
-      };
+        'description':
+            'Metadata keys to merge into the task. Set a key to null '
+            'to delete it.',
+      },
+    },
+    'required': ['taskId'],
+    'additionalProperties': false,
+  };
 
   @override
   String get prompt => _taskUpdatePrompt;
@@ -499,12 +506,14 @@ class TaskUpdateTool extends Tool {
     // Check if task exists.
     final existingTask = await _taskStore.getTask(taskListId, parsed.taskId);
     if (existingTask == null) {
-      return _formatResult(TaskUpdateToolOutput(
-        success: false,
-        taskId: parsed.taskId,
-        updatedFields: const [],
-        error: 'Task not found',
-      ));
+      return _formatResult(
+        TaskUpdateToolOutput(
+          success: false,
+          taskId: parsed.taskId,
+          updatedFields: const [],
+          error: 'Task not found',
+        ),
+      );
     }
 
     final updatedFields = <String>[];
@@ -560,17 +569,18 @@ class TaskUpdateTool extends Tool {
 
       // Handle deletion.
       if (updateStatus != null && updateStatus.isDeleted) {
-        final deleted =
-            await _taskStore.deleteTask(taskListId, parsed.taskId);
-        return _formatResult(TaskUpdateToolOutput(
-          success: deleted,
-          taskId: parsed.taskId,
-          updatedFields: deleted ? const ['deleted'] : const [],
-          error: deleted ? null : 'Failed to delete task',
-          statusChange: deleted
-              ? (from: existingTask.status.toJsonString(), to: 'deleted')
-              : null,
-        ));
+        final deleted = await _taskStore.deleteTask(taskListId, parsed.taskId);
+        return _formatResult(
+          TaskUpdateToolOutput(
+            success: deleted,
+            taskId: parsed.taskId,
+            updatedFields: deleted ? const ['deleted'] : const [],
+            error: deleted ? null : 'Failed to delete task',
+            statusChange: deleted
+                ? (from: existingTask.status.toJsonString(), to: 'deleted')
+                : null,
+          ),
+        );
       }
 
       // Regular status update.
@@ -580,7 +590,7 @@ class TaskUpdateTool extends Tool {
         if (updateStatus.status == TaskStatus.completed &&
             _executeHooks != null) {
           final blockingErrors = <String>[];
-          await for (final result in _executeHooks!(
+          await for (final result in _executeHooks(
             taskId: parsed.taskId,
             subject: existingTask.subject,
             description: existingTask.description,
@@ -593,16 +603,18 @@ class TaskUpdateTool extends Tool {
           }
 
           if (blockingErrors.isNotEmpty) {
-            return _formatResult(TaskUpdateToolOutput(
-              success: false,
-              taskId: parsed.taskId,
-              updatedFields: const [],
-              error: blockingErrors.join('\n'),
-            ));
+            return _formatResult(
+              TaskUpdateToolOutput(
+                success: false,
+                taskId: parsed.taskId,
+                updatedFields: const [],
+                error: blockingErrors.join('\n'),
+              ),
+            );
           }
         }
 
-        updates['status'] = updateStatus!.status;
+        updates['status'] = updateStatus.status;
         updatedFields.add('status');
       }
     }
@@ -625,7 +637,7 @@ class TaskUpdateTool extends Tool {
         'assignedBy': senderName,
         'timestamp': DateTime.now().toIso8601String(),
       });
-      await _writeToMailbox!(
+      await _writeToMailbox(
         updates['owner'] as String,
         MailboxMessage(
           from: senderName,
@@ -669,24 +681,27 @@ class TaskUpdateTool extends Tool {
       final allDone = allTasks.every((t) => t.status == TaskStatus.completed);
       if (allDone &&
           allTasks.length >= 3 &&
-          !allTasks.any((t) => RegExp(r'verif', caseSensitive: false)
-              .hasMatch(t.subject))) {
+          !allTasks.any(
+            (t) => RegExp(r'verif', caseSensitive: false).hasMatch(t.subject),
+          )) {
         verificationNudgeNeeded = true;
       }
     }
 
-    return _formatResult(TaskUpdateToolOutput(
-      success: true,
-      taskId: parsed.taskId,
-      updatedFields: updatedFields,
-      statusChange: updates.containsKey('status')
-          ? (
-              from: existingTask.status.toJsonString(),
-              to: (updates['status'] as TaskStatus).toJsonString(),
-            )
-          : null,
-      verificationNudgeNeeded: verificationNudgeNeeded,
-    ));
+    return _formatResult(
+      TaskUpdateToolOutput(
+        success: true,
+        taskId: parsed.taskId,
+        updatedFields: updatedFields,
+        statusChange: updates.containsKey('status')
+            ? (
+                from: existingTask.status.toJsonString(),
+                to: (updates['status'] as TaskStatus).toJsonString(),
+              )
+            : null,
+        verificationNudgeNeeded: verificationNudgeNeeded,
+      ),
+    );
   }
 
   /// Format the output into a ToolResult.
@@ -723,7 +738,8 @@ class TaskUpdateTool extends Tool {
     return ToolResult.success(content, metadata: output.toJson());
   }
 
-  static const String _taskUpdatePrompt = '''Use this tool to update a task in the task list.
+  static const String _taskUpdatePrompt =
+      '''Use this tool to update a task in the task list.
 
 ## When to Use This Tool
 

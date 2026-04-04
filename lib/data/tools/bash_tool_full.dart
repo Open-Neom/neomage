@@ -2,10 +2,7 @@
 // Complete shell command execution with security, sandboxing, output handling.
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
-
-import 'tool.dart';
 
 /// Bash tool input.
 class BashToolInput {
@@ -24,13 +21,13 @@ class BashToolInput {
   });
 
   factory BashToolInput.fromJson(Map<String, dynamic> json) => BashToolInput(
-        command: json['command'] as String,
-        timeoutMs: json['timeout'] as int?,
-        description: json['description'] as String?,
-        runInBackground: json['run_in_background'] as bool? ?? false,
-        dangerouslyDisableSandbox:
-            json['dangerouslyDisableSandbox'] as bool? ?? false,
-      );
+    command: json['command'] as String,
+    timeoutMs: json['timeout'] as int?,
+    description: json['description'] as String?,
+    runInBackground: json['run_in_background'] as bool? ?? false,
+    dangerouslyDisableSandbox:
+        json['dangerouslyDisableSandbox'] as bool? ?? false,
+  );
 }
 
 /// Bash tool output.
@@ -64,19 +61,17 @@ class BashToolOutput {
   });
 
   Map<String, dynamic> toJson() => {
-        'stdout': stdout,
-        'stderr': stderr,
-        'exitCode': exitCode,
-        if (interrupted) 'interrupted': true,
-        if (isImage) 'isImage': true,
-        if (backgroundTaskId != null) 'backgroundTaskId': backgroundTaskId,
-        if (returnCodeInterpretation != null)
-          'returnCodeInterpretation': returnCodeInterpretation,
-        if (persistedOutputPath != null)
-          'persistedOutputPath': persistedOutputPath,
-        if (persistedOutputSize != null)
-          'persistedOutputSize': persistedOutputSize,
-      };
+    'stdout': stdout,
+    'stderr': stderr,
+    'exitCode': exitCode,
+    if (interrupted) 'interrupted': true,
+    if (isImage) 'isImage': true,
+    if (backgroundTaskId != null) 'backgroundTaskId': backgroundTaskId,
+    if (returnCodeInterpretation != null)
+      'returnCodeInterpretation': returnCodeInterpretation,
+    if (persistedOutputPath != null) 'persistedOutputPath': persistedOutputPath,
+    if (persistedOutputSize != null) 'persistedOutputSize': persistedOutputSize,
+  };
 }
 
 /// Semantic exit code interpretation.
@@ -86,8 +81,10 @@ String? interpretExitCode(String command, int exitCode) {
   final baseCmd = command.trim().split(RegExp(r'\s+')).first;
 
   return switch (baseCmd) {
-    'grep' || 'rg' || 'ag' || 'ack' when exitCode == 1 =>
-      'No matches found (not an error)',
+    'grep' ||
+    'rg' ||
+    'ag' ||
+    'ack' when exitCode == 1 => 'No matches found (not an error)',
     'find' || 'fd' when exitCode == 1 =>
       'Partial results (some directories inaccessible)',
     'diff' when exitCode == 1 => 'Differences found (not an error)',
@@ -101,8 +98,20 @@ String? interpretExitCode(String command, int exitCode) {
 
 /// Commands that are expected to produce no output.
 const _silentCommands = {
-  'mv', 'cp', 'rm', 'mkdir', 'rmdir', 'chmod', 'chown',
-  'touch', 'ln', 'cd', 'export', 'unset', 'source', '.',
+  'mv',
+  'cp',
+  'rm',
+  'mkdir',
+  'rmdir',
+  'chmod',
+  'chown',
+  'touch',
+  'ln',
+  'cd',
+  'export',
+  'unset',
+  'source',
+  '.',
 };
 
 /// Check if a command is expected to be silent.
@@ -114,13 +123,37 @@ bool isSilentCommand(String command) {
 /// Search/read/list classification for UI display.
 ({bool isSearch, bool isRead, bool isList}) classifyCommand(String command) {
   const searchCmds = {
-    'find', 'grep', 'rg', 'ag', 'ack', 'locate', 'which', 'whereis',
-    'fd', 'fzf',
+    'find',
+    'grep',
+    'rg',
+    'ag',
+    'ack',
+    'locate',
+    'which',
+    'whereis',
+    'fd',
+    'fzf',
   };
   const readCmds = {
-    'cat', 'head', 'tail', 'less', 'more', 'wc', 'stat', 'file',
-    'strings', 'jq', 'yq', 'awk', 'cut', 'sort', 'uniq', 'tr',
-    'xxd', 'hexdump', 'od',
+    'cat',
+    'head',
+    'tail',
+    'less',
+    'more',
+    'wc',
+    'stat',
+    'file',
+    'strings',
+    'jq',
+    'yq',
+    'awk',
+    'cut',
+    'sort',
+    'uniq',
+    'tr',
+    'xxd',
+    'hexdump',
+    'od',
   };
   const listCmds = {'ls', 'tree', 'du', 'df', 'lsof', 'lsblk'};
 
@@ -176,18 +209,26 @@ class SecurityCheckResult {
 
 /// Dangerous zsh builtins.
 const _dangerousZshBuiltins = {
-  'zmodload', 'emulate', 'sysopen', 'sysread', 'syswrite', 'sysseek',
-  'zpty', 'ztcp', 'zsocket', 'mapfile',
+  'zmodload',
+  'emulate',
+  'sysopen',
+  'sysread',
+  'syswrite',
+  'sysseek',
+  'zpty',
+  'ztcp',
+  'zsocket',
+  'mapfile',
 };
 
 /// Patterns for command substitution.
 final _commandSubstitutionPattern = RegExp(
-  r'\$\('         // $( command substitution
-  r'|\$\['        // $[ legacy arithmetic
-  r'|\$\{'        // ${ parameter expansion
-  r'|<\('         // <( process substitution
-  r'|>\('         // >( process substitution
-  r'|=\('         // =( zsh process substitution
+  r'\$\(' // $( command substitution
+  r'|\$\[' // $[ legacy arithmetic
+  r'|\$\{' // ${ parameter expansion
+  r'|<\(' // <( process substitution
+  r'|>\(' // >( process substitution
+  r'|=\(', // =( zsh process substitution
 );
 
 /// Dangerous git operations.
@@ -231,7 +272,10 @@ SecurityCheckResult validateCommandSecurity(String command) {
   // Check for command substitution patterns
   if (_commandSubstitutionPattern.hasMatch(command)) {
     // Allow $() in single-quoted strings
-    final inSingleQuote = _isInSingleQuotes(command, _commandSubstitutionPattern);
+    final inSingleQuote = _isInSingleQuotes(
+      command,
+      _commandSubstitutionPattern,
+    );
     if (!inSingleQuote) {
       violations.add(
         'Command substitution detected — use explicit commands instead',
@@ -318,15 +362,34 @@ const _dangerousRemovalPaths = {
 
 /// Framework paths that shouldn't be deleted entirely.
 const _protectedFrameworkPaths = {
-  'node_modules', '.git', 'venv', '__pycache__', '.dart_tool',
-  'build', '.gradle', 'target', 'vendor',
+  'node_modules',
+  '.git',
+  'venv',
+  '__pycache__',
+  '.dart_tool',
+  'build',
+  '.gradle',
+  'target',
+  'vendor',
 };
 
 /// Dangerous config files that need extra permission.
 const _dangerousFiles = {
-  '.gitconfig', '.gitmodules', '.bashrc', '.bash_profile', '.zshrc',
-  '.zprofile', '.profile', '.ripgreprc', '.mcp.json', '.neomclaw.json',
-  '.npmrc', '.yarnrc', '.env', '.env.local', '.env.production',
+  '.gitconfig',
+  '.gitmodules',
+  '.bashrc',
+  '.bash_profile',
+  '.zshrc',
+  '.zprofile',
+  '.profile',
+  '.ripgreprc',
+  '.mcp.json',
+  '.neomclaw.json',
+  '.npmrc',
+  '.yarnrc',
+  '.env',
+  '.env.local',
+  '.env.production',
 };
 
 /// Check if a command attempts dangerous path operations.
@@ -440,10 +503,7 @@ const _readOnlySafeCommands = {
           );
         }
       } else {
-        return (
-          isSafe: false,
-          reason: '$cmd is not allowed in read-only mode',
-        );
+        return (isSafe: false, reason: '$cmd is not allowed in read-only mode');
       }
     }
 
@@ -613,7 +673,7 @@ Future<BashToolOutput> executeCommand(
   final env = <String, String>{
     ...?options.environment,
     'NEOMCLAWCODE': '1', // Side-channel hint
-    'TERM': 'dumb',    // Disable terminal features
+    'TERM': 'dumb', // Disable terminal features
   };
 
   // 5. Execute
@@ -689,8 +749,7 @@ Future<BashToolOutput> executeCommand(
     final isImage = isImageOutput(stdout);
 
     // Semantic exit code
-    final interpretation =
-        interpretExitCode(input.command, exitCode);
+    final interpretation = interpretExitCode(input.command, exitCode);
 
     // Silent command check
     final noOutput = stdout.trim().isEmpty && isSilentCommand(input.command);
@@ -705,11 +764,7 @@ Future<BashToolOutput> executeCommand(
       noOutputExpected: noOutput,
     );
   } catch (e) {
-    return BashToolOutput(
-      stdout: '',
-      stderr: e.toString(),
-      exitCode: -1,
-    );
+    return BashToolOutput(stdout: '', stderr: e.toString(), exitCode: -1);
   }
 }
 
@@ -775,16 +830,17 @@ class CwdTracker {
     required String initialCwd,
     required String projectRoot,
     bool maintainProjectDir = true,
-  })  : _cwd = initialCwd,
-        _projectRoot = projectRoot,
-        _maintainProjectDir = maintainProjectDir;
+  }) : _cwd = initialCwd,
+       _projectRoot = projectRoot,
+       _maintainProjectDir = maintainProjectDir;
 
   String get cwd => _cwd;
 
   /// Update CWD from command output.
   String? updateCwd(String newCwd) {
     if (_maintainProjectDir && !_isUnderProject(newCwd)) {
-      final reason = 'Shell cwd was reset to $_projectRoot '
+      final reason =
+          'Shell cwd was reset to $_projectRoot '
           '(was: $newCwd, outside project)';
       _cwd = _projectRoot;
       return reason;
@@ -796,8 +852,9 @@ class CwdTracker {
 
   bool _isUnderProject(String path) {
     final normalized = path.endsWith('/') ? path : '$path/';
-    final projectNorm =
-        _projectRoot.endsWith('/') ? _projectRoot : '$_projectRoot/';
+    final projectNorm = _projectRoot.endsWith('/')
+        ? _projectRoot
+        : '$_projectRoot/';
     return normalized.startsWith(projectNorm) || path == _projectRoot;
   }
 }
@@ -830,16 +887,28 @@ String? extractHeredocBaseCommand(String command) {
 // ── Safe Wrapper Stripping ──
 
 /// Safe command prefixes that can be stripped for permission checking.
-const _safeWrappers = {
-  'timeout', 'time', 'nice', 'nohup', 'stdbuf', 'env',
-};
+const _safeWrappers = {'timeout', 'time', 'nice', 'nohup', 'stdbuf', 'env'};
 
 /// Safe environment variables that don't affect security.
 const _safeEnvVars = {
-  'NODE_ENV', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TERM', 'TZ',
-  'FORCE_COLOR', 'NO_COLOR', 'CI', 'DEBIAN_FRONTEND',
-  'PYTHONDONTWRITEBYTECODE', 'GOFLAGS', 'RUSTFLAGS',
-  'HOME', 'PATH', 'SHELL', 'USER', 'LOGNAME',
+  'NODE_ENV',
+  'LANG',
+  'LC_ALL',
+  'LC_CTYPE',
+  'TERM',
+  'TZ',
+  'FORCE_COLOR',
+  'NO_COLOR',
+  'CI',
+  'DEBIAN_FRONTEND',
+  'PYTHONDONTWRITEBYTECODE',
+  'GOFLAGS',
+  'RUSTFLAGS',
+  'HOME',
+  'PATH',
+  'SHELL',
+  'USER',
+  'LOGNAME',
 };
 
 /// Strip safe wrappers and env vars from a command for permission checking.

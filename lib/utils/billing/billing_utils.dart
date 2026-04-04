@@ -6,8 +6,6 @@
 import 'dart:async';
 import 'package:neom_claw/core/platform/claw_io.dart';
 
-import 'package:sint/sint.dart';
-
 // ============================================================================
 // Privacy Level
 // ============================================================================
@@ -22,11 +20,7 @@ import 'package:sint/sint.dart';
 /// - noTelemetry:        Analytics/telemetry disabled.
 /// - essentialTraffic:   ALL nonessential network traffic disabled
 ///                       (telemetry + auto-updates, grove, release notes, etc.).
-enum PrivacyLevel {
-  defaultLevel,
-  noTelemetry,
-  essentialTraffic,
-}
+enum PrivacyLevel { defaultLevel, noTelemetry, essentialTraffic }
 
 /// Get the current privacy level based on environment variables.
 ///
@@ -35,7 +29,8 @@ enum PrivacyLevel {
 ///   DISABLE_TELEMETRY                        -> noTelemetry
 PrivacyLevel getPrivacyLevel() {
   if (Platform.environment.containsKey(
-      'NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC')) {
+    'NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC',
+  )) {
     return PrivacyLevel.essentialTraffic;
   }
   if (Platform.environment.containsKey('DISABLE_TELEMETRY')) {
@@ -61,7 +56,8 @@ bool isTelemetryDisabled() {
 /// "unset X to re-enable" messages.
 String? getEssentialTrafficOnlyReason() {
   if (Platform.environment.containsKey(
-      'NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC')) {
+    'NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC',
+  )) {
     return 'NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC';
   }
   return null;
@@ -198,8 +194,8 @@ typedef FastModeChecker = bool Function();
 typedef UnknownModelCostFlagged = void Function();
 
 /// Callback type for analytics logging.
-typedef AnalyticsLogger = void Function(
-    String eventName, Map<String, dynamic> metadata);
+typedef AnalyticsLogger =
+    void Function(String eventName, Map<String, dynamic> metadata);
 
 // ── Model cost registry ──
 
@@ -382,10 +378,7 @@ class OAuthAccountInfo {
   final String? organizationRole;
   final String? workspaceRole;
 
-  const OAuthAccountInfo({
-    this.organizationRole,
-    this.workspaceRole,
-  });
+  const OAuthAccountInfo({this.organizationRole, this.workspaceRole});
 }
 
 /// Global config relevant to billing.
@@ -511,10 +504,7 @@ bool isBilledAsExtraUsage({
   if (isFastMode) return true;
   if (model == null || !has1mContext(model)) return false;
 
-  final m = model
-      .toLowerCase()
-      .replaceAll(RegExp(r'\[1m\]$'), '')
-      .trim();
+  final m = model.toLowerCase().replaceAll(RegExp(r'\[1m\]$'), '').trim();
   final isOpus46 = m == 'opus' || m.contains('opus-4-6');
   final isSonnet46 = m == 'sonnet' || m.contains('sonnet-4-6');
 
@@ -532,10 +522,7 @@ class AttributionTexts {
   final String commit;
   final String pr;
 
-  const AttributionTexts({
-    required this.commit,
-    required this.pr,
-  });
+  const AttributionTexts({required this.commit, required this.pr});
 }
 
 /// Attribution data summary.
@@ -574,10 +561,7 @@ class AttributionSettings {
   final AttributionSettingOverride? attribution;
   final bool? includeCoAuthoredBy;
 
-  const AttributionSettings({
-    this.attribution,
-    this.includeCoAuthoredBy,
-  });
+  const AttributionSettings({this.attribution, this.includeCoAuthoredBy});
 }
 
 /// Custom attribution overrides from settings.
@@ -669,8 +653,9 @@ int countUserPromptsInMessages(List<PromptCountMessage> messages) {
 /// Count non-sidechain user messages in transcript entries.
 /// Used to calculate the number of "steers" (user prompts - 1).
 int countUserPromptsFromEntries(List<PromptCountMessage> entries) {
-  final nonSidechain =
-      entries.where((entry) => entry.type == 'user' && !entry.isSidechain);
+  final nonSidechain = entries.where(
+    (entry) => entry.type == 'user' && !entry.isSidechain,
+  );
   return countUserPromptsInMessages(nonSidechain.toList());
 }
 
@@ -688,15 +673,11 @@ class TranscriptEntry {
   final String type;
   final List<Map<String, dynamic>>? contentBlocks;
 
-  const TranscriptEntry({
-    required this.type,
-    this.contentBlocks,
-  });
+  const TranscriptEntry({required this.type, this.contentBlocks});
 }
 
 /// Callback type for checking if a tool invocation accesses a memory file.
-typedef MemoryFileAccessChecker = bool Function(
-    String toolName, dynamic input);
+typedef MemoryFileAccessChecker = bool Function(String toolName, dynamic input);
 
 /// Count memory file accesses in transcript entries.
 /// Uses the same detection conditions as the PostToolUse session file access
@@ -778,7 +759,7 @@ AttributionTexts getAttributionTexts({
       ? getPublicModelName(model)
       : 'NeomClaw Opus 4.6';
   const defaultAttribution =
-      'Generated with [OpenNeomClaw](https://github.com/Gitlawb/openneomclaw)';
+      'Generated with [NeomClaw](https://github.com/Open-Neom/neom_claw)';
   final defaultCommit = isDisableCoAuthoredBy()
       ? ''
       : 'Co-Authored-By: $modelName <noreply@anthropic.com>';
@@ -809,8 +790,10 @@ AttributionTexts getAttributionTexts({
 Future<AttributionData?> getPrAttributionData(
   AttributionAppState appState, {
   required Future<AttributionData?> Function(
-          List<AttributionState>, List<String>)
-      calculateCommitAttribution,
+    List<AttributionState>,
+    List<String>,
+  )
+  calculateCommitAttribution,
 }) async {
   final attribution = appState.attribution;
   if (attribution == null) {
@@ -854,7 +837,7 @@ Future<String> getEnhancedPrAttribution({
   required String Function(String) sanitizeModelName,
   required Future<bool> Function() isInternalModelRepo,
   required Future<AttributionData?> Function(AttributionAppState)
-      getAttributionData,
+  getAttributionData,
   required Future<TranscriptStats> Function() getTranscriptStats,
 }) async {
   if (userType == 'ant' && isUndercover()) {
@@ -883,7 +866,7 @@ Future<String> getEnhancedPrAttribution({
   }
 
   const defaultAttribution =
-      'Generated with [OpenNeomClaw](https://github.com/Gitlawb/openneomclaw)';
+      'Generated with [NeomClaw](https://github.com/Open-Neom/neom_claw)';
 
   // Get AppState.
   final appState = getAppState();
@@ -905,8 +888,9 @@ Future<String> getEnhancedPrAttribution({
 
   // Get short model name, sanitized for non-internal repos.
   final rawModelName = getCanonicalName(getMainLoopModel());
-  final shortModelName =
-      isInternal ? rawModelName : sanitizeModelName(rawModelName);
+  final shortModelName = isInternal
+      ? rawModelName
+      : sanitizeModelName(rawModelName);
 
   // If no attribution data, return default.
   if (neomClawPercent == 0 && promptCount == 0 && memoryAccessCount == 0) {
@@ -918,7 +902,7 @@ Future<String> getEnhancedPrAttribution({
       ? ', $memoryAccessCount ${memoryAccessCount == 1 ? 'memory' : 'memories'} recalled'
       : '';
   final summary =
-      'Generated with [OpenNeomClaw](https://github.com/Gitlawb/openneomclaw) '
+      'Generated with [NeomClaw](https://github.com/Open-Neom/neom_claw) '
       '($neomClawPercent% $promptCount-shotted by $shortModelName$memSuffix)';
 
   return summary;

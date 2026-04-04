@@ -48,7 +48,7 @@ class SessionLifecycle {
 class ConversationLifecycle {
   /// Fired when a new conversation begins.
   final Future<void> Function(ConversationStartedEvent event)?
-      onConversationStart;
+  onConversationStart;
 
   /// Fired at the beginning of each user turn.
   final Future<void> Function(TurnStartedEvent event)? onTurnStart;
@@ -57,8 +57,7 @@ class ConversationLifecycle {
   final Future<void> Function(TurnEndedEvent event)? onTurnEnd;
 
   /// Fired when the conversation ends.
-  final Future<void> Function(ConversationEndedEvent event)?
-      onConversationEnd;
+  final Future<void> Function(ConversationEndedEvent event)? onConversationEnd;
 
   /// Fired when context compaction occurs (message history trimming).
   final Future<void> Function(CompactionEvent event)? onCompaction;
@@ -87,19 +86,18 @@ class ToolLifecycle {
   ///
   /// If the returned map is non-null, it replaces the original tool input.
   final Future<Map<String, dynamic>?> Function(ToolBeforeExecutionEvent event)?
-      onToolBeforeExecution;
+  onToolBeforeExecution;
 
   /// Fired after a tool executes successfully. Can return modified output.
   ///
   /// If the returned string is non-null, it replaces the original output.
   final Future<String?> Function(ToolAfterExecutionEvent event)?
-      onToolAfterExecution;
+  onToolAfterExecution;
 
   /// Fired when a tool encounters an error. Can return a recovery action.
   ///
   /// The returned [ToolRecoveryAction] tells the system how to proceed.
-  final Future<ToolRecoveryAction> Function(ToolErrorEvent event)?
-      onToolError;
+  final Future<ToolRecoveryAction> Function(ToolErrorEvent event)? onToolError;
 
   /// Fired when a tool execution times out.
   final Future<void> Function(ToolTimeoutEvent event)? onToolTimeout;
@@ -663,516 +661,544 @@ class LifecycleManager {
   /// Register session lifecycle callbacks.
   void registerSession(SessionLifecycle lifecycle) {
     if (lifecycle.onSessionStart != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:session:start',
-        type: HookType.onSessionStart,
-        priority: HookPriority.normal,
-        name: 'Session Start Lifecycle',
-        source: 'lifecycle',
-        asyncHandler: (context) async {
-          final event = SessionStartedEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            workingDirectory:
-                context.metadata['workingDirectory'] as String?,
-            profile: context.metadata['profile'] as String?,
-            isResume: context.metadata['isResume'] as bool? ?? false,
-          );
-          await lifecycle.onSessionStart!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:session:start',
+          type: HookType.onSessionStart,
+          priority: HookPriority.normal,
+          name: 'Session Start Lifecycle',
+          source: 'lifecycle',
+          asyncHandler: (context) async {
+            final event = SessionStartedEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              workingDirectory: context.metadata['workingDirectory'] as String?,
+              profile: context.metadata['profile'] as String?,
+              isResume: context.metadata['isResume'] as bool? ?? false,
+            );
+            await lifecycle.onSessionStart!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onSessionEnd != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:session:end',
-        type: HookType.onSessionEnd,
-        priority: HookPriority.normal,
-        name: 'Session End Lifecycle',
-        source: 'lifecycle',
-        asyncHandler: (context) async {
-          final event = SessionEndedEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            reason: context.metadata['reason'] as String? ?? 'unknown',
-            duration: context.metadata['duration'] as Duration? ??
-                Duration.zero,
-            totalTokens:
-                context.metadata['totalTokens'] as int? ?? 0,
-            estimatedCost:
-                context.metadata['estimatedCost'] as double? ?? 0.0,
-          );
-          await lifecycle.onSessionEnd!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:session:end',
+          type: HookType.onSessionEnd,
+          priority: HookPriority.normal,
+          name: 'Session End Lifecycle',
+          source: 'lifecycle',
+          asyncHandler: (context) async {
+            final event = SessionEndedEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              reason: context.metadata['reason'] as String? ?? 'unknown',
+              duration:
+                  context.metadata['duration'] as Duration? ?? Duration.zero,
+              totalTokens: context.metadata['totalTokens'] as int? ?? 0,
+              estimatedCost:
+                  context.metadata['estimatedCost'] as double? ?? 0.0,
+            );
+            await lifecycle.onSessionEnd!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onSessionPause != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:session:pause',
-        type: HookType.onSessionEnd, // Reuse session-end with metadata flag
-        priority: HookPriority.normal,
-        name: 'Session Pause Lifecycle',
-        source: 'lifecycle',
-        matcher: (context) => context.metadata['isPause'] == true,
-        asyncHandler: (context) async {
-          final event = SessionPausedEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            reason: context.metadata['reason'] as String?,
-          );
-          await lifecycle.onSessionPause!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:session:pause',
+          type: HookType.onSessionEnd, // Reuse session-end with metadata flag
+          priority: HookPriority.normal,
+          name: 'Session Pause Lifecycle',
+          source: 'lifecycle',
+          matcher: (context) => context.metadata['isPause'] == true,
+          asyncHandler: (context) async {
+            final event = SessionPausedEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              reason: context.metadata['reason'] as String?,
+            );
+            await lifecycle.onSessionPause!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onSessionResume != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:session:resume',
-        type: HookType.onSessionStart, // Reuse with metadata flag
-        priority: HookPriority.normal,
-        name: 'Session Resume Lifecycle',
-        source: 'lifecycle',
-        matcher: (context) => context.metadata['isResume'] == true,
-        asyncHandler: (context) async {
-          final event = SessionResumedEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            pauseDuration: context.metadata['pauseDuration'] as Duration? ??
-                Duration.zero,
-          );
-          await lifecycle.onSessionResume!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:session:resume',
+          type: HookType.onSessionStart, // Reuse with metadata flag
+          priority: HookPriority.normal,
+          name: 'Session Resume Lifecycle',
+          source: 'lifecycle',
+          matcher: (context) => context.metadata['isResume'] == true,
+          asyncHandler: (context) async {
+            final event = SessionResumedEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              pauseDuration:
+                  context.metadata['pauseDuration'] as Duration? ??
+                  Duration.zero,
+            );
+            await lifecycle.onSessionResume!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
   }
 
   /// Register conversation lifecycle callbacks.
   void registerConversation(ConversationLifecycle lifecycle) {
     if (lifecycle.onConversationStart != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:conversation:start',
-        type: HookType.onConversationStart,
-        priority: HookPriority.normal,
-        name: 'Conversation Start Lifecycle',
-        source: 'lifecycle',
-        asyncHandler: (context) async {
-          final event = ConversationStartedEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            conversationId:
-                context.metadata['conversationId'] as String? ?? '',
-            isContinuation:
-                context.metadata['isContinuation'] as bool? ?? false,
-          );
-          await lifecycle.onConversationStart!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:conversation:start',
+          type: HookType.onConversationStart,
+          priority: HookPriority.normal,
+          name: 'Conversation Start Lifecycle',
+          source: 'lifecycle',
+          asyncHandler: (context) async {
+            final event = ConversationStartedEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              conversationId:
+                  context.metadata['conversationId'] as String? ?? '',
+              isContinuation:
+                  context.metadata['isContinuation'] as bool? ?? false,
+            );
+            await lifecycle.onConversationStart!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onTurnStart != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:turn:start',
-        type: HookType.preMessage,
-        priority: HookPriority.normal,
-        name: 'Turn Start Lifecycle',
-        source: 'lifecycle',
-        matcher: (context) =>
-            context is MessageHookContext && context.role == 'user',
-        asyncHandler: (context) async {
-          final event = TurnStartedEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            turnIndex: context.turnIndex ?? 0,
-            userMessage: context is MessageHookContext
-                ? context.content
-                : '',
-          );
-          await lifecycle.onTurnStart!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:turn:start',
+          type: HookType.preMessage,
+          priority: HookPriority.normal,
+          name: 'Turn Start Lifecycle',
+          source: 'lifecycle',
+          matcher: (context) =>
+              context is MessageHookContext && context.role == 'user',
+          asyncHandler: (context) async {
+            final event = TurnStartedEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              turnIndex: context.turnIndex ?? 0,
+              userMessage: context is MessageHookContext ? context.content : '',
+            );
+            await lifecycle.onTurnStart!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onTurnEnd != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:turn:end',
-        type: HookType.postMessage,
-        priority: HookPriority.normal,
-        name: 'Turn End Lifecycle',
-        source: 'lifecycle',
-        matcher: (context) =>
-            context is MessageHookContext && context.role == 'assistant',
-        asyncHandler: (context) async {
-          final event = TurnEndedEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            turnIndex: context.turnIndex ?? 0,
-            tokensUsed: context.metadata['tokensUsed'] as int? ?? 0,
-            toolInvocations:
-                context.metadata['toolInvocations'] as int? ?? 0,
-            duration: context.metadata['turnDuration'] as Duration? ??
-                Duration.zero,
-          );
-          await lifecycle.onTurnEnd!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:turn:end',
+          type: HookType.postMessage,
+          priority: HookPriority.normal,
+          name: 'Turn End Lifecycle',
+          source: 'lifecycle',
+          matcher: (context) =>
+              context is MessageHookContext && context.role == 'assistant',
+          asyncHandler: (context) async {
+            final event = TurnEndedEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              turnIndex: context.turnIndex ?? 0,
+              tokensUsed: context.metadata['tokensUsed'] as int? ?? 0,
+              toolInvocations: context.metadata['toolInvocations'] as int? ?? 0,
+              duration:
+                  context.metadata['turnDuration'] as Duration? ??
+                  Duration.zero,
+            );
+            await lifecycle.onTurnEnd!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onConversationEnd != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:conversation:end',
-        type: HookType.onConversationEnd,
-        priority: HookPriority.normal,
-        name: 'Conversation End Lifecycle',
-        source: 'lifecycle',
-        asyncHandler: (context) async {
-          final event = ConversationEndedEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            conversationId:
-                context.metadata['conversationId'] as String? ?? '',
-            turnCount: context.metadata['turnCount'] as int? ?? 0,
-            totalTokens: context.metadata['totalTokens'] as int? ?? 0,
-          );
-          await lifecycle.onConversationEnd!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:conversation:end',
+          type: HookType.onConversationEnd,
+          priority: HookPriority.normal,
+          name: 'Conversation End Lifecycle',
+          source: 'lifecycle',
+          asyncHandler: (context) async {
+            final event = ConversationEndedEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              conversationId:
+                  context.metadata['conversationId'] as String? ?? '',
+              turnCount: context.metadata['turnCount'] as int? ?? 0,
+              totalTokens: context.metadata['totalTokens'] as int? ?? 0,
+            );
+            await lifecycle.onConversationEnd!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onCompaction != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:compaction',
-        type: HookType.onCompaction,
-        priority: HookPriority.normal,
-        name: 'Compaction Lifecycle',
-        source: 'lifecycle',
-        asyncHandler: (context) async {
-          final event = CompactionEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            messagesBefore:
-                context.metadata['messagesBefore'] as int? ?? 0,
-            messagesAfter:
-                context.metadata['messagesAfter'] as int? ?? 0,
-            tokensBefore:
-                context.metadata['tokensBefore'] as int? ?? 0,
-            tokensAfter:
-                context.metadata['tokensAfter'] as int? ?? 0,
-          );
-          await lifecycle.onCompaction!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:compaction',
+          type: HookType.onCompaction,
+          priority: HookPriority.normal,
+          name: 'Compaction Lifecycle',
+          source: 'lifecycle',
+          asyncHandler: (context) async {
+            final event = CompactionEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              messagesBefore: context.metadata['messagesBefore'] as int? ?? 0,
+              messagesAfter: context.metadata['messagesAfter'] as int? ?? 0,
+              tokensBefore: context.metadata['tokensBefore'] as int? ?? 0,
+              tokensAfter: context.metadata['tokensAfter'] as int? ?? 0,
+            );
+            await lifecycle.onCompaction!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
   }
 
   /// Register tool lifecycle callbacks.
   void registerTool(ToolLifecycle lifecycle) {
     if (lifecycle.onToolRegistered != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:tool:registered',
-        type: HookType.onToolRegistration,
-        priority: HookPriority.normal,
-        name: 'Tool Registered Lifecycle',
-        source: 'lifecycle',
-        asyncHandler: (context) async {
-          final event = ToolRegisteredEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            toolName: context.metadata['toolName'] as String? ?? '',
-            source: context.metadata['source'] as String? ?? 'unknown',
-          );
-          await lifecycle.onToolRegistered!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:tool:registered',
+          type: HookType.onToolRegistration,
+          priority: HookPriority.normal,
+          name: 'Tool Registered Lifecycle',
+          source: 'lifecycle',
+          asyncHandler: (context) async {
+            final event = ToolRegisteredEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              toolName: context.metadata['toolName'] as String? ?? '',
+              source: context.metadata['source'] as String? ?? 'unknown',
+            );
+            await lifecycle.onToolRegistered!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onToolBeforeExecution != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:tool:before',
-        type: HookType.preToolExecution,
-        priority: HookPriority.normal,
-        name: 'Tool Before Execution Lifecycle',
-        source: 'lifecycle',
-        asyncHandler: (context) async {
-          if (context is! ToolHookContext) return const HookContinue();
-          final event = ToolBeforeExecutionEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            toolName: context.toolName,
-            input: context.toolInput,
-          );
-          final modifiedInput =
-              await lifecycle.onToolBeforeExecution!(event);
-          _emitEvent(event);
-          if (modifiedInput != null) {
-            return HookTransform(modifiedInput);
-          }
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:tool:before',
+          type: HookType.preToolExecution,
+          priority: HookPriority.normal,
+          name: 'Tool Before Execution Lifecycle',
+          source: 'lifecycle',
+          asyncHandler: (context) async {
+            if (context is! ToolHookContext) return const HookContinue();
+            final event = ToolBeforeExecutionEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              toolName: context.toolName,
+              input: context.toolInput,
+            );
+            final modifiedInput = await lifecycle.onToolBeforeExecution!(event);
+            _emitEvent(event);
+            if (modifiedInput != null) {
+              return HookTransform(modifiedInput);
+            }
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onToolAfterExecution != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:tool:after',
-        type: HookType.postToolExecution,
-        priority: HookPriority.normal,
-        name: 'Tool After Execution Lifecycle',
-        source: 'lifecycle',
-        asyncHandler: (context) async {
-          if (context is! ToolHookContext) return const HookContinue();
-          final event = ToolAfterExecutionEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            toolName: context.toolName,
-            input: context.toolInput,
-            output: context.toolOutput ?? '',
-            isError: context.toolIsError ?? false,
-            executionDuration:
-                context.executionDuration ?? Duration.zero,
-          );
-          final modifiedOutput =
-              await lifecycle.onToolAfterExecution!(event);
-          _emitEvent(event);
-          if (modifiedOutput != null) {
-            return HookTransform({'output': modifiedOutput});
-          }
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:tool:after',
+          type: HookType.postToolExecution,
+          priority: HookPriority.normal,
+          name: 'Tool After Execution Lifecycle',
+          source: 'lifecycle',
+          asyncHandler: (context) async {
+            if (context is! ToolHookContext) return const HookContinue();
+            final event = ToolAfterExecutionEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              toolName: context.toolName,
+              input: context.toolInput,
+              output: context.toolOutput ?? '',
+              isError: context.toolIsError ?? false,
+              executionDuration: context.executionDuration ?? Duration.zero,
+            );
+            final modifiedOutput = await lifecycle.onToolAfterExecution!(event);
+            _emitEvent(event);
+            if (modifiedOutput != null) {
+              return HookTransform({'output': modifiedOutput});
+            }
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onToolError != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:tool:error',
-        type: HookType.onError,
-        priority: HookPriority.normal,
-        name: 'Tool Error Lifecycle',
-        source: 'lifecycle',
-        matcher: (context) =>
-            context is ErrorHookContext && context.source == 'tool',
-        asyncHandler: (context) async {
-          if (context is! ErrorHookContext) return const HookContinue();
-          final event = ToolErrorEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            toolName: context.metadata['toolName'] as String? ?? '',
-            input: context.metadata['toolInput'] as Map<String, dynamic>? ??
-                {},
-            error: context.error,
-            stackTrace: context.stackTrace,
-          );
-          final action = await lifecycle.onToolError!(event);
-          _emitEvent(event);
-          return switch (action) {
-            ToolRecoveryAction.propagate => const HookContinue(),
-            ToolRecoveryAction.retry =>
-              const HookRetry(Duration(seconds: 1)),
-            ToolRecoveryAction.retryWithModifiedInput =>
-              const HookRetry(Duration(seconds: 1)),
-            ToolRecoveryAction.suppress => const HookSkip('Error suppressed'),
-            ToolRecoveryAction.abortTurn =>
-              const HookAbort('Turn aborted due to tool error'),
-          };
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:tool:error',
+          type: HookType.onError,
+          priority: HookPriority.normal,
+          name: 'Tool Error Lifecycle',
+          source: 'lifecycle',
+          matcher: (context) =>
+              context is ErrorHookContext && context.source == 'tool',
+          asyncHandler: (context) async {
+            if (context is! ErrorHookContext) return const HookContinue();
+            final event = ToolErrorEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              toolName: context.metadata['toolName'] as String? ?? '',
+              input:
+                  context.metadata['toolInput'] as Map<String, dynamic>? ?? {},
+              error: context.error,
+              stackTrace: context.stackTrace,
+            );
+            final action = await lifecycle.onToolError!(event);
+            _emitEvent(event);
+            return switch (action) {
+              ToolRecoveryAction.propagate => const HookContinue(),
+              ToolRecoveryAction.retry => const HookRetry(Duration(seconds: 1)),
+              ToolRecoveryAction.retryWithModifiedInput => const HookRetry(
+                Duration(seconds: 1),
+              ),
+              ToolRecoveryAction.suppress => const HookSkip('Error suppressed'),
+              ToolRecoveryAction.abortTurn => const HookAbort(
+                'Turn aborted due to tool error',
+              ),
+            };
+          },
+        ),
+      );
     }
 
     if (lifecycle.onToolTimeout != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:tool:timeout',
-        type: HookType.onError,
-        priority: HookPriority.normal,
-        name: 'Tool Timeout Lifecycle',
-        source: 'lifecycle',
-        matcher: (context) =>
-            context is ErrorHookContext &&
-            context.errorCategory == 'timeout' &&
-            context.source == 'tool',
-        asyncHandler: (context) async {
-          if (context is! ErrorHookContext) return const HookContinue();
-          final event = ToolTimeoutEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            toolName: context.metadata['toolName'] as String? ?? '',
-            input: context.metadata['toolInput'] as Map<String, dynamic>? ??
-                {},
-            timeoutDuration:
-                context.metadata['timeout'] as Duration? ??
-                    const Duration(seconds: 30),
-          );
-          await lifecycle.onToolTimeout!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:tool:timeout',
+          type: HookType.onError,
+          priority: HookPriority.normal,
+          name: 'Tool Timeout Lifecycle',
+          source: 'lifecycle',
+          matcher: (context) =>
+              context is ErrorHookContext &&
+              context.errorCategory == 'timeout' &&
+              context.source == 'tool',
+          asyncHandler: (context) async {
+            if (context is! ErrorHookContext) return const HookContinue();
+            final event = ToolTimeoutEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              toolName: context.metadata['toolName'] as String? ?? '',
+              input:
+                  context.metadata['toolInput'] as Map<String, dynamic>? ?? {},
+              timeoutDuration:
+                  context.metadata['timeout'] as Duration? ??
+                  const Duration(seconds: 30),
+            );
+            await lifecycle.onToolTimeout!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
   }
 
   /// Register agent lifecycle callbacks.
   void registerAgent(AgentLifecycle lifecycle) {
     if (lifecycle.onAgentSpawned != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:agent:spawned',
-        type: HookType.onAgentSpawn,
-        priority: HookPriority.normal,
-        name: 'Agent Spawned Lifecycle',
-        source: 'lifecycle',
-        asyncHandler: (context) async {
-          final event = AgentSpawnedEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            agentId: context.metadata['agentId'] as String? ?? '',
-            task: context.metadata['task'] as String? ?? '',
-            parentId: context.metadata['parentId'] as String?,
-          );
-          await lifecycle.onAgentSpawned!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:agent:spawned',
+          type: HookType.onAgentSpawn,
+          priority: HookPriority.normal,
+          name: 'Agent Spawned Lifecycle',
+          source: 'lifecycle',
+          asyncHandler: (context) async {
+            final event = AgentSpawnedEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              agentId: context.metadata['agentId'] as String? ?? '',
+              task: context.metadata['task'] as String? ?? '',
+              parentId: context.metadata['parentId'] as String?,
+            );
+            await lifecycle.onAgentSpawned!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onAgentMessage != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:agent:message',
-        type: HookType.onFork, // Reuse fork hook for agent messages
-        priority: HookPriority.normal,
-        name: 'Agent Message Lifecycle',
-        source: 'lifecycle',
-        matcher: (context) =>
-            context.metadata['eventType'] == 'agentMessage',
-        asyncHandler: (context) async {
-          final event = AgentMessageEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            agentId: context.metadata['agentId'] as String? ?? '',
-            message: context.metadata['message'] as String? ?? '',
-            messageType:
-                context.metadata['messageType'] as String? ?? 'progress',
-          );
-          await lifecycle.onAgentMessage!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:agent:message',
+          type: HookType.onFork, // Reuse fork hook for agent messages
+          priority: HookPriority.normal,
+          name: 'Agent Message Lifecycle',
+          source: 'lifecycle',
+          matcher: (context) => context.metadata['eventType'] == 'agentMessage',
+          asyncHandler: (context) async {
+            final event = AgentMessageEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              agentId: context.metadata['agentId'] as String? ?? '',
+              message: context.metadata['message'] as String? ?? '',
+              messageType:
+                  context.metadata['messageType'] as String? ?? 'progress',
+            );
+            await lifecycle.onAgentMessage!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onAgentCompleted != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:agent:completed',
-        type: HookType.onAgentComplete,
-        priority: HookPriority.normal,
-        name: 'Agent Completed Lifecycle',
-        source: 'lifecycle',
-        asyncHandler: (context) async {
-          final event = AgentCompletedEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            agentId: context.metadata['agentId'] as String? ?? '',
-            result: context.metadata['result'] as String? ?? '',
-            duration: context.metadata['duration'] as Duration? ??
-                Duration.zero,
-            tokensUsed: context.metadata['tokensUsed'] as int? ?? 0,
-          );
-          await lifecycle.onAgentCompleted!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:agent:completed',
+          type: HookType.onAgentComplete,
+          priority: HookPriority.normal,
+          name: 'Agent Completed Lifecycle',
+          source: 'lifecycle',
+          asyncHandler: (context) async {
+            final event = AgentCompletedEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              agentId: context.metadata['agentId'] as String? ?? '',
+              result: context.metadata['result'] as String? ?? '',
+              duration:
+                  context.metadata['duration'] as Duration? ?? Duration.zero,
+              tokensUsed: context.metadata['tokensUsed'] as int? ?? 0,
+            );
+            await lifecycle.onAgentCompleted!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onAgentError != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:agent:error',
-        type: HookType.onError,
-        priority: HookPriority.normal,
-        name: 'Agent Error Lifecycle',
-        source: 'lifecycle',
-        matcher: (context) =>
-            context is ErrorHookContext && context.source == 'agent',
-        asyncHandler: (context) async {
-          if (context is! ErrorHookContext) return const HookContinue();
-          final event = AgentErrorEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            agentId: context.metadata['agentId'] as String? ?? '',
-            error: context.error,
-            stackTrace: context.stackTrace,
-            recoverable: context.recoverable,
-          );
-          await lifecycle.onAgentError!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:agent:error',
+          type: HookType.onError,
+          priority: HookPriority.normal,
+          name: 'Agent Error Lifecycle',
+          source: 'lifecycle',
+          matcher: (context) =>
+              context is ErrorHookContext && context.source == 'agent',
+          asyncHandler: (context) async {
+            if (context is! ErrorHookContext) return const HookContinue();
+            final event = AgentErrorEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              agentId: context.metadata['agentId'] as String? ?? '',
+              error: context.error,
+              stackTrace: context.stackTrace,
+              recoverable: context.recoverable,
+            );
+            await lifecycle.onAgentError!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
 
     if (lifecycle.onAgentTimeout != null) {
-      _register(HookRegistration(
-        id: 'lifecycle:agent:timeout',
-        type: HookType.onError,
-        priority: HookPriority.normal,
-        name: 'Agent Timeout Lifecycle',
-        source: 'lifecycle',
-        matcher: (context) =>
-            context is ErrorHookContext &&
-            context.errorCategory == 'timeout' &&
-            context.source == 'agent',
-        asyncHandler: (context) async {
-          if (context is! ErrorHookContext) return const HookContinue();
-          final event = AgentTimeoutEvent(
-            timestamp: context.timestamp,
-            sessionId: context.sessionId,
-            metadata: context.metadata,
-            agentId: context.metadata['agentId'] as String? ?? '',
-            timeoutDuration:
-                context.metadata['timeout'] as Duration? ??
-                    const Duration(minutes: 5),
-          );
-          await lifecycle.onAgentTimeout!(event);
-          _emitEvent(event);
-          return const HookContinue();
-        },
-      ));
+      _register(
+        HookRegistration(
+          id: 'lifecycle:agent:timeout',
+          type: HookType.onError,
+          priority: HookPriority.normal,
+          name: 'Agent Timeout Lifecycle',
+          source: 'lifecycle',
+          matcher: (context) =>
+              context is ErrorHookContext &&
+              context.errorCategory == 'timeout' &&
+              context.source == 'agent',
+          asyncHandler: (context) async {
+            if (context is! ErrorHookContext) return const HookContinue();
+            final event = AgentTimeoutEvent(
+              timestamp: context.timestamp,
+              sessionId: context.sessionId,
+              metadata: context.metadata,
+              agentId: context.metadata['agentId'] as String? ?? '',
+              timeoutDuration:
+                  context.metadata['timeout'] as Duration? ??
+                  const Duration(minutes: 5),
+            );
+            await lifecycle.onAgentTimeout!(event);
+            _emitEvent(event);
+            return const HookContinue();
+          },
+        ),
+      );
     }
   }
 
@@ -1237,18 +1263,19 @@ class BuiltInLifecycleHooks {
       int totalInputTokens,
       int totalOutputTokens,
       double estimatedCost,
-    ) onCostUpdate,
+    )
+    onCostUpdate,
     double inputTokenCost = 0.000003,
     double outputTokenCost = 0.000015,
   }) {
     var totalInput = 0;
     var totalOutput = 0;
     var totalCost = 0.0;
-    DateTime? sessionStart;
+    DateTime? _sessionStart;
 
     return SessionLifecycle(
       onSessionStart: (event) async {
-        sessionStart = event.timestamp;
+        _sessionStart = event.timestamp;
         totalInput = 0;
         totalOutput = 0;
         totalCost = 0.0;
@@ -1268,30 +1295,40 @@ class BuiltInLifecycleHooks {
   }) {
     return ConversationLifecycle(
       onConversationStart: (event) async {
-        log('[${event.timestamp.toIso8601String()}] '
-            'Conversation started: ${event.conversationId}');
+        log(
+          '[${event.timestamp.toIso8601String()}] '
+          'Conversation started: ${event.conversationId}',
+        );
       },
       onTurnStart: (event) async {
-        log('[${event.timestamp.toIso8601String()}] '
-            'Turn ${event.turnIndex} started');
+        log(
+          '[${event.timestamp.toIso8601String()}] '
+          'Turn ${event.turnIndex} started',
+        );
       },
       onTurnEnd: (event) async {
-        log('[${event.timestamp.toIso8601String()}] '
-            'Turn ${event.turnIndex} ended '
-            '(tokens: ${event.tokensUsed}, '
-            'tools: ${event.toolInvocations}, '
-            'duration: ${event.duration.inMilliseconds}ms)');
+        log(
+          '[${event.timestamp.toIso8601String()}] '
+          'Turn ${event.turnIndex} ended '
+          '(tokens: ${event.tokensUsed}, '
+          'tools: ${event.toolInvocations}, '
+          'duration: ${event.duration.inMilliseconds}ms)',
+        );
       },
       onConversationEnd: (event) async {
-        log('[${event.timestamp.toIso8601String()}] '
-            'Conversation ended: ${event.conversationId} '
-            '(${event.turnCount} turns, '
-            '${event.totalTokens} tokens)');
+        log(
+          '[${event.timestamp.toIso8601String()}] '
+          'Conversation ended: ${event.conversationId} '
+          '(${event.turnCount} turns, '
+          '${event.totalTokens} tokens)',
+        );
       },
       onCompaction: (event) async {
-        log('[${event.timestamp.toIso8601String()}] '
-            'Compaction: ${event.messagesRemoved} messages removed, '
-            '${event.tokensSaved} tokens saved');
+        log(
+          '[${event.timestamp.toIso8601String()}] '
+          'Compaction: ${event.messagesRemoved} messages removed, '
+          '${event.tokensSaved} tokens saved',
+        );
       },
     );
   }
@@ -1309,7 +1346,8 @@ class BuiltInLifecycleHooks {
         final tool = event.toolName.toLowerCase();
         if (tool != 'write' && tool != 'edit') return null;
 
-        final path = event.input['file_path'] as String? ??
+        final path =
+            event.input['file_path'] as String? ??
             event.input['path'] as String?;
         if (path == null) return null;
 
@@ -1359,9 +1397,7 @@ class BuiltInLifecycleHooks {
                 return null;
               }
             }
-            onWarning?.call(
-              'Destructive git operation detected: $command',
-            );
+            onWarning?.call('Destructive git operation detected: $command');
           }
         }
         return null;
@@ -1380,8 +1416,10 @@ class BuiltInLifecycleHooks {
       RegExp(r'(?:api[_-]?key|apikey)\s*[=:]\s*\S+', caseSensitive: false),
       RegExp(r'(?:password|passwd|pwd)\s*[=:]\s*\S+', caseSensitive: false),
       RegExp(r'(?:secret|token)\s*[=:]\s*\S+', caseSensitive: false),
-      RegExp(r'(?:access[_-]?key|aws[_-]?key)\s*[=:]\s*\S+',
-          caseSensitive: false),
+      RegExp(
+        r'(?:access[_-]?key|aws[_-]?key)\s*[=:]\s*\S+',
+        caseSensitive: false,
+      ),
       RegExp(r'-----BEGIN (?:RSA |DSA |EC )?PRIVATE KEY-----'),
       RegExp(r'sk-[a-zA-Z0-9]{20,}'),
       RegExp(r'ghp_[a-zA-Z0-9]{36}'),
@@ -1465,25 +1503,28 @@ class BuiltInLifecycleHooks {
     }
 
     if (writeBackup != null && readFile != null) {
-      manager.registerTool(fileBackup(
-        writeBackup: writeBackup,
-        readFile: readFile,
-      ));
+      manager.registerTool(
+        fileBackup(writeBackup: writeBackup, readFile: readFile),
+      );
     }
 
-    manager.registerTool(gitSafety(
-      protectedBranches: protectedBranches ?? ['main', 'master'],
-      onWarning: onGitWarning,
-    ));
+    manager.registerTool(
+      gitSafety(
+        protectedBranches: protectedBranches ?? ['main', 'master'],
+        onWarning: onGitWarning,
+      ),
+    );
 
     if (onSecretFound != null) {
       manager.registerTool(secretDetection(onSecretFound: onSecretFound));
     }
 
-    manager.registerTool(rateLimiting(
-      maxToolCallsPerMinute: maxToolCallsPerMinute,
-      onLimitApproached: onRateLimitWarning,
-      onLimitExceeded: onRateLimitExceeded,
-    ));
+    manager.registerTool(
+      rateLimiting(
+        maxToolCallsPerMinute: maxToolCallsPerMinute,
+        onLimitApproached: onRateLimitWarning,
+        onLimitExceeded: onRateLimitExceeded,
+      ),
+    );
   }
 }

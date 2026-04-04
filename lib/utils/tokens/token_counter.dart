@@ -29,30 +29,30 @@ abstract class TokenEncoder {
 /// Regex pattern used to split text into rough BPE-compatible chunks, modeled
 /// after the cl100k_base tokenizer used by NeomClaw and GPT-4.
 final RegExp _cl100kSplitPattern = RegExp(
-  r"'(?:[sdmt]|ll|ve|re)|"             // contractions
-  r'[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}][\p{Ll}]+|'  // Title-case words
-  r'[\p{Lu}\p{Lt}]+(?=[\p{Lu}\p{Lt}][\p{Ll}])|'   // ALLCAPS before title
-  r'\p{L}+|'                           // other letter runs
-  r'\p{N}{1,3}|'                       // numbers up to 3 digits
-  r' ?[^\s\p{L}\p{N}]+[\r\n]*|'       // punctuation + optional newline
-  r'\s*[\r\n]+|'                       // newline runs
-  r'\s+(?!\S)|'                        // trailing whitespace
-  r'\s+',                              // other whitespace
+  r"'(?:[sdmt]|ll|ve|re)|" // contractions
+  r'[^\r\n\p{L}\p{N}]?[\p{Lu}\p{Lt}][\p{Ll}]+|' // Title-case words
+  r'[\p{Lu}\p{Lt}]+(?=[\p{Lu}\p{Lt}][\p{Ll}])|' // ALLCAPS before title
+  r'\p{L}+|' // other letter runs
+  r'\p{N}{1,3}|' // numbers up to 3 digits
+  r' ?[^\s\p{L}\p{N}]+[\r\n]*|' // punctuation + optional newline
+  r'\s*[\r\n]+|' // newline runs
+  r'\s+(?!\S)|' // trailing whitespace
+  r'\s+', // other whitespace
   unicode: true,
 );
 
 /// CJK Unicode range test.
 bool _isCjk(int codeUnit) {
-  return (codeUnit >= 0x4E00 && codeUnit <= 0x9FFF) ||   // CJK Unified
-      (codeUnit >= 0x3400 && codeUnit <= 0x4DBF) ||      // CJK Ext A
-      (codeUnit >= 0x20000 && codeUnit <= 0x2A6DF) ||    // CJK Ext B
-      (codeUnit >= 0x2A700 && codeUnit <= 0x2B73F) ||    // CJK Ext C
-      (codeUnit >= 0x2B740 && codeUnit <= 0x2B81F) ||    // CJK Ext D
-      (codeUnit >= 0xF900 && codeUnit <= 0xFAFF) ||      // CJK Compat
-      (codeUnit >= 0x3000 && codeUnit <= 0x303F) ||      // CJK Symbols
-      (codeUnit >= 0x3040 && codeUnit <= 0x309F) ||      // Hiragana
-      (codeUnit >= 0x30A0 && codeUnit <= 0x30FF) ||      // Katakana
-      (codeUnit >= 0xAC00 && codeUnit <= 0xD7AF);        // Hangul
+  return (codeUnit >= 0x4E00 && codeUnit <= 0x9FFF) || // CJK Unified
+      (codeUnit >= 0x3400 && codeUnit <= 0x4DBF) || // CJK Ext A
+      (codeUnit >= 0x20000 && codeUnit <= 0x2A6DF) || // CJK Ext B
+      (codeUnit >= 0x2A700 && codeUnit <= 0x2B73F) || // CJK Ext C
+      (codeUnit >= 0x2B740 && codeUnit <= 0x2B81F) || // CJK Ext D
+      (codeUnit >= 0xF900 && codeUnit <= 0xFAFF) || // CJK Compat
+      (codeUnit >= 0x3000 && codeUnit <= 0x303F) || // CJK Symbols
+      (codeUnit >= 0x3040 && codeUnit <= 0x309F) || // Hiragana
+      (codeUnit >= 0x30A0 && codeUnit <= 0x30FF) || // Katakana
+      (codeUnit >= 0xAC00 && codeUnit <= 0xD7AF); // Hangul
 }
 
 /// Approximate cl100k_base tokenizer using heuristic BPE-like splitting.
@@ -337,8 +337,7 @@ class ContextWindow {
 
 /// High-level token counting, truncation, splitting, and cost estimation.
 class TokenCounter {
-  TokenCounter({TokenEncoder? encoder})
-      : _encoder = encoder ?? Cl100kEncoder();
+  TokenCounter({TokenEncoder? encoder}) : _encoder = encoder ?? Cl100kEncoder();
 
   final TokenEncoder _encoder;
 
@@ -438,9 +437,12 @@ class TokenCounter {
       var end = text.length;
       while (_encoder.count(text.substring(start, end)) > chunkSize &&
           end > start + 1) {
-        end = start + ((end - start) * chunkSize /
-                _encoder.count(text.substring(start, end)))
-            .floor();
+        end =
+            start +
+            ((end - start) *
+                    chunkSize /
+                    _encoder.count(text.substring(start, end)))
+                .floor();
         if (end <= start) end = start + 1;
       }
       chunks.add(text.substring(start, end));
@@ -465,10 +467,10 @@ class TokenCounter {
     int cacheWrite = 0,
   }) {
     final pricing = ModelPricingTable.forModel(model);
-    final inputCost =
-        (inputTokens - cacheRead) * pricing.inputPerMillion / 1e6;
+    final inputCost = (inputTokens - cacheRead) * pricing.inputPerMillion / 1e6;
     final outputCost = outputTokens * pricing.outputPerMillion / 1e6;
-    final cacheCost = cacheRead * pricing.cacheReadPerMillion / 1e6 +
+    final cacheCost =
+        cacheRead * pricing.cacheReadPerMillion / 1e6 +
         cacheWrite * pricing.cacheWritePerMillion / 1e6;
     return CostEstimate(
       inputCost: inputCost,

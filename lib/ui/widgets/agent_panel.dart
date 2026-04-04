@@ -1,21 +1,12 @@
 // AgentPanel — port of neom_claw/src/components/AgentPanel/.
 // Shows spawned agents, their status, tasks, logs, and swarm overview.
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 // ─── Agent display data ───
 
 /// Agent status for display.
-enum AgentDisplayStatus {
-  idle,
-  running,
-  completed,
-  failed,
-  cancelled,
-  waiting,
-}
+enum AgentDisplayStatus { idle, running, completed, failed, cancelled, waiting }
 
 /// Agent info for display in the panel.
 class AgentDisplayInfo {
@@ -179,8 +170,11 @@ class _AgentPanelState extends State<AgentPanel>
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             child: Row(
               children: [
-                Icon(Icons.groups_outlined, size: 18,
-                    color: isDark ? Colors.white70 : Colors.black54),
+                Icon(
+                  Icons.groups_outlined,
+                  size: 18,
+                  color: isDark ? Colors.white70 : Colors.black54,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Agents',
@@ -193,12 +187,12 @@ class _AgentPanelState extends State<AgentPanel>
                 const Spacer(),
                 // Active count badge
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.blue.shade900
-                        : Colors.blue.shade50,
+                    color: isDark ? Colors.blue.shade900 : Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -217,8 +211,10 @@ class _AgentPanelState extends State<AgentPanel>
                     onPressed: widget.onClose,
                     icon: const Icon(Icons.close, size: 16),
                     padding: EdgeInsets.zero,
-                    constraints:
-                        const BoxConstraints(minWidth: 24, minHeight: 24),
+                    constraints: const BoxConstraints(
+                      minWidth: 24,
+                      minHeight: 24,
+                    ),
                   ),
               ],
             ),
@@ -257,8 +253,11 @@ class _AgentPanelState extends State<AgentPanel>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.smart_toy_outlined,
-                size: 48, color: Colors.grey.shade400),
+            Icon(
+              Icons.smart_toy_outlined,
+              size: 48,
+              color: Colors.grey.shade400,
+            ),
             const SizedBox(height: 12),
             Text(
               'No agents spawned',
@@ -284,8 +283,7 @@ class _AgentPanelState extends State<AgentPanel>
           isExpanded: _expandedAgentId == agent.id,
           onToggle: () {
             setState(() {
-              _expandedAgentId =
-                  _expandedAgentId == agent.id ? null : agent.id;
+              _expandedAgentId = _expandedAgentId == agent.id ? null : agent.id;
             });
           },
           onCancel: widget.onCancelAgent != null
@@ -300,8 +298,7 @@ class _AgentPanelState extends State<AgentPanel>
     final allTasks = widget.agents.expand((a) => a.tasks).toList();
     if (allTasks.isEmpty) {
       return Center(
-        child: Text('No tasks',
-            style: TextStyle(color: Colors.grey.shade500)),
+        child: Text('No tasks', style: TextStyle(color: Colors.grey.shade500)),
       );
     }
 
@@ -364,9 +361,7 @@ class _AgentPanelState extends State<AgentPanel>
                     ? Colors.white.withValues(alpha: 0.1)
                     : Colors.black.withValues(alpha: 0.08),
                 valueColor: AlwaysStoppedAnimation(
-                  swarm.failedTasks > 0
-                      ? Colors.orange
-                      : Colors.green,
+                  swarm.failedTasks > 0 ? Colors.orange : Colors.green,
                 ),
               ),
             ],
@@ -383,18 +378,19 @@ class _AgentPanelState extends State<AgentPanel>
             ),
           ),
           const SizedBox(height: 8),
-          ...swarm.agents.map((a) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: AgentCard(
-                  agent: a,
-                  isExpanded: _expandedAgentId == a.id,
-                  onToggle: () => setState(() {
-                    _expandedAgentId =
-                        _expandedAgentId == a.id ? null : a.id;
-                  }),
-                  compact: true,
-                ),
-              )),
+          ...swarm.agents.map(
+            (a) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: AgentCard(
+                agent: a,
+                isExpanded: _expandedAgentId == a.id,
+                onToggle: () => setState(() {
+                  _expandedAgentId = _expandedAgentId == a.id ? null : a.id;
+                }),
+                compact: true,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -584,10 +580,7 @@ class AgentCard extends StatelessWidget {
                 // Log entries
                 if (agent.logs.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  AgentLogView(
-                    logs: agent.logs,
-                    maxHeight: 150,
-                  ),
+                  AgentLogView(logs: agent.logs, maxHeight: 150),
                 ],
 
                 // Cancel button
@@ -599,8 +592,10 @@ class AgentCard extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: onCancel,
                       icon: const Icon(Icons.cancel_outlined, size: 14),
-                      label: const Text('Cancel',
-                          style: TextStyle(fontSize: 12)),
+                      label: const Text(
+                        'Cancel',
+                        style: TextStyle(fontSize: 12),
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -619,11 +614,14 @@ class AgentCard extends StatelessWidget {
   Widget _stat(String label, String value) {
     return Column(
       children: [
-        Text(value,
-            style: const TextStyle(
-                fontSize: 12, fontWeight: FontWeight.w600)),
-        Text(label,
-            style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        ),
+        Text(
+          label,
+          style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+        ),
       ],
     );
   }
@@ -720,11 +718,7 @@ class AgentLogView extends StatelessWidget {
   final List<AgentLogEntry> logs;
   final double maxHeight;
 
-  const AgentLogView({
-    super.key,
-    required this.logs,
-    this.maxHeight = 200,
-  });
+  const AgentLogView({super.key, required this.logs, this.maxHeight = 200});
 
   Color _levelColor(AgentLogLevel level) {
     switch (level) {
@@ -828,16 +822,26 @@ class SwarmOverviewCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _metric('Agents', '${swarm.activeAgents}/${swarm.totalAgents}',
-                  Colors.blue),
               _metric(
-                  'Tasks',
-                  '${swarm.completedTasks}/${swarm.totalTasks}',
-                  Colors.green),
-              _metric('Failed', '${swarm.failedTasks}',
-                  swarm.failedTasks > 0 ? Colors.red : Colors.grey),
-              _metric('Cost', '\$${swarm.totalCost.toStringAsFixed(3)}',
-                  Colors.amber),
+                'Agents',
+                '${swarm.activeAgents}/${swarm.totalAgents}',
+                Colors.blue,
+              ),
+              _metric(
+                'Tasks',
+                '${swarm.completedTasks}/${swarm.totalTasks}',
+                Colors.green,
+              ),
+              _metric(
+                'Failed',
+                '${swarm.failedTasks}',
+                swarm.failedTasks > 0 ? Colors.red : Colors.grey,
+              ),
+              _metric(
+                'Cost',
+                '\$${swarm.totalCost.toStringAsFixed(3)}',
+                Colors.amber,
+              ),
             ],
           ),
           const SizedBox(height: 4),
@@ -866,10 +870,7 @@ class SwarmOverviewCard extends StatelessWidget {
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 9,
-            color: color.withValues(alpha: 0.7),
-          ),
+          style: TextStyle(fontSize: 9, color: color.withValues(alpha: 0.7)),
         ),
       ],
     );

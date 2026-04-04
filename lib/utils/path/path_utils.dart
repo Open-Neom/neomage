@@ -77,9 +77,8 @@ String relativePath(String from, String to) {
 /// Expands a leading `~` to the current user's home directory.
 String expandHome(String path) {
   if (!path.startsWith('~')) return path;
-  final home = Platform.environment['HOME'] ??
-      Platform.environment['USERPROFILE'] ??
-      '';
+  final home =
+      Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
   if (path == '~') return home;
   if (path.startsWith('~/') || path.startsWith('~\\')) {
     return '$home${path.substring(1)}';
@@ -92,8 +91,7 @@ bool isAbsolute(String path) {
   if (path.isEmpty) return false;
   if (path.startsWith('/')) return true;
   // Windows drive letter: C:\ or C:/
-  if (path.length >= 3 &&
-      RegExp(r'^[a-zA-Z]:[/\\]').hasMatch(path)) {
+  if (path.length >= 3 && RegExp(r'^[a-zA-Z]:[/\\]').hasMatch(path)) {
     return true;
   }
   return false;
@@ -114,7 +112,9 @@ String joinPaths(List<String> parts) {
   final normalized = normalizePath(path);
   final lastSlash = normalized.lastIndexOf('/');
   final dir = lastSlash == -1 ? '.' : normalized.substring(0, lastSlash);
-  final file = lastSlash == -1 ? normalized : normalized.substring(lastSlash + 1);
+  final file = lastSlash == -1
+      ? normalized
+      : normalized.substring(lastSlash + 1);
   final dotIdx = file.lastIndexOf('.');
   if (dotIdx <= 0) {
     return (dir: dir, basename: file, ext: '');
@@ -198,11 +198,7 @@ String sanitizePath(String path) {
     p = p.replaceAll('..', '');
   }
   // Remove leading/trailing whitespace from each segment.
-  p = p
-      .split('/')
-      .map((s) => s.trim())
-      .where((s) => s.isNotEmpty)
-      .join('/');
+  p = p.split('/').map((s) => s.trim()).where((s) => s.isNotEmpty).join('/');
   // Preserve leading slash.
   if (path.startsWith('/') && !p.startsWith('/')) {
     p = '/$p';
@@ -238,8 +234,7 @@ class GlobMatcher {
   bool match(String path) => _regex.hasMatch(normalizePath(path));
 
   /// Filters [paths], returning only those that match.
-  List<String> matchAll(List<String> paths) =>
-      paths.where(match).toList();
+  List<String> matchAll(List<String> paths) => paths.where(match).toList();
 
   /// The original glob pattern string.
   String get pattern => _pattern;
@@ -331,11 +326,13 @@ class GitignoreParser {
       if (negated) line = line.substring(1);
       final dirOnly = line.endsWith('/');
       if (dirOnly) line = line.substring(0, line.length - 1);
-      rules.add(_GitignoreRule(
-        pattern: GlobMatcher.compile(line),
-        negated: negated,
-        directoryOnly: dirOnly,
-      ));
+      rules.add(
+        _GitignoreRule(
+          pattern: GlobMatcher.compile(line),
+          negated: negated,
+          directoryOnly: dirOnly,
+        ),
+      );
     }
     return GitignoreParser._(rules);
   }
@@ -455,7 +452,10 @@ class PathTrie<T> {
   }
 
   void _collect(
-      _TrieNode<T> node, List<String> path, List<(String, T)> results) {
+    _TrieNode<T> node,
+    List<String> path,
+    List<(String, T)> results,
+  ) {
     if (node.hasValue) {
       results.add((path.join('/'), node.value as T));
     }
@@ -540,13 +540,17 @@ class FileWatcher {
   /// Returns a broadcast [Stream] of [FileEvent]s. Only one watcher per path
   /// is active at a time; calling [watch] again for the same path replaces the
   /// previous watcher.
-  Stream<FileEvent> watch(String path, {WatcherConfig config = const WatcherConfig()}) {
+  Stream<FileEvent> watch(
+    String path, {
+    WatcherConfig config = const WatcherConfig(),
+  }) {
     // Cancel existing watcher for this path.
     _subscriptions[path]?.cancel();
 
     final controller = StreamController<FileEvent>.broadcast();
-    final compiledIgnore =
-        config.ignorePatterns.map(GlobMatcher.compile).toList();
+    final compiledIgnore = config.ignorePatterns
+        .map(GlobMatcher.compile)
+        .toList();
 
     final entity = FileSystemEntity.isDirectorySync(path)
         ? Directory(path)
@@ -555,8 +559,7 @@ class FileWatcher {
     // Debounce tracking.
     final lastEmit = <String, DateTime>{};
 
-    final sub =
-        entity.watch(recursive: config.recursive).listen((fse) {
+    final sub = entity.watch(recursive: config.recursive).listen((fse) {
       final eventPath = normalizePath(fse.path);
 
       // Filter by extension.

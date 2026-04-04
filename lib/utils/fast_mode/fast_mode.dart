@@ -1,4 +1,4 @@
-// Fast mode — port of openneomclaw/src/utils/fastMode.ts.
+// Fast mode — port of neom_claw/src/utils/fastMode.ts.
 // Fast mode configuration, availability checks, runtime state management,
 // cooldown handling, org-level status prefetch, and overage rejection.
 
@@ -38,10 +38,7 @@ class FastModeCooldown extends FastModeRuntimeState {
   final int resetAt;
   final CooldownReason reason;
 
-  const FastModeCooldown({
-    required this.resetAt,
-    required this.reason,
-  });
+  const FastModeCooldown({required this.resetAt, required this.reason});
 }
 
 /// Org-level fast mode status from the API.
@@ -74,10 +71,7 @@ class FastModeResponse {
   final bool enabled;
   final FastModeDisabledReason? disabledReason;
 
-  const FastModeResponse({
-    required this.enabled,
-    this.disabledReason,
-  });
+  const FastModeResponse({required this.enabled, this.disabledReason});
 
   factory FastModeResponse.fromJson(Map<String, dynamic> json) {
     FastModeDisabledReason? reason;
@@ -172,15 +166,16 @@ class FastModeConfig {
 
   /// Update settings for a specific source.
   final void Function(String source, Map<String, dynamic> updates)
-      updateSettingsForSource;
+  updateSettingsForSource;
 
   /// Get global config value.
   final Map<String, dynamic> Function() getGlobalConfig;
 
   /// Save global config.
   final void Function(
-          Map<String, dynamic> Function(Map<String, dynamic> current))
-      saveGlobalConfig;
+    Map<String, dynamic> Function(Map<String, dynamic> current),
+  )
+  saveGlobalConfig;
 
   /// Get OAuth tokens.
   final Map<String, String>? Function() getOAuthTokens;
@@ -326,8 +321,7 @@ class FastModeManager {
         }
       }
       final oauthTokens = _config.getOAuthTokens();
-      final authType =
-          oauthTokens != null ? AuthType.oauth : AuthType.apiKey;
+      final authType = oauthTokens != null ? AuthType.oauth : AuthType.apiKey;
       return _getDisabledReasonMessage(disabled.reason, authType);
     }
 
@@ -368,8 +362,7 @@ class FastModeManager {
   /// Check if a model supports fast mode.
   bool isFastModeSupportedByModel(ModelSetting modelSetting) {
     if (!isFastModeEnabled) return false;
-    final model =
-        modelSetting ?? _config.getDefaultMainLoopModel();
+    final model = modelSetting ?? _config.getDefaultMainLoopModel();
     final parsedModel = _config.parseUserSpecifiedModel(model);
     return parsedModel.toLowerCase().contains('opus-4-6');
   }
@@ -394,10 +387,7 @@ class FastModeManager {
   /// Trigger a cooldown period for fast mode.
   void triggerCooldown(int resetTimestamp, CooldownReason reason) {
     if (!isFastModeEnabled) return;
-    _runtimeState = FastModeCooldown(
-      resetAt: resetTimestamp,
-      reason: reason,
-    );
+    _runtimeState = FastModeCooldown(resetAt: resetTimestamp, reason: reason);
     _hasLoggedCooldownExpiry = false;
     cooldownTriggered.emit((resetAt: resetTimestamp, reason: reason));
   }
@@ -415,13 +405,13 @@ class FastModeManager {
   /// has it disabled.
   void handleRejectedByApi() {
     if (_orgStatus is FastModeOrgDisabled) return;
-    _orgStatus =
-        const FastModeOrgDisabled(reason: FastModeDisabledReason.preference);
+    _orgStatus = const FastModeOrgDisabled(
+      reason: FastModeDisabledReason.preference,
+    );
     _config.updateSettingsForSource('userSettings', {'fastMode': null});
-    _config.saveGlobalConfig((current) => {
-          ...current,
-          'penguinModeOrgEnabled': false,
-        });
+    _config.saveGlobalConfig(
+      (current) => {...current, 'penguinModeOrgEnabled': false},
+    );
     orgFastModeChanged.emit(false);
   }
 
@@ -430,7 +420,8 @@ class FastModeManager {
     ModelSetting model,
     bool? fastModeUserEnabled,
   ) {
-    final enabled = isFastModeEnabled &&
+    final enabled =
+        isFastModeEnabled &&
         isFastModeAvailable &&
         (fastModeUserEnabled == true) &&
         isFastModeSupportedByModel(model);
@@ -477,10 +468,9 @@ class FastModeManager {
     // Disable fast mode permanently unless the user has ran out of credits.
     if (!_isOutOfCreditsReason(reason)) {
       _config.updateSettingsForSource('userSettings', {'fastMode': null});
-      _config.saveGlobalConfig((current) => {
-            ...current,
-            'penguinModeOrgEnabled': false,
-          });
+      _config.saveGlobalConfig(
+        (current) => {...current, 'penguinModeOrgEnabled': false},
+      );
     }
     overageRejection.emit(message);
   }
@@ -512,7 +502,8 @@ class FastModeManager {
     // Service key OAuth sessions lack user:profile scope.
     final apiKey = _config.getApiKey();
     final oauthTokens = _config.getOAuthTokens();
-    final hasUsableOAuth = oauthTokens != null &&
+    final hasUsableOAuth =
+        oauthTokens != null &&
         oauthTokens['accessToken'] != null &&
         _config.hasProfileScope();
     if (!hasUsableOAuth && apiKey == null) {
@@ -522,7 +513,8 @@ class FastModeManager {
       _orgStatus = isAnt || cachedEnabled
           ? const FastModeOrgEnabled()
           : const FastModeOrgDisabled(
-              reason: FastModeDisabledReason.preference);
+              reason: FastModeDisabledReason.preference,
+            );
       return;
     }
 
@@ -560,17 +552,17 @@ class FastModeManager {
       _orgStatus = status.enabled
           ? const FastModeOrgEnabled()
           : FastModeOrgDisabled(
-              reason: status.disabledReason ?? FastModeDisabledReason.preference,
+              reason:
+                  status.disabledReason ?? FastModeDisabledReason.preference,
             );
 
       if (previousEnabled != status.enabled) {
         if (!status.enabled) {
           _config.updateSettingsForSource('userSettings', {'fastMode': null});
         }
-        _config.saveGlobalConfig((current) => {
-              ...current,
-              'penguinModeOrgEnabled': status.enabled,
-            });
+        _config.saveGlobalConfig(
+          (current) => {...current, 'penguinModeOrgEnabled': status.enabled},
+        );
         orgFastModeChanged.emit(status.enabled);
       }
     } catch (_) {
@@ -582,7 +574,8 @@ class FastModeManager {
       _orgStatus = isAnt || cachedEnabled
           ? const FastModeOrgEnabled()
           : const FastModeOrgDisabled(
-              reason: FastModeDisabledReason.networkError);
+              reason: FastModeDisabledReason.networkError,
+            );
     } finally {
       _inflightPrefetch = null;
     }
@@ -592,8 +585,7 @@ class FastModeManager {
     String? apiKey,
     Map<String, String>? oauthTokens,
   ) async {
-    final endpoint =
-        '${_config.getBaseApiUrl()}/api/neomclaw_penguin_mode';
+    final endpoint = '${_config.getBaseApiUrl()}/api/neomclaw_penguin_mode';
     final accessToken = oauthTokens?['accessToken'];
     final hasOAuth = accessToken != null && _config.hasProfileScope();
 

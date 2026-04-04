@@ -21,9 +21,7 @@ Future<List<McpServerConfig>> loadMcpConfigFile(String path) async {
 }
 
 /// Load all MCP configs from standard locations.
-Future<List<McpServerConfig>> loadAllMcpConfigs({
-  String? projectRoot,
-}) async {
+Future<List<McpServerConfig>> loadAllMcpConfigs({String? projectRoot}) async {
   final configs = <McpServerConfig>[];
 
   // 1. Project-local: .mcp.json
@@ -32,7 +30,8 @@ Future<List<McpServerConfig>> loadAllMcpConfigs({
   }
 
   // 2. User: ~/.neomclaw/settings.json (mcpServers key)
-  final homeDir = Platform.environment['HOME'] ??
+  final homeDir =
+      Platform.environment['HOME'] ??
       Platform.environment['USERPROFILE'] ??
       '/tmp';
   final userSettings = File('$homeDir/.neomclaw/settings.json');
@@ -66,9 +65,7 @@ Future<void> writeMcpConfigFile(
   }
   final file = File(path);
   await file.parent.create(recursive: true);
-  await file.writeAsString(
-    const JsonEncoder.withIndent('  ').convert(json),
-  );
+  await file.writeAsString(const JsonEncoder.withIndent('  ').convert(json));
 }
 
 // ── Parsing ──
@@ -96,9 +93,8 @@ McpServerConfig? _parseOneConfig(String name, Map<String, dynamic> json) {
     return McpStdioConfig(
       name: name,
       command: json['command'] as String,
-      args: (json['args'] as List<dynamic>?)
-              ?.map((a) => a.toString())
-              .toList() ??
+      args:
+          (json['args'] as List<dynamic>?)?.map((a) => a.toString()).toList() ??
           const [],
       env: env,
     );
@@ -110,15 +106,12 @@ McpServerConfig? _parseOneConfig(String name, Map<String, dynamic> json) {
     final transport = json['transport'] as String?;
 
     if (transport == 'sse' || url.contains('/sse')) {
-      return McpSseConfig(
-        name: name,
-        url: url,
-        headers: headers,
-        env: env,
-      );
+      return McpSseConfig(name: name, url: url, headers: headers, env: env);
     }
 
-    if (transport == 'ws' || url.startsWith('ws://') || url.startsWith('wss://')) {
+    if (transport == 'ws' ||
+        url.startsWith('ws://') ||
+        url.startsWith('wss://')) {
       return McpWebSocketConfig(
         name: name,
         url: url,
@@ -127,12 +120,7 @@ McpServerConfig? _parseOneConfig(String name, Map<String, dynamic> json) {
       );
     }
 
-    return McpHttpConfig(
-      name: name,
-      url: url,
-      headers: headers,
-      env: env,
-    );
+    return McpHttpConfig(name: name, url: url, headers: headers, env: env);
   }
 
   return null;
@@ -149,30 +137,30 @@ Map<String, String> _parseHeaders(dynamic headers) {
 }
 
 Map<String, dynamic> _configToJson(McpServerConfig config) => switch (config) {
-      McpStdioConfig(command: final cmd, args: final args) => {
-          'command': cmd,
-          if (args.isNotEmpty) 'args': args,
-          if (config.env.isNotEmpty) 'env': config.env,
-        },
-      McpSseConfig(url: final url, headers: final h) => {
-          'url': url,
-          'transport': 'sse',
-          if (h.isNotEmpty) 'headers': h,
-          if (config.env.isNotEmpty) 'env': config.env,
-        },
-      McpHttpConfig(url: final url, headers: final h) => {
-          'url': url,
-          if (h.isNotEmpty) 'headers': h,
-          if (config.env.isNotEmpty) 'env': config.env,
-        },
-      McpWebSocketConfig(url: final url, headers: final h) => {
-          'url': url,
-          'transport': 'ws',
-          if (h.isNotEmpty) 'headers': h,
-          if (config.env.isNotEmpty) 'env': config.env,
-        },
-      McpSdkConfig() => {
-          'transport': 'sdk',
-          if (config.env.isNotEmpty) 'env': config.env,
-        },
-    };
+  McpStdioConfig(command: final cmd, args: final args) => {
+    'command': cmd,
+    if (args.isNotEmpty) 'args': args,
+    if (config.env.isNotEmpty) 'env': config.env,
+  },
+  McpSseConfig(url: final url, headers: final h) => {
+    'url': url,
+    'transport': 'sse',
+    if (h.isNotEmpty) 'headers': h,
+    if (config.env.isNotEmpty) 'env': config.env,
+  },
+  McpHttpConfig(url: final url, headers: final h) => {
+    'url': url,
+    if (h.isNotEmpty) 'headers': h,
+    if (config.env.isNotEmpty) 'env': config.env,
+  },
+  McpWebSocketConfig(url: final url, headers: final h) => {
+    'url': url,
+    'transport': 'ws',
+    if (h.isNotEmpty) 'headers': h,
+    if (config.env.isNotEmpty) 'env': config.env,
+  },
+  McpSdkConfig() => {
+    'transport': 'sdk',
+    if (config.env.isNotEmpty) 'env': config.env,
+  },
+};

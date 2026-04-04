@@ -2,9 +2,6 @@
 // Provides permission scoping, rule evaluation, caching, and specialized
 // checkers for files, tools, git, and network operations.
 
-import 'dart:async';
-import 'dart:convert';
-
 import 'hook_types.dart';
 
 // ---------------------------------------------------------------------------
@@ -142,7 +139,8 @@ class PermissionRequest {
   String get cacheKey => '${scope.name}:$action:$resource';
 
   @override
-  String toString() => 'PermissionRequest('
+  String toString() =>
+      'PermissionRequest('
       'scope: ${scope.name}, action: $action, '
       'resource: $resource, risk: ${riskLevel.name})';
 }
@@ -184,7 +182,8 @@ class PermissionDecision {
       autoExpiry != null && DateTime.now().isAfter(autoExpiry!);
 
   @override
-  String toString() => 'PermissionDecision('
+  String toString() =>
+      'PermissionDecision('
       'level: ${level.name}, reason: $reason, '
       'expired: $isExpired)';
 }
@@ -244,8 +243,7 @@ class PermissionRule {
   });
 
   /// Whether this rule has expired.
-  bool get isExpired =>
-      expiresAt != null && DateTime.now().isAfter(expiresAt!);
+  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
 
   /// Whether this rule is active (enabled and not expired).
   bool get isActive => enabled && !isExpired;
@@ -265,13 +263,13 @@ class PermissionRule {
 
     // Resource filter
     if (resourcePattern != null &&
-        !PermissionPatternMatcher.match(
-            resourcePattern!, request.resource)) {
+        !PermissionPatternMatcher.match(resourcePattern!, request.resource)) {
       return false;
     }
 
     // Tool filter
-    if (toolPattern != null && request.toolName != null &&
+    if (toolPattern != null &&
+        request.toolName != null &&
         !PermissionPatternMatcher.match(toolPattern!, request.toolName!)) {
       return false;
     }
@@ -281,7 +279,8 @@ class PermissionRule {
   }
 
   @override
-  String toString() => 'PermissionRule(id: $id, name: $name, '
+  String toString() =>
+      'PermissionRule(id: $id, name: $name, '
       'level: ${level.name}, priority: $priority)';
 }
 
@@ -373,7 +372,8 @@ class PermissionRuleSet {
     // No rule matched — use default
     return PermissionDecision(
       level: defaultLevel,
-      reason: 'No matching rule; using default level '
+      reason:
+          'No matching rule; using default level '
           '(${defaultLevel.name})',
     );
   }
@@ -416,9 +416,7 @@ class PermissionCache {
   /// Default time-to-live for cached decisions.
   final Duration defaultTtl;
 
-  PermissionCache({
-    this.defaultTtl = const Duration(minutes: 30),
-  });
+  PermissionCache({this.defaultTtl = const Duration(minutes: 30)});
 
   /// Number of entries currently in the cache.
   int get length => _entries.length;
@@ -458,8 +456,9 @@ class PermissionCache {
   /// Remove all entries matching a scope.
   int invalidateScope(PermissionScope scope) {
     final prefix = '${scope.name}:';
-    final keysToRemove =
-        _entries.keys.where((k) => k.startsWith(prefix)).toList();
+    final keysToRemove = _entries.keys
+        .where((k) => k.startsWith(prefix))
+        .toList();
     for (final key in keysToRemove) {
       _entries.remove(key);
     }
@@ -468,11 +467,10 @@ class PermissionCache {
 
   /// Remove all expired entries.
   int purgeExpired() {
-    final keysToRemove =
-        _entries.entries
-            .where((e) => e.value.isExpired || e.value.decision.isExpired)
-            .map((e) => e.key)
-            .toList();
+    final keysToRemove = _entries.entries
+        .where((e) => e.value.isExpired || e.value.decision.isExpired)
+        .map((e) => e.key)
+        .toList();
     for (final key in keysToRemove) {
       _entries.remove(key);
     }
@@ -491,10 +489,7 @@ class _CacheEntry {
   final PermissionDecision decision;
   final DateTime expiresAt;
 
-  const _CacheEntry({
-    required this.decision,
-    required this.expiresAt,
-  });
+  const _CacheEntry({required this.decision, required this.expiresAt});
 
   bool get isExpired => DateTime.now().isAfter(expiresAt);
 }
@@ -522,10 +517,10 @@ class FilePermissionChecker {
     List<String>? protectedPaths,
     required PermissionRuleSet ruleSet,
     PermissionCache? cache,
-  })  : _allowedPaths = List.of(allowedPaths),
-        _protectedPaths = List.of(protectedPaths ?? _defaultProtectedPaths),
-        _ruleSet = ruleSet,
-        _cache = cache ?? PermissionCache();
+  }) : _allowedPaths = List.of(allowedPaths),
+       _protectedPaths = List.of(protectedPaths ?? _defaultProtectedPaths),
+       _ruleSet = ruleSet,
+       _cache = cache ?? PermissionCache();
 
   /// Default protected paths that should never be modified.
   static const _defaultProtectedPaths = <String>[
@@ -589,7 +584,8 @@ class FilePermissionChecker {
     if (isProtectedPath(normalized)) {
       return PermissionDecision(
         level: PermissionLevel.deny,
-        reason: 'Path "$normalized" is a protected system path. '
+        reason:
+            'Path "$normalized" is a protected system path. '
             'Write operations are blocked.',
       );
     }
@@ -601,8 +597,9 @@ class FilePermissionChecker {
       );
     }
 
-    final risk =
-        _isSensitiveFile(normalized) ? RiskLevel.critical : RiskLevel.medium;
+    final risk = _isSensitiveFile(normalized)
+        ? RiskLevel.critical
+        : RiskLevel.medium;
     final request = PermissionRequest(
       scope: PermissionScope.file,
       action: 'write',
@@ -621,7 +618,8 @@ class FilePermissionChecker {
     if (isProtectedPath(normalized)) {
       return PermissionDecision(
         level: PermissionLevel.deny,
-        reason: 'Path "$normalized" is a protected system path. '
+        reason:
+            'Path "$normalized" is a protected system path. '
             'Delete operations are blocked.',
       );
     }
@@ -725,20 +723,10 @@ class ToolPermissionChecker {
   final PermissionCache _cache;
 
   /// Tools that are always considered high-risk.
-  static const _highRiskTools = <String>{
-    'Bash',
-    'bash',
-    'shell',
-    'terminal',
-  };
+  static const _highRiskTools = <String>{'Bash', 'bash', 'shell', 'terminal'};
 
   /// Tools that are always considered safe (low risk).
-  static const _safeTools = <String>{
-    'Read',
-    'Glob',
-    'Grep',
-    'TodoWrite',
-  };
+  static const _safeTools = <String>{'Read', 'Glob', 'Grep', 'TodoWrite'};
 
   /// Dangerous bash command patterns.
   static final _dangerousBashPatterns = <_DangerousPattern>[
@@ -746,26 +734,14 @@ class ToolPermissionChecker {
       RegExp(r'\brm\s+(-[^\s]*)?(-r|-f|-rf|-fr)\b'),
       'Recursive or forced file deletion',
     ),
-    _DangerousPattern(
-      RegExp(r'\bsudo\b'),
-      'Elevated privilege execution',
-    ),
+    _DangerousPattern(RegExp(r'\bsudo\b'), 'Elevated privilege execution'),
     _DangerousPattern(
       RegExp(r'\bchmod\s+[0-7]*7[0-7]*\b'),
       'World-writable permission change',
     ),
-    _DangerousPattern(
-      RegExp(r'\bchown\b'),
-      'File ownership change',
-    ),
-    _DangerousPattern(
-      RegExp(r'\bmkfs\b'),
-      'Filesystem creation (destructive)',
-    ),
-    _DangerousPattern(
-      RegExp(r'\bdd\s+.*\bof=\s*/dev/'),
-      'Direct device write',
-    ),
+    _DangerousPattern(RegExp(r'\bchown\b'), 'File ownership change'),
+    _DangerousPattern(RegExp(r'\bmkfs\b'), 'Filesystem creation (destructive)'),
+    _DangerousPattern(RegExp(r'\bdd\s+.*\bof=\s*/dev/'), 'Direct device write'),
     _DangerousPattern(
       RegExp(r'>\s*/dev/sd[a-z]'),
       'Direct device write via redirect',
@@ -778,30 +754,15 @@ class ToolPermissionChecker {
       RegExp(r'\bwget\b.*\|\s*(ba)?sh'),
       'Piping remote download to shell',
     ),
-    _DangerousPattern(
-      RegExp(r'\beval\b'),
-      'Dynamic code evaluation',
-    ),
-    _DangerousPattern(
-      RegExp(r'>\s*/etc/'),
-      'Writing to system configuration',
-    ),
-    _DangerousPattern(
-      RegExp(r'\bnc\s+-[^\s]*l'),
-      'Network listener (netcat)',
-    ),
+    _DangerousPattern(RegExp(r'\beval\b'), 'Dynamic code evaluation'),
+    _DangerousPattern(RegExp(r'>\s*/etc/'), 'Writing to system configuration'),
+    _DangerousPattern(RegExp(r'\bnc\s+-[^\s]*l'), 'Network listener (netcat)'),
     _DangerousPattern(
       RegExp(r'\bsshpass\b'),
       'Automated SSH password authentication',
     ),
-    _DangerousPattern(
-      RegExp(r'\bgit\s+push\s+.*--force\b'),
-      'Git force push',
-    ),
-    _DangerousPattern(
-      RegExp(r'\bgit\s+reset\s+--hard\b'),
-      'Git hard reset',
-    ),
+    _DangerousPattern(RegExp(r'\bgit\s+push\s+.*--force\b'), 'Git force push'),
+    _DangerousPattern(RegExp(r'\bgit\s+reset\s+--hard\b'), 'Git hard reset'),
     _DangerousPattern(
       RegExp(r'\bgit\s+clean\s+.*-f'),
       'Git clean (forced file removal)',
@@ -819,8 +780,8 @@ class ToolPermissionChecker {
   ToolPermissionChecker({
     required PermissionRuleSet ruleSet,
     PermissionCache? cache,
-  })  : _ruleSet = ruleSet,
-        _cache = cache ?? PermissionCache();
+  }) : _ruleSet = ruleSet,
+       _cache = cache ?? PermissionCache();
 
   /// Check whether a tool execution is permitted.
   PermissionDecision checkToolExecution(
@@ -864,8 +825,9 @@ class ToolPermissionChecker {
         return PermissionDecision(
           level: PermissionLevel.ask,
           matchedRule: decision.matchedRule,
-          reason: 'Critical risk operation requires explicit approval: '
-              '${dangerReason ?? toolName}',
+          reason:
+              'Critical risk operation requires explicit approval: '
+              '$dangerReason',
         );
       }
       return decision;
@@ -878,10 +840,7 @@ class ToolPermissionChecker {
   ///
   /// Returns a tuple of (isDangerous, reason). If not dangerous, reason
   /// is an empty string.
-  (bool, String) isDangerousInput(
-    String toolName,
-    Map<String, dynamic> input,
-  ) {
+  (bool, String) isDangerousInput(String toolName, Map<String, dynamic> input) {
     // Special handling for bash/shell tools
     final lowerToolName = toolName.toLowerCase();
     if (lowerToolName == 'bash' ||
@@ -892,9 +851,8 @@ class ToolPermissionChecker {
     }
 
     // Check for file paths pointing to sensitive locations
-    final filePath = input['file_path'] as String? ??
-        input['path'] as String? ??
-        '';
+    final filePath =
+        input['file_path'] as String? ?? input['path'] as String? ?? '';
     if (filePath.isNotEmpty) {
       for (final pattern in FilePermissionChecker._sensitivePatterns) {
         if (pattern.hasMatch(filePath)) {
@@ -995,8 +953,8 @@ class GitPermissionChecker {
     required PermissionRuleSet ruleSet,
     PermissionCache? cache,
     this.protectedBranches = const ['main', 'master', 'develop', 'release'],
-  })  : _ruleSet = ruleSet,
-        _cache = cache ?? PermissionCache();
+  }) : _ruleSet = ruleSet,
+       _cache = cache ?? PermissionCache();
 
   /// Check whether a git operation is permitted.
   PermissionDecision checkGitOperation(GitOperation operation) {
@@ -1072,7 +1030,8 @@ class GitPermissionChecker {
     if (force && isProtected) {
       return PermissionDecision(
         level: PermissionLevel.deny,
-        reason: 'Force push to protected branch "$branch" on '
+        reason:
+            'Force push to protected branch "$branch" on '
             'remote "$remote" is blocked.',
       );
     }
@@ -1124,11 +1083,13 @@ class PermissionAuditLog {
 
   /// Log a permission request and its decision.
   void log(PermissionRequest request, PermissionDecision decision) {
-    _entries.add(PermissionAuditEntry(
-      request: request,
-      decision: decision,
-      timestamp: DateTime.now(),
-    ));
+    _entries.add(
+      PermissionAuditEntry(
+        request: request,
+        decision: decision,
+        timestamp: DateTime.now(),
+      ),
+    );
 
     if (_entries.length > maxEntries) {
       _entries.removeRange(0, _entries.length - maxEntries);
@@ -1188,16 +1149,16 @@ class PermissionAuditEntry {
   });
 
   Map<String, dynamic> toJson() => {
-        'timestamp': timestamp.toIso8601String(),
-        'scope': request.scope.name,
-        'action': request.action,
-        'resource': request.resource,
-        'toolName': request.toolName,
-        'riskLevel': request.riskLevel.name,
-        'decision': decision.level.name,
-        'reason': decision.reason,
-        'matchedRule': decision.matchedRule?.id,
-      };
+    'timestamp': timestamp.toIso8601String(),
+    'scope': request.scope.name,
+    'action': request.action,
+    'resource': request.resource,
+    'toolName': request.toolName,
+    'riskLevel': request.riskLevel.name,
+    'decision': decision.level.name,
+    'reason': decision.reason,
+    'matchedRule': decision.matchedRule?.id,
+  };
 }
 
 // ---------------------------------------------------------------------------

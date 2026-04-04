@@ -58,8 +58,9 @@ class SseParser {
         if (_dataBuffer.isNotEmpty) {
           final data = _dataBuffer.toString();
           // Remove trailing newline if present.
-          final trimmed =
-              data.endsWith('\n') ? data.substring(0, data.length - 1) : data;
+          final trimmed = data.endsWith('\n')
+              ? data.substring(0, data.length - 1)
+              : data;
           yield SseEvent(
             eventType: _eventType.isNotEmpty ? _eventType : null,
             data: trimmed,
@@ -133,16 +134,16 @@ enum StreamEventType {
 
 /// Map raw SSE event type strings to [StreamEventType].
 StreamEventType? parseStreamEventType(String raw) => switch (raw) {
-      'message_start' => StreamEventType.messageStart,
-      'content_block_start' => StreamEventType.contentBlockStart,
-      'content_block_delta' => StreamEventType.contentBlockDelta,
-      'content_block_stop' => StreamEventType.contentBlockStop,
-      'message_delta' => StreamEventType.messageDelta,
-      'message_stop' => StreamEventType.messageStop,
-      'ping' => StreamEventType.ping,
-      'error' => StreamEventType.error,
-      _ => null,
-    };
+  'message_start' => StreamEventType.messageStart,
+  'content_block_start' => StreamEventType.contentBlockStart,
+  'content_block_delta' => StreamEventType.contentBlockDelta,
+  'content_block_stop' => StreamEventType.contentBlockStop,
+  'message_delta' => StreamEventType.messageDelta,
+  'message_stop' => StreamEventType.messageStop,
+  'ping' => StreamEventType.ping,
+  'error' => StreamEventType.error,
+  _ => null,
+};
 
 // ---------------------------------------------------------------------------
 // Stream update events emitted to UI
@@ -160,7 +161,8 @@ class TextDelta extends StreamUpdate {
   const TextDelta({required this.text, required this.blockIndex});
 
   @override
-  String toString() => 'TextDelta(block=$blockIndex, "${text.length > 40 ? '${text.substring(0, 40)}...' : text}")';
+  String toString() =>
+      'TextDelta(block=$blockIndex, "${text.length > 40 ? '${text.substring(0, 40)}...' : text}")';
 }
 
 /// A thinking/reasoning delta.
@@ -316,7 +318,11 @@ class ToolUseAccumulator extends ContentBlockAccumulator {
   final String toolName;
   final StringBuffer _jsonBuffer = StringBuffer();
 
-  ToolUseAccumulator(super.index, {required this.toolId, required this.toolName});
+  ToolUseAccumulator(
+    super.index, {
+    required this.toolId,
+    required this.toolName,
+  });
 
   void append(String partialJson) => _jsonBuffer.write(partialJson);
 
@@ -342,7 +348,11 @@ class ImageAccumulator extends ContentBlockAccumulator {
   final String mediaType;
   final String base64Data;
 
-  ImageAccumulator(super.index, {required this.mediaType, required this.base64Data});
+  ImageAccumulator(
+    super.index, {
+    required this.mediaType,
+    required this.base64Data,
+  });
 
   @override
   ContentBlock toContentBlock() =>
@@ -374,20 +384,20 @@ class StreamingState {
   bool get isComplete => stopReason != null;
 
   TokenUsage get usage => TokenUsage(
-        inputTokens: _inputTokens,
-        outputTokens: _outputTokens,
-        cacheCreationInputTokens: _cacheCreationTokens,
-        cacheReadInputTokens: _cacheReadTokens,
-      );
+    inputTokens: _inputTokens,
+    outputTokens: _outputTokens,
+    cacheCreationInputTokens: _cacheCreationTokens,
+    cacheReadInputTokens: _cacheReadTokens,
+  );
 
   /// Build the final assembled [Message].
   Message toMessage() => Message(
-        id: messageId,
-        role: MessageRole.assistant,
-        content: contentBlocks.map((b) => b.toContentBlock()).toList(),
-        stopReason: _mapStopReason(stopReason),
-        usage: usage,
-      );
+    id: messageId,
+    role: MessageRole.assistant,
+    content: contentBlocks.map((b) => b.toContentBlock()).toList(),
+    stopReason: _mapStopReason(stopReason),
+    usage: usage,
+  );
 
   void _emit(StreamUpdate update) {
     if (!_controller.isClosed) _controller.add(update);
@@ -398,12 +408,12 @@ class StreamingState {
   }
 
   StopReason? _mapStopReason(String? reason) => switch (reason) {
-        'end_turn' => StopReason.endTurn,
-        'max_tokens' => StopReason.maxTokens,
-        'tool_use' => StopReason.toolUse,
-        'stop_sequence' => StopReason.stopSequence,
-        _ => null,
-      };
+    'end_turn' => StopReason.endTurn,
+    'max_tokens' => StopReason.maxTokens,
+    'tool_use' => StopReason.toolUse,
+    'stop_sequence' => StopReason.stopSequence,
+    _ => null,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -456,11 +466,13 @@ class StreamAssembler {
       startUsage = TokenUsage.fromJson(usageData);
     }
 
-    state._emit(MessageStartUpdate(
-      messageId: state.messageId ?? '',
-      model: state.model ?? '',
-      usage: startUsage,
-    ));
+    state._emit(
+      MessageStartUpdate(
+        messageId: state.messageId ?? '',
+        model: state.model ?? '',
+        usage: startUsage,
+      ),
+    );
   }
 
   void _handleContentBlockStart(Map<String, dynamic> data) {
@@ -487,18 +499,18 @@ class StreamAssembler {
         state.contentBlocks.add(
           ToolUseAccumulator(index, toolId: toolId, toolName: toolName),
         );
-        state._emit(ToolUseStart(
-          toolName: toolName,
-          toolId: toolId,
-          blockIndex: index,
-        ));
+        state._emit(
+          ToolUseStart(toolName: toolName, toolId: toolId, blockIndex: index),
+        );
       case 'image':
         final source = block['source'] as Map<String, dynamic>? ?? {};
-        state.contentBlocks.add(ImageAccumulator(
-          index,
-          mediaType: source['media_type'] as String? ?? 'image/png',
-          base64Data: source['data'] as String? ?? '',
-        ));
+        state.contentBlocks.add(
+          ImageAccumulator(
+            index,
+            mediaType: source['media_type'] as String? ?? 'image/png',
+            base64Data: source['data'] as String? ?? '',
+          ),
+        );
       default:
         // Unknown block type — treat as text.
         state.contentBlocks.add(TextAccumulator(index));
@@ -530,10 +542,9 @@ class StreamAssembler {
         final partialJson = delta['partial_json'] as String? ?? '';
         if (accumulator is ToolUseAccumulator) {
           accumulator.append(partialJson);
-          state._emit(ToolUseInputDelta(
-            partialJson: partialJson,
-            blockIndex: index,
-          ));
+          state._emit(
+            ToolUseInputDelta(partialJson: partialJson, blockIndex: index),
+          );
         }
     }
   }
@@ -545,12 +556,14 @@ class StreamAssembler {
 
     // Emit completion event for tool_use blocks.
     if (accumulator is ToolUseAccumulator) {
-      state._emit(ToolUseComplete(
-        toolName: accumulator.toolName,
-        toolId: accumulator.toolId,
-        input: accumulator.parsedInput,
-        blockIndex: index,
-      ));
+      state._emit(
+        ToolUseComplete(
+          toolName: accumulator.toolName,
+          toolId: accumulator.toolId,
+          input: accumulator.parsedInput,
+          blockIndex: index,
+        ),
+      );
     }
   }
 
@@ -561,31 +574,38 @@ class StreamAssembler {
     state.stopReason = delta['stop_reason'] as String?;
 
     if (usageData != null) {
-      state._outputTokens = usageData['output_tokens'] as int? ?? state._outputTokens;
-      state._emit(UsageUpdate(
-        inputTokens: state._inputTokens,
-        outputTokens: state._outputTokens,
-        cacheCreationInputTokens: state._cacheCreationTokens,
-        cacheReadInputTokens: state._cacheReadTokens,
-      ));
+      state._outputTokens =
+          usageData['output_tokens'] as int? ?? state._outputTokens;
+      state._emit(
+        UsageUpdate(
+          inputTokens: state._inputTokens,
+          outputTokens: state._outputTokens,
+          cacheCreationInputTokens: state._cacheCreationTokens,
+          cacheReadInputTokens: state._cacheReadTokens,
+        ),
+      );
     }
   }
 
   void _handleMessageStop() {
-    state._emit(MessageComplete(
-      stopReason: state.stopReason,
-      messageId: state.messageId,
-      model: state.model,
-    ));
+    state._emit(
+      MessageComplete(
+        stopReason: state.stopReason,
+        messageId: state.messageId,
+        model: state.model,
+      ),
+    );
     state.close();
   }
 
   void _handleError(Map<String, dynamic> data) {
     final error = data['error'] as Map<String, dynamic>? ?? data;
-    state._emit(StreamError(
-      message: error['message'] as String? ?? 'Unknown stream error',
-      errorType: error['type'] as String?,
-    ));
+    state._emit(
+      StreamError(
+        message: error['message'] as String? ?? 'Unknown stream error',
+        errorType: error['type'] as String?,
+      ),
+    );
   }
 
   ContentBlockAccumulator? _findAccumulator(int index) {
@@ -609,7 +629,8 @@ class StreamAssembler {
 /// The returned [StreamAssembler] can be used after the stream completes to
 /// retrieve the fully assembled [Message] via `assembler.state.toMessage()`.
 (Stream<StreamUpdate>, StreamAssembler) processStreamWithAssembler(
-    Stream<List<int>> byteStream) {
+  Stream<List<int>> byteStream,
+) {
   final parser = SseParser();
   final assembler = StreamAssembler();
 
@@ -672,11 +693,7 @@ Map<String, dynamic> encodeImageContent(List<int> bytes, String mediaType) {
   final base64Data = base64Encode(bytes);
   return {
     'type': 'image',
-    'source': {
-      'type': 'base64',
-      'media_type': mediaType,
-      'data': base64Data,
-    },
+    'source': {'type': 'base64', 'media_type': mediaType, 'data': base64Data},
   };
 }
 
@@ -696,7 +713,8 @@ Map<String, dynamic> encodePdfContent(List<int> bytes) {
 }
 
 /// Detect image media type from file extension.
-String? mediaTypeFromExtension(String extension) => switch (extension.toLowerCase()) {
+String? mediaTypeFromExtension(String extension) =>
+    switch (extension.toLowerCase()) {
       'jpg' || 'jpeg' => 'image/jpeg',
       'png' => 'image/png',
       'gif' => 'image/gif',
@@ -712,21 +730,36 @@ String? mediaTypeFromBytes(List<int> bytes) {
     return 'image/jpeg';
   }
   // PNG: 89 50 4E 47
-  if (bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47) {
+  if (bytes[0] == 0x89 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x4E &&
+      bytes[3] == 0x47) {
     return 'image/png';
   }
   // GIF: 47 49 46 38
-  if (bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x38) {
+  if (bytes[0] == 0x47 &&
+      bytes[1] == 0x49 &&
+      bytes[2] == 0x46 &&
+      bytes[3] == 0x38) {
     return 'image/gif';
   }
   // WebP: 52 49 46 46 ... 57 45 42 50
   if (bytes.length >= 12 &&
-      bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
-      bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50) {
+      bytes[0] == 0x52 &&
+      bytes[1] == 0x49 &&
+      bytes[2] == 0x46 &&
+      bytes[3] == 0x46 &&
+      bytes[8] == 0x57 &&
+      bytes[9] == 0x45 &&
+      bytes[10] == 0x42 &&
+      bytes[11] == 0x50) {
     return 'image/webp';
   }
   // PDF: 25 50 44 46 (%PDF)
-  if (bytes[0] == 0x25 && bytes[1] == 0x50 && bytes[2] == 0x44 && bytes[3] == 0x46) {
+  if (bytes[0] == 0x25 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x44 &&
+      bytes[3] == 0x46) {
     return 'application/pdf';
   }
   return null;
@@ -761,11 +794,11 @@ class CacheConfig {
   /// Auto breakpoints: cache the system prompt (index -1 signals system)
   /// and the last user message.
   factory CacheConfig.auto({int? messageCount}) => CacheConfig(
-        enabled: true,
-        breakpoints: messageCount != null && messageCount > 0
-            ? [0, messageCount - 1]
-            : const [0],
-      );
+    enabled: true,
+    breakpoints: messageCount != null && messageCount > 0
+        ? [0, messageCount - 1]
+        : const [0],
+  );
 }
 
 /// Apply cache breakpoints to a list of message maps destined for the API.
@@ -814,9 +847,7 @@ List<Map<String, dynamic>> applyCacheToSystem(
 ) {
   if (systemBlocks.isEmpty) return systemBlocks;
 
-  final result = systemBlocks
-      .map((b) => Map<String, dynamic>.from(b))
-      .toList();
+  final result = systemBlocks.map((b) => Map<String, dynamic>.from(b)).toList();
   result.last['cache_control'] = {'type': 'ephemeral'};
   return result;
 }
@@ -864,8 +895,10 @@ class RateLimiter {
 
     // Check token rate.
     if (estimatedTokens > 0) {
-      final tokensInWindow =
-          _tokenRecords.fold<int>(0, (sum, r) => sum + r.tokens);
+      final tokensInWindow = _tokenRecords.fold<int>(
+        0,
+        (sum, r) => sum + r.tokens,
+      );
       if (tokensInWindow + estimatedTokens > maxTokensPerMinute) {
         final oldest = _tokenRecords.first;
         final waitUntil = oldest.timestamp.add(const Duration(minutes: 1));
@@ -890,8 +923,10 @@ class RateLimiter {
   /// Record a rate limit (429) response. Returns the recommended backoff.
   Duration recordRateLimit() {
     _consecutiveRateLimits++;
-    final backoffMs =
-        (pow(2, _consecutiveRateLimits) * 1000).toInt().clamp(1000, 60000);
+    final backoffMs = (pow(2, _consecutiveRateLimits) * 1000).toInt().clamp(
+      1000,
+      60000,
+    );
     final jitter = Random().nextInt(500);
     return Duration(milliseconds: backoffMs + jitter);
   }
@@ -963,9 +998,9 @@ Future<T> withStreamRetry<T>(
       final baseMs = initialDelay.inMilliseconds * pow(2, attempt - 1);
       final jitter = random.nextDouble() * 0.25 * baseMs;
       final delayMs = (baseMs + jitter).toInt().clamp(
-            initialDelay.inMilliseconds,
-            maxDelay.inMilliseconds,
-          );
+        initialDelay.inMilliseconds,
+        maxDelay.inMilliseconds,
+      );
 
       await Future<void>.delayed(Duration(milliseconds: delayMs));
     }
@@ -985,6 +1020,7 @@ Future<Message> collectStreamToMessage(
   void Function(StreamUpdate update)? onUpdate,
 }) async {
   String? accMessageId;
+  // ignore: unused_local_variable
   String? accModel;
   String? stopReason;
   int inputTokens = 0;
@@ -1007,15 +1043,25 @@ Future<Message> collectStreamToMessage(
           cacheReadTokens = update.usage!.cacheReadInputTokens;
         }
       case TextDelta(:final text, :final blockIndex):
-        final acc = blocks.putIfAbsent(blockIndex, () => TextAccumulator(blockIndex));
+        final acc = blocks.putIfAbsent(
+          blockIndex,
+          () => TextAccumulator(blockIndex),
+        );
         if (acc is TextAccumulator) acc.append(text);
       case ThinkingDelta(:final text, :final blockIndex):
-        final acc = blocks.putIfAbsent(blockIndex, () => ThinkingAccumulator(blockIndex));
+        final acc = blocks.putIfAbsent(
+          blockIndex,
+          () => ThinkingAccumulator(blockIndex),
+        );
         if (acc is ThinkingAccumulator) acc.append(text);
       case ToolUseStart(:final toolName, :final toolId, :final blockIndex):
         blocks.putIfAbsent(
           blockIndex,
-          () => ToolUseAccumulator(blockIndex, toolId: toolId, toolName: toolName),
+          () => ToolUseAccumulator(
+            blockIndex,
+            toolId: toolId,
+            toolName: toolName,
+          ),
         );
       case ToolUseInputDelta(:final partialJson, :final blockIndex):
         final acc = blocks[blockIndex];
@@ -1070,7 +1116,8 @@ Future<Message> collectStreamToMessage(
 /// This enables interop: callers using [ApiProvider.createMessageStream]
 /// can pipe its events through this converter to get [StreamUpdate]s.
 Stream<StreamUpdate> convertProviderStream(
-    Stream<StreamEvent> providerStream) async* {
+  Stream<StreamEvent> providerStream,
+) async* {
   final assembler = StreamAssembler();
 
   await for (final event in providerStream) {
@@ -1108,14 +1155,10 @@ Stream<StreamUpdate> convertProviderStream(
 
       case MessageDeltaEvent(:final stopReason, :final usage):
         final data = <String, dynamic>{
-          'delta': {
-            if (stopReason != null) 'stop_reason': stopReason.name,
-          },
+          'delta': {if (stopReason != null) 'stop_reason': stopReason.name},
         };
         if (usage != null) {
-          data['usage'] = {
-            'output_tokens': usage.outputTokens,
-          };
+          data['usage'] = {'output_tokens': usage.outputTokens};
           yield UsageUpdate(
             inputTokens: usage.inputTokens,
             outputTokens: usage.outputTokens,
@@ -1140,16 +1183,16 @@ Stream<StreamUpdate> convertProviderStream(
 }
 
 Map<String, dynamic> _contentBlockToMap(ContentBlock block) => switch (block) {
-      TextBlock(:final text) => {'type': 'text', 'text': text},
-      ToolUseBlock(:final id, :final name, :final input) => {
-          'type': 'tool_use',
-          'id': id,
-          'name': name,
-          'input': input,
-        },
-      ImageBlock(:final mediaType, :final base64Data) => {
-          'type': 'image',
-          'source': {'type': 'base64', 'media_type': mediaType, 'data': base64Data},
-        },
-      ToolResultBlock() => {'type': 'tool_result'},
-    };
+  TextBlock(:final text) => {'type': 'text', 'text': text},
+  ToolUseBlock(:final id, :final name, :final input) => {
+    'type': 'tool_use',
+    'id': id,
+    'name': name,
+    'input': input,
+  },
+  ImageBlock(:final mediaType, :final base64Data) => {
+    'type': 'image',
+    'source': {'type': 'base64', 'media_type': mediaType, 'data': base64Data},
+  },
+  ToolResultBlock() => {'type': 'tool_result'},
+};

@@ -146,16 +146,15 @@ class NativePlatformService implements PlatformService {
   // ---------------------------------------------------------------------------
 
   @override
-  Stream<FileChangeEvent> watchDirectory(
-    String path, {
-    bool recursive = true,
-  }) {
+  Stream<FileChangeEvent> watchDirectory(String path, {bool recursive = true}) {
     return io.Directory(path)
         .watch(recursive: recursive)
-        .map((event) => FileChangeEvent(
-              path: event.path,
-              type: _mapChangeType(event.type),
-            ));
+        .map(
+          (event) => FileChangeEvent(
+            path: event.path,
+            type: _mapChangeType(event.type),
+          ),
+        );
   }
 
   // ---------------------------------------------------------------------------
@@ -255,8 +254,10 @@ class NativePlatformService implements PlatformService {
         } else if (body is List<int>) {
           request.add(body);
         } else if (body is Map) {
-          request.headers
-              .set('content-type', 'application/json; charset=utf-8');
+          request.headers.set(
+            'content-type',
+            'application/json; charset=utf-8',
+          );
           request.write(jsonEncode(body));
         }
       }

@@ -4,8 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
-import 'dart:math';
 
 // ---------------------------------------------------------------------------
 // Protocol version
@@ -46,10 +44,10 @@ class BridgeProtocolVersion {
   }
 
   Map<String, dynamic> toJson() => {
-        'major': major,
-        'minor': minor,
-        'patch': patch,
-      };
+    'major': major,
+    'minor': minor,
+    'patch': patch,
+  };
 
   factory BridgeProtocolVersion.fromJson(Map<String, dynamic> json) =>
       BridgeProtocolVersion(
@@ -145,29 +143,29 @@ class BridgeHandshake {
   });
 
   Map<String, dynamic> toJson() => {
-        'clientName': clientName,
-        'clientVersion': clientVersion.toJson(),
-        'capabilities': capabilities.map((c) => c.wireName).toList(),
-        'workspacePaths': workspacePaths,
-        'pid': pid,
-        if (sessionId != null) 'sessionId': sessionId,
-        if (extensions.isNotEmpty) 'extensions': extensions,
-      };
+    'clientName': clientName,
+    'clientVersion': clientVersion.toJson(),
+    'capabilities': capabilities.map((c) => c.wireName).toList(),
+    'workspacePaths': workspacePaths,
+    'pid': pid,
+    if (sessionId != null) 'sessionId': sessionId,
+    if (extensions.isNotEmpty) 'extensions': extensions,
+  };
 
   factory BridgeHandshake.fromJson(Map<String, dynamic> json) =>
       BridgeHandshake(
         clientName: json['clientName'] as String,
         clientVersion: BridgeProtocolVersion.fromJson(
-            json['clientVersion'] as Map<String, dynamic>),
+          json['clientVersion'] as Map<String, dynamic>,
+        ),
         capabilities: BridgeCapability.parseList(
-            json['capabilities'] as List<dynamic>),
-        workspacePaths: (json['workspacePaths'] as List<dynamic>?)
-                ?.cast<String>() ??
-            [],
+          json['capabilities'] as List<dynamic>,
+        ),
+        workspacePaths:
+            (json['workspacePaths'] as List<dynamic>?)?.cast<String>() ?? [],
         pid: json['pid'] as int,
         sessionId: json['sessionId'] as String?,
-        extensions:
-            (json['extensions'] as Map<String, dynamic>?) ?? const {},
+        extensions: (json['extensions'] as Map<String, dynamic>?) ?? const {},
       );
 
   @override
@@ -198,18 +196,18 @@ abstract final class ErrorCode {
 
   /// Human-readable description of an error code.
   static String describe(int code) => switch (code) {
-        parseError => 'Parse error',
-        invalidRequest => 'Invalid request',
-        methodNotFound => 'Method not found',
-        invalidParams => 'Invalid params',
-        internalError => 'Internal error',
-        serverNotInitialized => 'Server not initialized',
-        requestCancelled => 'Request cancelled',
-        contentModified => 'Content modified',
-        requestFailed => 'Request failed',
-        serverCancelled => 'Server cancelled',
-        _ => 'Unknown error ($code)',
-      };
+    parseError => 'Parse error',
+    invalidRequest => 'Invalid request',
+    methodNotFound => 'Method not found',
+    invalidParams => 'Invalid params',
+    internalError => 'Internal error',
+    serverNotInitialized => 'Server not initialized',
+    requestCancelled => 'Request cancelled',
+    contentModified => 'Content modified',
+    requestFailed => 'Request failed',
+    serverCancelled => 'Server cancelled',
+    _ => 'Unknown error ($code)',
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -222,58 +220,52 @@ class BridgeError implements Exception {
   final String message;
   final dynamic data;
 
-  const BridgeError({
-    required this.code,
-    required this.message,
-    this.data,
-  });
+  const BridgeError({required this.code, required this.message, this.data});
 
-  factory BridgeError.parseError([String? detail]) => BridgeError(
-        code: ErrorCode.parseError,
-        message: detail ?? 'Parse error',
-      );
+  factory BridgeError.parseError([String? detail]) =>
+      BridgeError(code: ErrorCode.parseError, message: detail ?? 'Parse error');
 
   factory BridgeError.invalidRequest([String? detail]) => BridgeError(
-        code: ErrorCode.invalidRequest,
-        message: detail ?? 'Invalid request',
-      );
+    code: ErrorCode.invalidRequest,
+    message: detail ?? 'Invalid request',
+  );
 
   factory BridgeError.methodNotFound(String method) => BridgeError(
-        code: ErrorCode.methodNotFound,
-        message: 'Method not found: $method',
-      );
+    code: ErrorCode.methodNotFound,
+    message: 'Method not found: $method',
+  );
 
   factory BridgeError.invalidParams([String? detail]) => BridgeError(
-        code: ErrorCode.invalidParams,
-        message: detail ?? 'Invalid params',
-      );
+    code: ErrorCode.invalidParams,
+    message: detail ?? 'Invalid params',
+  );
 
   factory BridgeError.internalError([String? detail]) => BridgeError(
-        code: ErrorCode.internalError,
-        message: detail ?? 'Internal error',
-      );
+    code: ErrorCode.internalError,
+    message: detail ?? 'Internal error',
+  );
 
   factory BridgeError.serverNotInitialized() => const BridgeError(
-        code: ErrorCode.serverNotInitialized,
-        message: 'Server not initialized',
-      );
+    code: ErrorCode.serverNotInitialized,
+    message: 'Server not initialized',
+  );
 
   factory BridgeError.requestCancelled() => const BridgeError(
-        code: ErrorCode.requestCancelled,
-        message: 'Request cancelled',
-      );
+    code: ErrorCode.requestCancelled,
+    message: 'Request cancelled',
+  );
 
   Map<String, dynamic> toJson() => {
-        'code': code,
-        'message': message,
-        if (data != null) 'data': data,
-      };
+    'code': code,
+    'message': message,
+    if (data != null) 'data': data,
+  };
 
   factory BridgeError.fromJson(Map<String, dynamic> json) => BridgeError(
-        code: json['code'] as int,
-        message: json['message'] as String,
-        data: json['data'],
-      );
+    code: json['code'] as int,
+    message: json['message'] as String,
+    data: json['data'],
+  );
 
   @override
   String toString() => 'BridgeError($code: $message)';
@@ -298,17 +290,17 @@ class BridgeRequest {
   });
 
   Map<String, dynamic> toJson() => {
-        'jsonrpc': '2.0',
-        'id': id,
-        'method': method,
-        if (params != null) 'params': params,
-      };
+    'jsonrpc': '2.0',
+    'id': id,
+    'method': method,
+    if (params != null) 'params': params,
+  };
 
   factory BridgeRequest.fromJson(Map<String, dynamic> json) => BridgeRequest(
-        id: json['id'].toString(),
-        method: json['method'] as String,
-        params: json['params'],
-      );
+    id: json['id'].toString(),
+    method: json['method'] as String,
+    params: json['params'],
+  );
 
   @override
   String toString() => 'BridgeRequest($id, $method)';
@@ -320,11 +312,7 @@ class BridgeResponse {
   final dynamic result;
   final BridgeError? error;
 
-  const BridgeResponse({
-    required this.id,
-    this.result,
-    this.error,
-  });
+  const BridgeResponse({required this.id, this.result, this.error});
 
   /// Whether this response indicates success.
   bool get isSuccess => error == null;
@@ -333,20 +321,19 @@ class BridgeResponse {
   bool get isError => error != null;
 
   Map<String, dynamic> toJson() => {
-        'jsonrpc': '2.0',
-        'id': id,
-        if (result != null) 'result': result,
-        if (error != null) 'error': error!.toJson(),
-      };
+    'jsonrpc': '2.0',
+    'id': id,
+    if (result != null) 'result': result,
+    if (error != null) 'error': error!.toJson(),
+  };
 
-  factory BridgeResponse.fromJson(Map<String, dynamic> json) =>
-      BridgeResponse(
-        id: json['id'].toString(),
-        result: json['result'],
-        error: json['error'] != null
-            ? BridgeError.fromJson(json['error'] as Map<String, dynamic>)
-            : null,
-      );
+  factory BridgeResponse.fromJson(Map<String, dynamic> json) => BridgeResponse(
+    id: json['id'].toString(),
+    result: json['result'],
+    error: json['error'] != null
+        ? BridgeError.fromJson(json['error'] as Map<String, dynamic>)
+        : null,
+  );
 
   /// Create a success response.
   factory BridgeResponse.success(String id, [dynamic result]) =>
@@ -367,16 +354,13 @@ class BridgeNotification {
   final String method;
   final dynamic params;
 
-  const BridgeNotification({
-    required this.method,
-    this.params,
-  });
+  const BridgeNotification({required this.method, this.params});
 
   Map<String, dynamic> toJson() => {
-        'jsonrpc': '2.0',
-        'method': method,
-        if (params != null) 'params': params,
-      };
+    'jsonrpc': '2.0',
+    'method': method,
+    if (params != null) 'params': params,
+  };
 
   factory BridgeNotification.fromJson(Map<String, dynamic> json) =>
       BridgeNotification(
@@ -434,11 +418,14 @@ class MessageSerializer {
     final type = classify(json);
     return switch (type) {
       MessageType.request => ProtocolMessage.request(
-          BridgeRequest.fromJson(json)),
+        BridgeRequest.fromJson(json),
+      ),
       MessageType.response => ProtocolMessage.response(
-          BridgeResponse.fromJson(json)),
+        BridgeResponse.fromJson(json),
+      ),
       MessageType.notification => ProtocolMessage.notification(
-          BridgeNotification.fromJson(json)),
+        BridgeNotification.fromJson(json),
+      ),
     };
   }
 
@@ -515,10 +502,12 @@ class RequestRegistry {
       timer = Timer(timeout, () {
         if (_pending.containsKey(request.id)) {
           _pending.remove(request.id);
-          completer.completeError(BridgeError(
-            code: ErrorCode.requestCancelled,
-            message: 'Request ${request.id} timed out after $timeout',
-          ));
+          completer.completeError(
+            BridgeError(
+              code: ErrorCode.requestCancelled,
+              message: 'Request ${request.id} timed out after $timeout',
+            ),
+          );
         }
       });
     }
@@ -552,10 +541,12 @@ class RequestRegistry {
     final pending = _pending.remove(id);
     if (pending == null) return false;
     pending.timer?.cancel();
-    pending.completer.completeError(BridgeError(
-      code: ErrorCode.requestCancelled,
-      message: reason ?? 'Request $id cancelled',
-    ));
+    pending.completer.completeError(
+      BridgeError(
+        code: ErrorCode.requestCancelled,
+        message: reason ?? 'Request $id cancelled',
+      ),
+    );
     return true;
   }
 
@@ -563,10 +554,12 @@ class RequestRegistry {
   void cancelAll([String? reason]) {
     for (final entry in _pending.values) {
       entry.timer?.cancel();
-      entry.completer.completeError(BridgeError(
-        code: ErrorCode.requestCancelled,
-        message: reason ?? 'All requests cancelled',
-      ));
+      entry.completer.completeError(
+        BridgeError(
+          code: ErrorCode.requestCancelled,
+          message: reason ?? 'All requests cancelled',
+        ),
+      );
     }
     _pending.clear();
   }
@@ -606,8 +599,8 @@ class _PendingRequest {
 // ---------------------------------------------------------------------------
 
 /// Handler for incoming requests. Returns the result to send back.
-typedef RequestHandler = Future<dynamic> Function(
-    String method, dynamic params);
+typedef RequestHandler =
+    Future<dynamic> Function(String method, dynamic params);
 
 /// Handler for incoming notifications.
 typedef NotificationHandler = void Function(String method, dynamic params);
@@ -638,9 +631,8 @@ class BridgeProtocol {
   final StreamController<BridgeNotification> _notifications =
       StreamController.broadcast();
 
-  BridgeProtocol({
-    Duration defaultTimeout = const Duration(seconds: 30),
-  }) : _registry = RequestRegistry(defaultTimeout: defaultTimeout);
+  BridgeProtocol({Duration defaultTimeout = const Duration(seconds: 30)})
+    : _registry = RequestRegistry(defaultTimeout: defaultTimeout);
 
   // ---- State ----
 
@@ -668,8 +660,7 @@ class BridgeProtocol {
   Stream<BridgeError> get errors => _errors.stream;
 
   /// Incoming notifications (after dispatch).
-  Stream<BridgeNotification> get incomingNotifications =>
-      _notifications.stream;
+  Stream<BridgeNotification> get incomingNotifications => _notifications.stream;
 
   // ---- Message handling ----
 
@@ -694,19 +685,23 @@ class BridgeProtocol {
 
   void _handleRequest(BridgeRequest request) async {
     if (!_initialized && request.method != 'initialize') {
-      _send(BridgeResponse.error(
-        request.id,
-        BridgeError.serverNotInitialized(),
-      ).toJson());
+      _send(
+        BridgeResponse.error(
+          request.id,
+          BridgeError.serverNotInitialized(),
+        ).toJson(),
+      );
       return;
     }
 
     final handler = _requestHandlers[request.method];
     if (handler == null) {
-      _send(BridgeResponse.error(
-        request.id,
-        BridgeError.methodNotFound(request.method),
-      ).toJson());
+      _send(
+        BridgeResponse.error(
+          request.id,
+          BridgeError.methodNotFound(request.method),
+        ).toJson(),
+      );
       return;
     }
 
@@ -716,19 +711,23 @@ class BridgeProtocol {
     } on BridgeError catch (e) {
       _send(BridgeResponse.error(request.id, e).toJson());
     } catch (e) {
-      _send(BridgeResponse.error(
-        request.id,
-        BridgeError.internalError(e.toString()),
-      ).toJson());
+      _send(
+        BridgeResponse.error(
+          request.id,
+          BridgeError.internalError(e.toString()),
+        ).toJson(),
+      );
     }
   }
 
   void _handleResponse(BridgeResponse response) {
     if (!_registry.complete(response)) {
-      _errors.add(BridgeError(
-        code: ErrorCode.invalidRequest,
-        message: 'No pending request for response id: ${response.id}',
-      ));
+      _errors.add(
+        BridgeError(
+          code: ErrorCode.invalidRequest,
+          message: 'No pending request for response id: ${response.id}',
+        ),
+      );
     }
   }
 
@@ -783,8 +782,7 @@ class BridgeProtocol {
   }
 
   /// Register a handler for incoming notifications with a specific method.
-  void registerNotificationHandler(
-      String method, NotificationHandler handler) {
+  void registerNotificationHandler(String method, NotificationHandler handler) {
     _notificationHandlers[method] = handler;
   }
 
@@ -802,11 +800,11 @@ class BridgeProtocol {
       final result = response.result as Map<String, dynamic>;
       if (result.containsKey('capabilities')) {
         _remoteCapabilities = BridgeCapability.parseList(
-            result['capabilities'] as List<dynamic>);
+          result['capabilities'] as List<dynamic>,
+        );
       }
       if (result.containsKey('clientName')) {
-        _remoteHandshake =
-            BridgeHandshake.fromJson(result);
+        _remoteHandshake = BridgeHandshake.fromJson(result);
       }
     }
     _initialized = true;
@@ -864,13 +862,10 @@ class BridgeProtocol {
   }
 
   /// Notify that a text document was saved.
-  void textDocumentDidSave({
-    required String uri,
-    String? text,
-  }) {
+  void textDocumentDidSave({required String uri, String? text}) {
     sendNotification('textDocument/didSave', {
       'textDocument': {'uri': uri},
-      if (text != null) 'text': text,
+      'text': ?text,
     });
   }
 
@@ -884,7 +879,7 @@ class BridgeProtocol {
     return sendRequest('textDocument/completion', {
       'textDocument': {'uri': uri},
       'position': {'line': line, 'character': character},
-      if (context != null) 'context': context,
+      'context': ?context,
     });
   }
 
@@ -950,19 +945,14 @@ class BridgeProtocol {
     required Map<String, dynamic> edit,
     String? label,
   }) {
-    return sendRequest('workspace/applyEdit', {
-      'edit': edit,
-      if (label != null) 'label': label,
-    });
+    return sendRequest('workspace/applyEdit', {'edit': edit, 'label': ?label});
   }
 
   /// Request workspace configuration.
   Future<BridgeResponse> workspaceConfiguration({
     required List<Map<String, dynamic>> items,
   }) {
-    return sendRequest('workspace/configuration', {
-      'items': items,
-    });
+    return sendRequest('workspace/configuration', {'items': items});
   }
 
   // ---- Window methods ----
@@ -976,7 +966,7 @@ class BridgeProtocol {
     return sendRequest('window/showMessage', {
       'type': type,
       'message': message,
-      if (actions != null) 'actions': actions,
+      'actions': ?actions,
     });
   }
 
@@ -990,16 +980,14 @@ class BridgeProtocol {
   }) {
     return sendRequest('neomclaw/chat', {
       'message': message,
-      if (conversationId != null) 'conversationId': conversationId,
-      if (options != null) 'options': options,
+      'conversationId': ?conversationId,
+      'options': ?options,
     });
   }
 
   /// Abort a running NeomClaw request.
   Future<BridgeResponse> neomClawAbort({String? conversationId}) {
-    return sendRequest('neomclaw/abort', {
-      if (conversationId != null) 'conversationId': conversationId,
-    });
+    return sendRequest('neomclaw/abort', {'conversationId': ?conversationId});
   }
 
   /// Get NeomClaw status.
@@ -1016,21 +1004,15 @@ class BridgeProtocol {
     return sendRequest('neomclaw/tools', {
       'toolName': toolName,
       'toolInput': toolInput,
-      if (conversationId != null) 'conversationId': conversationId,
+      'conversationId': ?conversationId,
     });
   }
 
   // ---- Progress / cancellation ----
 
   /// Send a progress notification.
-  void progress({
-    required String token,
-    required Map<String, dynamic> value,
-  }) {
-    sendNotification(r'$/progress', {
-      'token': token,
-      'value': value,
-    });
+  void progress({required String token, required Map<String, dynamic> value}) {
+    sendNotification(r'$/progress', {'token': token, 'value': value});
   }
 
   /// Cancel a pending request on the remote side.

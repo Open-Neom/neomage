@@ -41,17 +41,16 @@ class RemoteSetting {
   });
 
   /// Whether the cached value has expired.
-  bool get isExpired =>
-      expiresAt != null && DateTime.now().isAfter(expiresAt!);
+  bool get isExpired => expiresAt != null && DateTime.now().isAfter(expiresAt!);
 
   Map<String, dynamic> toJson() => {
-        'key': key,
-        'value': value,
-        'source': source.name,
-        'lastFetched': lastFetched.toIso8601String(),
-        if (expiresAt != null) 'expiresAt': expiresAt!.toIso8601String(),
-        'overridable': overridable,
-      };
+    'key': key,
+    'value': value,
+    'source': source.name,
+    'lastFetched': lastFetched.toIso8601String(),
+    if (expiresAt != null) 'expiresAt': expiresAt!.toIso8601String(),
+    'overridable': overridable,
+  };
 
   factory RemoteSetting.fromJson(Map<String, dynamic> json) {
     return RemoteSetting(
@@ -178,17 +177,14 @@ class RemoteSettingsService {
   ///
   /// If [force] is `true` the local cache is ignored and a fresh request is
   /// made.  Returns the full map of remote settings.
-  Future<Map<String, RemoteSetting>> fetchSettings({
-    bool force = false,
-  }) async {
+  Future<Map<String, RemoteSetting>> fetchSettings({bool force = false}) async {
     if (!force && _remote.isNotEmpty && !_hasExpired()) {
       return Map.unmodifiable(_remote);
     }
 
     try {
       _httpClient ??= HttpClient();
-      final request =
-          await _httpClient!.getUrl(Uri.parse(config.endpoint));
+      final request = await _httpClient!.getUrl(Uri.parse(config.endpoint));
       final response = await request.close();
 
       if (response.statusCode != 200) {
@@ -320,8 +316,7 @@ class RemoteSettingsService {
         isRemoteOnly: remote != null && local == null,
         isLocalOnly: remote == null && local != null,
       );
-    }).toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
+    }).toList()..sort((a, b) => a.key.compareTo(b.key));
   }
 
   // ── Export ─────────────────────────────────────────────────────────────
@@ -329,9 +324,7 @@ class RemoteSettingsService {
   /// Export all effective (resolved) settings as a flat map.
   Map<String, dynamic> exportEffective() {
     final allKeys = <String>{..._remote.keys, ..._overrides.keys};
-    return {
-      for (final key in allKeys) key: getEffective(key).value,
-    };
+    return {for (final key in allKeys) key: getEffective(key).value};
   }
 
   // ── Cleanup ───────────────────────────────────────────────────────────
@@ -361,8 +354,9 @@ class RemoteSettingsService {
       final overridable = value is Map && value['overridable'] == false
           ? false
           : true;
-      final actualValue =
-          value is Map && value.containsKey('value') ? value['value'] : value;
+      final actualValue = value is Map && value.containsKey('value')
+          ? value['value']
+          : value;
 
       _remote[entry.key] = RemoteSetting(
         key: entry.key,
@@ -380,9 +374,7 @@ class RemoteSettingsService {
       final dir = Directory(config.cacheDir);
       if (!await dir.exists()) await dir.create(recursive: true);
 
-      final data = {
-        for (final e in _remote.entries) e.key: e.value.toJson(),
-      };
+      final data = {for (final e in _remote.entries) e.key: e.value.toJson()};
       await File(_cachePath).writeAsString(json.encode(data));
     } catch (_) {
       // Best-effort caching — do not crash if disk write fails.

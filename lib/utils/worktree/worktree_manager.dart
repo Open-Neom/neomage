@@ -1,6 +1,6 @@
 /// Git worktree management: creating, listing, cleaning up worktrees.
 ///
-/// Ported from openneomclaw/src/utils/worktree.ts (1519 LOC).
+/// Ported from neom_claw/src/utils/worktree.ts (1519 LOC).
 library;
 
 import 'dart:async';
@@ -98,20 +98,18 @@ class WorktreeSession {
   }
 
   Map<String, dynamic> toJson() => {
-        'originalCwd': originalCwd,
-        'worktreePath': worktreePath,
-        'worktreeName': worktreeName,
-        if (worktreeBranch != null) 'worktreeBranch': worktreeBranch,
-        if (originalBranch != null) 'originalBranch': originalBranch,
-        if (originalHeadCommit != null)
-          'originalHeadCommit': originalHeadCommit,
-        'sessionId': sessionId,
-        if (tmuxSessionName != null) 'tmuxSessionName': tmuxSessionName,
-        'hookBased': hookBased,
-        if (creationDurationMs != null)
-          'creationDurationMs': creationDurationMs,
-        'usedSparsePaths': usedSparsePaths,
-      };
+    'originalCwd': originalCwd,
+    'worktreePath': worktreePath,
+    'worktreeName': worktreeName,
+    if (worktreeBranch != null) 'worktreeBranch': worktreeBranch,
+    if (originalBranch != null) 'originalBranch': originalBranch,
+    if (originalHeadCommit != null) 'originalHeadCommit': originalHeadCommit,
+    'sessionId': sessionId,
+    if (tmuxSessionName != null) 'tmuxSessionName': tmuxSessionName,
+    'hookBased': hookBased,
+    if (creationDurationMs != null) 'creationDurationMs': creationDurationMs,
+    'usedSparsePaths': usedSparsePaths,
+  };
 
   factory WorktreeSession.fromJson(Map<String, dynamic> json) {
     return WorktreeSession(
@@ -210,19 +208,17 @@ class WorktreeManager extends SintController {
       _defaultFindCanonicalGitRoot;
 
   /// Callback for getting the default branch.
-  Future<String> Function() _getDefaultBranch =
-      () async => 'main';
+  Future<String> Function() _getDefaultBranch = () async => 'main';
 
   /// Callback for getting the current branch.
-  Future<String> Function() _getBranch =
-      () async => 'main';
+  Future<String> Function() _getBranch = () async => 'main';
 
   /// Callback for saving project config.
   void Function(WorktreeSession? session)? onSaveProjectConfig;
 
   /// Callback for executing worktree create hooks.
   Future<({String worktreePath})> Function(String slug)?
-      onExecuteWorktreeCreateHook;
+  onExecuteWorktreeCreateHook;
 
   /// Callback for executing worktree remove hooks.
   Future<bool> Function(String worktreePath)? onExecuteWorktreeRemoveHook;
@@ -250,8 +246,7 @@ class WorktreeManager extends SintController {
     Future<String> Function()? getDefaultBranch,
     Future<String> Function()? getBranch,
     void Function(WorktreeSession?)? saveProjectConfig,
-    Future<({String worktreePath})> Function(String)?
-        executeWorktreeCreateHook,
+    Future<({String worktreePath})> Function(String)? executeWorktreeCreateHook,
     Future<bool> Function(String)? executeWorktreeRemoveHook,
     bool Function()? hasWorktreeCreateHook,
     Future<String?> Function(String)? readWorktreeHeadSha,
@@ -399,11 +394,7 @@ class WorktreeManager extends SintController {
         stderr: result.stderr as String? ?? '',
       );
     } catch (e) {
-      return ExecResult(
-        code: -1,
-        stderr: e.toString(),
-        error: e.toString(),
-      );
+      return ExecResult(code: -1, stderr: e.toString(), error: e.toString());
     }
   }
 
@@ -433,10 +424,7 @@ class WorktreeManager extends SintController {
     // New worktree: fetch base branch then add
     await Directory(_worktreesDir(repoRoot)).create(recursive: true);
 
-    final fetchEnv = {
-      ...Platform.environment,
-      ..._gitNoPromptEnv,
-    };
+    final fetchEnv = {...Platform.environment, ..._gitNoPromptEnv};
 
     String baseBranch;
     String? baseSha;
@@ -459,10 +447,11 @@ class WorktreeManager extends SintController {
       final originRef = 'origin/$defaultBranch';
 
       // Try to resolve locally first to skip fetch
-      final revParseResult = await _execGit(
-        ['rev-parse', '--verify', 'refs/remotes/origin/$defaultBranch'],
-        cwd: repoRoot,
-      );
+      final revParseResult = await _execGit([
+        'rev-parse',
+        '--verify',
+        'refs/remotes/origin/$defaultBranch',
+      ], cwd: repoRoot);
 
       if (revParseResult.code == 0 && revParseResult.stdout.trim().isNotEmpty) {
         baseBranch = originRef;
@@ -479,10 +468,10 @@ class WorktreeManager extends SintController {
 
     // Resolve base SHA if we don't have it yet
     if (baseSha == null) {
-      final shaResult = await _execGit(
-        ['rev-parse', baseBranch],
-        cwd: repoRoot,
-      );
+      final shaResult = await _execGit([
+        'rev-parse',
+        baseBranch,
+      ], cwd: repoRoot);
       if (shaResult.code != 0) {
         throw StateError(
           'Failed to resolve base branch "$baseBranch": git rev-parse failed',
@@ -492,7 +481,14 @@ class WorktreeManager extends SintController {
     }
 
     // Create the worktree. -B (not -b) resets any orphan branch left behind.
-    final addArgs = ['worktree', 'add', '-B', worktreeBranch, worktreePath, baseBranch];
+    final addArgs = [
+      'worktree',
+      'add',
+      '-B',
+      worktreeBranch,
+      worktreePath,
+      baseBranch,
+    ];
 
     final createResult = await _execGit(addArgs, cwd: repoRoot);
     if (createResult.code != 0) {
@@ -549,10 +545,11 @@ class WorktreeManager extends SintController {
     }
 
     if (hooksPath != null) {
-      final configResult = await _execGit(
-        ['config', 'core.hooksPath', hooksPath],
-        cwd: worktreePath,
-      );
+      final configResult = await _execGit([
+        'config',
+        'core.hooksPath',
+        hooksPath,
+      ], cwd: worktreePath);
       if (configResult.code == 0) {
         _logForDebugging(
           'Configured worktree to use hooks from main repository: $hooksPath',
@@ -584,8 +581,7 @@ class WorktreeManager extends SintController {
   ) async {
     String includeContent;
     try {
-      includeContent =
-          await File('$repoRoot/.worktreeinclude').readAsString();
+      includeContent = await File('$repoRoot/.worktreeinclude').readAsString();
     } catch (_) {
       return [];
     }
@@ -599,21 +595,21 @@ class WorktreeManager extends SintController {
     if (patterns.isEmpty) return [];
 
     // List gitignored files with --directory for performance
-    final gitignored = await _execGit(
-      [
-        'ls-files',
-        '--others',
-        '--ignored',
-        '--exclude-standard',
-        '--directory',
-      ],
-      cwd: repoRoot,
-    );
+    final gitignored = await _execGit([
+      'ls-files',
+      '--others',
+      '--ignored',
+      '--exclude-standard',
+      '--directory',
+    ], cwd: repoRoot);
 
     if (gitignored.code != 0 || gitignored.stdout.trim().isEmpty) return [];
 
-    final entries =
-        gitignored.stdout.trim().split('\n').where((e) => e.isNotEmpty).toList();
+    final entries = gitignored.stdout
+        .trim()
+        .split('\n')
+        .where((e) => e.isNotEmpty)
+        .toList();
 
     final files = <String>[];
     final collapsedDirs = entries.where((e) => e.endsWith('/')).toList();
@@ -641,17 +637,14 @@ class WorktreeManager extends SintController {
     }).toList();
 
     if (dirsToExpand.isNotEmpty) {
-      final expanded = await _execGit(
-        [
-          'ls-files',
-          '--others',
-          '--ignored',
-          '--exclude-standard',
-          '--',
-          ...dirsToExpand,
-        ],
-        cwd: repoRoot,
-      );
+      final expanded = await _execGit([
+        'ls-files',
+        '--others',
+        '--ignored',
+        '--exclude-standard',
+        '--',
+        ...dirsToExpand,
+      ], cwd: repoRoot);
       if (expanded.code == 0 && expanded.stdout.trim().isNotEmpty) {
         for (final f
             in expanded.stdout.trim().split('\n').where((e) => e.isNotEmpty)) {
@@ -691,7 +684,9 @@ class WorktreeManager extends SintController {
   /// Simple gitignore-style pattern matching.
   static bool _matchesAnyPattern(String path, List<String> patterns) {
     for (final pattern in patterns) {
-      final normalized = pattern.startsWith('/') ? pattern.substring(1) : pattern;
+      final normalized = pattern.startsWith('/')
+          ? pattern.substring(1)
+          : pattern;
       // Simple glob matching (supports * and **)
       final regexStr = normalized
           .replaceAll('.', r'\.')
@@ -792,7 +787,11 @@ class WorktreeManager extends SintController {
 
       final originalBranch = await _getBranch();
       final createStart = DateTime.now().millisecondsSinceEpoch;
-      final result = await _getOrCreateWorktree(gitRoot, slug, options: options);
+      final result = await _getOrCreateWorktree(
+        gitRoot,
+        slug,
+        options: options,
+      );
 
       int? creationDurationMs;
       if (result is WorktreeCreated) {
@@ -858,8 +857,9 @@ class WorktreeManager extends SintController {
 
       if (session.hookBased) {
         if (onExecuteWorktreeRemoveHook != null) {
-          final hookRan =
-              await onExecuteWorktreeRemoveHook!(session.worktreePath);
+          final hookRan = await onExecuteWorktreeRemoveHook!(
+            session.worktreePath,
+          );
           if (hookRan) {
             _logForDebugging(
               'Removed hook-based worktree at: ${session.worktreePath}',
@@ -873,10 +873,12 @@ class WorktreeManager extends SintController {
           }
         }
       } else {
-        final removeResult = await _execGit(
-          ['worktree', 'remove', '--force', session.worktreePath],
-          cwd: session.originalCwd,
-        );
+        final removeResult = await _execGit([
+          'worktree',
+          'remove',
+          '--force',
+          session.worktreePath,
+        ], cwd: session.originalCwd);
 
         if (removeResult.code != 0) {
           _logForDebugging(
@@ -897,10 +899,11 @@ class WorktreeManager extends SintController {
       if (!session.hookBased && session.worktreeBranch != null) {
         await Future.delayed(const Duration(milliseconds: 100));
 
-        final deleteResult = await _execGit(
-          ['branch', '-D', session.worktreeBranch!],
-          cwd: session.originalCwd,
-        );
+        final deleteResult = await _execGit([
+          'branch',
+          '-D',
+          session.worktreeBranch!,
+        ], cwd: session.originalCwd);
 
         if (deleteResult.code != 0) {
           _logForDebugging(
@@ -925,13 +928,16 @@ class WorktreeManager extends SintController {
   // ---------------------------------------------------------------------------
 
   /// Create a lightweight worktree for a subagent.
-  Future<({
-    String worktreePath,
-    String? worktreeBranch,
-    String? headCommit,
-    String? gitRoot,
-    bool hookBased,
-  })> createAgentWorktree(String slug) async {
+  Future<
+    ({
+      String worktreePath,
+      String? worktreeBranch,
+      String? headCommit,
+      String? gitRoot,
+      bool hookBased,
+    })
+  >
+  createAgentWorktree(String slug) async {
     validateWorktreeSlug(slug);
 
     if (_hasWorktreeCreateHook() && onExecuteWorktreeCreateHook != null) {
@@ -965,7 +971,7 @@ class WorktreeManager extends SintController {
       await _performPostCreationSetup(gitRoot, result.worktreePath);
     } else {
       // Bump mtime so periodic cleanup doesn't consider this stale
-      final now = DateTime.now();
+      final _now = DateTime.now();
       try {
         await Process.run('touch', [result.worktreePath]);
       } catch (_) {}
@@ -1011,10 +1017,12 @@ class WorktreeManager extends SintController {
       return false;
     }
 
-    final removeResult = await _execGit(
-      ['worktree', 'remove', '--force', worktreePath],
-      cwd: gitRoot,
-    );
+    final removeResult = await _execGit([
+      'worktree',
+      'remove',
+      '--force',
+      worktreePath,
+    ], cwd: gitRoot);
 
     if (removeResult.code != 0) {
       _logForDebugging(
@@ -1028,10 +1036,11 @@ class WorktreeManager extends SintController {
 
     if (worktreeBranch == null) return true;
 
-    final deleteResult = await _execGit(
-      ['branch', '-D', worktreeBranch],
-      cwd: gitRoot,
-    );
+    final deleteResult = await _execGit([
+      'branch',
+      '-D',
+      worktreeBranch,
+    ], cwd: gitRoot);
 
     if (deleteResult.code != 0) {
       _logForDebugging(
@@ -1086,14 +1095,19 @@ class WorktreeManager extends SintController {
       if (mtimeMs >= cutoffMs) continue;
 
       // Both checks must succeed with empty output
-      final statusFuture = _execGit(
-        ['--no-optional-locks', 'status', '--porcelain', '-uno'],
-        cwd: worktreePath,
-      );
-      final unpushedFuture = _execGit(
-        ['rev-list', '--max-count=1', 'HEAD', '--not', '--remotes'],
-        cwd: worktreePath,
-      );
+      final statusFuture = _execGit([
+        '--no-optional-locks',
+        'status',
+        '--porcelain',
+        '-uno',
+      ], cwd: worktreePath);
+      final unpushedFuture = _execGit([
+        'rev-list',
+        '--max-count=1',
+        'HEAD',
+        '--not',
+        '--remotes',
+      ], cwd: worktreePath);
 
       final results = await Future.wait([statusFuture, unpushedFuture]);
       final status = results[0];
@@ -1128,17 +1142,18 @@ class WorktreeManager extends SintController {
     String worktreePath,
     String headCommit,
   ) async {
-    final statusResult = await _execGit(
-      ['status', '--porcelain'],
-      cwd: worktreePath,
-    );
+    final statusResult = await _execGit([
+      'status',
+      '--porcelain',
+    ], cwd: worktreePath);
     if (statusResult.code != 0) return true;
     if (statusResult.stdout.trim().isNotEmpty) return true;
 
-    final revListResult = await _execGit(
-      ['rev-list', '--count', '$headCommit..HEAD'],
-      cwd: worktreePath,
-    );
+    final revListResult = await _execGit([
+      'rev-list',
+      '--count',
+      '$headCommit..HEAD',
+    ], cwd: worktreePath);
     if (revListResult.code != 0) return true;
     if ((int.tryParse(revListResult.stdout.trim()) ?? 0) > 0) return true;
 
@@ -1206,7 +1221,10 @@ class WorktreeManager extends SintController {
   ) async {
     // Check platform
     if (Platform.isWindows) {
-      return (handled: false, error: 'Error: --tmux is not supported on Windows');
+      return (
+        handled: false,
+        error: 'Error: --tmux is not supported on Windows',
+      );
     }
 
     // Check tmux
@@ -1220,7 +1238,7 @@ class WorktreeManager extends SintController {
 
     // Parse worktree name from args
     String? worktreeName;
-    bool forceClassicTmux = false;
+    bool _forceClassicTmux = false;
 
     for (int i = 0; i < args.length; i++) {
       final arg = args[i];
@@ -1231,7 +1249,7 @@ class WorktreeManager extends SintController {
       } else if (arg.startsWith('--worktree=')) {
         worktreeName = arg.substring('--worktree='.length);
       } else if (arg == '--tmux=classic') {
-        forceClassicTmux = true;
+        _forceClassicTmux = true;
       }
     }
 
@@ -1303,8 +1321,10 @@ class WorktreeManager extends SintController {
 
     // Build tmux session name
     final tmuxSessionNameFinal =
-        '${repoName}_${worktreeBranchName(worktreeName)}'
-            .replaceAll(RegExp(r'[/.]'), '_');
+        '${repoName}_${worktreeBranchName(worktreeName)}'.replaceAll(
+          RegExp(r'[/.]'),
+          '_',
+        );
 
     // Build new args without --tmux and --worktree
     final newArgs = <String>[];
@@ -1332,8 +1352,11 @@ class WorktreeManager extends SintController {
       ...newArgs,
     ];
 
-    final tmuxResult = Process.runSync('tmux', tmuxArgs,
-        workingDirectory: worktreeDir);
+    final _tmuxResult = Process.runSync(
+      'tmux',
+      tmuxArgs,
+      workingDirectory: worktreeDir,
+    );
 
     return (handled: true, error: null);
   }
@@ -1345,11 +1368,6 @@ class WorktreeManager extends SintController {
   @override
   void onInit() {
     super.onInit();
-  }
-
-  @override
-  void onClose() {
-    super.onClose();
   }
 }
 

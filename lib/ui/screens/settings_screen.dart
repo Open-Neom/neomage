@@ -1,4 +1,4 @@
-// Settings screen — faithful port of openneomclaw/src/components/Settings/
+// Settings screen — faithful port of neom_claw/src/components/Settings/
 // Ports: Settings.tsx (tab container), Config.tsx (config options),
 // Status.tsx (system info + diagnostics), Usage.tsx (rate limit bars).
 //
@@ -19,7 +19,6 @@ import '../../data/api/api_provider.dart';
 import '../../data/auth/auth_service.dart';
 import '../controllers/chat_controller.dart';
 import 'ollama_setup_screen.dart';
-import '../widgets/custom_select.dart';
 import '../widgets/design_system.dart';
 
 // ─── Settings tab enum ───────────────────────────────────────────────────
@@ -210,7 +209,8 @@ class SettingsController extends SintController {
         : defaultBaseUrl;
 
     if (AuthService.requiresApiKey(provider) && apiKey.isEmpty) {
-      testError.value = 'API key is required for '
+      testError.value =
+          'API key is required for '
           '${AuthService.providerDisplayName(provider)}';
       testResult.value = null;
       return;
@@ -243,7 +243,8 @@ class SettingsController extends SintController {
     required String model,
     required String baseUrl,
   }) async {
-    const prompt = 'Introduce yourself briefly: what model are you, '
+    const prompt =
+        'Introduce yourself briefly: what model are you, '
         'who made you, and what are your main capabilities? '
         'Keep it to 2-3 sentences.';
 
@@ -265,9 +266,12 @@ class SettingsController extends SintController {
   }
 
   Future<String> _testGemini(
-      String apiKey, String model, String baseUrl, String prompt) async {
-    final url = Uri.parse(
-        '$baseUrl/models/$model:generateContent?key=$apiKey');
+    String apiKey,
+    String model,
+    String baseUrl,
+    String prompt,
+  ) async {
+    final url = Uri.parse('$baseUrl/models/$model:generateContent?key=$apiKey');
     final resp = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -275,9 +279,9 @@ class SettingsController extends SintController {
         'contents': [
           {
             'parts': [
-              {'text': prompt}
-            ]
-          }
+              {'text': prompt},
+            ],
+          },
         ],
         'generationConfig': {'maxOutputTokens': 256},
       }),
@@ -296,7 +300,11 @@ class SettingsController extends SintController {
   }
 
   Future<String> _testAnthropic(
-      String apiKey, String model, String baseUrl, String prompt) async {
+    String apiKey,
+    String model,
+    String baseUrl,
+    String prompt,
+  ) async {
     final url = Uri.parse('$baseUrl/v1/messages');
     final resp = await http.post(
       url,
@@ -309,14 +317,13 @@ class SettingsController extends SintController {
         'model': model,
         'max_tokens': 256,
         'messages': [
-          {'role': 'user', 'content': prompt}
+          {'role': 'user', 'content': prompt},
         ],
       }),
     );
     if (resp.statusCode != 200) {
       final body = jsonDecode(resp.body);
-      throw Exception(
-          body['error']?['message'] ?? 'HTTP ${resp.statusCode}');
+      throw Exception(body['error']?['message'] ?? 'HTTP ${resp.statusCode}');
     }
     final body = jsonDecode(resp.body);
     final content = body['content'] as List?;
@@ -325,11 +332,13 @@ class SettingsController extends SintController {
   }
 
   Future<String> _testOpenAiCompat(
-      String apiKey, String model, String baseUrl, String prompt) async {
+    String apiKey,
+    String model,
+    String baseUrl,
+    String prompt,
+  ) async {
     final url = Uri.parse('$baseUrl/chat/completions');
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
+    final headers = <String, String>{'Content-Type': 'application/json'};
     if (apiKey.isNotEmpty) {
       headers['Authorization'] = 'Bearer $apiKey';
     }
@@ -340,16 +349,16 @@ class SettingsController extends SintController {
         'model': model,
         'max_tokens': 256,
         'messages': [
-          {'role': 'user', 'content': prompt}
+          {'role': 'user', 'content': prompt},
         ],
       }),
     );
     if (resp.statusCode != 200) {
       final body = jsonDecode(resp.body);
       final msg = body['error']?['message'] ?? body['message'] ?? '';
-      throw Exception(msg.toString().isNotEmpty
-          ? msg
-          : 'HTTP ${resp.statusCode}');
+      throw Exception(
+        msg.toString().isNotEmpty ? msg : 'HTTP ${resp.statusCode}',
+      );
     }
     final body = jsonDecode(resp.body);
     final choices = body['choices'] as List?;
@@ -383,9 +392,7 @@ class SettingsController extends SintController {
       // Port of fetchUtilization() from Usage.tsx
       // In production, this calls the API to get rate limit data
       utilization.value = const Utilization(
-        limits: [
-          RateLimit(title: 'Standard usage', utilization: 0),
-        ],
+        limits: [RateLimit(title: 'Standard usage', utilization: 0)],
       );
     } catch (e) {
       usageError.value = 'Failed to load usage data: $e';
@@ -477,9 +484,11 @@ class SettingsController extends SintController {
 
     if (query.isEmpty) return items;
     return items
-        .where((item) =>
-            item.label.toLowerCase().contains(query) ||
-            (item.searchText?.toLowerCase().contains(query) ?? false))
+        .where(
+          (item) =>
+              item.label.toLowerCase().contains(query) ||
+              (item.searchText?.toLowerCase().contains(query) ?? false),
+        )
         .toList();
   }
 
@@ -493,14 +502,12 @@ class SettingsController extends SintController {
   List<StatusProperty> get statusProperties {
     return [
       const StatusProperty(label: 'Version', value: '1.0.0'),
-      StatusProperty(
-          label: 'Provider', value: selectedProvider.value.name),
+      StatusProperty(label: 'Provider', value: selectedProvider.value.name),
       StatusProperty(label: 'Model', value: modelController.text),
     ];
   }
 
-  String get defaultModel =>
-      AuthService.defaultModel(selectedProvider.value);
+  String get defaultModel => AuthService.defaultModel(selectedProvider.value);
 
   String get defaultBaseUrl =>
       AuthService.defaultBaseUrl(selectedProvider.value);
@@ -550,9 +557,9 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () async {
               await controller.saveProviderConfig();
               if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings saved')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('Settings saved')));
             },
             icon: const Icon(Icons.save),
             label: const Text('Save'),
@@ -561,42 +568,43 @@ class SettingsScreen extends StatelessWidget {
         // Tab bar (port of Tabs component from Settings.tsx)
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
-          child: Obx(() => Row(
-                children: SettingsTab.values.map((tab) {
-                  final selected = controller.selectedTab.value == tab;
-                  return Expanded(
-                    child: InkWell(
-                      onTap: () => controller.selectedTab.value = tab,
-                      child: Container(
-                        height: 48,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: selected
-                                  ? Theme.of(context).colorScheme.primary
-                                  : Colors.transparent,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                        child: Text(
-                          tab.name[0].toUpperCase() + tab.name.substring(1),
-                          style: TextStyle(
-                            fontWeight:
-                                selected ? FontWeight.bold : FontWeight.normal,
+          child: Obx(
+            () => Row(
+              children: SettingsTab.values.map((tab) {
+                final selected = controller.selectedTab.value == tab;
+                return Expanded(
+                  child: InkWell(
+                    onTap: () => controller.selectedTab.value = tab,
+                    child: Container(
+                      height: 48,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
                             color: selected
                                 ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
+                                : Colors.transparent,
+                            width: 2,
                           ),
                         ),
                       ),
+                      child: Text(
+                        tab.name[0].toUpperCase() + tab.name.substring(1),
+                        style: TextStyle(
+                          fontWeight: selected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: selected
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                     ),
-                  );
-                }).toList(),
-              )),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ),
       ),
       body: Obx(() {
@@ -632,30 +640,31 @@ class _StatusTab extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         // ── Primary section ──
-        ...controller.statusProperties.map((prop) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 120,
-                    child: Text(
-                      '${prop.label}:',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
+        ...controller.statusProperties.map(
+          (prop) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(
+                  width: 120,
+                  child: Text(
+                    '${prop.label}:',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  Expanded(child: SelectableText(prop.value)),
-                ],
-              ),
-            )),
+                ),
+                Expanded(child: SelectableText(prop.value)),
+              ],
+            ),
+          ),
+        ),
 
         const SizedBox(height: 16),
         const Divider(),
         const SizedBox(height: 16),
 
         // ── Provider config ──
-        Text('API Provider',
-            style: theme.textTheme.titleMedium),
+        Text('API Provider', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
 
         Obx(() {
@@ -679,10 +688,8 @@ class _StatusTab extends StatelessWidget {
                 selected: selected,
                 onSelected: (_) {
                   controller.selectedProvider.value = type;
-                  controller.modelController.text =
-                      controller.defaultModel;
-                  controller.baseUrlController.text =
-                      controller.defaultBaseUrl;
+                  controller.modelController.text = controller.defaultModel;
+                  controller.baseUrlController.text = controller.defaultBaseUrl;
                 },
               );
             }).toList(),
@@ -696,16 +703,20 @@ class _StatusTab extends StatelessWidget {
           obscureText: controller.obscureKey.value,
           decoration: InputDecoration(
             labelText: 'API Key',
-            hintText: !AuthService.requiresApiKey(
-                    controller.selectedProvider.value)
+            hintText:
+                !AuthService.requiresApiKey(controller.selectedProvider.value)
                 ? 'Optional for local models'
                 : 'Enter your ${AuthService.providerDisplayName(controller.selectedProvider.value)} API key',
-            suffixIcon: Obx(() => IconButton(
-                  icon: Icon(controller.obscureKey.value
+            suffixIcon: Obx(
+              () => IconButton(
+                icon: Icon(
+                  controller.obscureKey.value
                       ? Icons.visibility_off
-                      : Icons.visibility),
-                  onPressed: () => controller.obscureKey.toggle(),
-                )),
+                      : Icons.visibility,
+                ),
+                onPressed: () => controller.obscureKey.toggle(),
+              ),
+            ),
           ),
         ),
 
@@ -732,27 +743,31 @@ class _StatusTab extends StatelessWidget {
         const SizedBox(height: 16),
 
         // ── Test Connection button ──
-        Obx(() => SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: controller.isTesting.value
-                    ? null
-                    : () => controller.testConnection(),
-                icon: controller.isTesting.value
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white70,
-                        ),
-                      )
-                    : const Icon(Icons.wifi_tethering, size: 18),
-                label: Text(controller.isTesting.value
+        Obx(
+          () => SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: controller.isTesting.value
+                  ? null
+                  : () => controller.testConnection(),
+              icon: controller.isTesting.value
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white70,
+                      ),
+                    )
+                  : const Icon(Icons.wifi_tethering, size: 18),
+              label: Text(
+                controller.isTesting.value
                     ? 'Connecting...'
-                    : 'Test Connection'),
+                    : 'Test Connection',
               ),
-            )),
+            ),
+          ),
+        ),
 
         // ── Test result / error display ──
         Obx(() {
@@ -763,8 +778,9 @@ class _StatusTab extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer
-                      .withValues(alpha: 0.3),
+                  color: theme.colorScheme.primaryContainer.withValues(
+                    alpha: 0.3,
+                  ),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: theme.colorScheme.primary.withValues(alpha: 0.3),
@@ -775,8 +791,11 @@ class _StatusTab extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.check_circle,
-                            size: 16, color: ClawColors.success),
+                        Icon(
+                          Icons.check_circle,
+                          size: 16,
+                          color: ClawColors.success,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Connected successfully',
@@ -792,9 +811,11 @@ class _StatusTab extends StatelessWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.smart_toy,
-                            size: 16,
-                            color: theme.colorScheme.primary),
+                        Icon(
+                          Icons.smart_toy,
+                          size: 16,
+                          color: theme.colorScheme.primary,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -829,8 +850,11 @@ class _StatusTab extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.error_outline,
-                        size: 16, color: ClawColors.error),
+                    Icon(
+                      Icons.error_outline,
+                      size: 16,
+                      color: ClawColors.error,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -854,11 +878,9 @@ class _StatusTab extends StatelessWidget {
 
         // ── Local Models (Ollama) shortcut ──
         OutlinedButton.icon(
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const OllamaSetupScreen(),
-            ),
-          ),
+          onPressed: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const OllamaSetupScreen())),
           icon: const Icon(Icons.computer, size: 18),
           label: const Text('Local Models (Ollama)'),
           style: OutlinedButton.styleFrom(
@@ -879,22 +901,25 @@ class _StatusTab extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Diagnostics',
-                  style: theme.textTheme.titleMedium),
+              Text('Diagnostics', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
-              ...controller.diagnostics.map((d) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      children: [
-                        Icon(d.icon, size: 16, color: d.color),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(d.message,
-                              style: const TextStyle(fontSize: 13)),
+              ...controller.diagnostics.map(
+                (d) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    children: [
+                      Icon(d.icon, size: 16, color: d.color),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          d.message,
+                          style: const TextStyle(fontSize: 13),
                         ),
-                      ],
-                    ),
-                  )),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           );
         }),
@@ -928,7 +953,9 @@ class _ConfigTab extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 10),
+                horizontal: 12,
+                vertical: 10,
+              ),
             ),
             onChanged: (v) => controller.searchQuery.value = v,
           ),
@@ -943,9 +970,7 @@ class _ConfigTab extends StatelessWidget {
               return Center(
                 child: Text(
                   'No settings match your search',
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                 ),
               );
             }
@@ -1018,16 +1043,18 @@ class _SettingTile extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
-            ...item.options!.map((opt) => ListTile(
-                  title: Text(opt),
-                  trailing: opt == item.value
-                      ? const Icon(Icons.check, color: ClawColors.success)
-                      : null,
-                  onTap: () {
-                    item.onChange?.call(opt);
-                    Navigator.pop(ctx);
-                  },
-                )),
+            ...item.options!.map(
+              (opt) => ListTile(
+                title: Text(opt),
+                trailing: opt == item.value
+                    ? const Icon(Icons.check, color: ClawColors.success)
+                    : null,
+                onTap: () {
+                  item.onChange?.call(opt);
+                  Navigator.pop(ctx);
+                },
+              ),
+            ),
             const SizedBox(height: 16),
           ],
         ),
@@ -1057,14 +1084,15 @@ class _UsageTab extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline,
-                  size: 48, color: ClawColors.error),
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: ClawColors.error,
+              ),
               const SizedBox(height: 12),
               Text(
                 controller.usageError.value!,
-                style: TextStyle(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -1137,8 +1165,8 @@ class _LimitBar extends StatelessWidget {
     final barColor = ratio > 0.9
         ? ClawColors.error
         : ratio > 0.7
-            ? ClawColors.warning
-            : ClawColors.success;
+        ? ClawColors.warning
+        : ClawColors.success;
 
     String? subtext;
     if (limit.resetsAt != null) {
@@ -1152,8 +1180,9 @@ class _LimitBar extends StatelessWidget {
       }
     }
     if (limit.extraSubtext != null) {
-      subtext =
-          subtext != null ? '${limit.extraSubtext} \u00B7 $subtext' : limit.extraSubtext;
+      subtext = subtext != null
+          ? '${limit.extraSubtext} \u00B7 $subtext'
+          : limit.extraSubtext;
     }
 
     return Padding(
@@ -1174,8 +1203,7 @@ class _LimitBar extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: ratio.clamp(0.0, 1.0),
                     minHeight: 8,
-                    backgroundColor:
-                        theme.colorScheme.surfaceContainerHighest,
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
                     valueColor: AlwaysStoppedAnimation(barColor),
                   ),
                 ),

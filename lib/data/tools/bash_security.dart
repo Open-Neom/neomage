@@ -1,4 +1,4 @@
-// BashTool Security — port of openneomclaw/src/tools/BashTool/bashSecurity.ts.
+// BashTool Security — port of neom_claw/src/tools/BashTool/bashSecurity.ts.
 // Shell command security validation: command substitution detection, redirection
 // checks, IFS injection prevention, obfuscated flag detection, dangerous
 // variable checks, quote extraction, heredoc validation, and more.
@@ -55,14 +55,14 @@ class SecurityResult {
   }) : behavior = 'allow';
 
   const SecurityResult.ask({required this.message})
-      : behavior = 'ask',
-        updatedInput = null,
-        decisionReason = null;
+    : behavior = 'ask',
+      updatedInput = null,
+      decisionReason = null;
 
   const SecurityResult.passthrough({required this.message})
-      : behavior = 'passthrough',
-        updatedInput = null,
-        decisionReason = null;
+    : behavior = 'passthrough',
+      updatedInput = null,
+      decisionReason = null;
 
   bool get isAllow => behavior == 'allow';
   bool get isAsk => behavior == 'ask';
@@ -89,8 +89,7 @@ final List<_SubstitutionPattern> _commandSubstitutionPatterns = [
   ),
   _SubstitutionPattern(RegExp(r'\$\('), r'$() command substitution'),
   _SubstitutionPattern(RegExp(r'\$\{'), r'${} parameter substitution'),
-  _SubstitutionPattern(
-      RegExp(r'\$\['), r'$[] legacy arithmetic expansion'),
+  _SubstitutionPattern(RegExp(r'\$\['), r'$[] legacy arithmetic expansion'),
   _SubstitutionPattern(RegExp(r'~\['), 'Zsh-style parameter expansion'),
   _SubstitutionPattern(RegExp(r'\(e:'), 'Zsh-style glob qualifiers'),
   _SubstitutionPattern(
@@ -106,11 +105,24 @@ final List<_SubstitutionPattern> _commandSubstitutionPatterns = [
 
 /// Zsh-specific dangerous commands that can bypass security checks.
 const Set<String> _zshDangerousCommands = {
-  'zmodload', 'emulate',
-  'sysopen', 'sysread', 'syswrite', 'sysseek',
-  'zpty', 'ztcp', 'zsocket', 'mapfile',
-  'zf_rm', 'zf_mv', 'zf_ln', 'zf_chmod', 'zf_chown',
-  'zf_mkdir', 'zf_rmdir', 'zf_chgrp',
+  'zmodload',
+  'emulate',
+  'sysopen',
+  'sysread',
+  'syswrite',
+  'sysseek',
+  'zpty',
+  'ztcp',
+  'zsocket',
+  'mapfile',
+  'zf_rm',
+  'zf_mv',
+  'zf_ln',
+  'zf_chmod',
+  'zf_chown',
+  'zf_mkdir',
+  'zf_rmdir',
+  'zf_chgrp',
 };
 
 // ─── Heredoc Detection ───────────────────────────────────────────────────────
@@ -284,8 +296,7 @@ SecurityResult _validateIncompleteCommands(ValidationContext ctx) {
     );
   }
 
-  return const SecurityResult.passthrough(
-      message: 'Command appears complete');
+  return const SecurityResult.passthrough(message: 'Command appears complete');
 }
 
 /// Check for jq-specific dangerous patterns.
@@ -320,8 +331,9 @@ SecurityResult _validateShellMetacharacters(ValidationContext ctx) {
   const message =
       'Command contains shell metacharacters (;, |, or &) in arguments';
 
-  if (RegExp(r'''(?:^|\s)["'][^"']*[;&][^"']*["'](?:\s|$)''')
-      .hasMatch(ctx.unquotedContent)) {
+  if (RegExp(
+    r'''(?:^|\s)["'][^"']*[;&][^"']*["'](?:\s|$)''',
+  ).hasMatch(ctx.unquotedContent)) {
     return SecurityResult.ask(message: message);
   }
 
@@ -335,8 +347,9 @@ SecurityResult _validateShellMetacharacters(ValidationContext ctx) {
     return SecurityResult.ask(message: message);
   }
 
-  if (RegExp(r'''-regex\s+["'][^"']*[;&][^"']*["']''')
-      .hasMatch(ctx.unquotedContent)) {
+  if (RegExp(
+    r'''-regex\s+["'][^"']*[;&][^"']*["']''',
+  ).hasMatch(ctx.unquotedContent)) {
     return SecurityResult.ask(message: message);
   }
 
@@ -345,18 +358,17 @@ SecurityResult _validateShellMetacharacters(ValidationContext ctx) {
 
 /// Check for dangerous variables in redirections/pipes.
 SecurityResult _validateDangerousVariables(ValidationContext ctx) {
-  if (RegExp(r'[<>|]\s*\$[A-Za-z_]')
-          .hasMatch(ctx.fullyUnquotedContent) ||
-      RegExp(r'\$[A-Za-z_][A-Za-z0-9_]*\s*[|<>]')
-          .hasMatch(ctx.fullyUnquotedContent)) {
+  if (RegExp(r'[<>|]\s*\$[A-Za-z_]').hasMatch(ctx.fullyUnquotedContent) ||
+      RegExp(
+        r'\$[A-Za-z_][A-Za-z0-9_]*\s*[|<>]',
+      ).hasMatch(ctx.fullyUnquotedContent)) {
     return const SecurityResult.ask(
       message:
           'Command contains variables in dangerous contexts '
           '(redirections or pipes)',
     );
   }
-  return const SecurityResult.passthrough(
-      message: 'No dangerous variables');
+  return const SecurityResult.passthrough(message: 'No dangerous variables');
 }
 
 /// Check for dangerous command substitution patterns.
@@ -370,13 +382,11 @@ SecurityResult _validateDangerousPatterns(ValidationContext ctx) {
 
   for (final sp in _commandSubstitutionPatterns) {
     if (sp.pattern.hasMatch(ctx.unquotedContent)) {
-      return SecurityResult.ask(
-          message: 'Command contains ${sp.message}');
+      return SecurityResult.ask(message: 'Command contains ${sp.message}');
     }
   }
 
-  return const SecurityResult.passthrough(
-      message: 'No dangerous patterns');
+  return const SecurityResult.passthrough(message: 'No dangerous patterns');
 }
 
 /// Check for input/output redirections.
@@ -405,8 +415,7 @@ SecurityResult _validateNewlines(ValidationContext ctx) {
 
   // Check for newline/CR followed by non-whitespace, except
   // backslash-newline continuations at word boundaries.
-  if (RegExp(r'(?<![\s]\\)[\n\r]\s*\S')
-      .hasMatch(ctx.fullyUnquotedPreStrip)) {
+  if (RegExp(r'(?<![\s]\\)[\n\r]\s*\S').hasMatch(ctx.fullyUnquotedPreStrip)) {
     return const SecurityResult.ask(
       message:
           'Command contains newlines that could separate multiple commands',
@@ -414,7 +423,8 @@ SecurityResult _validateNewlines(ValidationContext ctx) {
   }
 
   return const SecurityResult.passthrough(
-      message: 'Newlines appear to be within data');
+    message: 'Newlines appear to be within data',
+  );
 }
 
 /// Check for IFS variable injection.
@@ -426,8 +436,7 @@ SecurityResult _validateIFSInjection(ValidationContext ctx) {
           'security validation',
     );
   }
-  return const SecurityResult.passthrough(
-      message: 'No IFS injection detected');
+  return const SecurityResult.passthrough(message: 'No IFS injection detected');
 }
 
 /// Check for /proc/*/environ access.
@@ -440,7 +449,8 @@ SecurityResult _validateProcEnvironAccess(ValidationContext ctx) {
     );
   }
   return const SecurityResult.passthrough(
-      message: 'No /proc/environ access detected');
+    message: 'No /proc/environ access detected',
+  );
 }
 
 /// Check for Zsh-specific dangerous commands.
@@ -451,8 +461,7 @@ SecurityResult _validateZshDangerousCommands(ValidationContext ctx) {
           'Command uses Zsh-specific dangerous builtin: ${ctx.baseCommand}',
     );
   }
-  return const SecurityResult.passthrough(
-      message: 'No Zsh dangerous commands');
+  return const SecurityResult.passthrough(message: 'No Zsh dangerous commands');
 }
 
 /// Check for git commit with command substitution in message.
@@ -482,8 +491,7 @@ SecurityResult _validateGitCommit(ValidationContext ctx) {
         messageContent.isNotEmpty &&
         RegExp(r'\$\(|`|\$\{').hasMatch(messageContent)) {
       return const SecurityResult.ask(
-        message:
-            'Git commit message contains command substitution patterns',
+        message: 'Git commit message contains command substitution patterns',
       );
     }
 
@@ -533,7 +541,8 @@ SecurityResult _validateGitCommit(ValidationContext ctx) {
   }
 
   return const SecurityResult.passthrough(
-      message: 'Git commit needs validation');
+    message: 'Git commit needs validation',
+  );
 }
 
 /// Check for ANSI-C quoting and obfuscated flags.
@@ -568,11 +577,9 @@ SecurityResult _validateObfuscatedFlags(ValidationContext ctx) {
   }
 
   // Block empty quote pairs followed by dash.
-  if (RegExp(r'''(?:^|\s)(?:''|""){1,}\s*-''')
-      .hasMatch(ctx.originalCommand)) {
+  if (RegExp(r'''(?:^|\s)(?:''|""){1,}\s*-''').hasMatch(ctx.originalCommand)) {
     return const SecurityResult.ask(
-      message:
-          'Command contains empty quotes before dash (potential bypass)',
+      message: 'Command contains empty quotes before dash (potential bypass)',
     );
   }
 
@@ -595,7 +602,8 @@ SecurityResult _validateObfuscatedFlags(ValidationContext ctx) {
   }
 
   return const SecurityResult.passthrough(
-      message: 'No obfuscated flags detected');
+    message: 'No obfuscated flags detected',
+  );
 }
 
 /// Check for carriage return characters causing tokenization differentials.
@@ -635,7 +643,8 @@ SecurityResult _validateCarriageReturn(ValidationContext ctx) {
   }
 
   return const SecurityResult.passthrough(
-      message: 'CR only inside double quotes');
+    message: 'CR only inside double quotes',
+  );
 }
 
 // ─── Main Security Validator ─────────────────────────────────────────────────
@@ -647,8 +656,7 @@ ValidationContext buildValidationContext(String command) {
 
   final extracted = extractQuotedContent(command);
   final fullyUnquotedPreStrip = extracted.fullyUnquoted;
-  final fullyUnquotedContent =
-      stripSafeRedirections(extracted.fullyUnquoted);
+  final fullyUnquotedContent = stripSafeRedirections(extracted.fullyUnquoted);
   final unquotedContent = extracted.withDoubleQuotes;
 
   return ValidationContext(
@@ -702,7 +710,8 @@ SecurityResult bashCommandIsSafe(String command) {
   }
 
   return const SecurityResult.passthrough(
-      message: 'All security checks passed');
+    message: 'All security checks passed',
+  );
 }
 
 /// Deprecated version of bashCommandIsSafe for heredoc recursive calls.
@@ -739,8 +748,9 @@ String? stripSafeHeredocSubstitutions(String command) {
     final afterOperator = command.substring(operatorEnd);
     final openLineEnd = afterOperator.indexOf('\n');
     if (openLineEnd == -1) continue;
-    if (!RegExp(r'^[ \t]*$')
-        .hasMatch(afterOperator.substring(0, openLineEnd))) {
+    if (!RegExp(
+      r'^[ \t]*$',
+    ).hasMatch(afterOperator.substring(0, openLineEnd))) {
       continue;
     }
 
@@ -753,7 +763,8 @@ String? stripSafeHeredocSubstitutions(String command) {
         final after = line.substring(delimiter.length);
         var closePos = -1;
         if (RegExp(r'^[ \t]*\)').hasMatch(after)) {
-          final lineStart = bodyStart +
+          final lineStart =
+              bodyStart +
               bodyLines.sublist(0, i).join('\n').length +
               (i > 0 ? 1 : 0);
           closePos = command.indexOf(')', lineStart);
@@ -792,13 +803,23 @@ String extractBaseCommand(String command) {
   // Strip leading variable assignments (FOO=bar cmd).
   while (RegExp(r'^[A-Za-z_][A-Za-z0-9_]*=\S*\s+').hasMatch(trimmed)) {
     trimmed = trimmed.replaceFirst(
-        RegExp(r'^[A-Za-z_][A-Za-z0-9_]*=\S*\s+'), '');
+      RegExp(r'^[A-Za-z_][A-Za-z0-9_]*=\S*\s+'),
+      '',
+    );
   }
 
   // Strip common wrappers: env, sudo, nohup, nice, time, etc.
   const wrappers = {
-    'env', 'sudo', 'nohup', 'nice', 'time', 'timeout',
-    'strace', 'ltrace', 'unbuffer', 'script',
+    'env',
+    'sudo',
+    'nohup',
+    'nice',
+    'time',
+    'timeout',
+    'strace',
+    'ltrace',
+    'unbuffer',
+    'script',
   };
 
   var words = trimmed.split(RegExp(r'\s+'));

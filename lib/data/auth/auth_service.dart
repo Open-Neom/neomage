@@ -18,7 +18,7 @@ class AuthService {
   final FlutterSecureStorage _secureStorage;
 
   AuthService({FlutterSecureStorage? secureStorage})
-      : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+    : _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   // ── API Key Management ──
 
@@ -28,20 +28,17 @@ class AuthService {
   Future<void> setAnthropicApiKey(String key) =>
       _secureStorage.write(key: _anthropicKeyKey, value: key);
 
-  Future<String?> getOpenAiApiKey() =>
-      _secureStorage.read(key: _openaiKeyKey);
+  Future<String?> getOpenAiApiKey() => _secureStorage.read(key: _openaiKeyKey);
 
   Future<void> setOpenAiApiKey(String key) =>
       _secureStorage.write(key: _openaiKeyKey, value: key);
 
-  Future<String?> getGeminiApiKey() =>
-      _secureStorage.read(key: _geminiKeyKey);
+  Future<String?> getGeminiApiKey() => _secureStorage.read(key: _geminiKeyKey);
 
   Future<void> setGeminiApiKey(String key) =>
       _secureStorage.write(key: _geminiKeyKey, value: key);
 
-  Future<String?> getQwenApiKey() =>
-      _secureStorage.read(key: _qwenKeyKey);
+  Future<String?> getQwenApiKey() => _secureStorage.read(key: _qwenKeyKey);
 
   Future<void> setQwenApiKey(String key) =>
       _secureStorage.write(key: _qwenKeyKey, value: key);
@@ -54,13 +51,13 @@ class AuthService {
 
   /// Get API key for any provider type.
   Future<String?> getApiKeyForProvider(ApiProviderType type) => switch (type) {
-        ApiProviderType.anthropic => getAnthropicApiKey(),
-        ApiProviderType.openai => getOpenAiApiKey(),
-        ApiProviderType.gemini => getGeminiApiKey(),
-        ApiProviderType.qwen => getQwenApiKey(),
-        ApiProviderType.deepseek => getDeepSeekApiKey(),
-        _ => Future.value(null),
-      };
+    ApiProviderType.anthropic => getAnthropicApiKey(),
+    ApiProviderType.openai => getOpenAiApiKey(),
+    ApiProviderType.gemini => getGeminiApiKey(),
+    ApiProviderType.qwen => getQwenApiKey(),
+    ApiProviderType.deepseek => getDeepSeekApiKey(),
+    _ => Future.value(null),
+  };
 
   /// Set API key for any provider type.
   Future<void> setApiKeyForProvider(ApiProviderType type, String key) =>
@@ -170,43 +167,42 @@ class AuthService {
 
   /// Default model for each provider.
   static String defaultModel(ApiProviderType type) => switch (type) {
-        ApiProviderType.gemini => 'gemini-2.5-flash',
-        ApiProviderType.qwen => 'qwen-plus',
-        ApiProviderType.openai => 'gpt-4o',
-        ApiProviderType.deepseek => 'deepseek-chat',
-        ApiProviderType.anthropic => 'claude-sonnet-4-20250514',
-        ApiProviderType.ollama => 'llama3.1',
-        _ => 'gpt-4o',
-      };
+    ApiProviderType.gemini => 'gemini-2.5-flash',
+    ApiProviderType.qwen => 'qwen-plus',
+    ApiProviderType.openai => 'gpt-4o',
+    ApiProviderType.deepseek => 'deepseek-chat',
+    ApiProviderType.anthropic => 'claude-sonnet-4-20250514',
+    ApiProviderType.ollama => 'llama3.1',
+    _ => 'gpt-4o',
+  };
 
   /// Default base URL for each provider.
   static String defaultBaseUrl(ApiProviderType type) => switch (type) {
-        ApiProviderType.gemini =>
-          'https://generativelanguage.googleapis.com/v1beta',
-        ApiProviderType.qwen =>
-          'https://dashscope.aliyuncs.com/compatible-mode/v1',
-        ApiProviderType.openai => 'https://api.openai.com/v1',
-        ApiProviderType.deepseek => 'https://api.deepseek.com/v1',
-        ApiProviderType.anthropic => 'https://api.anthropic.com',
-        ApiProviderType.ollama => 'http://localhost:11434/v1',
-        _ => 'https://api.openai.com/v1',
-      };
+    ApiProviderType.gemini =>
+      'https://generativelanguage.googleapis.com/v1beta',
+    ApiProviderType.qwen => 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    ApiProviderType.openai => 'https://api.openai.com/v1',
+    ApiProviderType.deepseek => 'https://api.deepseek.com/v1',
+    ApiProviderType.anthropic => 'https://api.anthropic.com',
+    ApiProviderType.ollama => 'http://localhost:11434/v1',
+    _ => 'https://api.openai.com/v1',
+  };
 
   /// Whether a provider requires an API key.
   static bool requiresApiKey(ApiProviderType type) => switch (type) {
-        ApiProviderType.ollama => false,
-        _ => true,
-      };
+    ApiProviderType.ollama => false,
+    _ => true,
+  };
 
   /// Provider display name.
   static String providerDisplayName(ApiProviderType type) => switch (type) {
-        ApiProviderType.gemini => 'Gemini',
-        ApiProviderType.qwen => 'Qwen',
-        ApiProviderType.openai => 'OpenAI',
-        ApiProviderType.deepseek => 'DeepSeek',
-        ApiProviderType.anthropic => 'Anthropic',
-        ApiProviderType.ollama => 'Ollama',
-        ApiProviderType.custom => 'Custom',
-        _ => type.name,
-      };
+    ApiProviderType.gemini => 'Gemini',
+    ApiProviderType.qwen => 'Qwen',
+    ApiProviderType.openai => 'OpenAI',
+    ApiProviderType.deepseek => 'DeepSeek',
+    ApiProviderType.anthropic => 'Anthropic',
+    ApiProviderType.ollama => 'Ollama',
+    ApiProviderType.custom => 'Custom',
+    _ => type.name,
+  };
 }

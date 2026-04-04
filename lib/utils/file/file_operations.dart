@@ -83,13 +83,17 @@ Future<EditResult> applyMultiEdit(
         errors.add('Edit $i: old_text not found.');
       } else {
         // Check uniqueness
-        final secondIndex =
-            content.indexOf(edit.oldText, index + edit.oldText.length);
+        final secondIndex = content.indexOf(
+          edit.oldText,
+          index + edit.oldText.length,
+        );
         if (secondIndex != -1) {
           errors.add(
-              'Edit $i: old_text is ambiguous (found at offsets $index and $secondIndex).');
+            'Edit $i: old_text is ambiguous (found at offsets $index and $secondIndex).',
+          );
         } else {
-          content = content.substring(0, index) +
+          content =
+              content.substring(0, index) +
               edit.newText +
               content.substring(index + edit.oldText.length);
           applied++;
@@ -150,9 +154,9 @@ List<DiffHunk> parseUnifiedDiff(String diff) {
     final line = lines[i];
 
     // Find hunk header: @@ -old,count +new,count @@
-    final hunkMatch =
-        RegExp(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@')
-            .firstMatch(line);
+    final hunkMatch = RegExp(
+      r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@',
+    ).firstMatch(line);
     if (hunkMatch != null) {
       final oldStart = int.parse(hunkMatch.group(1)!);
       final oldCount = int.parse(hunkMatch.group(2) ?? '1');
@@ -164,7 +168,10 @@ List<DiffHunk> parseUnifiedDiff(String diff) {
 
       while (i < lines.length) {
         final l = lines[i];
-        if (l.startsWith('@@') || l.startsWith('diff ') || l.startsWith('---') || l.startsWith('+++')) {
+        if (l.startsWith('@@') ||
+            l.startsWith('diff ') ||
+            l.startsWith('---') ||
+            l.startsWith('+++')) {
           break;
         }
         if (l.startsWith('+')) {
@@ -182,13 +189,15 @@ List<DiffHunk> parseUnifiedDiff(String diff) {
         i++;
       }
 
-      hunks.add(DiffHunk(
-        oldStart: oldStart,
-        oldCount: oldCount,
-        newStart: newStart,
-        newCount: newCount,
-        lines: hunkLines,
-      ));
+      hunks.add(
+        DiffHunk(
+          oldStart: oldStart,
+          oldCount: oldCount,
+          newStart: newStart,
+          newCount: newCount,
+          lines: hunkLines,
+        ),
+      );
     } else {
       i++;
     }
@@ -247,8 +256,11 @@ String applyDiff(String content, String diff) {
 }
 
 /// Apply a diff to a file.
-Future<EditResult> applyDiffToFile(String filePath, String diff,
-    {bool createBackup = true}) async {
+Future<EditResult> applyDiffToFile(
+  String filePath,
+  String diff, {
+  bool createBackup = true,
+}) async {
   final file = File(filePath);
   if (!await file.exists()) {
     return EditResult(
@@ -307,12 +319,12 @@ class NotebookCell {
   });
 
   Map<String, dynamic> toJson() => {
-        'cell_type': cellType,
-        'source': source,
-        if (metadata != null) 'metadata': metadata,
-        if (cellType == 'code') 'outputs': outputs ?? [],
-        if (cellType == 'code') 'execution_count': executionCount,
-      };
+    'cell_type': cellType,
+    'source': source,
+    if (metadata != null) 'metadata': metadata,
+    if (cellType == 'code') 'outputs': outputs ?? [],
+    if (cellType == 'code') 'execution_count': executionCount,
+  };
 
   factory NotebookCell.fromJson(Map<String, dynamic> json) {
     return NotebookCell(
@@ -346,23 +358,22 @@ class Notebook {
       metadata: json['metadata'] as Map<String, dynamic>? ?? {},
       nbformat: json['nbformat'] as int? ?? 4,
       nbformatMinor: json['nbformat_minor'] as int? ?? 5,
-      cells: (json['cells'] as List?)
-              ?.map((c) =>
-                  NotebookCell.fromJson(c as Map<String, dynamic>))
+      cells:
+          (json['cells'] as List?)
+              ?.map((c) => NotebookCell.fromJson(c as Map<String, dynamic>))
               .toList() ??
           [],
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'metadata': metadata,
-        'nbformat': nbformat,
-        'nbformat_minor': nbformatMinor,
-        'cells': cells.map((c) => c.toJson()).toList(),
-      };
+    'metadata': metadata,
+    'nbformat': nbformat,
+    'nbformat_minor': nbformatMinor,
+    'cells': cells.map((c) => c.toJson()).toList(),
+  };
 
-  String toJsonString() =>
-      const JsonEncoder.withIndent(' ').convert(toJson());
+  String toJsonString() => const JsonEncoder.withIndent(' ').convert(toJson());
 }
 
 /// Notebook edit command.
@@ -393,7 +404,9 @@ Future<({bool success, String message, int cellCount})> editNotebook({
     case NotebookCommand.addCell:
       final cell = NotebookCell(
         cellType: cellType ?? 'code',
-        source: content != null ? content.split('\n').map((l) => '$l\n').toList() : [''],
+        source: content != null
+            ? content.split('\n').map((l) => '$l\n').toList()
+            : [''],
       );
       final idx = cellIndex ?? notebook.cells.length;
       if (idx < 0 || idx > notebook.cells.length) {
@@ -417,8 +430,10 @@ Future<({bool success, String message, int cellCount})> editNotebook({
         );
       }
       if (content != null) {
-        notebook.cells[cellIndex].source =
-            content.split('\n').map((l) => '$l\n').toList();
+        notebook.cells[cellIndex].source = content
+            .split('\n')
+            .map((l) => '$l\n')
+            .toList();
       }
       if (cellType != null) {
         notebook.cells[cellIndex].cellType = cellType;
@@ -475,13 +490,39 @@ Future<bool> isBinaryFile(String path) async {
   // Check extension first
   final ext = p.extension(path).replaceFirst('.', '').toLowerCase();
   const binaryExts = {
-    'png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico',
-    'mp3', 'wav', 'ogg', 'mp4', 'avi', 'mov',
-    'zip', 'tar', 'gz', '7z', 'rar',
-    'pdf', 'doc', 'docx', 'xls', 'xlsx',
-    'exe', 'dll', 'so', 'dylib',
-    'woff', 'woff2', 'ttf', 'otf',
-    'sqlite', 'db',
+    'png',
+    'jpg',
+    'jpeg',
+    'gif',
+    'webp',
+    'bmp',
+    'ico',
+    'mp3',
+    'wav',
+    'ogg',
+    'mp4',
+    'avi',
+    'mov',
+    'zip',
+    'tar',
+    'gz',
+    '7z',
+    'rar',
+    'pdf',
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'exe',
+    'dll',
+    'so',
+    'dylib',
+    'woff',
+    'woff2',
+    'ttf',
+    'otf',
+    'sqlite',
+    'db',
   };
   if (binaryExts.contains(ext)) return true;
 
@@ -548,8 +589,7 @@ Future<bool> undoFileChange(String filePath) async {
 /// Clean old backup files.
 Future<int> cleanBackups(String directory, {int maxAge = 86400}) async {
   var cleaned = 0;
-  final cutoff =
-      DateTime.now().subtract(Duration(seconds: maxAge));
+  final cutoff = DateTime.now().subtract(Duration(seconds: maxAge));
 
   await for (final entity in Directory(directory).list(recursive: true)) {
     if (entity is File && entity.path.contains('.bak.')) {

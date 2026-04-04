@@ -1,4 +1,4 @@
-// Teammate utilities — port of openneomclaw teammate.ts + teammateMailbox.ts +
+// Teammate utilities — port of neom_claw teammate.ts + teammateMailbox.ts +
 // teammateContext.ts + teamDiscovery.ts + teamMemoryOps.ts.
 // Agent swarm coordination: identity resolution, mailbox messaging,
 // in-process teammate context, team discovery, and team memory operations.
@@ -192,9 +192,7 @@ bool isPlanModeRequired() {
   final inProcessCtx = getTeammateContext();
   if (inProcessCtx != null) return inProcessCtx.planModeRequired;
   if (_dynamicTeamContext != null) return _dynamicTeamContext!.planModeRequired;
-  return _isEnvTruthy(
-    Platform.environment['NEOMCLAW_PLAN_MODE_REQUIRED'],
-  );
+  return _isEnvTruthy(Platform.environment['NEOMCLAW_PLAN_MODE_REQUIRED']);
 }
 
 /// Check if this session is a team lead.
@@ -255,9 +253,12 @@ bool hasWorkingInProcessTeammates(Map<String, InProcessTeammateTask> tasks) {
 Future<void> waitForTeammatesToBecomeIdle(
   Map<String, InProcessTeammateTask> tasks,
   void Function(
-    Map<String, InProcessTeammateTask> Function(Map<String, InProcessTeammateTask>)
-        updateFn,
-  ) setTasks,
+    Map<String, InProcessTeammateTask> Function(
+      Map<String, InProcessTeammateTask>,
+    )
+    updateFn,
+  )
+  setTasks,
 ) async {
   final workingTaskIds = <String>[];
 
@@ -339,13 +340,13 @@ class TeammateMessage {
   final String? summary;
 
   Map<String, dynamic> toJson() => {
-        'from': from,
-        'text': text,
-        'timestamp': timestamp,
-        'read': read,
-        if (color != null) 'color': color,
-        if (summary != null) 'summary': summary,
-      };
+    'from': from,
+    'text': text,
+    'timestamp': timestamp,
+    'read': read,
+    if (color != null) 'color': color,
+    if (summary != null) 'summary': summary,
+  };
 
   TeammateMessage copyWith({bool? read}) {
     return TeammateMessage(
@@ -378,11 +379,7 @@ String _sanitizePathComponent(String component) {
 /// Get the teams directory from env or default.
 String _getTeamsDir() {
   return Platform.environment['NEOMCLAW_TEAMS_DIR'] ??
-      p.join(
-        Platform.environment['HOME'] ?? '.',
-        '.neomclaw',
-        'teams',
-      );
+      p.join(Platform.environment['HOME'] ?? '.', '.neomclaw', 'teams');
 }
 
 /// Get the path to a teammate's inbox file.
@@ -499,9 +496,9 @@ Future<void> markMessageAsReadByIndex(
     messages[messageIndex] = msg.copyWith(read: true);
 
     final encoder = const JsonEncoder.withIndent('  ');
-    await File(inboxPath).writeAsString(
-      encoder.convert(messages.map((m) => m.toJson()).toList()),
-    );
+    await File(
+      inboxPath,
+    ).writeAsString(encoder.convert(messages.map((m) => m.toJson()).toList()));
   } on PathNotFoundException {
     return;
   } catch (_) {
@@ -512,10 +509,7 @@ Future<void> markMessageAsReadByIndex(
 }
 
 /// Mark all messages in a teammate's inbox as read.
-Future<void> markMessagesAsRead(
-  String agentName, {
-  String? teamName,
-}) async {
+Future<void> markMessagesAsRead(String agentName, {String? teamName}) async {
   final inboxPath = getInboxPath(agentName, teamName: teamName);
   final lockFilePath = '$inboxPath.lock';
   final lock = File(lockFilePath);
@@ -526,13 +520,12 @@ Future<void> markMessagesAsRead(
     final messages = await readMailbox(agentName, teamName: teamName);
     if (messages.isEmpty) return;
 
-    final updated =
-        messages.map((m) => m.copyWith(read: true)).toList();
+    final updated = messages.map((m) => m.copyWith(read: true)).toList();
 
     final encoder = const JsonEncoder.withIndent('  ');
-    await File(inboxPath).writeAsString(
-      encoder.convert(updated.map((m) => m.toJson()).toList()),
-    );
+    await File(
+      inboxPath,
+    ).writeAsString(encoder.convert(updated.map((m) => m.toJson()).toList()));
   } on PathNotFoundException {
     return;
   } catch (_) {
@@ -543,10 +536,7 @@ Future<void> markMessagesAsRead(
 }
 
 /// Clear a teammate's inbox (delete all messages).
-Future<void> clearMailbox(
-  String agentName, {
-  String? teamName,
-}) async {
+Future<void> clearMailbox(String agentName, {String? teamName}) async {
   final inboxPath = getInboxPath(agentName, teamName: teamName);
   try {
     await File(inboxPath).writeAsString('[]');
@@ -557,11 +547,13 @@ Future<void> clearMailbox(
 
 /// Format teammate messages as XML for attachment display.
 String formatTeammateMessages(List<TeammateMessage> messages) {
-  return messages.map((m) {
-    final colorAttr = m.color != null ? ' color="${m.color}"' : '';
-    final summaryAttr = m.summary != null ? ' summary="${m.summary}"' : '';
-    return '<$teammateMessageTag teammate_id="${m.from}"$colorAttr$summaryAttr>\n${m.text}\n</$teammateMessageTag>';
-  }).join('\n\n');
+  return messages
+      .map((m) {
+        final colorAttr = m.color != null ? ' color="${m.color}"' : '';
+        final summaryAttr = m.summary != null ? ' summary="${m.summary}"' : '';
+        return '<$teammateMessageTag teammate_id="${m.from}"$colorAttr$summaryAttr>\n${m.text}\n</$teammateMessageTag>';
+      })
+      .join('\n\n');
 }
 
 /// Mark messages matching [predicate] as read, leaving others unread.
@@ -586,13 +578,13 @@ Future<void> markMessagesAsReadByPredicate(
     }).toList();
 
     final encoder = const JsonEncoder.withIndent('  ');
-    await File(inboxPath).writeAsString(
-      encoder.convert(updated.map((m) => m.toJson()).toList()),
-    );
+    await File(
+      inboxPath,
+    ).writeAsString(encoder.convert(updated.map((m) => m.toJson()).toList()));
   } on PathNotFoundException {
     return;
-  } catch (_) {}
-  finally {
+  } catch (_) {
+  } finally {
     await _releaseLock(lock);
   }
 }
@@ -634,15 +626,15 @@ class IdleNotificationMessage {
   final String? failureReason;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'from': from,
-        'timestamp': timestamp,
-        if (idleReason != null) 'idleReason': idleReason,
-        if (summary != null) 'summary': summary,
-        if (completedTaskId != null) 'completedTaskId': completedTaskId,
-        if (completedStatus != null) 'completedStatus': completedStatus,
-        if (failureReason != null) 'failureReason': failureReason,
-      };
+    'type': messageType,
+    'from': from,
+    'timestamp': timestamp,
+    if (idleReason != null) 'idleReason': idleReason,
+    if (summary != null) 'summary': summary,
+    if (completedTaskId != null) 'completedTaskId': completedTaskId,
+    if (completedStatus != null) 'completedStatus': completedStatus,
+    if (failureReason != null) 'failureReason': failureReason,
+  };
 }
 
 /// Creates an idle notification message to send to the team leader.
@@ -714,15 +706,15 @@ class PermissionRequestMessage {
   final List<dynamic> permissionSuggestions;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'request_id': requestId,
-        'agent_id': agentId,
-        'tool_name': toolName,
-        'tool_use_id': toolUseId,
-        'description': description,
-        'input': input,
-        'permission_suggestions': permissionSuggestions,
-      };
+    'type': messageType,
+    'request_id': requestId,
+    'agent_id': agentId,
+    'tool_name': toolName,
+    'tool_use_id': toolUseId,
+    'description': description,
+    'input': input,
+    'permission_suggestions': permissionSuggestions,
+  };
 }
 
 /// Permission response from leader to worker.
@@ -744,15 +736,14 @@ class PermissionResponseSuccess extends PermissionResponseMessage {
   final List<dynamic>? permissionUpdates;
 
   Map<String, dynamic> toJson() => {
-        'type': PermissionResponseMessage.messageType,
-        'request_id': requestId,
-        'subtype': 'success',
-        'response': {
-          if (updatedInput != null) 'updated_input': updatedInput,
-          if (permissionUpdates != null)
-            'permission_updates': permissionUpdates,
-        },
-      };
+    'type': PermissionResponseMessage.messageType,
+    'request_id': requestId,
+    'subtype': 'success',
+    'response': {
+      if (updatedInput != null) 'updated_input': updatedInput,
+      if (permissionUpdates != null) 'permission_updates': permissionUpdates,
+    },
+  };
 }
 
 class PermissionResponseError extends PermissionResponseMessage {
@@ -761,11 +752,11 @@ class PermissionResponseError extends PermissionResponseMessage {
   final String error;
 
   Map<String, dynamic> toJson() => {
-        'type': PermissionResponseMessage.messageType,
-        'request_id': requestId,
-        'subtype': 'error',
-        'error': error,
-      };
+    'type': PermissionResponseMessage.messageType,
+    'request_id': requestId,
+    'subtype': 'error',
+    'error': error,
+  };
 }
 
 /// Creates a permission request message.
@@ -878,14 +869,14 @@ class SandboxPermissionRequestMessage {
   final int createdAt;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'requestId': requestId,
-        'workerId': workerId,
-        'workerName': workerName,
-        if (workerColor != null) 'workerColor': workerColor,
-        'hostPattern': hostPattern,
-        'createdAt': createdAt,
-      };
+    'type': messageType,
+    'requestId': requestId,
+    'workerId': workerId,
+    'workerName': workerName,
+    if (workerColor != null) 'workerColor': workerColor,
+    'hostPattern': hostPattern,
+    'createdAt': createdAt,
+  };
 }
 
 /// Sandbox permission response from leader to worker.
@@ -914,12 +905,12 @@ class SandboxPermissionResponseMessage {
   final String timestamp;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'requestId': requestId,
-        'host': host,
-        'allow': allow,
-        'timestamp': timestamp,
-      };
+    'type': messageType,
+    'requestId': requestId,
+    'host': host,
+    'allow': allow,
+    'timestamp': timestamp,
+  };
 }
 
 /// Creates a sandbox permission request.
@@ -956,7 +947,8 @@ SandboxPermissionResponseMessage createSandboxPermissionResponseMessage({
 
 /// Checks if a message text contains a sandbox permission request.
 SandboxPermissionRequestMessage? isSandboxPermissionRequest(
-    String messageText) {
+  String messageText,
+) {
   try {
     final parsed = jsonDecode(messageText) as Map<String, dynamic>;
     if (parsed['type'] == SandboxPermissionRequestMessage.messageType) {
@@ -968,7 +960,8 @@ SandboxPermissionRequestMessage? isSandboxPermissionRequest(
 
 /// Checks if a message text contains a sandbox permission response.
 SandboxPermissionResponseMessage? isSandboxPermissionResponse(
-    String messageText) {
+  String messageText,
+) {
   try {
     final parsed = jsonDecode(messageText) as Map<String, dynamic>;
     if (parsed['type'] == SandboxPermissionResponseMessage.messageType) {
@@ -1006,12 +999,12 @@ class ShutdownRequestMessage {
   final String timestamp;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'requestId': requestId,
-        'from': from,
-        if (reason != null) 'reason': reason,
-        'timestamp': timestamp,
-      };
+    'type': messageType,
+    'requestId': requestId,
+    'from': from,
+    if (reason != null) 'reason': reason,
+    'timestamp': timestamp,
+  };
 }
 
 /// Shutdown approved from teammate to leader.
@@ -1043,13 +1036,13 @@ class ShutdownApprovedMessage {
   final String? backendType;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'requestId': requestId,
-        'from': from,
-        'timestamp': timestamp,
-        if (paneId != null) 'paneId': paneId,
-        if (backendType != null) 'backendType': backendType,
-      };
+    'type': messageType,
+    'requestId': requestId,
+    'from': from,
+    'timestamp': timestamp,
+    if (paneId != null) 'paneId': paneId,
+    if (backendType != null) 'backendType': backendType,
+  };
 }
 
 /// Shutdown rejected from teammate to leader.
@@ -1078,12 +1071,12 @@ class ShutdownRejectedMessage {
   final String timestamp;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'requestId': requestId,
-        'from': from,
-        'reason': reason,
-        'timestamp': timestamp,
-      };
+    'type': messageType,
+    'requestId': requestId,
+    'from': from,
+    'reason': reason,
+    'timestamp': timestamp,
+  };
 }
 
 /// Creates a shutdown request message.
@@ -1138,7 +1131,8 @@ Future<({String requestId, String target})> sendShutdownRequestToMailbox(
 }) async {
   final resolvedTeamName = teamName ?? getTeamName();
   final senderName = getAgentName() ?? teamLeadName;
-  final requestId = 'shutdown-$targetName-${DateTime.now().millisecondsSinceEpoch}';
+  final requestId =
+      'shutdown-$targetName-${DateTime.now().millisecondsSinceEpoch}';
 
   final shutdownMessage = createShutdownRequestMessage(
     requestId: requestId,
@@ -1225,13 +1219,13 @@ class PlanApprovalRequestMessage {
   final String requestId;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'from': from,
-        'timestamp': timestamp,
-        'planFilePath': planFilePath,
-        'planContent': planContent,
-        'requestId': requestId,
-      };
+    'type': messageType,
+    'from': from,
+    'timestamp': timestamp,
+    'planFilePath': planFilePath,
+    'planContent': planContent,
+    'requestId': requestId,
+  };
 }
 
 /// Plan approval response from leader to teammate.
@@ -1263,13 +1257,13 @@ class PlanApprovalResponseMessage {
   final String? permissionMode;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'requestId': requestId,
-        'approved': approved,
-        if (feedback != null) 'feedback': feedback,
-        'timestamp': timestamp,
-        if (permissionMode != null) 'permissionMode': permissionMode,
-      };
+    'type': messageType,
+    'requestId': requestId,
+    'approved': approved,
+    if (feedback != null) 'feedback': feedback,
+    'timestamp': timestamp,
+    if (permissionMode != null) 'permissionMode': permissionMode,
+  };
 }
 
 /// Checks if a message text contains a plan approval request.
@@ -1325,13 +1319,13 @@ class TaskAssignmentMessage {
   final String timestamp;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'taskId': taskId,
-        'subject': subject,
-        'description': description,
-        'assignedBy': assignedBy,
-        'timestamp': timestamp,
-      };
+    'type': messageType,
+    'taskId': taskId,
+    'subject': subject,
+    'description': description,
+    'assignedBy': assignedBy,
+    'timestamp': timestamp,
+  };
 }
 
 /// Checks if a message text contains a task assignment.
@@ -1357,8 +1351,7 @@ class TeamPermissionUpdateMessage {
 
   factory TeamPermissionUpdateMessage.fromJson(Map<String, dynamic> json) {
     return TeamPermissionUpdateMessage(
-      permissionUpdate:
-          json['permissionUpdate'] as Map<String, dynamic>? ?? {},
+      permissionUpdate: json['permissionUpdate'] as Map<String, dynamic>? ?? {},
       directoryPath: json['directoryPath'] as String? ?? '',
       toolName: json['toolName'] as String? ?? '',
     );
@@ -1371,11 +1364,11 @@ class TeamPermissionUpdateMessage {
   final String toolName;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'permissionUpdate': permissionUpdate,
-        'directoryPath': directoryPath,
-        'toolName': toolName,
-      };
+    'type': messageType,
+    'permissionUpdate': permissionUpdate,
+    'directoryPath': directoryPath,
+    'toolName': toolName,
+  };
 }
 
 /// Checks if a message text contains a team permission update.
@@ -1408,10 +1401,10 @@ class ModeSetRequestMessage {
   final String from;
 
   Map<String, dynamic> toJson() => {
-        'type': messageType,
-        'mode': mode,
-        'from': from,
-      };
+    'type': messageType,
+    'mode': mode,
+    'from': from,
+  };
 }
 
 /// Creates a mode set request message.
@@ -1489,8 +1482,8 @@ String? getLastPeerDmSummary(List<Map<String, dynamic>> messages) {
               final summary = (input['summary'] is String)
                   ? input['summary'] as String
                   : message.length > 80
-                      ? message.substring(0, 80)
-                      : message;
+                  ? message.substring(0, 80)
+                  : message;
               return '[to $to] $summary';
             }
           }
@@ -1566,8 +1559,9 @@ List<TeammateStatus> getTeammateStatuses(
   final teamFile = teamFileOverride ?? _readTeamFile(teamName);
   if (teamFile == null) return [];
 
-  final hiddenPaneIds =
-      Set<String>.from((teamFile['hiddenPaneIds'] as List<dynamic>?) ?? []);
+  final hiddenPaneIds = Set<String>.from(
+    (teamFile['hiddenPaneIds'] as List<dynamic>?) ?? [],
+  );
   final members = (teamFile['members'] as List<dynamic>?) ?? [];
   final statuses = <TeammateStatus>[];
 
@@ -1579,21 +1573,23 @@ List<TeammateStatus> getTeammateStatuses(
     final isActive = (member['isActive'] as bool?) ?? true;
     final status = isActive ? 'running' : 'idle';
 
-    statuses.add(TeammateStatus(
-      name: name,
-      agentId: member['agentId'] as String? ?? '',
-      agentType: member['agentType'] as String?,
-      model: member['model'] as String?,
-      prompt: member['prompt'] as String?,
-      status: status,
-      color: member['color'] as String?,
-      tmuxPaneId: member['tmuxPaneId'] as String? ?? '',
-      cwd: member['cwd'] as String? ?? '',
-      worktreePath: member['worktreePath'] as String?,
-      isHidden: hiddenPaneIds.contains(member['tmuxPaneId'] as String? ?? ''),
-      backendType: member['backendType'] as String?,
-      mode: member['mode'] as String?,
-    ));
+    statuses.add(
+      TeammateStatus(
+        name: name,
+        agentId: member['agentId'] as String? ?? '',
+        agentType: member['agentType'] as String?,
+        model: member['model'] as String?,
+        prompt: member['prompt'] as String?,
+        status: status,
+        color: member['color'] as String?,
+        tmuxPaneId: member['tmuxPaneId'] as String? ?? '',
+        cwd: member['cwd'] as String? ?? '',
+        worktreePath: member['worktreePath'] as String?,
+        isHidden: hiddenPaneIds.contains(member['tmuxPaneId'] as String? ?? ''),
+        backendType: member['backendType'] as String?,
+        mode: member['mode'] as String?,
+      ),
+    );
   }
 
   return statuses;
@@ -1687,7 +1683,9 @@ Future<void> _acquireLock(File lock) async {
       await lock.create(exclusive: true);
       return;
     } catch (_) {
-      final delay = _lockMinTimeout + (i * (_lockMaxTimeout - _lockMinTimeout) ~/ _lockRetries);
+      final delay =
+          _lockMinTimeout +
+          (i * (_lockMaxTimeout - _lockMinTimeout) ~/ _lockRetries);
       await Future<void>.delayed(Duration(milliseconds: delay));
     }
   }

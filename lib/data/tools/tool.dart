@@ -19,8 +19,10 @@ class ToolResult {
     this.newMessages,
   });
 
-  factory ToolResult.success(String content, {Map<String, dynamic>? metadata}) =>
-      ToolResult(content: content, metadata: metadata);
+  factory ToolResult.success(
+    String content, {
+    Map<String, dynamic>? metadata,
+  }) => ToolResult(content: content, metadata: metadata);
 
   factory ToolResult.error(String message) =>
       ToolResult(content: message, isError: true);
@@ -32,7 +34,9 @@ class ValidationResult {
   final String? error;
 
   const ValidationResult.valid() : isValid = true, error = null;
-  const ValidationResult.invalid(String message) : isValid = false, error = message;
+  const ValidationResult.invalid(String message)
+    : isValid = false,
+      error = message;
 }
 
 /// Tool interrupt behavior when user sends a new message.
@@ -89,10 +93,8 @@ abstract class Tool {
   Future<ToolResult> execute(Map<String, dynamic> input);
 
   /// Execute with full context (default delegates to simple execute).
-  Future<ToolResult> call(
-    Map<String, dynamic> input,
-    ToolUseContext context,
-  ) => execute(input);
+  Future<ToolResult> call(Map<String, dynamic> input, ToolUseContext context) =>
+      execute(input);
 
   // ── Availability ──
 
@@ -183,10 +185,10 @@ abstract class Tool {
 
   /// Convert to API tool definition.
   ToolDefinition get definition => ToolDefinition(
-        name: name,
-        description: description,
-        inputSchema: inputSchema,
-      );
+    name: name,
+    description: description,
+    inputSchema: inputSchema,
+  );
 }
 
 /// Mixin for tools that execute shell commands.
@@ -198,8 +200,7 @@ mixin ShellToolMixin on Tool {
   bool get isConcurrencySafe => false;
 
   @override
-  InterruptBehavior get interruptBehavior =>
-      InterruptBehavior.finishThenYield;
+  InterruptBehavior get interruptBehavior => InterruptBehavior.finishThenYield;
 }
 
 /// Mixin for tools that only read files/data.

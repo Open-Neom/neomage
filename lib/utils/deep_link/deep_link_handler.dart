@@ -1,6 +1,6 @@
 /// Deep Link Handler
 ///
-/// Faithful port of openneomclaw/src/utils/deepLink/*.ts
+/// Faithful port of neom_claw/src/utils/deepLink/*.ts
 /// Covers: parseDeepLink.ts, terminalLauncher.ts, registerProtocol.ts,
 ///         protocolHandler.ts, banner.ts, terminalPreference.ts
 ///
@@ -10,6 +10,7 @@
 /// - OS protocol handler registration (.app bundle, .desktop, Windows registry)
 /// - Deep link origin banner for security awareness
 /// - Terminal preference capture for deep link handling
+library;
 
 import 'dart:async';
 import 'package:neom_claw/core/platform/claw_io.dart';
@@ -86,9 +87,10 @@ bool _containsControlChars(String s) {
 /// Strips zero-width chars, directional overrides, and other steganographic chars.
 String _partiallySanitizeUnicode(String input) {
   // Remove zero-width chars, directional marks, and other invisible Unicode
-  return input.replaceAll(RegExp(
-    r'[\u200B-\u200F\u2028-\u202F\u2060-\u206F\uFEFF\uFFF9-\uFFFB]',
-  ), '');
+  return input.replaceAll(
+    RegExp(r'[\u200B-\u200F\u2028-\u202F\u2060-\u206F\uFEFF\uFFF9-\uFFFB]'),
+    '',
+  );
 }
 
 /// Parse a neom-claw-cli:// URI into a structured action.
@@ -132,7 +134,9 @@ DeepLinkAction parseDeepLink(String uri) {
 
   // Reject control characters in cwd
   if (cwd != null && _containsControlChars(cwd)) {
-    throw FormatException('Deep link cwd contains disallowed control characters');
+    throw FormatException(
+      'Deep link cwd contains disallowed control characters',
+    );
   }
   if (cwd != null && cwd.length > maxCwdLength) {
     throw FormatException(
@@ -152,7 +156,9 @@ DeepLinkAction parseDeepLink(String uri) {
     // Strip hidden Unicode characters (ASCII smuggling / hidden prompt injection)
     query = _partiallySanitizeUnicode(rawQuery.trim());
     if (_containsControlChars(query)) {
-      throw FormatException('Deep link query contains disallowed control characters');
+      throw FormatException(
+        'Deep link query contains disallowed control characters',
+      );
     }
     if (query.length > maxQueryLength) {
       throw FormatException(
@@ -208,12 +214,32 @@ class _MacosTerminal {
 }
 
 const List<_MacosTerminal> _macosTerminals = [
-  _MacosTerminal(name: 'iTerm2', bundleId: 'com.googlecode.iterm2', app: 'iTerm'),
-  _MacosTerminal(name: 'Ghostty', bundleId: 'com.mitchellh.ghostty', app: 'Ghostty'),
+  _MacosTerminal(
+    name: 'iTerm2',
+    bundleId: 'com.googlecode.iterm2',
+    app: 'iTerm',
+  ),
+  _MacosTerminal(
+    name: 'Ghostty',
+    bundleId: 'com.mitchellh.ghostty',
+    app: 'Ghostty',
+  ),
   _MacosTerminal(name: 'Kitty', bundleId: 'net.kovidgoyal.kitty', app: 'kitty'),
-  _MacosTerminal(name: 'Alacritty', bundleId: 'org.alacritty', app: 'Alacritty'),
-  _MacosTerminal(name: 'WezTerm', bundleId: 'com.github.wez.wezterm', app: 'WezTerm'),
-  _MacosTerminal(name: 'Terminal.app', bundleId: 'com.apple.Terminal', app: 'Terminal'),
+  _MacosTerminal(
+    name: 'Alacritty',
+    bundleId: 'org.alacritty',
+    app: 'Alacritty',
+  ),
+  _MacosTerminal(
+    name: 'WezTerm',
+    bundleId: 'com.github.wez.wezterm',
+    app: 'WezTerm',
+  ),
+  _MacosTerminal(
+    name: 'Terminal.app',
+    bundleId: 'com.apple.Terminal',
+    app: 'Terminal',
+  ),
 ];
 
 /// Linux terminals in preference order.
@@ -234,26 +260,38 @@ const List<String> _linuxTerminals = [
 Future<TerminalInfo> _detectMacosTerminal({String? storedPreference}) async {
   // Check stored preference
   if (storedPreference != null) {
-    final match = _macosTerminals.where((t) => t.app == storedPreference).firstOrNull;
-    if (match != null) return TerminalInfo(name: match.name, command: match.app);
+    final match = _macosTerminals
+        .where((t) => t.app == storedPreference)
+        .firstOrNull;
+    if (match != null) {
+      return TerminalInfo(name: match.name, command: match.app);
+    }
   }
 
   // Check TERM_PROGRAM env var
   final termProgram = Platform.environment['TERM_PROGRAM'];
   if (termProgram != null) {
-    final normalized = termProgram.replaceAll(RegExp(r'\.app$', caseSensitive: false), '').toLowerCase();
-    final match = _macosTerminals.where((t) =>
-        t.app.toLowerCase() == normalized || t.name.toLowerCase() == normalized).firstOrNull;
-    if (match != null) return TerminalInfo(name: match.name, command: match.app);
+    final normalized = termProgram
+        .replaceAll(RegExp(r'\.app$', caseSensitive: false), '')
+        .toLowerCase();
+    final match = _macosTerminals
+        .where(
+          (t) =>
+              t.app.toLowerCase() == normalized ||
+              t.name.toLowerCase() == normalized,
+        )
+        .firstOrNull;
+    if (match != null) {
+      return TerminalInfo(name: match.name, command: match.app);
+    }
   }
 
   // Check installed via mdfind (Spotlight)
   for (final terminal in _macosTerminals) {
     try {
-      final result = await Process.run(
-        'mdfind',
-        ['kMDItemCFBundleIdentifier == "${terminal.bundleId}"'],
-      );
+      final result = await Process.run('mdfind', [
+        'kMDItemCFBundleIdentifier == "${terminal.bundleId}"',
+      ]);
       if (result.exitCode == 0 && (result.stdout as String).trim().isNotEmpty) {
         return TerminalInfo(name: terminal.name, command: terminal.app);
       }
@@ -263,8 +301,12 @@ Future<TerminalInfo> _detectMacosTerminal({String? storedPreference}) async {
   // Fallback: check /Applications directly
   for (final terminal in _macosTerminals) {
     try {
-      final exists = await Directory('/Applications/${terminal.app}.app').exists();
-      if (exists) return TerminalInfo(name: terminal.name, command: terminal.app);
+      final exists = await Directory(
+        '/Applications/${terminal.app}.app',
+      ).exists();
+      if (exists) {
+        return TerminalInfo(name: terminal.name, command: terminal.app);
+      }
     } catch (_) {}
   }
 
@@ -350,11 +392,26 @@ Future<bool> launchInTerminal(
   }
 
   if (Platform.isMacOS) {
-    return _launchMacosTerminal(terminal, neomClawPath, neomClawArgs, action.cwd);
+    return _launchMacosTerminal(
+      terminal,
+      neomClawPath,
+      neomClawArgs,
+      action.cwd,
+    );
   } else if (Platform.isLinux) {
-    return _launchLinuxTerminal(terminal, neomClawPath, neomClawArgs, action.cwd);
+    return _launchLinuxTerminal(
+      terminal,
+      neomClawPath,
+      neomClawArgs,
+      action.cwd,
+    );
   } else if (Platform.isWindows) {
-    return _launchWindowsTerminal(terminal, neomClawPath, neomClawArgs, action.cwd);
+    return _launchWindowsTerminal(
+      terminal,
+      neomClawPath,
+      neomClawArgs,
+      action.cwd,
+    );
   }
   return false;
 }
@@ -370,7 +427,8 @@ Future<bool> _launchMacosTerminal(
     // SHELL-STRING PATHS (AppleScript)
     case 'iTerm':
       final shCmd = _buildShellCommand(neomClawPath, neomClawArgs, cwd);
-      final script = '''tell application "iTerm"
+      final script =
+          '''tell application "iTerm"
   if running then
     create window with default profile
   else
@@ -386,7 +444,8 @@ end tell''';
 
     case 'Terminal':
       final shCmd = _buildShellCommand(neomClawPath, neomClawArgs, cwd);
-      final script = '''tell application "Terminal"
+      final script =
+          '''tell application "Terminal"
   do script ${_appleScriptQuote(shCmd)}
   activate
 end tell''';
@@ -395,7 +454,12 @@ end tell''';
 
     // PURE ARGV PATHS (no shell)
     case 'Ghostty':
-      final args = ['-na', terminal.command, '--args', '--window-save-state=never'];
+      final args = [
+        '-na',
+        terminal.command,
+        '--args',
+        '--window-save-state=never',
+      ];
       if (cwd != null) args.add('--working-directory=$cwd');
       args.addAll(['-e', neomClawPath, ...neomClawArgs]);
       final result = await Process.run('open', args);
@@ -429,7 +493,9 @@ end tell''';
 
   // Fallback to Terminal.app
   if (terminal.command != 'Terminal') {
-    _logDebug('Failed to launch ${terminal.name}, falling back to Terminal.app');
+    _logDebug(
+      'Failed to launch ${terminal.name}, falling back to Terminal.app',
+    );
     return _launchMacosTerminal(
       const TerminalInfo(name: 'Terminal.app', command: 'Terminal'),
       neomClawPath,
@@ -534,7 +600,7 @@ Future<bool> _spawnDetached(
   String? cwd,
 }) async {
   try {
-    final process = await Process.start(
+    final _process = await Process.start(
       command,
       args,
       mode: ProcessStartMode.detached,
@@ -554,7 +620,11 @@ Future<bool> _spawnDetached(
 
 /// Build a single-quoted POSIX shell command string.
 /// Only used by AppleScript paths (iTerm, Terminal.app).
-String _buildShellCommand(String neomClawPath, List<String> neomClawArgs, String? cwd) {
+String _buildShellCommand(
+  String neomClawPath,
+  List<String> neomClawArgs,
+  String? cwd,
+) {
   final cdPrefix = cwd != null ? 'cd ${_shellQuote(cwd)} && ' : '';
   return '$cdPrefix${[neomClawPath, ...neomClawArgs].map(_shellQuote).join(' ')}';
 }
@@ -590,8 +660,7 @@ String _cmdQuote(String arg) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// macOS .app bundle directory path.
-String get _macosAppDir =>
-    p.join(_homeDir(), 'Applications', macosAppName);
+String get _macosAppDir => p.join(_homeDir(), 'Applications', macosAppName);
 
 /// macOS symlink path inside the .app bundle.
 String get _macosSymlinkPath =>
@@ -600,15 +669,15 @@ String get _macosSymlinkPath =>
 /// Linux .desktop file path.
 String _linuxDesktopPath() {
   final xdgDataHome =
-      Platform.environment['XDG_DATA_HOME'] ?? p.join(_homeDir(), '.local', 'share');
+      Platform.environment['XDG_DATA_HOME'] ??
+      p.join(_homeDir(), '.local', 'share');
   return p.join(xdgDataHome, 'applications', desktopFileName);
 }
 
 /// Windows registry key.
 const String _windowsRegKey =
     'HKEY_CURRENT_USER\\Software\\Classes\\$deepLinkProtocol';
-const String _windowsCommandKey =
-    '$_windowsRegKey\\shell\\open\\command';
+const String _windowsCommandKey = '$_windowsRegKey\\shell\\open\\command';
 
 /// Linux .desktop Exec line.
 String _linuxExecLine(String neomClawPath) =>
@@ -627,13 +696,14 @@ Future<void> _registerMacos(String neomClawPath) async {
   try {
     await Directory(_macosAppDir).delete(recursive: true);
   } on FileSystemException catch (e) {
-    if (e.osError?.errorCode != 2 /* ENOENT */) rethrow;
+    if (e.osError?.errorCode != 2 /* ENOENT */ ) rethrow;
   }
 
   await Directory(p.dirname(_macosSymlinkPath)).create(recursive: true);
 
   // Info.plist
-  final infoPlist = '''<?xml version="1.0" encoding="UTF-8"?>
+  final infoPlist =
+      '''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -673,7 +743,9 @@ Future<void> _registerMacos(String neomClawPath) async {
       '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister';
   await Process.run(lsregister, ['-R', _macosAppDir]);
 
-  _logDebug('Registered $deepLinkProtocol:// protocol handler at $_macosAppDir');
+  _logDebug(
+    'Registered $deepLinkProtocol:// protocol handler at $_macosAppDir',
+  );
 }
 
 /// Register the protocol handler on Linux.
@@ -681,7 +753,8 @@ Future<void> _registerLinux(String neomClawPath) async {
   final desktopPath = _linuxDesktopPath();
   await Directory(p.dirname(desktopPath)).create(recursive: true);
 
-  final desktopEntry = '''[Desktop Entry]
+  final desktopEntry =
+      '''[Desktop Entry]
 Name=$appName
 Comment=Handle $deepLinkProtocol:// deep links for NeomClaw
 ${_linuxExecLine(neomClawPath)}
@@ -695,10 +768,11 @@ MimeType=x-scheme-handler/$deepLinkProtocol;
   // Register with xdg-mime if available
   final xdgMime = await _which('xdg-mime');
   if (xdgMime != null) {
-    final result = await Process.run(
-      xdgMime,
-      ['default', desktopFileName, 'x-scheme-handler/$deepLinkProtocol'],
-    );
+    final result = await Process.run(xdgMime, [
+      'default',
+      desktopFileName,
+      'x-scheme-handler/$deepLinkProtocol',
+    ]);
     if (result.exitCode != 0) {
       throw Exception('xdg-mime exited with code ${result.exitCode}');
     }
@@ -712,7 +786,14 @@ Future<void> _registerWindows(String neomClawPath) async {
   final regCommands = [
     ['add', _windowsRegKey, '/ve', '/d', 'URL:$appName', '/f'],
     ['add', _windowsRegKey, '/v', 'URL Protocol', '/d', '', '/f'],
-    ['add', _windowsCommandKey, '/ve', '/d', _windowsCommandValue(neomClawPath), '/f'],
+    [
+      'add',
+      _windowsCommandKey,
+      '/ve',
+      '/d',
+      _windowsCommandValue(neomClawPath),
+      '/f',
+    ],
   ];
 
   for (final args in regCommands) {
@@ -722,7 +803,9 @@ Future<void> _registerWindows(String neomClawPath) async {
     }
   }
 
-  _logDebug('Registered $deepLinkProtocol:// protocol handler in Windows registry');
+  _logDebug(
+    'Registered $deepLinkProtocol:// protocol handler in Windows registry',
+  );
 }
 
 /// Register the neom-claw-cli:// protocol handler with the operating system.
@@ -769,9 +852,15 @@ Future<bool> isProtocolHandlerCurrent(String neomClawPath) async {
       final content = await File(_linuxDesktopPath()).readAsString();
       return content.contains(_linuxExecLine(neomClawPath));
     } else if (Platform.isWindows) {
-      final result = await Process.run('reg', ['query', _windowsCommandKey, '/ve']);
+      final result = await Process.run('reg', [
+        'query',
+        _windowsCommandKey,
+        '/ve',
+      ]);
       return result.exitCode == 0 &&
-          (result.stdout as String).contains(_windowsCommandValue(neomClawPath));
+          (result.stdout as String).contains(
+            _windowsCommandValue(neomClawPath),
+          );
     }
   } catch (_) {}
   return false;
@@ -783,12 +872,14 @@ Future<void> ensureDeepLinkProtocolRegistered() async {
   if (await isProtocolHandlerCurrent(neomClawPath)) return;
 
   // Check failure backoff
-  final configHome = Platform.environment['NEOMCLAW_CONFIG_HOME'] ??
+  final configHome =
+      Platform.environment['NEOMCLAW_CONFIG_HOME'] ??
       p.join(_homeDir(), '.neomclaw');
   final failureMarkerPath = p.join(configHome, '.deep-link-register-failed');
   try {
     final stat = await File(failureMarkerPath).stat();
-    if (DateTime.now().millisecondsSinceEpoch - stat.modified.millisecondsSinceEpoch <
+    if (DateTime.now().millisecondsSinceEpoch -
+            stat.modified.millisecondsSinceEpoch <
         failureBackoffMs) {
       return;
     }
@@ -798,7 +889,9 @@ Future<void> ensureDeepLinkProtocolRegistered() async {
 
   try {
     await registerProtocolHandler(neomClawPath);
-    _logDebug('Auto-registered $deepLinkProtocol:// deep link protocol handler');
+    _logDebug(
+      'Auto-registered $deepLinkProtocol:// deep link protocol handler',
+    );
     try {
       await File(failureMarkerPath).delete();
     } catch (_) {}
@@ -833,18 +926,14 @@ Future<int> handleDeepLinkUri(String uri) async {
   final cwd = action.cwd ?? _homeDir();
 
   // Read FETCH_HEAD age for repo links
-  DateTime? lastFetch;
+  DateTime? _lastFetch;
   if (action.repo != null) {
-    lastFetch = await readLastFetchTime(cwd);
+    _lastFetch = await readLastFetchTime(cwd);
   }
 
   final launched = await launchInTerminal(
     Platform.resolvedExecutable,
-    DeepLinkAction(
-      query: action.query,
-      cwd: cwd,
-      repo: action.repo,
-    ),
+    DeepLinkAction(query: action.query, cwd: cwd, repo: action.repo),
   );
 
   if (!launched) {
@@ -886,8 +975,10 @@ String buildDeepLinkBanner(DeepLinkBannerInfo info) {
     final age = info.lastFetch != null
         ? _formatRelativeTimeAgo(info.lastFetch!)
         : 'never';
-    final stale = info.lastFetch == null ||
-        DateTime.now().millisecondsSinceEpoch - info.lastFetch!.millisecondsSinceEpoch >
+    final stale =
+        info.lastFetch == null ||
+        DateTime.now().millisecondsSinceEpoch -
+                info.lastFetch!.millisecondsSinceEpoch >
             staleFetchWarnMs;
     lines.add(
       'Resolved ${info.repo} from local clones - last fetched $age${stale ? ' -- NEOMCLAW.md may be stale' : ''}',
@@ -931,11 +1022,10 @@ Future<DateTime?> readLastFetchTime(String cwd) async {
 /// Find the .git directory for a working directory.
 Future<String?> _findGitDir(String cwd) async {
   try {
-    final result = await Process.run(
-      'git',
-      ['rev-parse', '--git-dir'],
-      workingDirectory: cwd,
-    );
+    final result = await Process.run('git', [
+      'rev-parse',
+      '--git-dir',
+    ], workingDirectory: cwd);
     if (result.exitCode == 0) {
       final gitDir = (result.stdout as String).trim();
       return p.isAbsolute(gitDir) ? gitDir : p.join(cwd, gitDir);
@@ -1029,11 +1119,13 @@ class DeepLinkController extends SintController {
   void setDeepLinkSession(DeepLinkAction action, String cwd) {
     isDeepLinkSession.value = true;
     currentAction.value = action;
-    bannerText.value = buildDeepLinkBanner(DeepLinkBannerInfo(
-      cwd: cwd,
-      prefillLength: action.query?.length,
-      repo: action.repo,
-    ));
+    bannerText.value = buildDeepLinkBanner(
+      DeepLinkBannerInfo(
+        cwd: cwd,
+        prefillLength: action.query?.length,
+        repo: action.repo,
+      ),
+    );
   }
 
   /// Register the protocol handler.
@@ -1070,7 +1162,9 @@ class DeepLinkController extends SintController {
 // ═══════════════════════════════════════════════════════════════════════════
 
 String _homeDir() =>
-    Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '/tmp';
+    Platform.environment['HOME'] ??
+    Platform.environment['USERPROFILE'] ??
+    '/tmp';
 
 /// Resolve a command to its full path using `which` / `where`.
 Future<String?> _which(String command) async {

@@ -1,4 +1,4 @@
-// Port of openneomclaw format.ts + truncate.ts + treeify.ts + json.ts +
+// Port of neom_claw format.ts + truncate.ts + treeify.ts + json.ts +
 // frontmatterParser.ts
 //
 // Formatting, truncation, tree rendering, JSON/JSONL parsing, and
@@ -124,7 +124,8 @@ String formatRelativeTime(
   DateTime? now,
 }) {
   final reference = now ?? DateTime.now();
-  final diffInMs = date.millisecondsSinceEpoch - reference.millisecondsSinceEpoch;
+  final diffInMs =
+      date.millisecondsSinceEpoch - reference.millisecondsSinceEpoch;
   final diffInSeconds = diffInMs ~/ 1000; // truncate toward zero
 
   final intervals = <({String unit, int seconds, String shortUnit})>[
@@ -184,8 +185,9 @@ String formatLogMetadata({
   int? prNumber,
   String? prRepository,
 }) {
-  final sizeOrCount =
-      fileSize != null ? formatFileSize(fileSize) : '$messageCount messages';
+  final sizeOrCount = fileSize != null
+      ? formatFileSize(fileSize)
+      : '$messageCount messages';
   final parts = <String>[
     formatRelativeTimeAgo(modified, style: RelativeTimeStyle.short),
     ?gitBranch,
@@ -210,7 +212,7 @@ String? formatResetTime(
   final now = DateTime.now();
   final hoursUntilReset =
       (date.millisecondsSinceEpoch - now.millisecondsSinceEpoch) /
-          (1000 * 60 * 60);
+      (1000 * 60 * 60);
 
   if (hoursUntilReset > 24) {
     final buf = StringBuffer();
@@ -230,8 +232,19 @@ String? formatResetTime(
 
 String _monthAbbr(int month) {
   const names = [
-    '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    '',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   return names[month];
 }
@@ -439,18 +452,16 @@ const _treeLine = '\u2502'; // '|'
 const _treeEmpty = ' ';
 
 /// Render a tree node as a string.
-String treeify(TreeNode obj, {TreeifyOptions options = const TreeifyOptions()}) {
+String treeify(
+  TreeNode obj, {
+  TreeifyOptions options = const TreeifyOptions(),
+}) {
   if (obj.isEmpty) return '(empty)';
 
   final lines = <String>[];
   final visited = <Object>{};
 
-  void growBranch(
-    dynamic node,
-    String prefix,
-    bool isLast, {
-    int depth = 0,
-  }) {
+  void growBranch(dynamic node, String prefix, bool isLast, {int depth = 0}) {
     if (node is String) {
       lines.add('$prefix$node');
       return;
@@ -479,12 +490,17 @@ String treeify(TreeNode obj, {TreeifyOptions options = const TreeifyOptions()}) 
       final treeChar = isLastKey ? _treeLastBranch : _treeBranch;
       final formattedKey = key.trim().isEmpty ? '' : key;
 
-      var line = '$nodePrefix$treeChar${formattedKey.isNotEmpty ? ' $formattedKey' : ''}';
+      var line =
+          '$nodePrefix$treeChar${formattedKey.isNotEmpty ? ' $formattedKey' : ''}';
       final shouldAddColon = key.trim().isNotEmpty;
 
       if (value is Map<String, dynamic> && visited.contains(value)) {
         lines.add(
-          '$line${shouldAddColon ? ': ' : line.isNotEmpty ? ' ' : ''}[Circular]',
+          '$line${shouldAddColon
+              ? ': '
+              : line.isNotEmpty
+              ? ' '
+              : ''}[Circular]',
         );
       } else if (value is Map<String, dynamic>) {
         lines.add(line);
@@ -493,12 +509,20 @@ String treeify(TreeNode obj, {TreeifyOptions options = const TreeifyOptions()}) 
         growBranch(value, nextPrefix, isLastKey, depth: depth + 1);
       } else if (value is List) {
         lines.add(
-          '$line${shouldAddColon ? ': ' : line.isNotEmpty ? ' ' : ''}[Array(${value.length})]',
+          '$line${shouldAddColon
+              ? ': '
+              : line.isNotEmpty
+              ? ' '
+              : ''}[Array(${value.length})]',
         );
       } else if (options.showValues) {
         final valueStr = '$value';
         line +=
-            '${shouldAddColon ? ': ' : line.isNotEmpty ? ' ' : ''}$valueStr';
+            '${shouldAddColon
+                ? ': '
+                : line.isNotEmpty
+                ? ' '
+                : ''}$valueStr';
         lines.add(line);
       } else {
         lines.add(line);
@@ -630,10 +654,7 @@ typedef FrontmatterData = Map<String, dynamic>;
 
 /// Result of parsing markdown with frontmatter.
 class ParsedMarkdown {
-  const ParsedMarkdown({
-    required this.frontmatter,
-    required this.content,
-  });
+  const ParsedMarkdown({required this.frontmatter, required this.content});
 
   final FrontmatterData frontmatter;
   final String content;
@@ -665,9 +686,7 @@ String _quoteProblematicValues(String frontmatterText) {
 
       // Quote if contains special YAML characters
       if (_yamlSpecialChars.hasMatch(value)) {
-        final escaped = value
-            .replaceAll(r'\', r'\\')
-            .replaceAll('"', r'\"');
+        final escaped = value.replaceAll(r'\', r'\\').replaceAll('"', r'\"');
         result.add('$key: "$escaped"');
         continue;
       }
@@ -705,9 +724,7 @@ ParsedMarkdown parseFrontmatter(String markdown, {String? sourcePath}) {
       }
     } catch (retryError) {
       final location = sourcePath != null ? ' in $sourcePath' : '';
-      stderr.writeln(
-        'Failed to parse YAML frontmatter$location: $retryError',
-      );
+      stderr.writeln('Failed to parse YAML frontmatter$location: $retryError');
     }
   }
 
@@ -741,7 +758,9 @@ dynamic _parseSimpleYaml(String text) {
     }
 
     // Key: value
-    final kvMatch = RegExp(r'^([a-zA-Z_][a-zA-Z0-9_-]*):\s*(.*)$').firstMatch(line);
+    final kvMatch = RegExp(
+      r'^([a-zA-Z_][a-zA-Z0-9_-]*):\s*(.*)$',
+    ).firstMatch(line);
     if (kvMatch != null) {
       final key = kvMatch.group(1)!;
       final value = kvMatch.group(2)!.trim();
@@ -793,9 +812,9 @@ dynamic _parseSimpleYaml(String text) {
 /// Split paths in frontmatter, respecting brace patterns.
 List<String> splitPathInFrontmatter(dynamic input) {
   if (input is List) {
-    return input.expand<String>(
-      (item) => splitPathInFrontmatter(item),
-    ).toList();
+    return input
+        .expand<String>((item) => splitPathInFrontmatter(item))
+        .toList();
   }
   if (input is! String) return [];
 
@@ -880,7 +899,10 @@ bool parseBooleanFrontmatter(dynamic value) {
 enum FrontmatterShell { bash, powershell }
 
 /// Parse and validate the `shell:` frontmatter field.
-FrontmatterShell? parseShellFrontmatter(dynamic value, {required String source}) {
+FrontmatterShell? parseShellFrontmatter(
+  dynamic value, {
+  required String source,
+}) {
   if (value == null) return null;
   final normalized = '$value'.trim().toLowerCase();
   if (normalized.isEmpty) return null;

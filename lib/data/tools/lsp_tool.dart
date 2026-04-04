@@ -1,4 +1,4 @@
-// LSPTool — port of openneomclaw/src/tools/LSPTool/.
+// LSPTool — port of neom_claw/src/tools/LSPTool/.
 // Language Server Protocol integration: go-to-definition, find-references,
 // hover, document/workspace symbols, call hierarchy, with formatters and
 // schema validation.
@@ -116,9 +116,9 @@ class LspPosition {
   const LspPosition({required this.line, required this.character});
 
   factory LspPosition.fromJson(Map<String, dynamic> json) => LspPosition(
-        line: json['line'] as int,
-        character: json['character'] as int,
-      );
+    line: json['line'] as int,
+    character: json['character'] as int,
+  );
 
   Map<String, dynamic> toJson() => {'line': line, 'character': character};
 }
@@ -131,14 +131,14 @@ class LspRange {
   const LspRange({required this.start, required this.end});
 
   factory LspRange.fromJson(Map<String, dynamic> json) => LspRange(
-        start: LspPosition.fromJson(json['start'] as Map<String, dynamic>),
-        end: LspPosition.fromJson(json['end'] as Map<String, dynamic>),
-      );
+    start: LspPosition.fromJson(json['start'] as Map<String, dynamic>),
+    end: LspPosition.fromJson(json['end'] as Map<String, dynamic>),
+  );
 
   Map<String, dynamic> toJson() => {
-        'start': start.toJson(),
-        'end': end.toJson(),
-      };
+    'start': start.toJson(),
+    'end': end.toJson(),
+  };
 }
 
 /// LSP Location.
@@ -149,9 +149,9 @@ class LspLocation {
   const LspLocation({required this.uri, required this.range});
 
   factory LspLocation.fromJson(Map<String, dynamic> json) => LspLocation(
-        uri: json['uri'] as String,
-        range: LspRange.fromJson(json['range'] as Map<String, dynamic>),
-      );
+    uri: json['uri'] as String,
+    range: LspRange.fromJson(json['range'] as Map<String, dynamic>),
+  );
 
   Map<String, dynamic> toJson() => {'uri': uri, 'range': range.toJson()};
 }
@@ -173,21 +173,22 @@ class LspLocationLink {
   factory LspLocationLink.fromJson(Map<String, dynamic> json) =>
       LspLocationLink(
         targetUri: json['targetUri'] as String,
-        targetRange:
-            LspRange.fromJson(json['targetRange'] as Map<String, dynamic>),
+        targetRange: LspRange.fromJson(
+          json['targetRange'] as Map<String, dynamic>,
+        ),
         targetSelectionRange: LspRange.fromJson(
-            json['targetSelectionRange'] as Map<String, dynamic>),
+          json['targetSelectionRange'] as Map<String, dynamic>,
+        ),
         originSelectionRange: json['originSelectionRange'] != null
             ? LspRange.fromJson(
-                json['originSelectionRange'] as Map<String, dynamic>)
+                json['originSelectionRange'] as Map<String, dynamic>,
+              )
             : null,
       );
 
   /// Convert to a Location for uniform handling.
-  LspLocation toLocation() => LspLocation(
-        uri: targetUri,
-        range: targetSelectionRange,
-      );
+  LspLocation toLocation() =>
+      LspLocation(uri: targetUri, range: targetSelectionRange);
 }
 
 /// LSP DocumentSymbol (hierarchical).
@@ -215,10 +216,13 @@ class LspDocumentSymbol {
         detail: json['detail'] as String?,
         range: LspRange.fromJson(json['range'] as Map<String, dynamic>),
         selectionRange: LspRange.fromJson(
-            json['selectionRange'] as Map<String, dynamic>),
-        children: (json['children'] as List<dynamic>?)
-                ?.map((e) =>
-                    LspDocumentSymbol.fromJson(e as Map<String, dynamic>))
+          json['selectionRange'] as Map<String, dynamic>,
+        ),
+        children:
+            (json['children'] as List<dynamic>?)
+                ?.map(
+                  (e) => LspDocumentSymbol.fromJson(e as Map<String, dynamic>),
+                )
                 .toList() ??
             const [],
       );
@@ -242,8 +246,9 @@ class LspSymbolInformation {
       LspSymbolInformation(
         name: json['name'] as String,
         kind: json['kind'] as int,
-        location:
-            LspLocation.fromJson(json['location'] as Map<String, dynamic>),
+        location: LspLocation.fromJson(
+          json['location'] as Map<String, dynamic>,
+        ),
         containerName: json['containerName'] as String?,
       );
 }
@@ -256,11 +261,11 @@ class LspHover {
   const LspHover({required this.contents, this.range});
 
   factory LspHover.fromJson(Map<String, dynamic> json) => LspHover(
-        contents: json['contents'],
-        range: json['range'] != null
-            ? LspRange.fromJson(json['range'] as Map<String, dynamic>)
-            : null,
-      );
+    contents: json['contents'],
+    range: json['range'] != null
+        ? LspRange.fromJson(json['range'] as Map<String, dynamic>)
+        : null,
+  );
 }
 
 /// LSP CallHierarchyItem.
@@ -288,7 +293,8 @@ class LspCallHierarchyItem {
         uri: json['uri'] as String,
         range: LspRange.fromJson(json['range'] as Map<String, dynamic>),
         selectionRange: LspRange.fromJson(
-            json['selectionRange'] as Map<String, dynamic>),
+          json['selectionRange'] as Map<String, dynamic>,
+        ),
         detail: json['detail'] as String?,
       );
 }
@@ -303,7 +309,8 @@ class LspIncomingCall {
   factory LspIncomingCall.fromJson(Map<String, dynamic> json) =>
       LspIncomingCall(
         from: LspCallHierarchyItem.fromJson(
-            json['from'] as Map<String, dynamic>),
+          json['from'] as Map<String, dynamic>,
+        ),
         fromRanges: (json['fromRanges'] as List<dynamic>)
             .map((e) => LspRange.fromJson(e as Map<String, dynamic>))
             .toList(),
@@ -319,8 +326,7 @@ class LspOutgoingCall {
 
   factory LspOutgoingCall.fromJson(Map<String, dynamic> json) =>
       LspOutgoingCall(
-        to: LspCallHierarchyItem.fromJson(
-            json['to'] as Map<String, dynamic>),
+        to: LspCallHierarchyItem.fromJson(json['to'] as Map<String, dynamic>),
         fromRanges: (json['fromRanges'] as List<dynamic>)
             .map((e) => LspRange.fromJson(e as Map<String, dynamic>))
             .toList(),
@@ -379,12 +385,12 @@ class LspToolOutput {
   });
 
   Map<String, dynamic> toJson() => {
-        'operation': operation,
-        'result': result,
-        'filePath': filePath,
-        if (resultCount != null) 'resultCount': resultCount,
-        if (fileCount != null) 'fileCount': fileCount,
-      };
+    'operation': operation,
+    'result': result,
+    'filePath': filePath,
+    if (resultCount != null) 'resultCount': resultCount,
+    if (fileCount != null) 'fileCount': fileCount,
+  };
 }
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
@@ -417,8 +423,7 @@ String formatUri(String? uri, {String? cwd}) {
       }
       // Normalize separators.
       relative = relative.replaceAll('\\', '/');
-      if (relative.length < filePath.length &&
-          !relative.startsWith('../../')) {
+      if (relative.length < filePath.length && !relative.startsWith('../../')) {
         return relative;
       }
     }
@@ -450,8 +455,7 @@ Map<String, List<T>> groupByFile<T>(
 }
 
 /// Format goToDefinition result.
-String formatGoToDefinitionResult(List<LspLocation>? locations,
-    {String? cwd}) {
+String formatGoToDefinitionResult(List<LspLocation>? locations, {String? cwd}) {
   if (locations == null || locations.isEmpty) {
     return 'No definition found. This may occur if the cursor is not on a '
         'symbol, or if the definition is in an external library not indexed '
@@ -469,14 +473,14 @@ String formatGoToDefinitionResult(List<LspLocation>? locations,
     return 'Defined in ${formatLocation(valid[0], cwd: cwd)}';
   }
 
-  final locationList =
-      valid.map((loc) => '  ${formatLocation(loc, cwd: cwd)}').join('\n');
+  final locationList = valid
+      .map((loc) => '  ${formatLocation(loc, cwd: cwd)}')
+      .join('\n');
   return 'Found ${valid.length} definitions:\n$locationList';
 }
 
 /// Format findReferences result.
-String formatFindReferencesResult(List<LspLocation>? locations,
-    {String? cwd}) {
+String formatFindReferencesResult(List<LspLocation>? locations, {String? cwd}) {
   if (locations == null || locations.isEmpty) {
     return 'No references found. This may occur if the symbol has no usages, '
         'or if the LSP server has not fully indexed the workspace.';
@@ -512,11 +516,13 @@ String formatFindReferencesResult(List<LspLocation>? locations,
 /// Extract text content from MarkupContent or MarkedString.
 String extractMarkupText(dynamic contents) {
   if (contents is List) {
-    return contents.map((item) {
-      if (item is String) return item;
-      if (item is Map) return item['value'] as String? ?? '';
-      return '';
-    }).join('\n\n');
+    return contents
+        .map((item) {
+          if (item is String) return item;
+          if (item is Map) return item['value'] as String? ?? '';
+          return '';
+        })
+        .join('\n\n');
   }
   if (contents is String) return contents;
   if (contents is Map) {
@@ -541,8 +547,10 @@ String formatHoverResult(LspHover? hover, {String? cwd}) {
 }
 
 /// Format a single DocumentSymbol with indentation.
-List<String> _formatDocumentSymbolNode(LspDocumentSymbol symbol,
-    {int indent = 0}) {
+List<String> _formatDocumentSymbolNode(
+  LspDocumentSymbol symbol, {
+  int indent = 0,
+}) {
   final lines = <String>[];
   final prefix = '  ' * indent;
   final kind = symbolKindToString(symbol.kind);
@@ -558,8 +566,10 @@ List<String> _formatDocumentSymbolNode(LspDocumentSymbol symbol,
 }
 
 /// Format documentSymbol result (hierarchical outline).
-String formatDocumentSymbolResult(List<LspDocumentSymbol>? symbols,
-    {String? cwd}) {
+String formatDocumentSymbolResult(
+  List<LspDocumentSymbol>? symbols, {
+  String? cwd,
+}) {
   if (symbols == null || symbols.isEmpty) {
     return 'No symbols found in document. This may occur if the file is empty, '
         'not supported by the LSP server, or if the server has not fully '
@@ -573,25 +583,23 @@ String formatDocumentSymbolResult(List<LspDocumentSymbol>? symbols,
 }
 
 /// Format workspaceSymbol result (flat list).
-String formatWorkspaceSymbolResult(List<LspSymbolInformation>? symbols,
-    {String? cwd}) {
+String formatWorkspaceSymbolResult(
+  List<LspSymbolInformation>? symbols, {
+  String? cwd,
+}) {
   if (symbols == null || symbols.isEmpty) {
     return 'No symbols found in workspace. This may occur if the workspace is '
         'empty, or if the LSP server has not finished indexing the project.';
   }
 
-  final valid = symbols
-      .where((s) => s.location.uri.isNotEmpty)
-      .toList();
+  final valid = symbols.where((s) => s.location.uri.isNotEmpty).toList();
   if (valid.isEmpty) {
     return 'No symbols found in workspace. This may occur if the workspace is '
         'empty, or if the LSP server has not finished indexing the project.';
   }
 
   final plural = valid.length == 1 ? 'symbol' : 'symbols';
-  final lines = <String>[
-    'Found ${valid.length} $plural in workspace:',
-  ];
+  final lines = <String>['Found ${valid.length} $plural in workspace:'];
 
   final byFile = groupByFile(valid, (s) => s.location.uri, cwd: cwd);
   for (final entry in byFile.entries) {
@@ -624,8 +632,10 @@ String _formatCallHierarchyItem(LspCallHierarchyItem item, {String? cwd}) {
 }
 
 /// Format prepareCallHierarchy result.
-String formatPrepareCallHierarchyResult(List<LspCallHierarchyItem>? items,
-    {String? cwd}) {
+String formatPrepareCallHierarchyResult(
+  List<LspCallHierarchyItem>? items, {
+  String? cwd,
+}) {
   if (items == null || items.isEmpty) {
     return 'No call hierarchy item found at this position';
   }
@@ -640,16 +650,13 @@ String formatPrepareCallHierarchyResult(List<LspCallHierarchyItem>? items,
 }
 
 /// Format incomingCalls result.
-String formatIncomingCallsResult(List<LspIncomingCall>? calls,
-    {String? cwd}) {
+String formatIncomingCallsResult(List<LspIncomingCall>? calls, {String? cwd}) {
   if (calls == null || calls.isEmpty) {
     return 'No incoming calls found (nothing calls this function)';
   }
 
   final plural = calls.length == 1 ? 'call' : 'calls';
-  final lines = <String>[
-    'Found ${calls.length} incoming $plural:',
-  ];
+  final lines = <String>['Found ${calls.length} incoming $plural:'];
 
   final byFile = groupByFile(calls, (c) => c.from.uri, cwd: cwd);
   for (final entry in byFile.entries) {
@@ -672,16 +679,13 @@ String formatIncomingCallsResult(List<LspIncomingCall>? calls,
 }
 
 /// Format outgoingCalls result.
-String formatOutgoingCallsResult(List<LspOutgoingCall>? calls,
-    {String? cwd}) {
+String formatOutgoingCallsResult(List<LspOutgoingCall>? calls, {String? cwd}) {
   if (calls == null || calls.isEmpty) {
     return 'No outgoing calls found (this function calls nothing)';
   }
 
   final plural = calls.length == 1 ? 'call' : 'calls';
-  final lines = <String>[
-    'Found ${calls.length} outgoing $plural:',
-  ];
+  final lines = <String>['Found ${calls.length} outgoing $plural:'];
 
   final byFile = groupByFile(calls, (c) => c.to.uri, cwd: cwd);
   for (final entry in byFile.entries) {
@@ -727,7 +731,10 @@ abstract class LspServerManager {
 
   /// Send a request to the LSP server.
   Future<dynamic> sendRequest(
-      String absolutePath, String method, dynamic params);
+    String absolutePath,
+    String method,
+    dynamic params,
+  );
 }
 
 // ─── LSP Tool ────────────────────────────────────────────────────────────────
@@ -761,38 +768,37 @@ class LspTool extends Tool with ReadOnlyToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'operation': {
-            'type': 'string',
-            'enum': LspOperation.values.map((e) => e.name).toList(),
-            'description': 'The LSP operation to perform',
-          },
-          'filePath': {
-            'type': 'string',
-            'description': 'The absolute or relative path to the file',
-          },
-          'line': {
-            'type': 'integer',
-            'minimum': 1,
-            'description':
-                'The line number (1-based, as shown in editors)',
-          },
-          'character': {
-            'type': 'integer',
-            'minimum': 1,
-            'description':
-                'The character offset (1-based, as shown in editors)',
-          },
-        },
-        'required': ['operation', 'filePath', 'line', 'character'],
-        'additionalProperties': false,
-      };
+    'type': 'object',
+    'properties': {
+      'operation': {
+        'type': 'string',
+        'enum': LspOperation.values.map((e) => e.name).toList(),
+        'description': 'The LSP operation to perform',
+      },
+      'filePath': {
+        'type': 'string',
+        'description': 'The absolute or relative path to the file',
+      },
+      'line': {
+        'type': 'integer',
+        'minimum': 1,
+        'description': 'The line number (1-based, as shown in editors)',
+      },
+      'character': {
+        'type': 'integer',
+        'minimum': 1,
+        'description': 'The character offset (1-based, as shown in editors)',
+      },
+    },
+    'required': ['operation', 'filePath', 'line', 'character'],
+    'additionalProperties': false,
+  };
 
   /// Expand a file path, resolving ~ and relative paths.
   String _expandPath(String filePath) {
     if (filePath.startsWith('~/')) {
-      final home = Platform.environment['HOME'] ??
+      final home =
+          Platform.environment['HOME'] ??
           Platform.environment['USERPROFILE'] ??
           '';
       return '$home${filePath.substring(1)}';
@@ -805,8 +811,7 @@ class LspTool extends Tool with ReadOnlyToolMixin {
     // Validate operation.
     final opStr = input['operation'] as String?;
     if (opStr == null || !isValidLspOperation(opStr)) {
-      return ValidationResult.invalid(
-          'Invalid operation: $opStr');
+      return ValidationResult.invalid('Invalid operation: $opStr');
     }
 
     // Validate file path.
@@ -835,14 +840,14 @@ class LspTool extends Tool with ReadOnlyToolMixin {
     // Validate line/character are positive integers.
     final line = input['line'];
     if (line is! int || line < 1) {
-      return const ValidationResult.invalid(
-          'line must be a positive integer');
+      return const ValidationResult.invalid('line must be a positive integer');
     }
 
     final character = input['character'];
     if (character is! int || character < 1) {
       return const ValidationResult.invalid(
-          'character must be a positive integer');
+        'character must be a positive integer',
+      );
     }
 
     return const ValidationResult.valid();
@@ -928,13 +933,13 @@ class LspTool extends Tool with ReadOnlyToolMixin {
           );
         }
 
-        final callMethod =
-            parsed.operation == LspOperation.incomingCalls
-                ? 'callHierarchy/incomingCalls'
-                : 'callHierarchy/outgoingCalls';
+        final callMethod = parsed.operation == LspOperation.incomingCalls
+            ? 'callHierarchy/incomingCalls'
+            : 'callHierarchy/outgoingCalls';
 
-        result = await manager.sendRequest(
-            absolutePath, callMethod, {'item': result[0]});
+        result = await manager.sendRequest(absolutePath, callMethod, {
+          'item': result[0],
+        });
       }
 
       // Format result string.
@@ -962,7 +967,10 @@ class LspTool extends Tool with ReadOnlyToolMixin {
 
   /// Build LSP request parameters.
   Map<String, dynamic> _buildParams(
-      LspOperation op, String uri, LspPosition position) {
+    LspOperation op,
+    String uri,
+    LspPosition position,
+  ) {
     switch (op) {
       case LspOperation.goToDefinition:
       case LspOperation.goToImplementation:

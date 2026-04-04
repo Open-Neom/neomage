@@ -16,14 +16,7 @@ enum AgentRole {
 }
 
 /// Lifecycle status of a task.
-enum TaskStatus {
-  pending,
-  running,
-  completed,
-  failed,
-  cancelled,
-  blocked,
-}
+enum TaskStatus { pending, running, completed, failed, cancelled, blocked }
 
 // ---------------------------------------------------------------------------
 // SwarmMessage
@@ -37,8 +30,8 @@ class SwarmMessage {
     required this.content,
     Map<String, dynamic>? metadata,
     DateTime? timestamp,
-  })  : metadata = metadata ?? {},
-        timestamp = timestamp ?? DateTime.now();
+  }) : metadata = metadata ?? {},
+       timestamp = timestamp ?? DateTime.now();
 
   final String fromAgentId;
 
@@ -51,12 +44,12 @@ class SwarmMessage {
   bool get isBroadcast => toAgentId == '*';
 
   Map<String, dynamic> toJson() => {
-        'from': fromAgentId,
-        'to': toAgentId,
-        'content': content,
-        'metadata': metadata,
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'from': fromAgentId,
+    'to': toAgentId,
+    'content': content,
+    'metadata': metadata,
+    'timestamp': timestamp.toIso8601String(),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -106,10 +99,12 @@ class MessageBus {
   /// Messages sent to or from a specific agent.
   List<SwarmMessage> messagesFor(String agentId) {
     return _history
-        .where((m) =>
-            m.fromAgentId == agentId ||
-            m.toAgentId == agentId ||
-            m.isBroadcast)
+        .where(
+          (m) =>
+              m.fromAgentId == agentId ||
+              m.toAgentId == agentId ||
+              m.isBroadcast,
+        )
         .toList();
   }
 
@@ -132,9 +127,9 @@ class SwarmTask {
     this.assignedAgentId,
     this.maxRetries = 2,
     this.timeoutSeconds = 300,
-  })  : dependencies = dependencies ?? [],
-        status = TaskStatus.pending,
-        _retryCount = 0;
+  }) : dependencies = dependencies ?? [],
+       status = TaskStatus.pending,
+       _retryCount = 0;
 
   final String id;
   final String description;
@@ -198,16 +193,16 @@ class SwarmTask {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'description': description,
-        'status': status.name,
-        'dependencies': dependencies,
-        'assignedAgentId': assignedAgentId,
-        'retryCount': _retryCount,
-        'error': error,
-        'startedAt': startedAt?.toIso8601String(),
-        'completedAt': completedAt?.toIso8601String(),
-      };
+    'id': id,
+    'description': description,
+    'status': status.name,
+    'dependencies': dependencies,
+    'assignedAgentId': assignedAgentId,
+    'retryCount': _retryCount,
+    'error': error,
+    'startedAt': startedAt?.toIso8601String(),
+    'completedAt': completedAt?.toIso8601String(),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -223,8 +218,8 @@ class SwarmAgent {
     this.model = 'claude-sonnet-4-20250514',
     this.systemPrompt = '',
     List<String>? tools,
-  })  : tools = tools ?? [],
-        _idle = true;
+  }) : tools = tools ?? [],
+       _idle = true;
 
   final String id;
   final String name;
@@ -260,14 +255,14 @@ class SwarmAgent {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'role': role.name,
-        'model': model,
-        'idle': _idle,
-        'currentTaskId': _currentTaskId,
-        'completedTasks': _completedTaskIds.length,
-      };
+    'id': id,
+    'name': name,
+    'role': role.name,
+    'model': model,
+    'idle': _idle,
+    'currentTaskId': _currentTaskId,
+    'completedTasks': _completedTaskIds.length,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -291,14 +286,19 @@ class AgentContext {
   final Map<String, dynamic> sharedMemory;
 
   /// Send a message from this agent.
-  void sendMessage(String toAgentId, String content,
-      {Map<String, dynamic>? metadata}) {
-    messageBus.publish(SwarmMessage(
-      fromAgentId: agent.id,
-      toAgentId: toAgentId,
-      content: content,
-      metadata: metadata,
-    ));
+  void sendMessage(
+    String toAgentId,
+    String content, {
+    Map<String, dynamic>? metadata,
+  }) {
+    messageBus.publish(
+      SwarmMessage(
+        fromAgentId: agent.id,
+        toAgentId: toAgentId,
+        content: content,
+        metadata: metadata,
+      ),
+    );
   }
 
   /// Broadcast a message to every other agent.
@@ -371,8 +371,7 @@ class DependencyGraph {
   }
 
   /// Successors (dependents) of [node].
-  Set<String> successors(String node) =>
-      _adjacency[node] ?? <String>{};
+  Set<String> successors(String node) => _adjacency[node] ?? <String>{};
 
   /// Predecessors (dependencies) of [node].
   Set<String> predecessors(String node) {
@@ -462,15 +461,15 @@ class SwarmProgress {
   bool get isFinished => (completed + failed + cancelled) == total;
 
   Map<String, dynamic> toJson() => {
-        'total': total,
-        'completed': completed,
-        'failed': failed,
-        'running': running,
-        'pending': pending,
-        'cancelled': cancelled,
-        'blocked': blocked,
-        'completionRate': completionRate,
-      };
+    'total': total,
+    'completed': completed,
+    'failed': failed,
+    'running': running,
+    'pending': pending,
+    'cancelled': cancelled,
+    'blocked': blocked,
+    'completionRate': completionRate,
+  };
 
   @override
   String toString() =>
@@ -501,12 +500,12 @@ class SwarmResult {
   final String? error;
 
   Map<String, dynamic> toJson() => {
-        'success': success,
-        'progress': progress.toJson(),
-        'taskResults': taskResults,
-        'durationMs': duration.inMilliseconds,
-        if (error != null) 'error': error,
-      };
+    'success': success,
+    'progress': progress.toJson(),
+    'taskResults': taskResults,
+    'durationMs': duration.inMilliseconds,
+    if (error != null) 'error': error,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -522,15 +521,16 @@ class SwarmConfig {
     this.enableWorkStealing = true,
     this.maxRetries = 2,
     Map<AgentRole, String>? modelPerRole,
-  }) : modelPerRole = modelPerRole ??
-            {
-              AgentRole.coordinator: 'claude-sonnet-4-20250514',
-              AgentRole.researcher: 'claude-sonnet-4-20250514',
-              AgentRole.implementer: 'claude-sonnet-4-20250514',
-              AgentRole.reviewer: 'claude-sonnet-4-20250514',
-              AgentRole.tester: 'claude-sonnet-4-20250514',
-              AgentRole.planner: 'claude-sonnet-4-20250514',
-            };
+  }) : modelPerRole =
+           modelPerRole ??
+           {
+             AgentRole.coordinator: 'claude-sonnet-4-20250514',
+             AgentRole.researcher: 'claude-sonnet-4-20250514',
+             AgentRole.implementer: 'claude-sonnet-4-20250514',
+             AgentRole.reviewer: 'claude-sonnet-4-20250514',
+             AgentRole.tester: 'claude-sonnet-4-20250514',
+             AgentRole.planner: 'claude-sonnet-4-20250514',
+           };
 
   final int maxAgents;
   final int maxDepth;
@@ -555,8 +555,8 @@ class SwarmOrchestrator {
   SwarmOrchestrator({
     required SwarmConfig config,
     Future<dynamic> Function(AgentContext)? executor,
-  })  : _config = config,
-        _executor = executor ?? _defaultExecutor;
+  }) : _config = config,
+       _executor = executor ?? _defaultExecutor;
 
   final SwarmConfig _config;
   final Future<dynamic> Function(AgentContext) _executor;
@@ -685,8 +685,9 @@ class SwarmOrchestrator {
       }
 
       // If no tasks are running and nothing is ready, we are stuck or done.
-      final runningCount =
-          _tasks.values.where((t) => t.status == TaskStatus.running).length;
+      final runningCount = _tasks.values
+          .where((t) => t.status == TaskStatus.running)
+          .length;
       if (runningCount == 0 && ready.isEmpty) break;
 
       // Yield to allow running tasks to progress.
@@ -737,9 +738,9 @@ class SwarmOrchestrator {
     SwarmAgent agent,
   ) async {
     try {
-      final result = await _executor(context).timeout(
-        Duration(seconds: task.timeoutSeconds),
-      );
+      final result = await _executor(
+        context,
+      ).timeout(Duration(seconds: task.timeoutSeconds));
       if (_cancelled) {
         task.markCancelled();
       } else {
@@ -814,11 +815,13 @@ class SwarmOrchestrator {
 
   /// Whether all tasks have reached a terminal state.
   bool _isComplete() {
-    return _tasks.values.every((task) =>
-        task.status == TaskStatus.completed ||
-        task.status == TaskStatus.failed ||
-        task.status == TaskStatus.cancelled ||
-        task.status == TaskStatus.blocked);
+    return _tasks.values.every(
+      (task) =>
+          task.status == TaskStatus.completed ||
+          task.status == TaskStatus.failed ||
+          task.status == TaskStatus.cancelled ||
+          task.status == TaskStatus.blocked,
+    );
   }
 
   // ---- Status & Control ----------------------------------------------------
@@ -864,8 +867,11 @@ class SwarmOrchestrator {
   String getStatus() {
     final p = getProgress();
     final agentStatus = _agents.values
-        .map((a) => '  ${a.name} (${a.role.name}): '
-            '${a.isIdle ? "idle" : "running ${a.currentTaskId}"}')
+        .map(
+          (a) =>
+              '  ${a.name} (${a.role.name}): '
+              '${a.isIdle ? "idle" : "running ${a.currentTaskId}"}',
+        )
         .join('\n');
     return 'Swarm Status\n'
         '  Tasks: ${p.completed}/${p.total} completed, '

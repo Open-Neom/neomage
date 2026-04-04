@@ -1,4 +1,4 @@
-// Sandbox Settings — full port of openneomclaw/src/components/sandbox/.
+// Sandbox Settings — full port of neom_claw/src/components/sandbox/.
 // Ports: SandboxSettings.tsx, SandboxOverridesTab.tsx, SandboxConfigTab.tsx,
 //        SandboxDependenciesTab.tsx, SandboxDoctorSection.tsx.
 //
@@ -136,8 +136,7 @@ class NetworkRestrictionConfig {
     this.deniedHosts = const [],
   });
 
-  bool get hasRestrictions =>
-      allowedHosts.isNotEmpty || deniedHosts.isNotEmpty;
+  bool get hasRestrictions => allowedHosts.isNotEmpty || deniedHosts.isNotEmpty;
 }
 
 /// Full sandbox configuration snapshot used by the Config tab.
@@ -173,7 +172,7 @@ class SandboxManagerAdapter {
   static bool _enabled = false;
   static bool _autoAllowBash = false;
   static bool _allowUnsandboxedCommands = false;
-  static bool _lockedByPolicy = false;
+  static final bool _lockedByPolicy = false;
 
   // ── Query state ──
 
@@ -273,8 +272,7 @@ class SandboxSettingsController extends SintController {
   late final statusMessage = Rxn<String>();
   late final isLockedByPolicy =
       SandboxManagerAdapter.areSandboxSettingsLockedByPolicy().obs;
-  late final isSandboxEnabled =
-      SandboxManagerAdapter.isSandboxingEnabled().obs;
+  late final isSandboxEnabled = SandboxManagerAdapter.isSandboxingEnabled().obs;
 
   // Derived — available tabs change based on error/warning state.
   List<SandboxTab> get availableTabs {
@@ -318,7 +316,8 @@ class SandboxSettingsController extends SintController {
     isLoading.value = true;
     try {
       await SandboxManagerAdapter.setAllowUnsandboxedCommands(
-          mode == OverrideMode.open);
+        mode == OverrideMode.open,
+      );
       overrideMode.value = mode;
       statusMessage.value = mode.confirmationMessage;
       onComplete?.call(mode.confirmationMessage);
@@ -390,9 +389,7 @@ class SandboxSettings extends StatelessWidget {
             if (controller.statusMessage.value != null)
               _StatusBanner(message: controller.statusMessage.value!),
             // ── Tab body ──
-            Flexible(
-              child: _tabBody(controller),
-            ),
+            Flexible(child: _tabBody(controller)),
           ],
         ),
       );
@@ -451,8 +448,10 @@ class _SandboxTabBar extends StatelessWidget {
                 onTap: () => onChanged(tab),
                 borderRadius: BorderRadius.circular(4),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: isActive
                         ? ClawColors.amber.withValues(alpha: 0.15)
@@ -460,7 +459,8 @@ class _SandboxTabBar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                     border: isActive
                         ? Border.all(
-                            color: ClawColors.amber.withValues(alpha: 0.4))
+                            color: ClawColors.amber.withValues(alpha: 0.4),
+                          )
                         : null,
                   ),
                   child: Text(
@@ -469,8 +469,9 @@ class _SandboxTabBar extends StatelessWidget {
                       color: isActive
                           ? ClawColors.amber
                           : ClawColors.darkTextSecondary,
-                      fontWeight:
-                          isActive ? FontWeight.w600 : FontWeight.normal,
+                      fontWeight: isActive
+                          ? FontWeight.w600
+                          : FontWeight.normal,
                       fontSize: 13,
                     ),
                   ),
@@ -510,10 +511,7 @@ class _StatusBanner extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(
-              message,
-              style: TextStyle(color: color, fontSize: 13),
-            ),
+            child: Text(message, style: TextStyle(color: color, fontSize: 13)),
           ),
         ],
       ),
@@ -549,18 +547,24 @@ class _SandboxModeTab extends StatelessWidget {
                   color: ClawColors.codeYellow.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                      color: ClawColors.codeYellow.withValues(alpha: 0.3)),
+                    color: ClawColors.codeYellow.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded,
-                        size: 16, color: ClawColors.codeYellow),
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 16,
+                      color: ClawColors.codeYellow,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Cannot block unix domain sockets (see Dependencies tab)',
                         style: TextStyle(
-                            color: ClawColors.codeYellow, fontSize: 13),
+                          color: ClawColors.codeYellow,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -678,10 +682,7 @@ class _ModeOptionTile extends StatelessWidget {
               if (isCurrent)
                 Text(
                   '(current)',
-                  style: TextStyle(
-                    color: ClawColors.codeGreen,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: ClawColors.codeGreen, fontSize: 12),
                 ),
             ],
           ),
@@ -709,10 +710,7 @@ class _SandboxOverridesTab extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Text(
             'Sandbox is not enabled. Enable sandbox to configure override settings.',
-            style: TextStyle(
-              color: ClawColors.darkTextSecondary,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: ClawColors.darkTextSecondary, fontSize: 13),
           ),
         );
       }
@@ -876,10 +874,7 @@ class _OverrideOptionTile extends StatelessWidget {
               if (isCurrent)
                 Text(
                   '(current)',
-                  style: TextStyle(
-                    color: ClawColors.codeGreen,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: ClawColors.codeGreen, fontSize: 12),
                 ),
             ],
           ),
@@ -894,10 +889,7 @@ class _OverrideDescription extends StatelessWidget {
   final String title;
   final String description;
 
-  const _OverrideDescription({
-    required this.title,
-    required this.description,
-  });
+  const _OverrideDescription({required this.title, required this.description});
 
   @override
   Widget build(BuildContext context) {
@@ -956,7 +948,7 @@ class _SandboxConfigTab extends StatelessWidget {
                   fontSize: 13,
                 ),
               ),
-              if (warningsNote != null) warningsNote,
+              ?warningsNote,
             ],
           ),
         );
@@ -1031,9 +1023,7 @@ class _SandboxConfigTab extends StatelessWidget {
             // Glob pattern warnings (Linux)
             if (config.globPatternWarnings.isNotEmpty) ...[
               const SizedBox(height: 12),
-              _GlobPatternWarning(
-                warnings: config.globPatternWarnings,
-              ),
+              _GlobPatternWarning(warnings: config.globPatternWarnings),
             ],
 
             // General warnings note
@@ -1054,11 +1044,7 @@ class _ConfigSection extends StatelessWidget {
   final String? content;
   final List<String>? lines;
 
-  const _ConfigSection({
-    required this.title,
-    this.content,
-    this.lines,
-  });
+  const _ConfigSection({required this.title, this.content, this.lines});
 
   @override
   Widget build(BuildContext context) {
@@ -1089,8 +1075,7 @@ class _ConfigSection extends StatelessWidget {
               child: Text(
                 line,
                 style: TextStyle(
-                  color:
-                      ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+                  color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
                   fontSize: 12,
                 ),
               ),
@@ -1117,8 +1102,11 @@ class _GlobPatternWarning extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.warning_amber_rounded,
-                size: 14, color: ClawColors.codeYellow),
+            Icon(
+              Icons.warning_amber_rounded,
+              size: 14,
+              color: ClawColors.codeYellow,
+            ),
             const SizedBox(width: 6),
             Text(
               'Warning: Glob patterns not fully supported on Linux',
@@ -1164,8 +1152,7 @@ class _WarningsNote extends StatelessWidget {
                 child: Text(
                   w,
                   style: TextStyle(
-                    color:
-                        ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+                    color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                 ),
@@ -1198,14 +1185,17 @@ class _SandboxDependenciesTab extends StatelessWidget {
       final socatMissing = check.errors.any((e) => e.contains('socat'));
       final seccompMissing = check.hasWarnings;
       final otherErrors = check.errors
-          .where((e) =>
-              !e.contains('ripgrep') &&
-              !e.contains('bwrap') &&
-              !e.contains('socat'))
+          .where(
+            (e) =>
+                !e.contains('ripgrep') &&
+                !e.contains('bwrap') &&
+                !e.contains('socat'),
+          )
           .toList();
 
-      final rgInstallHint =
-          isMac ? 'brew install ripgrep' : 'apt install ripgrep';
+      final rgInstallHint = isMac
+          ? 'brew install ripgrep'
+          : 'apt install ripgrep';
 
       return SingleChildScrollView(
         padding: const EdgeInsets.all(12),
@@ -1251,10 +1241,7 @@ class _SandboxDependenciesTab extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   err,
-                  style: TextStyle(
-                    color: ClawColors.codeRed,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: ClawColors.codeRed, fontSize: 13),
                 ),
               ),
             ),
@@ -1300,10 +1287,7 @@ class _DependencyRow extends StatelessWidget {
                 ),
                 TextSpan(
                   text: status,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: statusColor, fontSize: 13),
                 ),
               ],
             ),
@@ -1314,8 +1298,7 @@ class _DependencyRow extends StatelessWidget {
               child: Text(
                 '· $hint',
                 style: TextStyle(
-                  color:
-                      ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+                  color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
                   fontSize: 12,
                 ),
               ),
@@ -1334,8 +1317,9 @@ class _SeccompDependencyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor =
-        isMissing ? ClawColors.codeYellow : ClawColors.codeGreen;
+    final statusColor = isMissing
+        ? ClawColors.codeYellow
+        : ClawColors.codeGreen;
     final statusText = isMissing ? 'not installed' : 'installed';
 
     return Padding(
@@ -1361,8 +1345,9 @@ class _SeccompDependencyRow extends StatelessWidget {
                   TextSpan(
                     text: ' (required to block unix domain sockets)',
                     style: TextStyle(
-                      color: ClawColors.darkTextSecondary
-                          .withValues(alpha: 0.7),
+                      color: ClawColors.darkTextSecondary.withValues(
+                        alpha: 0.7,
+                      ),
                       fontSize: 12,
                     ),
                   ),
@@ -1372,9 +1357,11 @@ class _SeccompDependencyRow extends StatelessWidget {
           if (isMissing) ...[
             _HintLine('· npm install -g @anthropic-ai/sandbox-runtime'),
             _HintLine(
-                '· or copy vendor/seccomp/* from sandbox-runtime and set'),
+              '· or copy vendor/seccomp/* from sandbox-runtime and set',
+            ),
             _HintLine(
-                '  sandbox.seccomp.bpfPath and applyPath in settings.json'),
+              '  sandbox.seccomp.bpfPath and applyPath in settings.json',
+            ),
           ],
         ],
       ),
@@ -1386,7 +1373,7 @@ class _SeccompDependencyRow extends StatelessWidget {
 class _HintLine extends StatelessWidget {
   final String text;
 
-  const _HintLine(this.text, {super.key});
+  const _HintLine(this.text);
 
   @override
   Widget build(BuildContext context) {
@@ -1427,8 +1414,9 @@ class SandboxDoctorSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final statusColor =
-        depCheck.hasErrors ? ClawColors.codeRed : ClawColors.codeYellow;
+    final statusColor = depCheck.hasErrors
+        ? ClawColors.codeRed
+        : ClawColors.codeYellow;
     final statusText = depCheck.hasErrors
         ? 'Missing dependencies'
         : 'Available (with warnings)';
@@ -1477,8 +1465,7 @@ class SandboxDoctorSection extends StatelessWidget {
               padding: const EdgeInsets.only(left: 8),
               child: Text(
                 '└ $w',
-                style:
-                    TextStyle(color: ClawColors.codeYellow, fontSize: 13),
+                style: TextStyle(color: ClawColors.codeYellow, fontSize: 13),
               ),
             ),
           ),
@@ -1489,8 +1476,7 @@ class SandboxDoctorSection extends StatelessWidget {
               child: Text(
                 '└ Run /sandbox for install instructions',
                 style: TextStyle(
-                  color:
-                      ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+                  color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
                   fontSize: 13,
                 ),
               ),

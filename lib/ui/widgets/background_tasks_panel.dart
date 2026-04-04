@@ -1,4 +1,4 @@
-// BackgroundTasksPanel — port of openneomclaw/src/components/tasks/
+// BackgroundTasksPanel — port of neom_claw/src/components/tasks/
 // Ports: BackgroundTasksDialog, BackgroundTask, BackgroundTaskStatus,
 // ShellProgress, taskStatusUtils, renderToolActivity.
 //
@@ -17,13 +17,7 @@ import 'package:sint/sint.dart';
 
 // ─── Task status enum (mirrors TaskStatus in Task.ts) ───
 
-enum TaskStatus {
-  pending,
-  running,
-  completed,
-  failed,
-  killed,
-}
+enum TaskStatus { pending, running, completed, failed, killed }
 
 // ─── Task types (mirrors the union type in tasks/types.ts) ───
 
@@ -96,10 +90,7 @@ class TeammateIdentity {
   final String agentName;
   final Color color;
 
-  const TeammateIdentity({
-    required this.agentName,
-    required this.color,
-  });
+  const TeammateIdentity({required this.agentName, required this.color});
 }
 
 // ─── Task progress ───
@@ -108,10 +99,7 @@ class TaskProgress {
   final String? lastActivityDescription;
   final List<String>? recentActivities;
 
-  const TaskProgress({
-    this.lastActivityDescription,
-    this.recentActivities,
-  });
+  const TaskProgress({this.lastActivityDescription, this.recentActivities});
 }
 
 // ─── ListItem model (mirrors ListItem union in BackgroundTasksDialog) ───
@@ -134,11 +122,11 @@ class TaskListItem {
   });
 
   factory TaskListItem.leader({String name = 'main'}) => TaskListItem(
-        id: '__leader__',
-        label: '@$name',
-        status: TaskStatus.running,
-        isLeader: true,
-      );
+    id: '__leader__',
+    label: '@$name',
+    status: TaskStatus.running,
+    isLeader: true,
+  );
 }
 
 // ─── taskStatusUtils (mirrors taskStatusUtils.tsx) ───
@@ -278,14 +266,20 @@ class ShellProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (shell.status) {
-      TaskStatus.completed =>
-        const TaskStatusText(status: TaskStatus.completed, label: 'done'),
-      TaskStatus.failed =>
-        const TaskStatusText(status: TaskStatus.failed, label: 'error'),
-      TaskStatus.killed =>
-        const TaskStatusText(status: TaskStatus.killed, label: 'stopped'),
-      TaskStatus.running || TaskStatus.pending =>
-        const TaskStatusText(status: TaskStatus.running),
+      TaskStatus.completed => const TaskStatusText(
+        status: TaskStatus.completed,
+        label: 'done',
+      ),
+      TaskStatus.failed => const TaskStatusText(
+        status: TaskStatus.failed,
+        label: 'error',
+      ),
+      TaskStatus.killed => const TaskStatusText(
+        status: TaskStatus.killed,
+        label: 'stopped',
+      ),
+      TaskStatus.running ||
+      TaskStatus.pending => const TaskStatusText(status: TaskStatus.running),
     };
   }
 }
@@ -316,8 +310,9 @@ class BackgroundTaskItem extends StatelessWidget {
 
     switch (task.type) {
       case BackgroundTaskType.localBash:
-        final displayText =
-            task.kind == 'monitor' ? task.description : (task.command ?? task.description);
+        final displayText = task.kind == 'monitor'
+            ? task.description
+            : (task.command ?? task.description);
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -337,7 +332,8 @@ class BackgroundTaskItem extends StatelessWidget {
         if (task.isRemoteReview) {
           return _RemoteSessionProgress(session: task);
         }
-        final isRunning = task.status == TaskStatus.running ||
+        final isRunning =
+            task.status == TaskStatus.running ||
             task.status == TaskStatus.pending;
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -523,8 +519,8 @@ class BackgroundTasksController extends SintController {
   List<TaskListItem> get teammateTasks => showSpinnerTree.value
       ? <TaskListItem>[]
       : allSelectableItems
-          .where((i) => i.type == BackgroundTaskType.inProcessTeammate)
-          .toList();
+            .where((i) => i.type == BackgroundTaskType.inProcessTeammate)
+            .toList();
 
   List<TaskListItem> get bashTasks => allSelectableItems
       .where((i) => i.type == BackgroundTaskType.localBash)
@@ -535,9 +531,11 @@ class BackgroundTasksController extends SintController {
       .toList();
 
   List<TaskListItem> get agentTasks => allSelectableItems
-      .where((i) =>
-          i.type == BackgroundTaskType.localAgent &&
-          i.id != foregroundedTaskId.value)
+      .where(
+        (i) =>
+            i.type == BackgroundTaskType.localAgent &&
+            i.id != foregroundedTaskId.value,
+      )
       .toList();
 
   List<TaskListItem> get workflowTasks => allSelectableItems
@@ -566,9 +564,11 @@ class BackgroundTasksController extends SintController {
 
   int get runningAgentCount =>
       remoteSessions
-          .where((t) =>
-              t.status == TaskStatus.running ||
-              t.status == TaskStatus.pending)
+          .where(
+            (t) =>
+                t.status == TaskStatus.running ||
+                t.status == TaskStatus.pending,
+          )
           .length +
       agentTasks.where((t) => t.status == TaskStatus.running).length;
 
@@ -668,7 +668,9 @@ class BackgroundTasksController extends SintController {
         return TaskListItem(
           id: task.id,
           type: BackgroundTaskType.localBash,
-          label: task.kind == 'monitor' ? task.description : (task.command ?? task.description),
+          label: task.kind == 'monitor'
+              ? task.description
+              : (task.command ?? task.description),
           status: task.status,
           task: task,
         );
@@ -808,7 +810,10 @@ class BackgroundTasksDialog extends StatelessWidget {
     }
   }
 
-  Widget _buildListView(BuildContext context, BackgroundTasksController controller) {
+  Widget _buildListView(
+    BuildContext context,
+    BackgroundTasksController controller,
+  ) {
     final theme = Theme.of(context);
     final items = controller.allSelectableItems;
     final teammates = controller.teammateTasks;
@@ -897,10 +902,9 @@ class BackgroundTasksDialog extends StatelessWidget {
                     if (teammates.isNotEmpty)
                       _TaskSection(
                         title: 'Agents',
-                        count: teammates
-                            .where((i) => !i.isLeader)
-                            .length,
-                        showTitle: bash.isNotEmpty ||
+                        count: teammates.where((i) => !i.isLeader).length,
+                        showTitle:
+                            bash.isNotEmpty ||
                             remote.isNotEmpty ||
                             agents.isNotEmpty,
                         items: teammates,
@@ -912,7 +916,8 @@ class BackgroundTasksDialog extends StatelessWidget {
                       _TaskSection(
                         title: 'Shells',
                         count: bash.length,
-                        showTitle: teammates.isNotEmpty ||
+                        showTitle:
+                            teammates.isNotEmpty ||
                             remote.isNotEmpty ||
                             agents.isNotEmpty,
                         items: bash,
@@ -939,7 +944,8 @@ class BackgroundTasksDialog extends StatelessWidget {
                         showTitle: true,
                         items: remote,
                         selectedId: controller.currentSelection?.id,
-                        topPadding: teammates.isNotEmpty ||
+                        topPadding:
+                            teammates.isNotEmpty ||
                             bash.isNotEmpty ||
                             monitors.isNotEmpty,
                       ),
@@ -952,7 +958,8 @@ class BackgroundTasksDialog extends StatelessWidget {
                         showTitle: true,
                         items: agents,
                         selectedId: controller.currentSelection?.id,
-                        topPadding: teammates.isNotEmpty ||
+                        topPadding:
+                            teammates.isNotEmpty ||
                             bash.isNotEmpty ||
                             monitors.isNotEmpty ||
                             remote.isNotEmpty,
@@ -966,7 +973,8 @@ class BackgroundTasksDialog extends StatelessWidget {
                         showTitle: true,
                         items: workflows,
                         selectedId: controller.currentSelection?.id,
-                        topPadding: teammates.isNotEmpty ||
+                        topPadding:
+                            teammates.isNotEmpty ||
                             bash.isNotEmpty ||
                             monitors.isNotEmpty ||
                             remote.isNotEmpty ||
@@ -981,7 +989,8 @@ class BackgroundTasksDialog extends StatelessWidget {
                         showTitle: false,
                         items: dreams,
                         selectedId: controller.currentSelection?.id,
-                        topPadding: teammates.isNotEmpty ||
+                        topPadding:
+                            teammates.isNotEmpty ||
                             bash.isNotEmpty ||
                             monitors.isNotEmpty ||
                             remote.isNotEmpty ||
@@ -1061,10 +1070,8 @@ class _TaskSection extends StatelessWidget {
             ),
           ),
         ...items.map(
-          (item) => _TaskListTile(
-            item: item,
-            isSelected: item.id == selectedId,
-          ),
+          (item) =>
+              _TaskListTile(item: item, isSelected: item.id == selectedId),
         ),
       ],
     );
@@ -1077,10 +1084,7 @@ class _TaskListTile extends StatelessWidget {
   final TaskListItem item;
   final bool isSelected;
 
-  const _TaskListTile({
-    required this.item,
-    required this.isSelected,
-  });
+  const _TaskListTile({required this.item, required this.isSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -1112,10 +1116,7 @@ class _TaskListTile extends StatelessWidget {
                       fontSize: 13,
                     ),
                   )
-                : BackgroundTaskItem(
-                    task: item.task!,
-                    maxActivityWidth: 50,
-                  ),
+                : BackgroundTaskItem(task: item.task!, maxActivityWidth: 50),
           ),
         ],
       ),
@@ -1148,16 +1149,41 @@ class _ActionBar extends StatelessWidget {
       child: Wrap(
         spacing: 12,
         children: [
-          _KeyHint(keyStyle: keyStyle, hintStyle: hintStyle, key_: '\u2191/\u2193', action: 'select'),
-          _KeyHint(keyStyle: keyStyle, hintStyle: hintStyle, key_: 'Enter', action: 'view'),
+          _KeyHint(
+            keyStyle: keyStyle,
+            hintStyle: hintStyle,
+            key_: '\u2191/\u2193',
+            action: 'select',
+          ),
+          _KeyHint(
+            keyStyle: keyStyle,
+            hintStyle: hintStyle,
+            key_: 'Enter',
+            action: 'view',
+          ),
           if (controller.currentSelection?.type ==
                   BackgroundTaskType.inProcessTeammate &&
               controller.currentSelection?.status == TaskStatus.running)
-            _KeyHint(keyStyle: keyStyle, hintStyle: hintStyle, key_: 'f', action: 'foreground'),
+            _KeyHint(
+              keyStyle: keyStyle,
+              hintStyle: hintStyle,
+              key_: 'f',
+              action: 'foreground',
+            ),
           if (controller.currentSelection != null &&
               controller.currentSelection!.status == TaskStatus.running)
-            _KeyHint(keyStyle: keyStyle, hintStyle: hintStyle, key_: 'x', action: 'stop'),
-          _KeyHint(keyStyle: keyStyle, hintStyle: hintStyle, key_: '\u2190/Esc', action: 'close'),
+            _KeyHint(
+              keyStyle: keyStyle,
+              hintStyle: hintStyle,
+              key_: 'x',
+              action: 'stop',
+            ),
+          _KeyHint(
+            keyStyle: keyStyle,
+            hintStyle: hintStyle,
+            key_: '\u2190/Esc',
+            action: 'close',
+          ),
         ],
       ),
     );
@@ -1304,10 +1330,7 @@ class _TaskDetailView extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   // Description
-                  _DetailRow(
-                    label: 'Description',
-                    value: task.description,
-                  ),
+                  _DetailRow(label: 'Description', value: task.description),
 
                   // Command (for shell tasks)
                   if (task.command != null) ...[
@@ -1357,8 +1380,10 @@ class _TaskDetailView extends StatelessWidget {
                   ),
 
                   // State flags
-                  if (task.isIdle || task.awaitingApproval ||
-                      task.shutdownRequested || task.hasError) ...[
+                  if (task.isIdle ||
+                      task.awaitingApproval ||
+                      task.shutdownRequested ||
+                      task.hasError) ...[
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 6,
@@ -1415,11 +1440,7 @@ class _DetailRow extends StatelessWidget {
   final String value;
   final Color? valueColor;
 
-  const _DetailRow({
-    required this.label,
-    required this.value,
-    this.valueColor,
-  });
+  const _DetailRow({required this.label, required this.value, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
@@ -1466,10 +1487,7 @@ class _StateChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
-      child: Text(
-        label,
-        style: TextStyle(color: color, fontSize: 11),
-      ),
+      child: Text(label, style: TextStyle(color: color, fontSize: 11)),
     );
   }
 }
@@ -1499,14 +1517,12 @@ class BackgroundTaskStatusBar extends StatelessWidget {
 
     return Obx(() {
       final tasks = controller.tasks;
-      final runningTasks = tasks.values
-          .where((t) => !t.isTerminal)
-          .toList();
-      final showSpinnerTree =
-          controller.showSpinnerTree.value;
+      final runningTasks = tasks.values.where((t) => !t.isTerminal).toList();
+      final showSpinnerTree = controller.showSpinnerTree.value;
 
       // Check if all tasks are teammates (show pills instead)
-      final allTeammates = !showSpinnerTree &&
+      final allTeammates =
+          !showSpinnerTree &&
           runningTasks.isNotEmpty &&
           runningTasks.every(
             (t) => t.type == BackgroundTaskType.inProcessTeammate,
@@ -1535,10 +1551,11 @@ class BackgroundTaskStatusBar extends StatelessWidget {
     List<BackgroundTaskState> tasks,
   ) {
     final theme = Theme.of(context);
-    final teammates = tasks
-        .where((t) => t.type == BackgroundTaskType.inProcessTeammate)
-        .toList()
-      ..sort((a, b) => a.startTime.compareTo(b.startTime));
+    final teammates =
+        tasks
+            .where((t) => t.type == BackgroundTaskType.inProcessTeammate)
+            .toList()
+          ..sort((a, b) => a.startTime.compareTo(b.startTime));
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -1597,18 +1614,11 @@ class BackgroundTaskStatusBar extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.play_arrow,
-              size: 14,
-              color: theme.colorScheme.primary,
-            ),
+            Icon(Icons.play_arrow, size: 14, color: theme.colorScheme.primary),
             const SizedBox(width: 4),
             Text(
               '$count ${count == 1 ? 'task' : 'tasks'}',
-              style: TextStyle(
-                color: theme.colorScheme.primary,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: theme.colorScheme.primary, fontSize: 12),
             ),
           ],
         ),
@@ -1641,8 +1651,8 @@ class _AgentPill extends StatelessWidget {
     final bgColor = isViewed
         ? pillColor.withValues(alpha: 0.2)
         : isSelected
-            ? theme.colorScheme.primary.withValues(alpha: 0.1)
-            : Colors.transparent;
+        ? theme.colorScheme.primary.withValues(alpha: 0.1)
+        : Colors.transparent;
     final borderColor = isSelected
         ? theme.colorScheme.primary
         : pillColor.withValues(alpha: 0.3);

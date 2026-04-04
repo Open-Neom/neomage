@@ -32,20 +32,17 @@ Future<List<LoadedPlugin>> loadPluginsFromDir(String dirPath) async {
 /// Load all plugins from standard locations.
 Future<List<LoadedPlugin>> loadAllPlugins({String? projectRoot}) async {
   final plugins = <LoadedPlugin>[];
-  final homeDir = Platform.environment['HOME'] ??
+  final homeDir =
+      Platform.environment['HOME'] ??
       Platform.environment['USERPROFILE'] ??
       '/tmp';
 
   // 1. User plugins: ~/.neomclaw/plugins/
-  plugins.addAll(
-    await loadPluginsFromDir('$homeDir/.neomclaw/plugins'),
-  );
+  plugins.addAll(await loadPluginsFromDir('$homeDir/.neomclaw/plugins'));
 
   // 2. Project plugins: .neomclaw/plugins/
   if (projectRoot != null) {
-    plugins.addAll(
-      await loadPluginsFromDir('$projectRoot/.neomclaw/plugins'),
-    );
+    plugins.addAll(await loadPluginsFromDir('$projectRoot/.neomclaw/plugins'));
   }
 
   return plugins;
@@ -89,14 +86,17 @@ Future<List<McpServerConfig>> loadPluginMcpConfigs(
           final value = entry.value;
           if (value is! Map<String, dynamic>) continue;
           if (value.containsKey('command')) {
-            configs.add(McpStdioConfig(
-              name: entry.key,
-              command: value['command'] as String,
-              args: (value['args'] as List?)
-                      ?.map((a) => a.toString())
-                      .toList() ??
-                  [],
-            ));
+            configs.add(
+              McpStdioConfig(
+                name: entry.key,
+                command: value['command'] as String,
+                args:
+                    (value['args'] as List?)
+                        ?.map((a) => a.toString())
+                        .toList() ??
+                    [],
+              ),
+            );
           }
         }
       }
@@ -124,12 +124,9 @@ Future<LoadedPlugin?> _loadPlugin(String pluginPath) async {
   final dirName = pluginPath.split('/').last;
 
   return LoadedPlugin(
-    manifest: manifest ??
-        PluginManifest(
-          name: dirName,
-          version: '0.0.0',
-          description: '',
-        ),
+    manifest:
+        manifest ??
+        PluginManifest(name: dirName, version: '0.0.0', description: ''),
     path: pluginPath,
   );
 }

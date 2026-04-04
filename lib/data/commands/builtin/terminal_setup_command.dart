@@ -1,5 +1,5 @@
 // /terminal-setup command — configures terminal keybindings for Shift+Enter.
-// Faithful port of openneomclaw/src/commands/terminalSetup/terminalSetup.tsx
+// Faithful port of neom_claw/src/commands/terminalSetup/terminalSetup.tsx
 // (530 TS LOC).
 //
 // Covers: terminal detection, native CSI u support check, VSCode/Cursor/
@@ -13,7 +13,6 @@ import 'dart:math';
 
 import 'package:path/path.dart' as p;
 
-import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';
 import '../command.dart';
 
@@ -116,9 +115,10 @@ String getTerminalPlistPath() {
 /// Generate a random hex string for backup file suffixes.
 String _randomHex(int bytes) {
   final rng = Random.secure();
-  return List.generate(bytes, (_) => rng.nextInt(256))
-      .map((b) => b.toRadixString(16).padLeft(2, '0'))
-      .join();
+  return List.generate(
+    bytes,
+    (_) => rng.nextInt(256),
+  ).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
 }
 
 // ============================================================================
@@ -140,11 +140,11 @@ class _VSCodeKeybinding {
   });
 
   Map<String, dynamic> toJson() => {
-        'key': key,
-        'command': command,
-        'args': args,
-        'when': when,
-      };
+    'key': key,
+    'command': command,
+    'args': args,
+    'when': when,
+  };
 }
 
 /// Install Shift+Enter keybinding for VSCode, Cursor, or Windsurf.
@@ -183,7 +183,12 @@ Future<String> installBindingsForVSCodeTerminal({
     userDirPath = p.join(appData, editorDir, 'User');
   } else if (Platform.isMacOS) {
     userDirPath = p.join(
-        home, 'Library', 'Application Support', editorDir, 'User');
+      home,
+      'Library',
+      'Application Support',
+      editorDir,
+      'User',
+    );
   } else {
     userDirPath = p.join(home, '.config', editorDir, 'User');
   }
@@ -247,15 +252,17 @@ Future<String> installBindingsForVSCodeTerminal({
 
     // Add to the array and write back.
     keybindings.add(newKeybinding.toJson());
-    final updatedContent =
-        const JsonEncoder.withIndent('  ').convert(keybindings);
+    final updatedContent = const JsonEncoder.withIndent(
+      '  ',
+    ).convert(keybindings);
     await File(keybindingsPath).writeAsString(updatedContent);
 
     return 'Installed $editor terminal Shift+Enter key binding\n'
         'See $keybindingsPath\n';
   } catch (e) {
     throw Exception(
-        'Failed to install $editor terminal Shift+Enter key binding: $e');
+      'Failed to install $editor terminal Shift+Enter key binding: $e',
+    );
   }
 }
 
@@ -318,23 +325,26 @@ Future<String> enableOptionAsMetaForTerminal() async {
       await File(plistPath).copy(backupPath);
     } catch (_) {
       throw Exception(
-          'Failed to create backup of Terminal.app preferences, bailing out');
+        'Failed to create backup of Terminal.app preferences, bailing out',
+      );
     }
 
     // Read the current default profile.
-    final defaultResult = await Process.run(
-      'defaults',
-      ['read', 'com.apple.Terminal', 'Default Window Settings'],
-    );
+    final defaultResult = await Process.run('defaults', [
+      'read',
+      'com.apple.Terminal',
+      'Default Window Settings',
+    ]);
     if (defaultResult.exitCode != 0 ||
         (defaultResult.stdout as String).trim().isEmpty) {
       throw Exception('Failed to read default Terminal.app profile');
     }
 
-    final startupResult = await Process.run(
-      'defaults',
-      ['read', 'com.apple.Terminal', 'Startup Window Settings'],
-    );
+    final startupResult = await Process.run('defaults', [
+      'read',
+      'com.apple.Terminal',
+      'Startup Window Settings',
+    ]);
     if (startupResult.exitCode != 0 ||
         (startupResult.stdout as String).trim().isEmpty) {
       throw Exception('Failed to read startup Terminal.app profile');
@@ -343,10 +353,12 @@ Future<String> enableOptionAsMetaForTerminal() async {
     bool wasAnyProfileUpdated = false;
     final defaultProfileName = (defaultResult.stdout as String).trim();
 
-    final optionAsMetaEnabled =
-        await enableOptionAsMetaForProfile(defaultProfileName);
-    final audioBellDisabled =
-        await disableAudioBellForProfile(defaultProfileName);
+    final optionAsMetaEnabled = await enableOptionAsMetaForProfile(
+      defaultProfileName,
+    );
+    final audioBellDisabled = await disableAudioBellForProfile(
+      defaultProfileName,
+    );
     if (optionAsMetaEnabled || audioBellDisabled) {
       wasAnyProfileUpdated = true;
     }
@@ -355,10 +367,12 @@ Future<String> enableOptionAsMetaForTerminal() async {
 
     // Only proceed if the startup profile is different from default.
     if (startupProfileName != defaultProfileName) {
-      final startupOptionEnabled =
-          await enableOptionAsMetaForProfile(startupProfileName);
-      final startupBellDisabled =
-          await disableAudioBellForProfile(startupProfileName);
+      final startupOptionEnabled = await enableOptionAsMetaForProfile(
+        startupProfileName,
+      );
+      final startupBellDisabled = await disableAudioBellForProfile(
+        startupProfileName,
+      );
       if (startupOptionEnabled || startupBellDisabled) {
         wasAnyProfileUpdated = true;
       }
@@ -366,8 +380,9 @@ Future<String> enableOptionAsMetaForTerminal() async {
 
     if (!wasAnyProfileUpdated) {
       throw Exception(
-          'Failed to enable Option as Meta key or disable audio bell '
-          'for any Terminal.app profile');
+        'Failed to enable Option as Meta key or disable audio bell '
+        'for any Terminal.app profile',
+      );
     }
 
     // Flush the preferences cache.
@@ -405,8 +420,7 @@ chars = "\\u001B\\r"''';
   if (xdgConfigHome != null) {
     configPaths.add(p.join(xdgConfigHome, 'alacritty', 'alacritty.toml'));
   } else {
-    configPaths
-        .add(p.join(home, '.config', 'alacritty', 'alacritty.toml'));
+    configPaths.add(p.join(home, '.config', 'alacritty', 'alacritty.toml'));
   }
 
   // Windows-specific path.
@@ -709,7 +723,7 @@ class TerminalSetupCommand extends LocalCommand {
         'To set up the shortcut (optional):\n'
         '1. Exit tmux/screen temporarily\n'
         '2. Run /terminal-setup directly in one of these terminals:\n'
-        '${platformTerminals}'
+        '$platformTerminals'
         '   - IDE: VSCode, Cursor, Windsurf, Zed\n'
         '   - Other: Alacritty\n'
         '3. Return to tmux/screen - settings will persist\n\n'

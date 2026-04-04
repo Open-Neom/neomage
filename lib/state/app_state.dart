@@ -90,10 +90,10 @@ enum PermissionMode {
   deny;
 
   String get label => switch (this) {
-        ask => 'Ask',
-        autoAllow => 'Auto-allow',
-        deny => 'Deny',
-      };
+    ask => 'Ask',
+    autoAllow => 'Auto-allow',
+    deny => 'Deny',
+  };
 }
 
 enum ConnectionStatus {
@@ -106,12 +106,12 @@ enum ConnectionStatus {
   bool get isActive => this == connected || this == reconnecting;
 
   String get label => switch (this) {
-        disconnected => 'Disconnected',
-        connecting => 'Connecting',
-        connected => 'Connected',
-        error => 'Error',
-        reconnecting => 'Reconnecting',
-      };
+    disconnected => 'Disconnected',
+    connecting => 'Connecting',
+    connected => 'Connected',
+    error => 'Error',
+    reconnecting => 'Reconnecting',
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -139,8 +139,8 @@ class SessionState {
     this.activeModel,
     this.activeProvider,
     this.isStreaming = false,
-  })  : startTime = startTime ?? DateTime.now(),
-        messages = messages ?? [];
+  }) : startTime = startTime ?? DateTime.now(),
+       messages = messages ?? [];
 
   int get totalTokens => inputTokens + outputTokens;
   int get messageCount => messages.length;
@@ -160,27 +160,27 @@ class SessionState {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'startTime': startTime.toIso8601String(),
-        'messageCount': messageCount,
-        'inputTokens': inputTokens,
-        'outputTokens': outputTokens,
-        'totalTokens': totalTokens,
-        'cost': cost,
-        'activeModel': activeModel,
-        'activeProvider': activeProvider,
-        'elapsed': elapsed.inSeconds,
-      };
+    'id': id,
+    'startTime': startTime.toIso8601String(),
+    'messageCount': messageCount,
+    'inputTokens': inputTokens,
+    'outputTokens': outputTokens,
+    'totalTokens': totalTokens,
+    'cost': cost,
+    'activeModel': activeModel,
+    'activeProvider': activeProvider,
+    'elapsed': elapsed.inSeconds,
+  };
 
   factory SessionState.fromJson(Map<String, dynamic> json) => SessionState(
-        id: json['id'] as String,
-        startTime: DateTime.parse(json['startTime'] as String),
-        inputTokens: json['inputTokens'] as int? ?? 0,
-        outputTokens: json['outputTokens'] as int? ?? 0,
-        cost: (json['cost'] as num?)?.toDouble() ?? 0.0,
-        activeModel: json['activeModel'] as String?,
-        activeProvider: json['activeProvider'] as String?,
-      );
+    id: json['id'] as String,
+    startTime: DateTime.parse(json['startTime'] as String),
+    inputTokens: json['inputTokens'] as int? ?? 0,
+    outputTokens: json['outputTokens'] as int? ?? 0,
+    cost: (json['cost'] as num?)?.toDouble() ?? 0.0,
+    activeModel: json['activeModel'] as String?,
+    activeProvider: json['activeProvider'] as String?,
+  );
 }
 
 class SessionMessage {
@@ -217,9 +217,9 @@ class NavigationState {
     this.currentView = 'chat',
     List<String>? history,
     List<String>? breadcrumbs,
-  })  : history = history ?? ['chat'],
-        breadcrumbs = breadcrumbs ?? ['Home'],
-        _historyIndex = 0;
+  }) : history = history ?? ['chat'],
+       breadcrumbs = breadcrumbs ?? ['Home'],
+       _historyIndex = 0;
 
   void navigateTo(String view, {String? breadcrumb}) {
     // Trim forward history if we navigated back
@@ -308,41 +308,42 @@ class EditorState {
   String? getAction(String key) => customKeybindings[key];
 
   Map<String, dynamic> toJson() => {
-        'vimModeEnabled': vimModeEnabled,
-        'keybindingScheme': keybindingScheme,
-        'tabSize': tabSize,
-        'useSoftTabs': useSoftTabs,
-        'wordWrap': wordWrap,
-        'lineNumbers': lineNumbers,
-        'minimap': minimap,
-        'theme': theme,
-        'fontSize': fontSize,
-        'fontFamily': fontFamily,
-        'bracketMatching': bracketMatching,
-        'autoIndent': autoIndent,
-        'highlightCurrentLine': highlightCurrentLine,
-        'customKeybindings': customKeybindings,
-      };
+    'vimModeEnabled': vimModeEnabled,
+    'keybindingScheme': keybindingScheme,
+    'tabSize': tabSize,
+    'useSoftTabs': useSoftTabs,
+    'wordWrap': wordWrap,
+    'lineNumbers': lineNumbers,
+    'minimap': minimap,
+    'theme': theme,
+    'fontSize': fontSize,
+    'fontFamily': fontFamily,
+    'bracketMatching': bracketMatching,
+    'autoIndent': autoIndent,
+    'highlightCurrentLine': highlightCurrentLine,
+    'customKeybindings': customKeybindings,
+  };
 
   factory EditorState.fromJson(Map<String, dynamic> json) => EditorState(
-        vimModeEnabled: json['vimModeEnabled'] as bool? ?? false,
-        keybindingScheme: json['keybindingScheme'] as String? ?? 'default',
-        tabSize: json['tabSize'] as int? ?? 2,
-        useSoftTabs: json['useSoftTabs'] as bool? ?? true,
-        wordWrap: json['wordWrap'] as bool? ?? true,
-        lineNumbers: json['lineNumbers'] as bool? ?? true,
-        minimap: json['minimap'] as bool? ?? false,
-        theme: json['theme'] as String? ?? 'dark',
-        fontSize: (json['fontSize'] as num?)?.toDouble() ?? 14.0,
-        fontFamily: json['fontFamily'] as String? ?? 'JetBrains Mono',
-        bracketMatching: json['bracketMatching'] as bool? ?? true,
-        autoIndent: json['autoIndent'] as bool? ?? true,
-        highlightCurrentLine: json['highlightCurrentLine'] as bool? ?? true,
-        customKeybindings:
-            (json['customKeybindings'] as Map<String, dynamic>?)?.map(
-                    (k, v) => MapEntry(k, v.toString())) ??
-                {},
-      );
+    vimModeEnabled: json['vimModeEnabled'] as bool? ?? false,
+    keybindingScheme: json['keybindingScheme'] as String? ?? 'default',
+    tabSize: json['tabSize'] as int? ?? 2,
+    useSoftTabs: json['useSoftTabs'] as bool? ?? true,
+    wordWrap: json['wordWrap'] as bool? ?? true,
+    lineNumbers: json['lineNumbers'] as bool? ?? true,
+    minimap: json['minimap'] as bool? ?? false,
+    theme: json['theme'] as String? ?? 'dark',
+    fontSize: (json['fontSize'] as num?)?.toDouble() ?? 14.0,
+    fontFamily: json['fontFamily'] as String? ?? 'JetBrains Mono',
+    bracketMatching: json['bracketMatching'] as bool? ?? true,
+    autoIndent: json['autoIndent'] as bool? ?? true,
+    highlightCurrentLine: json['highlightCurrentLine'] as bool? ?? true,
+    customKeybindings:
+        (json['customKeybindings'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(k, v.toString()),
+        ) ??
+        {},
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -360,8 +361,8 @@ class AppConnectionState {
     this.apiError,
     Map<String, McpServerState>? mcpServers,
     Map<String, IdeConnection>? ideConnections,
-  })  : mcpServers = mcpServers ?? {},
-        ideConnections = ideConnections ?? {};
+  }) : mcpServers = mcpServers ?? {},
+       ideConnections = ideConnections ?? {};
 
   void setApiStatus(ConnectionStatus status, {String? error}) {
     apiStatus = status;
@@ -414,10 +415,13 @@ class McpServerState {
     List<String>? tools,
     List<String>? resources,
     this.connectedAt,
-  })  : tools = tools ?? [],
-        resources = resources ?? [];
+  }) : tools = tools ?? [],
+       resources = resources ?? [];
 
-  void setConnected(List<String> availableTools, List<String> availableResources) {
+  void setConnected(
+    List<String> availableTools,
+    List<String> availableResources,
+  ) {
     status = ConnectionStatus.connected;
     error = null;
     tools
@@ -487,28 +491,28 @@ class StateSnapshot {
   });
 
   Map<String, dynamic> toJson() => {
-        'timestamp': timestamp.toIso8601String(),
-        'session': session,
-        'editor': editor,
-        'currentView': currentView,
-        'featureFlags': featureFlags,
-        'workingDirectory': workingDirectory,
-        'model': model,
-        'provider': provider,
-        'permissionMode': permissionMode,
-      };
+    'timestamp': timestamp.toIso8601String(),
+    'session': session,
+    'editor': editor,
+    'currentView': currentView,
+    'featureFlags': featureFlags,
+    'workingDirectory': workingDirectory,
+    'model': model,
+    'provider': provider,
+    'permissionMode': permissionMode,
+  };
 
   factory StateSnapshot.fromJson(Map<String, dynamic> json) => StateSnapshot(
-        timestamp: DateTime.parse(json['timestamp'] as String),
-        session: json['session'] as Map<String, dynamic>? ?? {},
-        editor: json['editor'] as Map<String, dynamic>? ?? {},
-        currentView: json['currentView'] as String? ?? 'chat',
-        featureFlags: json['featureFlags'] as Map<String, dynamic>? ?? {},
-        workingDirectory: json['workingDirectory'] as String?,
-        model: json['model'] as String?,
-        provider: json['provider'] as String?,
-        permissionMode: json['permissionMode'] as String? ?? 'ask',
-      );
+    timestamp: DateTime.parse(json['timestamp'] as String),
+    session: json['session'] as Map<String, dynamic>? ?? {},
+    editor: json['editor'] as Map<String, dynamic>? ?? {},
+    currentView: json['currentView'] as String? ?? 'chat',
+    featureFlags: json['featureFlags'] as Map<String, dynamic>? ?? {},
+    workingDirectory: json['workingDirectory'] as String?,
+    model: json['model'] as String?,
+    provider: json['provider'] as String?,
+    permissionMode: json['permissionMode'] as String? ?? 'ask',
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -545,16 +549,16 @@ class AppStateManager {
     List<String>? workingDirectories,
     Map<String, bool>? featureFlags,
     bool telemetryEnabled = false,
-  })  : editor = editor ?? EditorState(),
-        _activeModel = model,
-        _activeProvider = provider,
-        _permissionMode = permissionMode,
-        _workingDirectories = workingDirectories ?? [],
-        _activeAgents = {},
-        _activeTasks = {},
-        _featureFlags = featureFlags ?? {},
-        _telemetryEnabled = telemetryEnabled,
-        _telemetryState = {};
+  }) : editor = editor ?? EditorState(),
+       _activeModel = model,
+       _activeProvider = provider,
+       _permissionMode = permissionMode,
+       _workingDirectories = workingDirectories ?? [],
+       _activeAgents = {},
+       _activeTasks = {},
+       _featureFlags = featureFlags ?? {},
+       _telemetryEnabled = telemetryEnabled,
+       _telemetryState = {};
 
   // -- Accessors ------------------------------------------------------------
 
@@ -605,8 +609,9 @@ class AppStateManager {
     final prev = _activeProvider ?? '';
     _activeProvider = provider;
     _session?.activeProvider = provider;
-    _eventController
-        .add(ProviderChanged(previousProvider: prev, newProvider: provider));
+    _eventController.add(
+      ProviderChanged(previousProvider: prev, newProvider: provider),
+    );
   }
 
   // -- Permission mode ------------------------------------------------------
@@ -614,8 +619,9 @@ class AppStateManager {
   void setPermissionMode(PermissionMode mode) {
     final prev = _permissionMode;
     _permissionMode = mode;
-    _eventController
-        .add(PermissionModeChanged(previousMode: prev, newMode: mode));
+    _eventController.add(
+      PermissionModeChanged(previousMode: prev, newMode: mode),
+    );
   }
 
   // -- Working directories --------------------------------------------------
@@ -623,12 +629,14 @@ class AppStateManager {
   void addWorkingDirectory(String path) {
     if (!_workingDirectories.contains(path)) {
       _workingDirectories.add(path);
-      _eventController.add(WorkingDirectoryChanged(
-        previousDir: _workingDirectories.length > 1
-            ? _workingDirectories[_workingDirectories.length - 2]
-            : '',
-        newDir: path,
-      ));
+      _eventController.add(
+        WorkingDirectoryChanged(
+          previousDir: _workingDirectories.length > 1
+              ? _workingDirectories[_workingDirectories.length - 2]
+              : '',
+          newDir: path,
+        ),
+      );
     }
   }
 
@@ -675,8 +683,12 @@ class AppStateManager {
 
   // -- MCP Servers ----------------------------------------------------------
 
-  void connectMcpServer(String name, String uri,
-      {List<String>? tools, List<String>? resources}) {
+  void connectMcpServer(
+    String name,
+    String uri, {
+    List<String>? tools,
+    List<String>? resources,
+  }) {
     final server = McpServerState(name: name, uri: uri);
     server.setConnected(tools ?? [], resources ?? []);
     connection.addMcpServer(name, server);
@@ -692,14 +704,15 @@ class AppStateManager {
 
   void connectIde(String name, String type, {String? workspacePath, int? pid}) {
     connection.addIdeConnection(
-        name,
-        IdeConnection(
-          name: name,
-          type: type,
-          status: ConnectionStatus.connected,
-          workspacePath: workspacePath,
-          pid: pid,
-        ));
+      name,
+      IdeConnection(
+        name: name,
+        type: type,
+        status: ConnectionStatus.connected,
+        workspacePath: workspacePath,
+        pid: pid,
+      ),
+    );
   }
 
   void disconnectIde(String name) {
@@ -709,16 +722,16 @@ class AppStateManager {
   // -- Snapshots ------------------------------------------------------------
 
   StateSnapshot createSnapshot() => StateSnapshot(
-        timestamp: DateTime.now(),
-        session: _session?.toJson() ?? {},
-        editor: editor.toJson(),
-        currentView: navigation.currentView,
-        featureFlags: _featureFlags.map((k, v) => MapEntry(k, v)),
-        workingDirectory: primaryWorkingDirectory,
-        model: _activeModel,
-        provider: _activeProvider,
-        permissionMode: _permissionMode.name,
-      );
+    timestamp: DateTime.now(),
+    session: _session?.toJson() ?? {},
+    editor: editor.toJson(),
+    currentView: navigation.currentView,
+    featureFlags: _featureFlags.map((k, v) => MapEntry(k, v)),
+    workingDirectory: primaryWorkingDirectory,
+    model: _activeModel,
+    provider: _activeProvider,
+    permissionMode: _permissionMode.name,
+  );
 
   void restoreFromSnapshot(StateSnapshot snapshot) {
     if (snapshot.session.isNotEmpty) {

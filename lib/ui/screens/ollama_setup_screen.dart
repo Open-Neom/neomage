@@ -3,7 +3,6 @@
 
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -36,6 +35,7 @@ class OllamaSetupController extends SintController {
     refresh();
   }
 
+  @override
   Future<void> refresh() async {
     isRefreshing.value = true;
     status.value = OllamaStatus.checking;
@@ -129,23 +129,25 @@ class OllamaSetupScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final ctrl = Sint.put(OllamaSetupController());
     final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final _isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Local Models (Ollama)'),
         actions: [
-          Obx(() => IconButton(
-                onPressed: ctrl.isRefreshing.value ? null : ctrl.refresh,
-                icon: ctrl.isRefreshing.value
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.refresh),
-                tooltip: 'Refresh',
-              )),
+          Obx(
+            () => IconButton(
+              onPressed: ctrl.isRefreshing.value ? null : ctrl.refresh,
+              icon: ctrl.isRefreshing.value
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
+              tooltip: 'Refresh',
+            ),
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -157,10 +159,12 @@ class OllamaSetupScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ── Status card ──
-                Obx(() => _StatusCard(
-                      status: ctrl.status.value,
-                      onRetry: ctrl.refresh,
-                    )),
+                Obx(
+                  () => _StatusCard(
+                    status: ctrl.status.value,
+                    onRetry: ctrl.refresh,
+                  ),
+                ),
 
                 const SizedBox(height: 24),
 
@@ -173,8 +177,10 @@ class OllamaSetupScreen extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Installed Models',
-                          style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        'Installed Models',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 8),
 
                       if (ctrl.models.isEmpty)
@@ -182,14 +188,18 @@ class OllamaSetupScreen extends StatelessWidget {
                           width: double.infinity,
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: cs.surfaceContainerHighest
-                                .withValues(alpha: 0.3),
+                            color: cs.surfaceContainerHighest.withValues(
+                              alpha: 0.3,
+                            ),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Column(
                             children: [
-                              Icon(Icons.download_outlined,
-                                  size: 40, color: cs.onSurfaceVariant),
+                              Icon(
+                                Icons.download_outlined,
+                                size: 40,
+                                color: cs.onSurfaceVariant,
+                              ),
                               const SizedBox(height: 8),
                               Text(
                                 'No models installed yet',
@@ -199,21 +209,24 @@ class OllamaSetupScreen extends StatelessWidget {
                               Text(
                                 'Download a model below to get started',
                                 style: TextStyle(
-                                    fontSize: 12,
-                                    color: cs.onSurfaceVariant
-                                        .withValues(alpha: 0.7)),
+                                  fontSize: 12,
+                                  color: cs.onSurfaceVariant.withValues(
+                                    alpha: 0.7,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         )
                       else
-                        ...ctrl.models.map((m) => _ModelTile(
-                              model: m,
-                              isSelected: ctrl.selectedModel.value == m.name,
-                              onSelect: () =>
-                                  ctrl.selectedModel.value = m.name,
-                              onDelete: () => _confirmDelete(context, ctrl, m),
-                            )),
+                        ...ctrl.models.map(
+                          (m) => _ModelTile(
+                            model: m,
+                            isSelected: ctrl.selectedModel.value == m.name,
+                            onSelect: () => ctrl.selectedModel.value = m.name,
+                            onDelete: () => _confirmDelete(context, ctrl, m),
+                          ),
+                        ),
 
                       const SizedBox(height: 16),
 
@@ -221,44 +234,57 @@ class OllamaSetupScreen extends StatelessWidget {
                       if (ctrl.models.isNotEmpty)
                         Row(
                           children: [
-                            Obx(() => OutlinedButton.icon(
-                                  onPressed: ctrl.isTesting.value ||
-                                          ctrl.selectedModel.value == null
-                                      ? null
-                                      : ctrl.testModel,
-                                  icon: ctrl.isTesting.value
-                                      ? const SizedBox(
-                                          width: 14,
-                                          height: 14,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 2),
-                                        )
-                                      : const Icon(Icons.wifi_tethering,
-                                          size: 16),
-                                  label: Text(ctrl.isTesting.value
+                            Obx(
+                              () => OutlinedButton.icon(
+                                onPressed:
+                                    ctrl.isTesting.value ||
+                                        ctrl.selectedModel.value == null
+                                    ? null
+                                    : ctrl.testModel,
+                                icon: ctrl.isTesting.value
+                                    ? const SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.wifi_tethering,
+                                        size: 16,
+                                      ),
+                                label: Text(
+                                  ctrl.isTesting.value
                                       ? 'Testing...'
-                                      : 'Test Model'),
-                                )),
+                                      : 'Test Model',
+                                ),
+                              ),
+                            ),
                             const SizedBox(width: 8),
-                            Obx(() => FilledButton.icon(
-                                  onPressed: ctrl.selectedModel.value == null
-                                      ? null
-                                      : () async {
-                                          await ctrl.activateModel();
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(SnackBar(
+                            Obx(
+                              () => FilledButton.icon(
+                                onPressed: ctrl.selectedModel.value == null
+                                    ? null
+                                    : () async {
+                                        await ctrl.activateModel();
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
                                               content: Text(
-                                                  '${ctrl.selectedModel.value} '
-                                                  'activated as default model'),
-                                            ));
-                                            Navigator.of(context).pop();
-                                          }
-                                        },
-                                  icon:
-                                      const Icon(Icons.check_circle, size: 16),
-                                  label: const Text('Use This Model'),
-                                )),
+                                                '${ctrl.selectedModel.value} '
+                                                'activated as default model',
+                                              ),
+                                            ),
+                                          );
+                                          Navigator.of(context).pop();
+                                        }
+                                      },
+                                icon: const Icon(Icons.check_circle, size: 16),
+                                label: const Text('Use This Model'),
+                              ),
+                            ),
                           ],
                         ),
 
@@ -274,19 +300,26 @@ class OllamaSetupScreen extends StatelessWidget {
                                 color: Colors.green.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                    color:
-                                        Colors.green.withValues(alpha: 0.3)),
+                                  color: Colors.green.withValues(alpha: 0.3),
+                                ),
                               ),
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.smart_toy,
-                                      size: 16, color: Colors.green),
+                                  const Icon(
+                                    Icons.smart_toy,
+                                    size: 16,
+                                    color: Colors.green,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
-                                    child: Text(ctrl.testResult.value!,
-                                        style: const TextStyle(
-                                            fontSize: 13, height: 1.4)),
+                                    child: Text(
+                                      ctrl.testResult.value!,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        height: 1.4,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -303,9 +336,10 @@ class OllamaSetupScreen extends StatelessWidget {
                                 color: cs.error.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: Text(ctrl.testError.value!,
-                                  style: TextStyle(
-                                      fontSize: 13, color: cs.error)),
+                              child: Text(
+                                ctrl.testError.value!,
+                                style: TextStyle(fontSize: 13, color: cs.error),
+                              ),
                             ),
                           );
                         }
@@ -323,24 +357,28 @@ class OllamaSetupScreen extends StatelessWidget {
                     return const SizedBox.shrink();
                   }
 
-                  final installed =
-                      ctrl.models.map((m) => m.name).toSet();
+                  final installed = ctrl.models.map((m) => m.name).toSet();
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Download Models',
-                          style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        'Download Models',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         'Recommended models for coding tasks',
                         style: TextStyle(
-                            fontSize: 12, color: cs.onSurfaceVariant),
+                          fontSize: 12,
+                          color: cs.onSurfaceVariant,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       ...ollamaRecommendedModels.map((rec) {
                         final isInstalled = installed.any(
-                            (n) => n.startsWith(rec.name.split(':').first));
+                          (n) => n.startsWith(rec.name.split(':').first),
+                        );
 
                         return ListTile(
                           dense: true,
@@ -351,56 +389,71 @@ class OllamaSetupScreen extends StatelessWidget {
                             color: isInstalled ? Colors.green : cs.primary,
                             size: 20,
                           ),
-                          title: Text(rec.name,
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                  fontFamily: 'monospace',
-                                  fontWeight: FontWeight.w500)),
-                          subtitle: Text('${rec.desc} · ${rec.size}',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: cs.onSurfaceVariant)),
+                          title: Text(
+                            rec.name,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${rec.desc} · ${rec.size}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
                           trailing: isInstalled
-                              ? Text('Installed',
+                              ? Text(
+                                  'Installed',
                                   style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.green.shade400))
-                              : Obx(() => ctrl.isPulling.value &&
-                                      ctrl.pullModelName.value == rec.name
-                                  ? SizedBox(
-                                      width: 80,
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          LinearProgressIndicator(
-                                            value:
-                                                ctrl.pullProgress.value
+                                    fontSize: 11,
+                                    color: Colors.green.shade400,
+                                  ),
+                                )
+                              : Obx(
+                                  () =>
+                                      ctrl.isPulling.value &&
+                                          ctrl.pullModelName.value == rec.name
+                                      ? SizedBox(
+                                          width: 80,
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              LinearProgressIndicator(
+                                                value: ctrl
+                                                    .pullProgress
+                                                    .value
                                                     ?.progress,
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                ctrl
+                                                        .pullProgress
+                                                        .value
+                                                        ?.status ??
+                                                    '',
+                                                style: TextStyle(
+                                                  fontSize: 9,
+                                                  color: cs.onSurfaceVariant,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            ctrl.pullProgress.value
-                                                    ?.status ??
-                                                '',
-                                            style: TextStyle(
-                                                fontSize: 9,
-                                                color:
-                                                    cs.onSurfaceVariant),
-                                            maxLines: 1,
-                                            overflow:
-                                                TextOverflow.ellipsis,
+                                        )
+                                      : TextButton(
+                                          onPressed: ctrl.isPulling.value
+                                              ? null
+                                              : () => ctrl.pullModel(rec.name),
+                                          child: const Text(
+                                            'Download',
+                                            style: TextStyle(fontSize: 12),
                                           ),
-                                        ],
-                                      ),
-                                    )
-                                  : TextButton(
-                                      onPressed: ctrl.isPulling.value
-                                          ? null
-                                          : () =>
-                                              ctrl.pullModel(rec.name),
-                                      child: const Text('Download',
-                                          style: TextStyle(fontSize: 12)),
-                                    )),
+                                        ),
+                                ),
                         );
                       }),
 
@@ -423,14 +476,18 @@ class OllamaSetupScreen extends StatelessWidget {
   }
 
   void _confirmDelete(
-      BuildContext context, OllamaSetupController ctrl, OllamaModel model) {
+    BuildContext context,
+    OllamaSetupController ctrl,
+    OllamaModel model,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Model'),
         content: Text(
-            'Delete ${model.displayName} (${model.sizeLabel})?\n\n'
-            'You can re-download it later.'),
+          'Delete ${model.displayName} (${model.sizeLabel})?\n\n'
+          'You can re-download it later.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -442,7 +499,8 @@ class OllamaSetupScreen extends StatelessWidget {
               ctrl.deleteModel(model.name);
             },
             style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(ctx).colorScheme.error),
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
             child: const Text('Delete'),
           ),
         ],
@@ -465,40 +523,40 @@ class _StatusCard extends StatelessWidget {
 
     final (icon, color, title, subtitle, action) = switch (status) {
       OllamaStatus.checking => (
-          Icons.hourglass_empty,
-          Colors.amber,
-          'Checking Ollama...',
-          'Looking for local instance on localhost:11434',
-          null,
-        ),
+        Icons.hourglass_empty,
+        Colors.amber,
+        'Checking Ollama...',
+        'Looking for local instance on localhost:11434',
+        null,
+      ),
       OllamaStatus.running => (
-          Icons.check_circle,
-          Colors.green,
-          'Ollama is running',
-          'Local models available on localhost:11434',
-          null,
-        ),
+        Icons.check_circle,
+        Colors.green,
+        'Ollama is running',
+        'Local models available on localhost:11434',
+        null,
+      ),
       OllamaStatus.notRunning => (
-          Icons.warning_amber,
-          Colors.orange,
-          'Ollama not detected',
-          'Install Ollama to run AI models locally — free, private, no API key needed',
-          'Install Ollama',
-        ),
+        Icons.warning_amber,
+        Colors.orange,
+        'Ollama not detected',
+        'Install Ollama to run AI models locally — free, private, no API key needed',
+        'Install Ollama',
+      ),
       OllamaStatus.error => (
-          Icons.error_outline,
-          Colors.red,
-          'Connection error',
-          'Could not connect to Ollama. Make sure it\'s running.',
-          'Retry',
-        ),
+        Icons.error_outline,
+        Colors.red,
+        'Connection error',
+        'Could not connect to Ollama. Make sure it\'s running.',
+        'Retry',
+      ),
       OllamaStatus.unknown => (
-          Icons.help_outline,
-          Colors.grey,
-          'Checking...',
-          '',
-          null,
-        ),
+        Icons.help_outline,
+        Colors.grey,
+        'Checking...',
+        '',
+        null,
+      ),
     };
 
     return Container(
@@ -517,17 +575,23 @@ class _StatusCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: cs.onSurface)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: cs.onSurface,
+                  ),
+                ),
                 if (subtitle.isNotEmpty)
-                  Text(subtitle,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: cs.onSurfaceVariant,
-                          height: 1.4)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: cs.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -565,9 +629,7 @@ class _ModelTile extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 6),
-      color: isSelected
-          ? cs.primaryContainer.withValues(alpha: 0.3)
-          : null,
+      color: isSelected ? cs.primaryContainer.withValues(alpha: 0.3) : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: isSelected
@@ -605,29 +667,44 @@ class _ModelTile extends StatelessWidget {
                     Row(
                       children: [
                         if (model.sizeLabel.isNotEmpty)
-                          Text(model.sizeLabel,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: cs.onSurfaceVariant)),
+                          Text(
+                            model.sizeLabel,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
                         if (model.family != null) ...[
-                          Text(' · ',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: cs.onSurfaceVariant)),
-                          Text(model.family!,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: cs.onSurfaceVariant)),
+                          Text(
+                            ' · ',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            model.family!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
                         ],
                         if (model.parameterSize != null) ...[
-                          Text(' · ',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: cs.onSurfaceVariant)),
-                          Text(model.parameterSize!,
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: cs.onSurfaceVariant)),
+                          Text(
+                            ' · ',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                          Text(
+                            model.parameterSize!,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -635,8 +712,11 @@ class _ModelTile extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.delete_outline,
-                    size: 16, color: cs.error.withValues(alpha: 0.7)),
+                icon: Icon(
+                  Icons.delete_outline,
+                  size: 16,
+                  color: cs.error.withValues(alpha: 0.7),
+                ),
                 onPressed: onDelete,
                 tooltip: 'Delete model',
               ),
@@ -671,7 +751,7 @@ class _CustomPullFieldState extends State<_CustomPullField> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final _cs = Theme.of(context).colorScheme;
 
     return Row(
       children: [
@@ -681,21 +761,26 @@ class _CustomPullFieldState extends State<_CustomPullField> {
             decoration: InputDecoration(
               isDense: true,
               hintText: 'Custom model name (e.g. phi3:mini)',
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
             ),
             style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
           ),
         ),
         const SizedBox(width: 8),
-        Obx(() => FilledButton(
-              onPressed: widget.isPulling.value || _ctrl.text.trim().isEmpty
-                  ? null
-                  : () => widget.onPull(_ctrl.text.trim()),
-              child: const Text('Pull'),
-            )),
+        Obx(
+          () => FilledButton(
+            onPressed: widget.isPulling.value || _ctrl.text.trim().isEmpty
+                ? null
+                : () => widget.onPull(_ctrl.text.trim()),
+            child: const Text('Pull'),
+          ),
+        ),
       ],
     );
   }

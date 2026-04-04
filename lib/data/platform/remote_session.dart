@@ -28,8 +28,8 @@ class RemotePermissionRequest {
     required this.id,
     required this.toolName,
     required this.toolInput,
-  })  : requestedAt = DateTime.now(),
-        _completer = Completer<bool>();
+  }) : requestedAt = DateTime.now(),
+       _completer = Completer<bool>();
 
   Future<bool> get response => _completer.future;
 
@@ -109,10 +109,8 @@ class RemoteSession {
   int _totalTokens = 0;
   int _toolCalls = 0;
 
-  RemoteSession({
-    required this.id,
-    required QueryEngine engine,
-  }) : _engine = engine;
+  RemoteSession({required this.id, required QueryEngine engine})
+    : _engine = engine;
 
   /// Event stream for real-time updates.
   Stream<RemoteSessionEvent> get events => _events.stream;
@@ -155,11 +153,13 @@ class RemoteSession {
       _totalTokens += _estimateTokens(response);
       _setStatus(RemoteSessionStatus.idle);
 
-      _events.add(CompletionEvent(
-        totalTokens: _totalTokens,
-        toolCalls: _toolCalls,
-        elapsed: DateTime.now().difference(_startedAt!),
-      ));
+      _events.add(
+        CompletionEvent(
+          totalTokens: _totalTokens,
+          toolCalls: _toolCalls,
+          elapsed: DateTime.now().difference(_startedAt!),
+        ),
+      );
 
       return response;
     } catch (e) {
@@ -173,7 +173,8 @@ class RemoteSession {
   void respondToPermission(String requestId, bool approved) {
     final request = _pendingPermissions.firstWhere(
       (r) => r.id == requestId,
-      orElse: () => throw ArgumentError('Unknown permission request: $requestId'),
+      orElse: () =>
+          throw ArgumentError('Unknown permission request: $requestId'),
     );
 
     if (approved) {
@@ -200,13 +201,13 @@ class RemoteSession {
 
   /// Serialize session state for persistence.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'status': _status.name,
-        'totalTokens': _totalTokens,
-        'toolCalls': _toolCalls,
-        'messageCount': _messages.length,
-        'startedAt': _startedAt?.toIso8601String(),
-      };
+    'id': id,
+    'status': _status.name,
+    'totalTokens': _totalTokens,
+    'toolCalls': _toolCalls,
+    'messageCount': _messages.length,
+    'startedAt': _startedAt?.toIso8601String(),
+  };
 
   /// Dispose resources.
   void dispose() {
@@ -269,16 +270,12 @@ class RemoteSessionManager {
   final QueryEngine Function() _engineFactory;
 
   RemoteSessionManager({required QueryEngine Function() engineFactory})
-      : _engineFactory = engineFactory;
+    : _engineFactory = engineFactory;
 
   /// Create a new session.
   RemoteSession createSession({String? id}) {
-    final sessionId =
-        id ?? 'session_${DateTime.now().millisecondsSinceEpoch}';
-    final session = RemoteSession(
-      id: sessionId,
-      engine: _engineFactory(),
-    );
+    final sessionId = id ?? 'session_${DateTime.now().millisecondsSinceEpoch}';
+    final session = RemoteSession(id: sessionId, engine: _engineFactory());
     _sessions[sessionId] = session;
     return session;
   }
@@ -287,8 +284,7 @@ class RemoteSessionManager {
   RemoteSession? getSession(String id) => _sessions[id];
 
   /// All active sessions.
-  List<RemoteSession> get activeSessions =>
-      _sessions.values.toList();
+  List<RemoteSession> get activeSessions => _sessions.values.toList();
 
   /// Remove a session.
   void removeSession(String id) {

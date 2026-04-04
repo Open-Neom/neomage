@@ -70,8 +70,10 @@ class HorizontalRuleToken extends MarkdownToken {
 /// Fast check for markdown syntax (optimization — skip parsing for plain text).
 bool hasMarkdownSyntax(String text) {
   if (text.length > 500) {
-    return RegExp(r'[*_`#\[>\-|~]|^\d+\.', multiLine: true)
-        .hasMatch(text.substring(0, 500));
+    return RegExp(
+      r'[*_`#\[>\-|~]|^\d+\.',
+      multiLine: true,
+    ).hasMatch(text.substring(0, 500));
   }
   return RegExp(r'[*_`#\[>\-|~]|^\d+\.', multiLine: true).hasMatch(text);
 }
@@ -91,8 +93,9 @@ List<MarkdownToken> parseMarkdown(String text) {
 
     // Code block (fenced)
     if (line.startsWith('```')) {
-      final lang =
-          line.substring(3).trim().isEmpty ? null : line.substring(3).trim();
+      final lang = line.substring(3).trim().isEmpty
+          ? null
+          : line.substring(3).trim();
       final codeLines = <String>[];
       i++;
       while (i < lines.length && !lines[i].startsWith('```')) {
@@ -107,10 +110,9 @@ List<MarkdownToken> parseMarkdown(String text) {
     // Heading
     final headingMatch = RegExp(r'^(#{1,6})\s+(.*)').firstMatch(line);
     if (headingMatch != null) {
-      tokens.add(HeadingToken(
-        headingMatch.group(2)!,
-        headingMatch.group(1)!.length,
-      ));
+      tokens.add(
+        HeadingToken(headingMatch.group(2)!, headingMatch.group(1)!.length),
+      );
       i++;
       continue;
     }
@@ -136,11 +138,13 @@ List<MarkdownToken> parseMarkdown(String text) {
     // Ordered list
     final olMatch = RegExp(r'^(\d+)\.\s+(.*)').firstMatch(line);
     if (olMatch != null) {
-      tokens.add(ListItemToken(
-        olMatch.group(2)!,
-        ordered: true,
-        index: int.tryParse(olMatch.group(1)!) ?? 1,
-      ));
+      tokens.add(
+        ListItemToken(
+          olMatch.group(2)!,
+          ordered: true,
+          index: int.tryParse(olMatch.group(1)!) ?? 1,
+        ),
+      );
       i++;
       continue;
     }
@@ -167,9 +171,9 @@ List<MarkdownToken> parseMarkdown(String text) {
 
 void _parseInlineTokens(String text, List<MarkdownToken> tokens) {
   final pattern = RegExp(
-    r'(`[^`]+`)'         // inline code
-    r'|(\*\*[^*]+\*\*)'  // bold
-    r'|(\*[^*]+\*)'      // italic
+    r'(`[^`]+`)' // inline code
+    r'|(\*\*[^*]+\*\*)' // bold
+    r'|(\*[^*]+\*)' // italic
     r'|(\[[^\]]+\]\([^)]+\))', // link
   );
 
@@ -220,19 +224,19 @@ class MessageRenderer extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (block) {
       TextBlock(text: final text) => _MarkdownView(
-          text: text,
-          isUser: isUser,
-          syntaxColors: syntaxColors,
-        ),
+        text: text,
+        isUser: isUser,
+        syntaxColors: syntaxColors,
+      ),
       ToolUseBlock() => ToolOutputWidget(
-          toolName: (block as ToolUseBlock).name,
-          input: (block as ToolUseBlock).input,
-          output: '',
-        ),
+        toolName: (block as ToolUseBlock).name,
+        input: (block as ToolUseBlock).input,
+        output: '',
+      ),
       ToolResultBlock(content: final content) => _ToolResultView(
-          content: content,
-          isError: (block as ToolResultBlock).isError,
-        ),
+        content: content,
+        isError: (block as ToolResultBlock).isError,
+      ),
       ImageBlock() => const Icon(Icons.image, size: 48),
     };
   }
@@ -274,10 +278,12 @@ class _MarkdownView extends StatelessWidget {
 
     void flushInline() {
       if (inlineSpans.isNotEmpty) {
-        widgets.add(RichText(
-          text: TextSpan(children: List.of(inlineSpans)),
-          softWrap: true,
-        ));
+        widgets.add(
+          RichText(
+            text: TextSpan(children: List.of(inlineSpans)),
+            softWrap: true,
+          ),
+        );
         inlineSpans.clear();
       }
     }
@@ -301,121 +307,136 @@ class _MarkdownView extends StatelessWidget {
           }
 
         case BoldToken(text: final t):
-          inlineSpans.add(TextSpan(
-            text: t,
-            style: baseStyle.copyWith(fontWeight: FontWeight.bold),
-          ));
+          inlineSpans.add(
+            TextSpan(
+              text: t,
+              style: baseStyle.copyWith(fontWeight: FontWeight.bold),
+            ),
+          );
 
         case ItalicToken(text: final t):
-          inlineSpans.add(TextSpan(
-            text: t,
-            style: baseStyle.copyWith(fontStyle: FontStyle.italic),
-          ));
+          inlineSpans.add(
+            TextSpan(
+              text: t,
+              style: baseStyle.copyWith(fontStyle: FontStyle.italic),
+            ),
+          );
 
         case CodeSpanToken(code: final code):
-          inlineSpans.add(TextSpan(
-            text: code,
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 13,
-              color: isDark
-                  ? const Color(0xFFE06C75)
-                  : const Color(0xFFE45649),
-              backgroundColor: isDark
-                  ? const Color(0xFF2C313A)
-                  : const Color(0xFFF0F0F0),
+          inlineSpans.add(
+            TextSpan(
+              text: code,
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 13,
+                color: isDark
+                    ? const Color(0xFFE06C75)
+                    : const Color(0xFFE45649),
+                backgroundColor: isDark
+                    ? const Color(0xFF2C313A)
+                    : const Color(0xFFF0F0F0),
+              ),
             ),
-          ));
+          );
 
         case CodeBlockToken(code: final code, language: final lang):
           flushInline();
-          widgets.add(_CodeBlockWidget(
-            code: code,
-            language: lang,
-            isDark: isDark,
-            syntaxColors: syntaxColors,
-          ));
+          widgets.add(
+            _CodeBlockWidget(
+              code: code,
+              language: lang,
+              isDark: isDark,
+              syntaxColors: syntaxColors,
+            ),
+          );
 
         case HeadingToken(text: final t, level: final level):
           flushInline();
-          widgets.add(Padding(
-            padding: EdgeInsets.only(top: level <= 2 ? 16 : 8, bottom: 4),
-            child: Text(
-              t,
-              style: baseStyle.copyWith(
-                fontSize: switch (level) {
-                  1 => 24.0,
-                  2 => 20.0,
-                  3 => 18.0,
-                  _ => 16.0,
-                },
-                fontWeight: FontWeight.bold,
+          widgets.add(
+            Padding(
+              padding: EdgeInsets.only(top: level <= 2 ? 16 : 8, bottom: 4),
+              child: Text(
+                t,
+                style: baseStyle.copyWith(
+                  fontSize: switch (level) {
+                    1 => 24.0,
+                    2 => 20.0,
+                    3 => 18.0,
+                    _ => 16.0,
+                  },
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ));
+          );
 
         case ListItemToken(
-            text: final t,
-            ordered: final ordered,
-            index: final idx,
-          ):
+          text: final t,
+          ordered: final ordered,
+          index: final idx,
+        ):
           flushInline();
-          widgets.add(Padding(
-            padding: const EdgeInsets.only(left: 16, top: 2),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  width: 24,
-                  child: Text(
-                    ordered ? '$idx.' : '\u2022',
-                    style: baseStyle,
+          widgets.add(
+            Padding(
+              padding: const EdgeInsets.only(left: 16, top: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 24,
+                    child: Text(ordered ? '$idx.' : '\u2022', style: baseStyle),
                   ),
-                ),
-                Expanded(child: Text(t, style: baseStyle)),
-              ],
+                  Expanded(child: Text(t, style: baseStyle)),
+                ],
+              ),
             ),
-          ));
+          );
 
         case BlockquoteToken(text: final t):
           flushInline();
-          widgets.add(Container(
-            margin: const EdgeInsets.symmetric(vertical: 4),
-            padding: const EdgeInsets.only(left: 12),
-            decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(
-                  color: isDark ? Colors.white24 : Colors.black26,
-                  width: 3,
+          widgets.add(
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.only(left: 12),
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: isDark ? Colors.white24 : Colors.black26,
+                    width: 3,
+                  ),
+                ),
+              ),
+              child: Text(
+                t,
+                style: baseStyle.copyWith(
+                  color: textColor.withAlpha(178),
+                  fontStyle: FontStyle.italic,
                 ),
               ),
             ),
-            child: Text(
-              t,
-              style: baseStyle.copyWith(
-                color: textColor.withAlpha(178),
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ));
+          );
 
         case LinkToken(text: final t, url: _):
-          inlineSpans.add(TextSpan(
-            text: t,
-            style: baseStyle.copyWith(
-              color: isDark
-                  ? const Color(0xFF61AFEF)
-                  : const Color(0xFF4078F2),
-              decoration: TextDecoration.underline,
+          inlineSpans.add(
+            TextSpan(
+              text: t,
+              style: baseStyle.copyWith(
+                color: isDark
+                    ? const Color(0xFF61AFEF)
+                    : const Color(0xFF4078F2),
+                decoration: TextDecoration.underline,
+              ),
             ),
-          ));
+          );
 
         case HorizontalRuleToken():
           flushInline();
-          widgets.add(Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Divider(color: textColor.withAlpha(51)),
-          ));
+          widgets.add(
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Divider(color: textColor.withAlpha(51)),
+            ),
+          );
       }
     }
 
@@ -608,10 +629,7 @@ class _ToolResultView extends StatelessWidget {
 class ConversationMessage extends StatelessWidget {
   final Message message;
 
-  const ConversationMessage({
-    super.key,
-    required this.message,
-  });
+  const ConversationMessage({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -640,10 +658,7 @@ class ConversationMessage extends StatelessWidget {
           for (final block in message.content)
             Padding(
               padding: const EdgeInsets.only(bottom: 4),
-              child: MessageRenderer(
-                block: block,
-                isUser: isUser,
-              ),
+              child: MessageRenderer(block: block, isUser: isUser),
             ),
         ],
       ),

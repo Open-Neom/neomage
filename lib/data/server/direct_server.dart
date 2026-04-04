@@ -10,13 +10,7 @@ import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 
 /// Server lifecycle status.
-enum ServerStatus {
-  stopped,
-  starting,
-  running,
-  stopping,
-  error,
-}
+enum ServerStatus { stopped, starting, running, stopping, error }
 
 /// HTTP method constants.
 enum HttpMethod { get, post, put, delete }
@@ -77,8 +71,7 @@ class ServerEndpoint {
   });
 
   @override
-  String toString() =>
-      '${method.name.toUpperCase()} $path — $description';
+  String toString() => '${method.name.toUpperCase()} $path — $description';
 }
 
 /// Lightweight record of an incoming request for the monitoring stream.
@@ -145,57 +138,57 @@ class DirectServer {
 
   /// Returns the list of registered API endpoints.
   List<ServerEndpoint> getEndpoints() => const [
-        ServerEndpoint(
-          path: '/api/chat',
-          method: HttpMethod.post,
-          description: 'Send a message and receive a streaming response.',
-        ),
-        ServerEndpoint(
-          path: '/api/status',
-          method: HttpMethod.get,
-          description: 'Server health and session info.',
-        ),
-        ServerEndpoint(
-          path: '/api/sessions',
-          method: HttpMethod.get,
-          description: 'List active sessions.',
-        ),
-        ServerEndpoint(
-          path: '/api/sessions',
-          method: HttpMethod.post,
-          description: 'Create a new session.',
-        ),
-        ServerEndpoint(
-          path: '/api/sessions/:id',
-          method: HttpMethod.delete,
-          description: 'End an active session.',
-        ),
-        ServerEndpoint(
-          path: '/api/tools',
-          method: HttpMethod.get,
-          description: 'List available tools.',
-        ),
-        ServerEndpoint(
-          path: '/api/tools/:name',
-          method: HttpMethod.post,
-          description: 'Execute a tool directly.',
-        ),
-        ServerEndpoint(
-          path: '/api/config',
-          method: HttpMethod.get,
-          description: 'Get current configuration.',
-        ),
-        ServerEndpoint(
-          path: '/api/config',
-          method: HttpMethod.put,
-          description: 'Update configuration.',
-        ),
-        ServerEndpoint(
-          path: '/api/ws',
-          method: HttpMethod.get,
-          description: 'WebSocket upgrade for streaming.',
-        ),
-      ];
+    ServerEndpoint(
+      path: '/api/chat',
+      method: HttpMethod.post,
+      description: 'Send a message and receive a streaming response.',
+    ),
+    ServerEndpoint(
+      path: '/api/status',
+      method: HttpMethod.get,
+      description: 'Server health and session info.',
+    ),
+    ServerEndpoint(
+      path: '/api/sessions',
+      method: HttpMethod.get,
+      description: 'List active sessions.',
+    ),
+    ServerEndpoint(
+      path: '/api/sessions',
+      method: HttpMethod.post,
+      description: 'Create a new session.',
+    ),
+    ServerEndpoint(
+      path: '/api/sessions/:id',
+      method: HttpMethod.delete,
+      description: 'End an active session.',
+    ),
+    ServerEndpoint(
+      path: '/api/tools',
+      method: HttpMethod.get,
+      description: 'List available tools.',
+    ),
+    ServerEndpoint(
+      path: '/api/tools/:name',
+      method: HttpMethod.post,
+      description: 'Execute a tool directly.',
+    ),
+    ServerEndpoint(
+      path: '/api/config',
+      method: HttpMethod.get,
+      description: 'Get current configuration.',
+    ),
+    ServerEndpoint(
+      path: '/api/config',
+      method: HttpMethod.put,
+      description: 'Update configuration.',
+    ),
+    ServerEndpoint(
+      path: '/api/ws',
+      method: HttpMethod.get,
+      description: 'WebSocket upgrade for streaming.',
+    ),
+  ];
 
   /// Starts the server with the given [config].
   ///
@@ -274,7 +267,12 @@ class DirectServer {
       await _sendJson(request, HttpStatus.tooManyRequests, {
         'error': 'Rate limit exceeded. Try again later.',
       });
-      _logRequest(request, HttpStatus.tooManyRequests, stopwatch.elapsed, clientIp);
+      _logRequest(
+        request,
+        HttpStatus.tooManyRequests,
+        stopwatch.elapsed,
+        clientIp,
+      );
       return;
     }
 
@@ -283,7 +281,12 @@ class DirectServer {
       await _sendJson(request, HttpStatus.unauthorized, {
         'error': 'Invalid or missing authorization token.',
       });
-      _logRequest(request, HttpStatus.unauthorized, stopwatch.elapsed, clientIp);
+      _logRequest(
+        request,
+        HttpStatus.unauthorized,
+        stopwatch.elapsed,
+        clientIp,
+      );
       return;
     }
 
@@ -323,7 +326,12 @@ class DirectServer {
     }
 
     stopwatch.stop();
-    _logRequest(request, request.response.statusCode, stopwatch.elapsed, clientIp);
+    _logRequest(
+      request,
+      request.response.statusCode,
+      stopwatch.elapsed,
+      clientIp,
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -362,12 +370,8 @@ class DirectServer {
 
   Future<void> _handleCreateSession(HttpRequest request) async {
     final id = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
-    _sessions[id] = {
-      'createdAt': DateTime.now().toIso8601String(),
-    };
-    await _sendJson(request, HttpStatus.created, {
-      'sessionId': id,
-    });
+    _sessions[id] = {'createdAt': DateTime.now().toIso8601String()};
+    await _sendJson(request, HttpStatus.created, {'sessionId': id});
   }
 
   Future<void> _handleDeleteSession(HttpRequest request) async {
@@ -408,20 +412,15 @@ class DirectServer {
   Future<void> _handlePutConfig(HttpRequest request) async {
     // Placeholder: real implementation merges config updates.
     final body = await _readJsonBody(request);
-    await _sendJson(request, HttpStatus.ok, {
-      'updated': body?.keys.toList(),
-    });
+    await _sendJson(request, HttpStatus.ok, {'updated': body?.keys.toList()});
   }
 
   Future<void> _handleWebSocket(HttpRequest request) async {
     final socket = await WebSocketTransformer.upgrade(request);
-    socket.listen(
-      (data) {
-        // Echo for now; real implementation pipes to chat engine.
-        socket.add(data);
-      },
-      onDone: () => socket.close(),
-    );
+    socket.listen((data) {
+      // Echo for now; real implementation pipes to chat engine.
+      socket.add(data);
+    }, onDone: () => socket.close());
   }
 
   // ---------------------------------------------------------------------------
@@ -501,13 +500,15 @@ class DirectServer {
     String? clientIp,
   ) {
     if (_requestController.isClosed) return;
-    _requestController.add(RequestLog(
-      timestamp: DateTime.now(),
-      method: request.method,
-      path: request.uri.path,
-      statusCode: statusCode,
-      latency: latency,
-      clientIp: clientIp,
-    ));
+    _requestController.add(
+      RequestLog(
+        timestamp: DateTime.now(),
+        method: request.method,
+        path: request.uri.path,
+        statusCode: statusCode,
+        latency: latency,
+        clientIp: clientIp,
+      ),
+    );
   }
 }

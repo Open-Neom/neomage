@@ -1,5 +1,5 @@
 // /insights command — generates usage insights report analyzing NeomClaw sessions.
-// Faithful port of openneomclaw/src/commands/insights.ts (3200 TS LOC).
+// Faithful port of neom_claw/src/commands/insights.ts (3200 TS LOC).
 //
 // Covers: session scanning, tool/language stats extraction, facet extraction
 // via model API, multi-clauding detection, data aggregation, parallel insight
@@ -7,7 +7,6 @@
 
 import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
-import 'dart:math';
 
 import 'package:path/path.dart' as p;
 
@@ -125,7 +124,8 @@ const List<String> outcomeOrder = [
 ];
 
 /// Prompt for facet extraction from sessions.
-const String facetExtractionPrompt = '''Analyze this NeomClaw session and extract structured facets.
+const String facetExtractionPrompt =
+    '''Analyze this NeomClaw session and extract structured facets.
 
 CRITICAL GUIDELINES:
 
@@ -252,34 +252,34 @@ class SessionMeta {
 
   /// Serialize to JSON.
   Map<String, dynamic> toJson() => {
-        'session_id': sessionId,
-        'project_path': projectPath,
-        'start_time': startTime,
-        'duration_minutes': durationMinutes,
-        'user_message_count': userMessageCount,
-        'assistant_message_count': assistantMessageCount,
-        'tool_counts': toolCounts,
-        'languages': languages,
-        'git_commits': gitCommits,
-        'git_pushes': gitPushes,
-        'input_tokens': inputTokens,
-        'output_tokens': outputTokens,
-        'first_prompt': firstPrompt,
-        if (summary != null) 'summary': summary,
-        'user_interruptions': userInterruptions,
-        'user_response_times': userResponseTimes,
-        'tool_errors': toolErrors,
-        'tool_error_categories': toolErrorCategories,
-        'uses_task_agent': usesTaskAgent,
-        'uses_mcp': usesMcp,
-        'uses_web_search': usesWebSearch,
-        'uses_web_fetch': usesWebFetch,
-        'lines_added': linesAdded,
-        'lines_removed': linesRemoved,
-        'files_modified': filesModified,
-        'message_hours': messageHours,
-        'user_message_timestamps': userMessageTimestamps,
-      };
+    'session_id': sessionId,
+    'project_path': projectPath,
+    'start_time': startTime,
+    'duration_minutes': durationMinutes,
+    'user_message_count': userMessageCount,
+    'assistant_message_count': assistantMessageCount,
+    'tool_counts': toolCounts,
+    'languages': languages,
+    'git_commits': gitCommits,
+    'git_pushes': gitPushes,
+    'input_tokens': inputTokens,
+    'output_tokens': outputTokens,
+    'first_prompt': firstPrompt,
+    if (summary != null) 'summary': summary,
+    'user_interruptions': userInterruptions,
+    'user_response_times': userResponseTimes,
+    'tool_errors': toolErrors,
+    'tool_error_categories': toolErrorCategories,
+    'uses_task_agent': usesTaskAgent,
+    'uses_mcp': usesMcp,
+    'uses_web_search': usesWebSearch,
+    'uses_web_fetch': usesWebFetch,
+    'lines_added': linesAdded,
+    'lines_removed': linesRemoved,
+    'files_modified': filesModified,
+    'message_hours': messageHours,
+    'user_message_timestamps': userMessageTimestamps,
+  };
 }
 
 /// Facets extracted from a session by the model.
@@ -312,8 +312,10 @@ class SessionFacets {
     this.userInstructionsToNeomClaw,
   });
 
-  factory SessionFacets.fromJson(Map<String, dynamic> json,
-      {String? sessionId}) {
+  factory SessionFacets.fromJson(
+    Map<String, dynamic> json, {
+    String? sessionId,
+  }) {
     return SessionFacets(
       sessionId: sessionId ?? json['session_id'] as String? ?? '',
       underlyingGoal: json['underlying_goal'] as String? ?? '',
@@ -326,26 +328,27 @@ class SessionFacets {
       frictionDetail: json['friction_detail'] as String? ?? '',
       primarySuccess: json['primary_success'] as String? ?? 'none',
       briefSummary: json['brief_summary'] as String? ?? '',
-      userInstructionsToNeomClaw:
-          _castListString(json['user_instructions_to_neomclaw']),
+      userInstructionsToNeomClaw: _castListString(
+        json['user_instructions_to_neomclaw'],
+      ),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'session_id': sessionId,
-        'underlying_goal': underlyingGoal,
-        'goal_categories': goalCategories,
-        'outcome': outcome,
-        'user_satisfaction_counts': userSatisfactionCounts,
-        'claude_helpfulness': neomClawHelpfulness,
-        'session_type': sessionType,
-        'friction_counts': frictionCounts,
-        'friction_detail': frictionDetail,
-        'primary_success': primarySuccess,
-        'brief_summary': briefSummary,
-        if (userInstructionsToNeomClaw != null)
-          'user_instructions_to_neomclaw': userInstructionsToNeomClaw,
-      };
+    'session_id': sessionId,
+    'underlying_goal': underlyingGoal,
+    'goal_categories': goalCategories,
+    'outcome': outcome,
+    'user_satisfaction_counts': userSatisfactionCounts,
+    'claude_helpfulness': neomClawHelpfulness,
+    'session_type': sessionType,
+    'friction_counts': frictionCounts,
+    'friction_detail': frictionDetail,
+    'primary_success': primarySuccess,
+    'brief_summary': briefSummary,
+    if (userInstructionsToNeomClaw != null)
+      'user_instructions_to_neomclaw': userInstructionsToNeomClaw,
+  };
 
   /// Validate that a parsed JSON object has the required fields.
   static bool isValid(dynamic obj) {
@@ -399,7 +402,7 @@ class AggregatedData {
   double messagesPerDay;
   List<int> messageHours;
   ({int overlapEvents, int sessionsInvolved, int userMessagesDuring})
-      multiClauding;
+  multiClauding;
 
   AggregatedData({
     this.totalSessions = 0,
@@ -439,22 +442,25 @@ class AggregatedData {
     this.daysActive = 0,
     this.messagesPerDay = 0,
     List<int>? messageHours,
-    this.multiClauding =
-        (overlapEvents: 0, sessionsInvolved: 0, userMessagesDuring: 0),
-  })  : toolCounts = toolCounts ?? {},
-        languages = languages ?? {},
-        projects = projects ?? {},
-        goalCategories = goalCategories ?? {},
-        outcomes = outcomes ?? {},
-        satisfaction = satisfaction ?? {},
-        helpfulness = helpfulness ?? {},
-        sessionTypes = sessionTypes ?? {},
-        friction = friction ?? {},
-        success = success ?? {},
-        sessionSummaries = sessionSummaries ?? [],
-        toolErrorCategories = toolErrorCategories ?? {},
-        userResponseTimes = userResponseTimes ?? [],
-        messageHours = messageHours ?? [];
+    this.multiClauding = (
+      overlapEvents: 0,
+      sessionsInvolved: 0,
+      userMessagesDuring: 0,
+    ),
+  }) : toolCounts = toolCounts ?? {},
+       languages = languages ?? {},
+       projects = projects ?? {},
+       goalCategories = goalCategories ?? {},
+       outcomes = outcomes ?? {},
+       satisfaction = satisfaction ?? {},
+       helpfulness = helpfulness ?? {},
+       sessionTypes = sessionTypes ?? {},
+       friction = friction ?? {},
+       success = success ?? {},
+       sessionSummaries = sessionSummaries ?? [],
+       toolErrorCategories = toolErrorCategories ?? {},
+       userResponseTimes = userResponseTimes ?? [],
+       messageHours = messageHours ?? [];
 }
 
 /// Lightweight session info from filesystem metadata.
@@ -499,15 +505,15 @@ class InsightResults {
   InsightResults();
 
   Map<String, dynamic> toJson() => {
-        if (atAGlance != null) 'at_a_glance': atAGlance,
-        if (projectAreas != null) 'project_areas': projectAreas,
-        if (interactionStyle != null) 'interaction_style': interactionStyle,
-        if (whatWorks != null) 'what_works': whatWorks,
-        if (frictionAnalysis != null) 'friction_analysis': frictionAnalysis,
-        if (suggestions != null) 'suggestions': suggestions,
-        if (onTheHorizon != null) 'on_the_horizon': onTheHorizon,
-        if (funEnding != null) 'fun_ending': funEnding,
-      };
+    if (atAGlance != null) 'at_a_glance': atAGlance,
+    if (projectAreas != null) 'project_areas': projectAreas,
+    if (interactionStyle != null) 'interaction_style': interactionStyle,
+    if (whatWorks != null) 'what_works': whatWorks,
+    if (frictionAnalysis != null) 'friction_analysis': frictionAnalysis,
+    if (suggestions != null) 'suggestions': suggestions,
+    if (onTheHorizon != null) 'on_the_horizon': onTheHorizon,
+    if (funEnding != null) 'fun_ending': funEnding,
+  };
 }
 
 /// Export format for structured data.
@@ -624,25 +630,25 @@ class ToolStatsResult {
   final List<String> userMessageTimestamps;
 
   ToolStatsResult()
-      : toolCounts = {},
-        languages = {},
-        gitCommits = 0,
-        gitPushes = 0,
-        inputTokens = 0,
-        outputTokens = 0,
-        userInterruptions = 0,
-        userResponseTimes = [],
-        toolErrors = 0,
-        toolErrorCategories = {},
-        usesTaskAgent = false,
-        usesMcp = false,
-        usesWebSearch = false,
-        usesWebFetch = false,
-        linesAdded = 0,
-        linesRemoved = 0,
-        filesModified = {},
-        messageHours = [],
-        userMessageTimestamps = [];
+    : toolCounts = {},
+      languages = {},
+      gitCommits = 0,
+      gitPushes = 0,
+      inputTokens = 0,
+      outputTokens = 0,
+      userInterruptions = 0,
+      userResponseTimes = [],
+      toolErrors = 0,
+      toolErrorCategories = {},
+      usesTaskAgent = false,
+      usesMcp = false,
+      usesWebSearch = false,
+      usesWebFetch = false,
+      linesAdded = 0,
+      linesRemoved = 0,
+      filesModified = {},
+      messageHours = [],
+      userMessageTimestamps = [];
 }
 
 /// Extract tool usage statistics from session messages.
@@ -677,8 +683,7 @@ ToolStatsResult extractToolStats(List<Map<String, dynamic>> messages) {
           if (block is! Map<String, dynamic>) continue;
           if (block['type'] == 'tool_use' && block['name'] != null) {
             final toolName = block['name'] as String;
-            stats.toolCounts[toolName] =
-                (stats.toolCounts[toolName] ?? 0) + 1;
+            stats.toolCounts[toolName] = (stats.toolCounts[toolName] ?? 0) + 1;
 
             // Check for special tool usage.
             if (toolName == 'Task' || toolName == 'dispatch_agent') {
@@ -764,10 +769,12 @@ ToolStatsResult extractToolStats(List<Map<String, dynamic>> messages) {
         // Calculate response time.
         if (lastAssistantTimestamp != null) {
           try {
-            final assistantTime =
-                DateTime.parse(lastAssistantTimestamp).millisecondsSinceEpoch;
-            final userTime =
-                DateTime.parse(msgTimestamp).millisecondsSinceEpoch;
+            final assistantTime = DateTime.parse(
+              lastAssistantTimestamp,
+            ).millisecondsSinceEpoch;
+            final userTime = DateTime.parse(
+              msgTimestamp,
+            ).millisecondsSinceEpoch;
             final responseTimeSec = (userTime - assistantTime) / 1000.0;
             // Only count reasonable response times (2s-1 hour).
             if (responseTimeSec > 2 && responseTimeSec < 3600) {
@@ -802,8 +809,9 @@ ToolStatsResult extractToolStats(List<Map<String, dynamic>> messages) {
         for (final block in content) {
           if (block is Map<String, dynamic> &&
               block['type'] == 'text' &&
-              (block['text'] as String? ?? '')
-                  .contains('[Request interrupted by user')) {
+              (block['text'] as String? ?? '').contains(
+                '[Request interrupted by user',
+              )) {
             stats.userInterruptions++;
             break;
           }
@@ -824,7 +832,7 @@ ToolStatsResult extractToolStats(List<Map<String, dynamic>> messages) {
 /// Uses a sliding window to find the pattern: session1 -> session2 -> session1
 /// within a 30-minute window.
 ({int overlapEvents, int sessionsInvolved, int userMessagesDuring})
-    detectMultiClauding(
+detectMultiClauding(
   List<({String sessionId, List<String> timestamps})> sessions,
 ) {
   const overlapWindowMs = 30 * 60000;
@@ -870,8 +878,9 @@ ToolStatsResult extractToolStats(List<Map<String, dynamic>> messages) {
         if (between.sessionId != msg.sessionId) {
           final pair = [msg.sessionId, between.sessionId]..sort();
           multiNeomClawSessionPairs.add(pair.join(':'));
-          messagesDuringMultiNeomClaw
-              .add('${allMessages[prevIndex].ts}:${msg.sessionId}');
+          messagesDuringMultiNeomClaw.add(
+            '${allMessages[prevIndex].ts}:${msg.sessionId}',
+          );
           messagesDuringMultiNeomClaw.add('${between.ts}:${between.sessionId}');
           messagesDuringMultiNeomClaw.add('${msg.ts}:${msg.sessionId}');
           break;
@@ -1026,9 +1035,11 @@ AggregatedData aggregateData(
             ? session.sessionId.substring(0, 8)
             : session.sessionId,
         'date': session.startTime.split('T').first,
-        'summary': session.summary ?? (session.firstPrompt.length > 100
-            ? session.firstPrompt.substring(0, 100)
-            : session.firstPrompt),
+        'summary':
+            session.summary ??
+            (session.firstPrompt.length > 100
+                ? session.firstPrompt.substring(0, 100)
+                : session.firstPrompt),
         if (sessionFacets?.underlyingGoal != null)
           'goal': sessionFacets!.underlyingGoal,
       });
@@ -1066,10 +1077,9 @@ AggregatedData aggregateData(
   // Multi-clauding detection.
   result.multiClauding = detectMultiClauding(
     sessions
-        .map((s) => (
-              sessionId: s.sessionId,
-              timestamps: s.userMessageTimestamps,
-            ))
+        .map(
+          (s) => (sessionId: s.sessionId, timestamps: s.userMessageTimestamps),
+        )
         .toList(),
   );
 
@@ -1139,8 +1149,7 @@ Include 3 friction categories with 2 examples each.''',
     ),
     const InsightSection(
       name: 'suggestions',
-      prompt:
-          '''Analyze this NeomClaw usage data and suggest improvements.
+      prompt: '''Analyze this NeomClaw usage data and suggest improvements.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1159,7 +1168,8 @@ Include 2-3 items for each category.''',
     ),
     const InsightSection(
       name: 'on_the_horizon',
-      prompt: '''Analyze this NeomClaw usage data and identify future opportunities.
+      prompt:
+          '''Analyze this NeomClaw usage data and identify future opportunities.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1238,9 +1248,9 @@ Future<void> saveFacets(SessionFacets facets) async {
     await dir.create(recursive: true);
   }
   final facetPath = p.join(getFacetsDir(), '${facets.sessionId}.json');
-  await File(facetPath).writeAsString(
-    const JsonEncoder.withIndent('  ').convert(facets.toJson()),
-  );
+  await File(
+    facetPath,
+  ).writeAsString(const JsonEncoder.withIndent('  ').convert(facets.toJson()));
 }
 
 /// Load cached session metadata.
@@ -1250,8 +1260,7 @@ Future<SessionMeta?> loadCachedSessionMeta(String sessionId) async {
     final file = File(metaPath);
     if (!await file.exists()) return null;
     final content = await file.readAsString();
-    return SessionMeta.fromJson(
-        jsonDecode(content) as Map<String, dynamic>);
+    return SessionMeta.fromJson(jsonDecode(content) as Map<String, dynamic>);
   } catch (_) {
     return null;
   }
@@ -1264,9 +1273,9 @@ Future<void> saveSessionMeta(SessionMeta meta) async {
     await dir.create(recursive: true);
   }
   final metaPath = p.join(getSessionMetaDir(), '${meta.sessionId}.json');
-  await File(metaPath).writeAsString(
-    const JsonEncoder.withIndent('  ').convert(meta.toJson()),
-  );
+  await File(
+    metaPath,
+  ).writeAsString(const JsonEncoder.withIndent('  ').convert(meta.toJson()));
 }
 
 // ============================================================================
@@ -1289,14 +1298,15 @@ Future<List<LiteSessionInfo>> scanAllSessions() async {
         if (file is! File || !file.path.endsWith('.jsonl')) continue;
 
         final stat = await file.stat();
-        final sessionId =
-            p.basenameWithoutExtension(file.path);
-        allSessions.add(LiteSessionInfo(
-          sessionId: sessionId,
-          path: file.path,
-          mtimeMs: stat.modified.millisecondsSinceEpoch,
-          size: stat.size,
-        ));
+        final sessionId = p.basenameWithoutExtension(file.path);
+        allSessions.add(
+          LiteSessionInfo(
+            sessionId: sessionId,
+            path: file.path,
+            mtimeMs: stat.modified.millisecondsSinceEpoch,
+            size: stat.size,
+          ),
+        );
       }
     } catch (_) {
       // Skip inaccessible project directories.
@@ -1371,8 +1381,7 @@ class InsightsCommand extends PromptCommand {
     final deduplicated = deduplicateSessionBranches(allMetas);
 
     // Filter substantive sessions.
-    final substantive =
-        deduplicated.where(isSubstantiveSession).toList();
+    final substantive = deduplicated.where(isSubstantiveSession).toList();
 
     // Load cached facets.
     final facets = <String, SessionFacets>{};
@@ -1402,10 +1411,10 @@ class InsightsCommand extends PromptCommand {
     // Build stats line.
     final sessionLabel =
         aggregated.totalSessionsScanned != null &&
-                aggregated.totalSessionsScanned! > aggregated.totalSessions
-            ? '${aggregated.totalSessionsScanned} sessions total, '
-                '${aggregated.totalSessions} analyzed'
-            : '${aggregated.totalSessions} sessions';
+            aggregated.totalSessionsScanned! > aggregated.totalSessions
+        ? '${aggregated.totalSessionsScanned} sessions total, '
+              '${aggregated.totalSessions} analyzed'
+        : '${aggregated.totalSessions} sessions';
 
     final stats = [
       sessionLabel,
@@ -1449,11 +1458,16 @@ class InsightsCommand extends PromptCommand {
     return sorted
         .take(n)
         .map((e) {
-          final label = labelMap[e.key] ??
-              e.key.replaceAll('_', ' ').split(' ').map((w) {
-                if (w.isEmpty) return w;
-                return w[0].toUpperCase() + w.substring(1);
-              }).join(' ');
+          final label =
+              labelMap[e.key] ??
+              e.key
+                  .replaceAll('_', ' ')
+                  .split(' ')
+                  .map((w) {
+                    if (w.isEmpty) return w;
+                    return w[0].toUpperCase() + w.substring(1);
+                  })
+                  .join(' ');
           return '$label (${e.value})';
         })
         .join(', ');

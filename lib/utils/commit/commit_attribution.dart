@@ -1,12 +1,12 @@
 /// Git commit attribution and message formatting.
 ///
-/// Ported from openneomclaw/src/utils/commitAttribution.ts (961 LOC).
+/// Ported from neom_claw/src/utils/commitAttribution.ts (961 LOC).
 ///
 /// Tracks NeomClaw's contributions to files, calculates attribution
 /// percentages for git commits, and provides snapshot/restore support
 /// for session persistence.
+library;
 
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math';
 
@@ -96,10 +96,10 @@ class FileAttributionState {
   }
 
   Map<String, dynamic> toJson() => {
-        'contentHash': contentHash,
-        'neomClawContribution': neomClawContribution,
-        'mtime': mtime,
-      };
+    'contentHash': contentHash,
+    'neomClawContribution': neomClawContribution,
+    'mtime': mtime,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -119,8 +119,8 @@ class AttributionState {
     this.permissionPromptCountAtLastCommit = 0,
     this.escapeCount = 0,
     this.escapeCountAtLastCommit = 0,
-  })  : fileStates = fileStates ?? {},
-        sessionBaselines = sessionBaselines ?? {};
+  }) : fileStates = fileStates ?? {},
+       sessionBaselines = sessionBaselines ?? {};
 
   /// File states keyed by relative path (from cwd).
   final Map<String, FileAttributionState> fileStates;
@@ -170,7 +170,8 @@ class AttributionState {
           promptCountAtLastCommit ?? this.promptCountAtLastCommit,
       permissionPromptCount:
           permissionPromptCount ?? this.permissionPromptCount,
-      permissionPromptCountAtLastCommit: permissionPromptCountAtLastCommit ??
+      permissionPromptCountAtLastCommit:
+          permissionPromptCountAtLastCommit ??
           this.permissionPromptCountAtLastCommit,
       escapeCount: escapeCount ?? this.escapeCount,
       escapeCountAtLastCommit:
@@ -192,10 +193,7 @@ class BaselineEntry {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        'contentHash': contentHash,
-        'mtime': mtime,
-      };
+  Map<String, dynamic> toJson() => {'contentHash': contentHash, 'mtime': mtime};
 }
 
 // ---------------------------------------------------------------------------
@@ -217,11 +215,11 @@ class AttributionSummary {
   final List<String> surfaces;
 
   Map<String, dynamic> toJson() => {
-        'neomClawPercent': neomClawPercent,
-        'neomClawChars': neomClawChars,
-        'humanChars': humanChars,
-        'surfaces': surfaces,
-      };
+    'neomClawPercent': neomClawPercent,
+    'neomClawChars': neomClawChars,
+    'humanChars': humanChars,
+    'surfaces': surfaces,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -243,11 +241,11 @@ class FileAttribution {
   final String surface;
 
   Map<String, dynamic> toJson() => {
-        'neomClawChars': neomClawChars,
-        'humanChars': humanChars,
-        'percent': percent,
-        'surface': surface,
-      };
+    'neomClawChars': neomClawChars,
+    'humanChars': humanChars,
+    'percent': percent,
+    'surface': surface,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -273,27 +271,28 @@ class AttributionData {
   final List<String> sessions;
 
   Map<String, dynamic> toJson() => {
-        'version': version,
-        'summary': summary.toJson(),
-        'files': files.map((k, v) => MapEntry(k, v.toJson())),
-        'surfaceBreakdown':
-            surfaceBreakdown.map((k, v) => MapEntry(k, v.toJson())),
-        'excludedGenerated': excludedGenerated,
-        'sessions': sessions,
-      };
+    'version': version,
+    'summary': summary.toJson(),
+    'files': files.map((k, v) => MapEntry(k, v.toJson())),
+    'surfaceBreakdown': surfaceBreakdown.map((k, v) => MapEntry(k, v.toJson())),
+    'excludedGenerated': excludedGenerated,
+    'sessions': sessions,
+  };
 }
 
 /// Surface breakdown entry for attribution data.
 class SurfaceBreakdownEntry {
-  const SurfaceBreakdownEntry(
-      {required this.neomClawChars, required this.percent});
+  const SurfaceBreakdownEntry({
+    required this.neomClawChars,
+    required this.percent,
+  });
   final int neomClawChars;
   final int percent;
 
   Map<String, dynamic> toJson() => {
-        'neomClawChars': neomClawChars,
-        'percent': percent,
-      };
+    'neomClawChars': neomClawChars,
+    'percent': percent,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -327,9 +326,13 @@ class AttributionSnapshotMessage {
   final int escapeCountAtLastCommit;
 
   factory AttributionSnapshotMessage.fromJson(Map<String, dynamic> json) {
-    final fs = (json['fileStates'] as Map<String, dynamic>?)?.map((k, v) =>
-            MapEntry(
-                k, FileAttributionState.fromJson(v as Map<String, dynamic>))) ??
+    final fs =
+        (json['fileStates'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(
+            k,
+            FileAttributionState.fromJson(v as Map<String, dynamic>),
+          ),
+        ) ??
         {};
     return AttributionSnapshotMessage(
       messageId: json['messageId'] as String,
@@ -349,19 +352,17 @@ class AttributionSnapshotMessage {
   }
 
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'messageId': messageId,
-        'surface': surface,
-        'fileStates':
-            fileStates.map((k, v) => MapEntry(k, v.toJson())),
-        'promptCount': promptCount,
-        'promptCountAtLastCommit': promptCountAtLastCommit,
-        'permissionPromptCount': permissionPromptCount,
-        'permissionPromptCountAtLastCommit':
-            permissionPromptCountAtLastCommit,
-        'escapeCount': escapeCount,
-        'escapeCountAtLastCommit': escapeCountAtLastCommit,
-      };
+    'type': type,
+    'messageId': messageId,
+    'surface': surface,
+    'fileStates': fileStates.map((k, v) => MapEntry(k, v.toJson())),
+    'promptCount': promptCount,
+    'promptCountAtLastCommit': promptCountAtLastCommit,
+    'permissionPromptCount': permissionPromptCount,
+    'permissionPromptCountAtLastCommit': permissionPromptCountAtLastCommit,
+    'escapeCount': escapeCount,
+    'escapeCountAtLastCommit': escapeCountAtLastCommit,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -488,10 +489,12 @@ class CommitAttributionManager extends SintController {
       return false;
     }
 
-    final isInternal =
-        _internalModelRepos.any((repo) => remoteUrl.contains(repo));
-    _repoClassCache =
-        isInternal ? RepoClassification.internal : RepoClassification.external;
+    final isInternal = _internalModelRepos.any(
+      (repo) => remoteUrl.contains(repo),
+    );
+    _repoClassCache = isInternal
+        ? RepoClassification.internal
+        : RepoClassification.external;
     return isInternal;
   }
 
@@ -628,8 +631,9 @@ class CommitAttributionManager extends SintController {
 
       if (oldContent.isEmpty || newContent.isEmpty) {
         // New file or full deletion.
-        neomClawContribution =
-            oldContent.isEmpty ? newContent.length : oldContent.length;
+        neomClawContribution = oldContent.isEmpty
+            ? newContent.length
+            : oldContent.length;
       } else {
         // Find actual changed region via common prefix/suffix matching.
         final minLen = min(oldContent.length, newContent.length);
@@ -694,8 +698,7 @@ class CommitAttributionManager extends SintController {
     int? mtime,
   }) {
     final normalizedPath = normalizeFilePath(filePath);
-    final effectiveMtime =
-        mtime ?? DateTime.now().millisecondsSinceEpoch;
+    final effectiveMtime = mtime ?? DateTime.now().millisecondsSinceEpoch;
 
     final newFileState = _computeFileModificationState(
       existingFileStates: attrState.fileStates,
@@ -706,8 +709,9 @@ class CommitAttributionManager extends SintController {
     );
     if (newFileState == null) return attrState;
 
-    final newFileStates =
-        Map<String, FileAttributionState>.from(attrState.fileStates);
+    final newFileStates = Map<String, FileAttributionState>.from(
+      attrState.fileStates,
+    );
     newFileStates[normalizedPath] = newFileState;
 
     return attrState.copyWith(fileStates: newFileStates);
@@ -746,8 +750,9 @@ class CommitAttributionManager extends SintController {
       mtime: DateTime.now().millisecondsSinceEpoch,
     );
 
-    final newFileStates =
-        Map<String, FileAttributionState>.from(attrState.fileStates);
+    final newFileStates = Map<String, FileAttributionState>.from(
+      attrState.fileStates,
+    );
     newFileStates[normalizedPath] = newFileState;
 
     return attrState.copyWith(fileStates: newFileStates);
@@ -762,8 +767,9 @@ class CommitAttributionManager extends SintController {
     required AttributionState attrState,
     required List<FileChange> changes,
   }) {
-    final newFileStates =
-        Map<String, FileAttributionState>.from(attrState.fileStates);
+    final newFileStates = Map<String, FileAttributionState>.from(
+      attrState.fileStates,
+    );
 
     for (final change in changes) {
       final effectiveMtime =
@@ -834,7 +840,8 @@ class CommitAttributionManager extends SintController {
           mergedFileStates[entry.key] = FileAttributionState(
             contentHash: entry.value.contentHash,
             neomClawContribution:
-                existing.neomClawContribution + entry.value.neomClawContribution,
+                existing.neomClawContribution +
+                entry.value.neomClawContribution,
             mtime: entry.value.mtime,
           );
         } else {
@@ -889,8 +896,7 @@ class CommitAttributionManager extends SintController {
       humanChars = max(0, humanChars);
 
       final total = neomClawChars + humanChars;
-      final percent =
-          total > 0 ? (neomClawChars / total * 100).round() : 0;
+      final percent = total > 0 ? (neomClawChars / total * 100).round() : 0;
 
       files[file] = FileAttribution(
         neomClawChars: neomClawChars,
@@ -906,15 +912,19 @@ class CommitAttributionManager extends SintController {
     }
 
     final totalChars = totalNeomClawChars + totalHumanChars;
-    final neomClawPercent =
-        totalChars > 0 ? (totalNeomClawChars / totalChars * 100).round() : 0;
+    final neomClawPercent = totalChars > 0
+        ? (totalNeomClawChars / totalChars * 100).round()
+        : 0;
 
     final surfaceBreakdown = <String, SurfaceBreakdownEntry>{};
     for (final entry in surfaceCounts.entries) {
-      final percent =
-          totalChars > 0 ? (entry.value / totalChars * 100).round() : 0;
-      surfaceBreakdown[entry.key] =
-          SurfaceBreakdownEntry(neomClawChars: entry.value, percent: percent);
+      final percent = totalChars > 0
+          ? (entry.value / totalChars * 100).round()
+          : 0;
+      surfaceBreakdown[entry.key] = SurfaceBreakdownEntry(
+        neomClawChars: entry.value,
+        percent: percent,
+      );
     }
 
     return AttributionData(
@@ -940,18 +950,21 @@ class CommitAttributionManager extends SintController {
     final cwd = getAttributionRepoRoot();
 
     try {
-      final result = await Process.run(
-        gitExe,
-        ['diff', '--cached', '--stat', '--', filePath],
-        workingDirectory: cwd,
-      );
+      final result = await Process.run(gitExe, [
+        'diff',
+        '--cached',
+        '--stat',
+        '--',
+        filePath,
+      ], workingDirectory: cwd);
 
       if (result.exitCode != 0 || (result.stdout as String).isEmpty) {
         return 0;
       }
 
-      final lines =
-          (result.stdout as String).split('\n').where((l) => l.isNotEmpty);
+      final lines = (result.stdout as String)
+          .split('\n')
+          .where((l) => l.isNotEmpty);
       var totalChanges = 0;
 
       for (final line in lines) {
@@ -959,10 +972,8 @@ class CommitAttributionManager extends SintController {
           final insertMatch = RegExp(r'(\d+) insertions?').firstMatch(line);
           final deleteMatch = RegExp(r'(\d+) deletions?').firstMatch(line);
 
-          final insertions =
-              int.tryParse(insertMatch?.group(1) ?? '') ?? 0;
-          final deletions =
-              int.tryParse(deleteMatch?.group(1) ?? '') ?? 0;
+          final insertions = int.tryParse(insertMatch?.group(1) ?? '') ?? 0;
+          final deletions = int.tryParse(deleteMatch?.group(1) ?? '') ?? 0;
           totalChanges += (insertions + deletions) * 40;
         }
       }
@@ -982,11 +993,13 @@ class CommitAttributionManager extends SintController {
     final cwd = getAttributionRepoRoot();
 
     try {
-      final result = await Process.run(
-        gitExe,
-        ['diff', '--cached', '--name-status', '--', filePath],
-        workingDirectory: cwd,
-      );
+      final result = await Process.run(gitExe, [
+        'diff',
+        '--cached',
+        '--name-status',
+        '--',
+        filePath,
+      ], workingDirectory: cwd);
 
       if (result.exitCode == 0 && (result.stdout as String).isNotEmpty) {
         return (result.stdout as String).trim().startsWith('D\t');
@@ -1007,11 +1020,11 @@ class CommitAttributionManager extends SintController {
     final cwd = getAttributionRepoRoot();
 
     try {
-      final result = await Process.run(
-        gitExe,
-        ['diff', '--cached', '--name-only'],
-        workingDirectory: cwd,
-      );
+      final result = await Process.run(gitExe, [
+        'diff',
+        '--cached',
+        '--name-only',
+      ], workingDirectory: cwd);
 
       if (result.exitCode == 0 && (result.stdout as String).isNotEmpty) {
         return (result.stdout as String)
@@ -1108,8 +1121,7 @@ class CommitAttributionManager extends SintController {
   void attributionRestoreStateFromLog(
     List<AttributionSnapshotMessage> attributionSnapshots,
   ) {
-    state.value =
-        restoreAttributionStateFromSnapshots(attributionSnapshots);
+    state.value = restoreAttributionStateFromSnapshots(attributionSnapshots);
   }
 
   /// Increment promptCount and save an attribution snapshot.

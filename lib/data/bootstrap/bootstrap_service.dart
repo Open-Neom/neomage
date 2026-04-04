@@ -17,19 +17,15 @@ enum BootstrapStepStatus {
   failed;
 
   String get label => switch (this) {
-        pending => 'Pending',
-        running => 'Running',
-        completed => 'Done',
-        skipped => 'Skipped',
-        failed => 'Failed',
-      };
+    pending => 'Pending',
+    running => 'Running',
+    completed => 'Done',
+    skipped => 'Skipped',
+    failed => 'Failed',
+  };
 }
 
-enum BootstrapResultStatus {
-  success,
-  partialSuccess,
-  failure;
-}
+enum BootstrapResultStatus { success, partialSuccess, failure }
 
 // ---------------------------------------------------------------------------
 // BootstrapStep — individual step with name, duration, status
@@ -53,13 +49,13 @@ class BootstrapStep {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'status': status.label,
-        'durationMs': duration.inMilliseconds,
-        'error': error,
-        'warning': warning,
-      };
+    'id': id,
+    'name': name,
+    'status': status.label,
+    'durationMs': duration.inMilliseconds,
+    'error': error,
+    'warning': warning,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -72,9 +68,9 @@ class BootstrapProgress {
   final Stopwatch _totalTimer;
 
   BootstrapProgress({required List<BootstrapStep> steps})
-      : steps = steps,
-        _currentIndex = 0,
-        _totalTimer = Stopwatch();
+    : steps = steps,
+      _currentIndex = 0,
+      _totalTimer = Stopwatch();
 
   int get currentIndex => _currentIndex;
   int get totalSteps => steps.length;
@@ -186,15 +182,15 @@ class ProjectInfo {
   });
 
   Map<String, dynamic> toJson() => {
-        'gitRoot': gitRoot,
-        'gitBranch': gitBranch,
-        'gitRemoteUrl': gitRemoteUrl,
-        'projectDir': projectDir,
-        'languages': languages,
-        'framework': framework,
-        'packageManager': packageManager,
-        'isGitRepo': isGitRepo,
-      };
+    'gitRoot': gitRoot,
+    'gitBranch': gitBranch,
+    'gitRemoteUrl': gitRemoteUrl,
+    'projectDir': projectDir,
+    'languages': languages,
+    'framework': framework,
+    'packageManager': packageManager,
+    'isGitRepo': isGitRepo,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -220,11 +216,11 @@ enum MemoryFileSource {
   configDir;
 
   String get label => switch (this) {
-        projectRoot => 'Project root',
-        parentDir => 'Parent directory',
-        userHome => 'User home',
-        configDir => 'Config directory',
-      };
+    projectRoot => 'Project root',
+    parentDir => 'Parent directory',
+    userHome => 'User home',
+    configDir => 'Config directory',
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -258,7 +254,9 @@ class BootstrapResult {
 
   String formatReport() {
     final buf = StringBuffer();
-    buf.writeln('Bootstrap ${status.name} in ${totalDuration.inMilliseconds}ms');
+    buf.writeln(
+      'Bootstrap ${status.name} in ${totalDuration.inMilliseconds}ms',
+    );
     buf.writeln('Steps:');
     for (final step in steps) {
       final icon = switch (step.status) {
@@ -329,8 +327,11 @@ Future<List<EnvironmentCheck>> validateEnvironment() async {
   return checks;
 }
 
-Future<EnvironmentCheck> _checkTool(String tool, List<String> args,
-    {bool required = true}) async {
+Future<EnvironmentCheck> _checkTool(
+  String tool,
+  List<String> args, {
+  bool required = true,
+}) async {
   try {
     final result = await Process.run(tool, args);
     if (result.exitCode == 0) {
@@ -340,13 +341,17 @@ Future<EnvironmentCheck> _checkTool(String tool, List<String> args,
     return EnvironmentCheck(
       name: tool,
       passed: !required,
-      message: required ? '$tool returned exit code ${result.exitCode}' : '$tool not available (optional)',
+      message: required
+          ? '$tool returned exit code ${result.exitCode}'
+          : '$tool not available (optional)',
     );
   } catch (_) {
     return EnvironmentCheck(
       name: tool,
       passed: !required,
-      message: required ? '$tool not found in PATH' : '$tool not found (optional)',
+      message: required
+          ? '$tool not found in PATH'
+          : '$tool not found (optional)',
     );
   }
 }
@@ -358,19 +363,28 @@ Future<EnvironmentCheck> _checkDiskSpace() async {
     // We can't easily get free disk space from Dart, so just verify the dir exists
     if (stat.type != FileSystemEntityType.notFound) {
       return const EnvironmentCheck(
-          name: 'disk_space', passed: true, message: 'Home directory accessible');
+        name: 'disk_space',
+        passed: true,
+        message: 'Home directory accessible',
+      );
     }
     return const EnvironmentCheck(
-        name: 'disk_space', passed: false, message: 'Home directory not found');
+      name: 'disk_space',
+      passed: false,
+      message: 'Home directory not found',
+    );
   } catch (e) {
     return EnvironmentCheck(
-        name: 'disk_space', passed: false, message: 'Error checking disk: $e');
+      name: 'disk_space',
+      passed: false,
+      message: 'Error checking disk: $e',
+    );
   }
 }
 
 Future<EnvironmentCheck> _checkWritePermissions() async {
   try {
-    final home = Platform.environment['HOME'] ?? '/tmp';
+    final _home = Platform.environment['HOME'] ?? '/tmp';
     final configDir = Directory('/.neomclaw');
     if (!configDir.existsSync()) {
       configDir.createSync(recursive: true);
@@ -380,12 +394,16 @@ Future<EnvironmentCheck> _checkWritePermissions() async {
     testFile.writeAsStringSync('test');
     testFile.deleteSync();
     return const EnvironmentCheck(
-        name: 'write_permissions', passed: true, message: 'Config dir writable');
+      name: 'write_permissions',
+      passed: true,
+      message: 'Config dir writable',
+    );
   } catch (e) {
     return EnvironmentCheck(
-        name: 'write_permissions',
-        passed: false,
-        message: 'Cannot write to config dir: $e');
+      name: 'write_permissions',
+      passed: false,
+      message: 'Cannot write to config dir: $e',
+    );
   }
 }
 
@@ -406,8 +424,10 @@ Future<ProjectInfo> detectProjectInfo(String projectDir) async {
   bool isGitRepo = false;
 
   try {
-    final revParse = await Process.run('git', ['rev-parse', '--show-toplevel'],
-        workingDirectory: projectDir);
+    final revParse = await Process.run('git', [
+      'rev-parse',
+      '--show-toplevel',
+    ], workingDirectory: projectDir);
     if (revParse.exitCode == 0) {
       gitRoot = revParse.stdout.toString().trim();
       isGitRepo = true;
@@ -416,17 +436,21 @@ Future<ProjectInfo> detectProjectInfo(String projectDir) async {
 
   if (isGitRepo) {
     try {
-      final branch = await Process.run('git', ['branch', '--show-current'],
-          workingDirectory: projectDir);
+      final branch = await Process.run('git', [
+        'branch',
+        '--show-current',
+      ], workingDirectory: projectDir);
       if (branch.exitCode == 0) {
         gitBranch = branch.stdout.toString().trim();
       }
     } catch (_) {}
 
     try {
-      final remote = await Process.run(
-          'git', ['config', '--get', 'remote.origin.url'],
-          workingDirectory: projectDir);
+      final remote = await Process.run('git', [
+        'config',
+        '--get',
+        'remote.origin.url',
+      ], workingDirectory: projectDir);
       if (remote.exitCode == 0) {
         gitRemoteUrl = remote.stdout.toString().trim();
       }
@@ -545,11 +569,13 @@ Future<List<MemoryFile>> loadMemoryFiles(String projectDir) async {
   final projectMemory = File('$projectDir/NEOMCLAW.md');
   if (projectMemory.existsSync()) {
     try {
-      files.add(MemoryFile(
-        path: projectMemory.path,
-        content: projectMemory.readAsStringSync(),
-        source: MemoryFileSource.projectRoot,
-      ));
+      files.add(
+        MemoryFile(
+          path: projectMemory.path,
+          content: projectMemory.readAsStringSync(),
+          source: MemoryFileSource.projectRoot,
+        ),
+      );
     } catch (_) {}
   }
 
@@ -557,11 +583,13 @@ Future<List<MemoryFile>> loadMemoryFiles(String projectDir) async {
   final projectNeomClawDir = File('$projectDir/.neomclaw/NEOMCLAW.md');
   if (projectNeomClawDir.existsSync()) {
     try {
-      files.add(MemoryFile(
-        path: projectNeomClawDir.path,
-        content: projectNeomClawDir.readAsStringSync(),
-        source: MemoryFileSource.projectRoot,
-      ));
+      files.add(
+        MemoryFile(
+          path: projectNeomClawDir.path,
+          content: projectNeomClawDir.readAsStringSync(),
+          source: MemoryFileSource.projectRoot,
+        ),
+      );
     } catch (_) {}
   }
 
@@ -572,11 +600,13 @@ Future<List<MemoryFile>> loadMemoryFiles(String projectDir) async {
     final parentMemory = File('${current.path}/NEOMCLAW.md');
     if (parentMemory.existsSync()) {
       try {
-        files.add(MemoryFile(
-          path: parentMemory.path,
-          content: parentMemory.readAsStringSync(),
-          source: MemoryFileSource.parentDir,
-        ));
+        files.add(
+          MemoryFile(
+            path: parentMemory.path,
+            content: parentMemory.readAsStringSync(),
+            source: MemoryFileSource.parentDir,
+          ),
+        );
       } catch (_) {}
     }
     current = current.parent;
@@ -588,11 +618,13 @@ Future<List<MemoryFile>> loadMemoryFiles(String projectDir) async {
     final homeMemory = File('$home/NEOMCLAW.md');
     if (homeMemory.existsSync()) {
       try {
-        files.add(MemoryFile(
-          path: homeMemory.path,
-          content: homeMemory.readAsStringSync(),
-          source: MemoryFileSource.userHome,
-        ));
+        files.add(
+          MemoryFile(
+            path: homeMemory.path,
+            content: homeMemory.readAsStringSync(),
+            source: MemoryFileSource.userHome,
+          ),
+        );
       } catch (_) {}
     }
 
@@ -601,11 +633,13 @@ Future<List<MemoryFile>> loadMemoryFiles(String projectDir) async {
     if (configMemory.existsSync() &&
         !files.any((f) => f.path == configMemory.path)) {
       try {
-        files.add(MemoryFile(
-          path: configMemory.path,
-          content: configMemory.readAsStringSync(),
-          source: MemoryFileSource.configDir,
-        ));
+        files.add(
+          MemoryFile(
+            path: configMemory.path,
+            content: configMemory.readAsStringSync(),
+            source: MemoryFileSource.configDir,
+          ),
+        );
       } catch (_) {}
     }
   }
@@ -623,7 +657,9 @@ String detectShell() {
   if (shell.contains('bash')) return 'bash';
   if (shell.contains('fish')) return 'fish';
   if (shell.contains('nu')) return 'nushell';
-  if (shell.contains('pwsh') || shell.contains('powershell')) return 'powershell';
+  if (shell.contains('pwsh') || shell.contains('powershell')) {
+    return 'powershell';
+  }
   if (shell.isNotEmpty) return shell.split('/').last;
   // Fallback
   if (Platform.isWindows) return 'cmd';
@@ -649,19 +685,20 @@ Future<Map<String, dynamic>> loadAllSettings({
   required String projectDir,
   String? configDir,
 }) async {
-  final home = Platform.environment['HOME'] ?? '';
+  final _home = Platform.environment['HOME'] ?? '';
   final cfgDir = configDir ?? '/.neomclaw';
 
   // Layer settings: user -> project -> local -> policy
   final userSettings = await _loadSettingsFile('$cfgDir/settings.json');
-  final projectSettings =
-      await _loadSettingsFile('$projectDir/.neomclaw/settings.json');
-  final localSettings =
-      await _loadSettingsFile('$projectDir/.neomclaw/settings.local.json');
+  final projectSettings = await _loadSettingsFile(
+    '$projectDir/.neomclaw/settings.json',
+  );
+  final localSettings = await _loadSettingsFile(
+    '$projectDir/.neomclaw/settings.local.json',
+  );
 
   // Policy settings (from org)
-  final policySettings =
-      await _loadSettingsFile('$cfgDir/policy.json');
+  final policySettings = await _loadSettingsFile('$cfgDir/policy.json');
 
   // Merge: policy overrides everything, then local, then project, then user
   final merged = <String, dynamic>{};
@@ -682,11 +719,8 @@ class BootstrapService {
   final void Function(String message)? onLog;
   final void Function(BootstrapProgress progress)? onProgress;
 
-  BootstrapService({
-    BootstrapConfig? config,
-    this.onLog,
-    this.onProgress,
-  }) : config = config ?? const BootstrapConfig();
+  BootstrapService({BootstrapConfig? config, this.onLog, this.onProgress})
+    : config = config ?? const BootstrapConfig();
 
   Future<BootstrapResult> run() async {
     final steps = _buildSteps();
@@ -756,8 +790,8 @@ class BootstrapService {
     final resultStatus = errors.isEmpty
         ? BootstrapResultStatus.success
         : warnings.isNotEmpty || progress.completedCount > progress.failedCount
-            ? BootstrapResultStatus.partialSuccess
-            : BootstrapResultStatus.failure;
+        ? BootstrapResultStatus.partialSuccess
+        : BootstrapResultStatus.failure;
 
     final result = BootstrapResult(
       status: resultStatus,
@@ -776,22 +810,22 @@ class BootstrapService {
   }
 
   List<BootstrapStep> _buildSteps() => [
-        BootstrapStep(id: 'load_settings', name: 'Load settings'),
-        BootstrapStep(id: 'detect_shell', name: 'Detect shell'),
-        BootstrapStep(id: 'detect_project', name: 'Detect project'),
-        BootstrapStep(id: 'detect_git', name: 'Detect git repository'),
-        BootstrapStep(id: 'load_memory', name: 'Load memory files'),
-        BootstrapStep(id: 'validate_env', name: 'Validate environment'),
-        BootstrapStep(id: 'init_api', name: 'Initialize API client'),
-        BootstrapStep(id: 'register_tools', name: 'Register tools'),
-        BootstrapStep(id: 'register_commands', name: 'Register commands'),
-        BootstrapStep(id: 'mcp_servers', name: 'Start MCP servers'),
-        BootstrapStep(id: 'plugins', name: 'Load plugins'),
-        BootstrapStep(id: 'keybindings', name: 'Load keybindings'),
-        BootstrapStep(id: 'telemetry', name: 'Initialize telemetry'),
-        BootstrapStep(id: 'update_check', name: 'Check for updates'),
-        BootstrapStep(id: 'doctor', name: 'Run doctor checks'),
-      ];
+    BootstrapStep(id: 'load_settings', name: 'Load settings'),
+    BootstrapStep(id: 'detect_shell', name: 'Detect shell'),
+    BootstrapStep(id: 'detect_project', name: 'Detect project'),
+    BootstrapStep(id: 'detect_git', name: 'Detect git repository'),
+    BootstrapStep(id: 'load_memory', name: 'Load memory files'),
+    BootstrapStep(id: 'validate_env', name: 'Validate environment'),
+    BootstrapStep(id: 'init_api', name: 'Initialize API client'),
+    BootstrapStep(id: 'register_tools', name: 'Register tools'),
+    BootstrapStep(id: 'register_commands', name: 'Register commands'),
+    BootstrapStep(id: 'mcp_servers', name: 'Start MCP servers'),
+    BootstrapStep(id: 'plugins', name: 'Load plugins'),
+    BootstrapStep(id: 'keybindings', name: 'Load keybindings'),
+    BootstrapStep(id: 'telemetry', name: 'Initialize telemetry'),
+    BootstrapStep(id: 'update_check', name: 'Check for updates'),
+    BootstrapStep(id: 'doctor', name: 'Run doctor checks'),
+  ];
 
   Future<Object?> _executeStep(String stepId) async {
     final projectDir = config.projectDir ?? Directory.current.path;
@@ -857,8 +891,10 @@ class BootstrapService {
 
   Future<Object?> _detectGit(String projectDir) async {
     try {
-      final result = await Process.run('git', ['rev-parse', '--is-inside-work-tree'],
-          workingDirectory: projectDir);
+      final result = await Process.run('git', [
+        'rev-parse',
+        '--is-inside-work-tree',
+      ], workingDirectory: projectDir);
       return result.exitCode == 0;
     } catch (_) {
       return false;
@@ -867,7 +903,8 @@ class BootstrapService {
 
   Future<Object?> _initializeApiClient() async {
     // Check for API key in environment
-    final apiKey = Platform.environment['ANTHROPIC_API_KEY'] ??
+    final apiKey =
+        Platform.environment['ANTHROPIC_API_KEY'] ??
         Platform.environment['NEOMCLAW_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
       return 'WARN:No API key found in environment';
@@ -936,7 +973,8 @@ class BootstrapService {
       final file = File(path);
       if (!file.existsSync()) continue;
       try {
-        final content = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+        final content =
+            jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
         final servers = content['mcpServers'] as Map<String, dynamic>? ?? {};
         serverCount += servers.length;
         _log('Found ${servers.length} MCP servers in $path');
@@ -990,7 +1028,8 @@ class BootstrapService {
     if (telemetryFile.existsSync()) {
       try {
         final config =
-            jsonDecode(telemetryFile.readAsStringSync()) as Map<String, dynamic>;
+            jsonDecode(telemetryFile.readAsStringSync())
+                as Map<String, dynamic>;
         final enabled = config['enabled'] as bool? ?? false;
         _log('Telemetry ${enabled ? "enabled" : "disabled"}');
         return enabled;

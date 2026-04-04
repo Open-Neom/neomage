@@ -1,4 +1,4 @@
-// GrepTool — faithful port of openneomclaw/src/tools/GrepTool/GrepTool.ts
+// GrepTool — faithful port of neom_claw/src/tools/GrepTool/GrepTool.ts
 // Search file contents with regex using ripgrep.
 //
 // Supports three output modes:
@@ -119,15 +119,15 @@ class GrepOutput {
   });
 
   Map<String, dynamic> toMap() => {
-        'mode': mode,
-        'numFiles': numFiles,
-        'filenames': filenames,
-        if (content != null) 'content': content,
-        if (numLines != null) 'numLines': numLines,
-        if (numMatches != null) 'numMatches': numMatches,
-        if (appliedLimit != null) 'appliedLimit': appliedLimit,
-        if (appliedOffset != null) 'appliedOffset': appliedOffset,
-      };
+    'mode': mode,
+    'numFiles': numFiles,
+    'filenames': filenames,
+    if (content != null) 'content': content,
+    if (numLines != null) 'numLines': numLines,
+    if (numMatches != null) 'numMatches': numMatches,
+    if (appliedLimit != null) 'appliedLimit': appliedLimit,
+    if (appliedOffset != null) 'appliedOffset': appliedOffset,
+  };
 }
 
 // ── Glob parsing ───────────────────────────────────────────────────────
@@ -252,7 +252,8 @@ String toRelativePath(String absolutePath) {
 /// Expand ~ and resolve relative paths to absolute.
 String expandPath(String path) {
   if (path.startsWith('~/') || path == '~') {
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
     return p.join(home, path.substring(path.startsWith('~/') ? 2 : 1));
@@ -270,7 +271,7 @@ String plural(int count, String singular) {
 
 // ── Main GrepTool class ───────────────────────────────────────────────
 
-/// Search file contents with regex -- port of openneomclaw GrepTool.
+/// Search file contents with regex -- port of neom_claw GrepTool.
 ///
 /// Supports three output modes:
 ///   - files_with_matches: list file paths sorted by modification time
@@ -303,93 +304,90 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'pattern': {
-            'type': 'string',
-            'description':
-                'The regular expression pattern to search for in file contents',
-          },
-          'path': {
-            'type': 'string',
-            'description':
-                'File or directory to search in (rg PATH). Defaults to '
-                    'current working directory.',
-          },
-          'glob': {
-            'type': 'string',
-            'description':
-                'Glob pattern to filter files (e.g. "*.js", "*.{ts,tsx}") '
-                    '- maps to rg --glob',
-          },
-          'output_mode': {
-            'type': 'string',
-            'enum': ['content', 'files_with_matches', 'count'],
-            'description':
-                'Output mode: "content" shows matching lines, '
-                    '"files_with_matches" shows file paths (default), '
-                    '"count" shows match counts.',
-          },
-          '-B': {
-            'type': 'number',
-            'description':
-                'Number of lines to show before each match (rg -B). '
-                    'Requires output_mode: "content".',
-          },
-          '-A': {
-            'type': 'number',
-            'description':
-                'Number of lines to show after each match (rg -A). '
-                    'Requires output_mode: "content".',
-          },
-          '-C': {
-            'type': 'number',
-            'description': 'Alias for context.',
-          },
-          'context': {
-            'type': 'number',
-            'description':
-                'Number of lines to show before and after each match (rg -C). '
-                    'Requires output_mode: "content".',
-          },
-          '-n': {
-            'type': 'boolean',
-            'description':
-                'Show line numbers in output (rg -n). Requires output_mode: '
-                    '"content". Defaults to true.',
-          },
-          '-i': {
-            'type': 'boolean',
-            'description': 'Case insensitive search (rg -i)',
-          },
-          'type': {
-            'type': 'string',
-            'description':
-                'File type to search (rg --type). Common types: js, py, '
-                    'rust, go, java, etc.',
-          },
-          'head_limit': {
-            'type': 'number',
-            'description':
-                'Limit output to first N lines/entries. Defaults to 250. '
-                    'Pass 0 for unlimited.',
-          },
-          'offset': {
-            'type': 'number',
-            'description':
-                'Skip first N lines/entries before applying head_limit. '
-                    'Defaults to 0.',
-          },
-          'multiline': {
-            'type': 'boolean',
-            'description':
-                'Enable multiline mode where . matches newlines and '
-                    'patterns can span lines (rg -U --multiline-dotall). '
-                    'Default: false.',
-          },
-        },
-        'required': ['pattern'],
-      };
+    'type': 'object',
+    'properties': {
+      'pattern': {
+        'type': 'string',
+        'description':
+            'The regular expression pattern to search for in file contents',
+      },
+      'path': {
+        'type': 'string',
+        'description':
+            'File or directory to search in (rg PATH). Defaults to '
+            'current working directory.',
+      },
+      'glob': {
+        'type': 'string',
+        'description':
+            'Glob pattern to filter files (e.g. "*.js", "*.{ts,tsx}") '
+            '- maps to rg --glob',
+      },
+      'output_mode': {
+        'type': 'string',
+        'enum': ['content', 'files_with_matches', 'count'],
+        'description':
+            'Output mode: "content" shows matching lines, '
+            '"files_with_matches" shows file paths (default), '
+            '"count" shows match counts.',
+      },
+      '-B': {
+        'type': 'number',
+        'description':
+            'Number of lines to show before each match (rg -B). '
+            'Requires output_mode: "content".',
+      },
+      '-A': {
+        'type': 'number',
+        'description':
+            'Number of lines to show after each match (rg -A). '
+            'Requires output_mode: "content".',
+      },
+      '-C': {'type': 'number', 'description': 'Alias for context.'},
+      'context': {
+        'type': 'number',
+        'description':
+            'Number of lines to show before and after each match (rg -C). '
+            'Requires output_mode: "content".',
+      },
+      '-n': {
+        'type': 'boolean',
+        'description':
+            'Show line numbers in output (rg -n). Requires output_mode: '
+            '"content". Defaults to true.',
+      },
+      '-i': {
+        'type': 'boolean',
+        'description': 'Case insensitive search (rg -i)',
+      },
+      'type': {
+        'type': 'string',
+        'description':
+            'File type to search (rg --type). Common types: js, py, '
+            'rust, go, java, etc.',
+      },
+      'head_limit': {
+        'type': 'number',
+        'description':
+            'Limit output to first N lines/entries. Defaults to 250. '
+            'Pass 0 for unlimited.',
+      },
+      'offset': {
+        'type': 'number',
+        'description':
+            'Skip first N lines/entries before applying head_limit. '
+            'Defaults to 0.',
+      },
+      'multiline': {
+        'type': 'boolean',
+        'description':
+            'Enable multiline mode where . matches newlines and '
+            'patterns can span lines (rg -U --multiline-dotall). '
+            'Default: false.',
+      },
+    },
+    'required': ['pattern'],
+  };
 
   @override
   bool get isAvailable =>
@@ -460,8 +458,7 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
     final searchPath = input['path'] as String?;
     final glob = input['glob'] as String?;
     final type = input['type'] as String?;
-    final outputMode =
-        input['output_mode'] as String? ?? 'files_with_matches';
+    final outputMode = input['output_mode'] as String? ?? 'files_with_matches';
     final contextBefore = _toInt(input['-B']);
     final contextAfter = _toInt(input['-A']);
     final contextC = _toInt(input['-C']);
@@ -502,11 +499,7 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
         case 'count':
           return _handleCountMode(results, headLimit, offset);
         default:
-          return await _handleFilesWithMatchesMode(
-            results,
-            headLimit,
-            offset,
-          );
+          return await _handleFilesWithMatchesMode(results, headLimit, offset);
       }
     } on RipgrepTimeoutException catch (e) {
       return ToolResult.error(
@@ -551,9 +544,13 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
       appliedOffset: offset > 0 ? offset : null,
     );
 
-    final limitInfo = formatLimitInfo(output.appliedLimit, output.appliedOffset);
-    final resultContent =
-        output.content?.isNotEmpty == true ? output.content! : 'No matches found';
+    final limitInfo = formatLimitInfo(
+      output.appliedLimit,
+      output.appliedOffset,
+    );
+    final resultContent = output.content?.isNotEmpty == true
+        ? output.content!
+        : 'No matches found';
     final finalContent = limitInfo.isNotEmpty
         ? '$resultContent\n\n[Showing results with pagination = $limitInfo]'
         : resultContent;
@@ -607,13 +604,17 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
       appliedOffset: offset > 0 ? offset : null,
     );
 
-    final limitInfo = formatLimitInfo(output.appliedLimit, output.appliedOffset);
-    final rawContent =
-        output.content?.isNotEmpty == true ? output.content! : 'No matches found';
-    final occurrences =
-        totalMatches == 1 ? 'occurrence' : 'occurrences';
+    final limitInfo = formatLimitInfo(
+      output.appliedLimit,
+      output.appliedOffset,
+    );
+    final rawContent = output.content?.isNotEmpty == true
+        ? output.content!
+        : 'No matches found';
+    final occurrences = totalMatches == 1 ? 'occurrence' : 'occurrences';
     final files = fileCount == 1 ? 'file' : 'files';
-    final summary = '\n\nFound $totalMatches total $occurrences '
+    final summary =
+        '\n\nFound $totalMatches total $occurrences '
         'across $fileCount $files.'
         '${limitInfo.isNotEmpty ? ' with pagination = $limitInfo' : ''}';
 
@@ -668,8 +669,12 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
       return ToolResult.success('No files found', metadata: output.toMap());
     }
 
-    final limitInfo = formatLimitInfo(output.appliedLimit, output.appliedOffset);
-    final result = 'Found ${output.numFiles} '
+    final limitInfo = formatLimitInfo(
+      output.appliedLimit,
+      output.appliedOffset,
+    );
+    final result =
+        'Found ${output.numFiles} '
         '${plural(output.numFiles, "file")}'
         '${limitInfo.isNotEmpty ? ' $limitInfo' : ''}\n'
         '${output.filenames.join('\n')}';
@@ -709,10 +714,7 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
     final stdout = result.stdout as String;
     if (stdout.isEmpty) return const [];
 
-    return stdout
-        .split('\n')
-        .where((line) => line.isNotEmpty)
-        .toList();
+    return stdout.split('\n').where((line) => line.isNotEmpty).toList();
   }
 
   /// Find ripgrep binary path, preferring 'rg' on PATH.
@@ -762,5 +764,6 @@ class RipgrepTimeoutException implements Exception {
   final int timeoutMs;
   const RipgrepTimeoutException(this.timeoutMs);
   @override
-  String toString() => 'RipgrepTimeoutException: timed out after ${timeoutMs}ms';
+  String toString() =>
+      'RipgrepTimeoutException: timed out after ${timeoutMs}ms';
 }

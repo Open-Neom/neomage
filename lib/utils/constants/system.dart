@@ -95,10 +95,7 @@ class SystemConstants {
   static const int connectionPoolSize = 10;
   static const int keepAliveInterval = 30000; // ms
   static const String defaultApiVersion = '2023-06-01';
-  static const List<String> supportedApiVersions = [
-    '2023-06-01',
-    '2023-01-01',
-  ];
+  static const List<String> supportedApiVersions = ['2023-06-01', '2023-01-01'];
 
   // ---- Platform support ---------------------------------------------------
   static const List<String> supportedPlatforms = [
@@ -109,16 +106,9 @@ class SystemConstants {
     'ios',
   ];
 
-  static const List<String> cliPlatforms = [
-    'macos',
-    'linux',
-    'windows',
-  ];
+  static const List<String> cliPlatforms = ['macos', 'linux', 'windows'];
 
-  static const List<String> mobilePlatforms = [
-    'android',
-    'ios',
-  ];
+  static const List<String> mobilePlatforms = ['android', 'ios'];
 
   // ---- File patterns: directories to ignore (search / glob) ---------------
   static const List<String> ignoredDirs = [

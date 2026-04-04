@@ -45,7 +45,9 @@ class HelpCommand extends LocalCommand {
     buffer.writeln();
 
     for (final cmd in commands) {
-      final hint = cmd.command.argumentHint != null ? ' ${cmd.command.argumentHint}' : '';
+      final hint = cmd.command.argumentHint != null
+          ? ' ${cmd.command.argumentHint}'
+          : '';
       buffer.writeln('  /${cmd.name}$hint — ${cmd.command.description}');
     }
 

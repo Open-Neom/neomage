@@ -77,24 +77,30 @@ List<DiffHunk> parseUnifiedDiff(String diffText) {
       while (i < lines.length && !lines[i].startsWith('@@')) {
         final l = lines[i];
         if (l.startsWith('+')) {
-          hunkLines.add(DiffLine(
-            type: DiffLineType.addition,
-            content: l.substring(1),
-            newLineNumber: newLine++,
-          ));
+          hunkLines.add(
+            DiffLine(
+              type: DiffLineType.addition,
+              content: l.substring(1),
+              newLineNumber: newLine++,
+            ),
+          );
         } else if (l.startsWith('-')) {
-          hunkLines.add(DiffLine(
-            type: DiffLineType.removal,
-            content: l.substring(1),
-            oldLineNumber: oldLine++,
-          ));
+          hunkLines.add(
+            DiffLine(
+              type: DiffLineType.removal,
+              content: l.substring(1),
+              oldLineNumber: oldLine++,
+            ),
+          );
         } else if (l.startsWith(' ') || l.isEmpty) {
-          hunkLines.add(DiffLine(
-            type: DiffLineType.context,
-            content: l.isEmpty ? '' : l.substring(1),
-            oldLineNumber: oldLine++,
-            newLineNumber: newLine++,
-          ));
+          hunkLines.add(
+            DiffLine(
+              type: DiffLineType.context,
+              content: l.isEmpty ? '' : l.substring(1),
+              oldLineNumber: oldLine++,
+              newLineNumber: newLine++,
+            ),
+          );
         } else if (l.startsWith('\\')) {
           // "\ No newline at end of file" — skip
         } else {
@@ -103,13 +109,15 @@ List<DiffHunk> parseUnifiedDiff(String diffText) {
         i++;
       }
 
-      hunks.add(DiffHunk(
-        oldStart: oldStart,
-        oldLines: oldLines,
-        newStart: newStart,
-        newLines: newLines,
-        lines: hunkLines,
-      ));
+      hunks.add(
+        DiffHunk(
+          oldStart: oldStart,
+          oldLines: oldLines,
+          newStart: newStart,
+          newLines: newLines,
+          lines: hunkLines,
+        ),
+      );
     } else {
       i++;
     }
@@ -185,10 +193,12 @@ DiffHunk adjustHunkLineNumbers(DiffHunk hunk, int offset) {
       return DiffLine(
         type: l.type,
         content: l.content,
-        oldLineNumber:
-            l.oldLineNumber != null ? l.oldLineNumber! + offset : null,
-        newLineNumber:
-            l.newLineNumber != null ? l.newLineNumber! + offset : null,
+        oldLineNumber: l.oldLineNumber != null
+            ? l.oldLineNumber! + offset
+            : null,
+        newLineNumber: l.newLineNumber != null
+            ? l.newLineNumber! + offset
+            : null,
       );
     }).toList(),
   );
@@ -196,10 +206,7 @@ DiffHunk adjustHunkLineNumbers(DiffHunk hunk, int offset) {
 
 // ── LCS diff algorithm ──
 
-List<List<int>> _longestCommonSubsequence(
-  List<String> a,
-  List<String> b,
-) {
+List<List<int>> _longestCommonSubsequence(List<String> a, List<String> b) {
   final m = a.length;
   final n = b.length;
   final dp = List.generate(m + 1, (_) => List.filled(n + 1, 0));
@@ -209,9 +216,7 @@ List<List<int>> _longestCommonSubsequence(
       if (a[i - 1] == b[j - 1]) {
         dp[i][j] = dp[i - 1][j - 1] + 1;
       } else {
-        dp[i][j] = dp[i - 1][j] > dp[i][j - 1]
-            ? dp[i - 1][j]
-            : dp[i][j - 1];
+        dp[i][j] = dp[i - 1][j] > dp[i][j - 1] ? dp[i - 1][j] : dp[i][j - 1];
       }
     }
   }
@@ -296,38 +301,46 @@ List<DiffHunk> _buildHunks(
 
       switch (edit.type) {
         case '+':
-          hunkLines.add(DiffLine(
-            type: DiffLineType.addition,
-            content: edit.content,
-            newLineNumber: edit.newIdx + 1,
-          ));
+          hunkLines.add(
+            DiffLine(
+              type: DiffLineType.addition,
+              content: edit.content,
+              newLineNumber: edit.newIdx + 1,
+            ),
+          );
           newCount++;
         case '-':
-          hunkLines.add(DiffLine(
-            type: DiffLineType.removal,
-            content: edit.content,
-            oldLineNumber: edit.oldIdx + 1,
-          ));
+          hunkLines.add(
+            DiffLine(
+              type: DiffLineType.removal,
+              content: edit.content,
+              oldLineNumber: edit.oldIdx + 1,
+            ),
+          );
           oldCount++;
         default:
-          hunkLines.add(DiffLine(
-            type: DiffLineType.context,
-            content: edit.content,
-            oldLineNumber: edit.oldIdx + 1,
-            newLineNumber: edit.newIdx + 1,
-          ));
+          hunkLines.add(
+            DiffLine(
+              type: DiffLineType.context,
+              content: edit.content,
+              oldLineNumber: edit.oldIdx + 1,
+              newLineNumber: edit.newIdx + 1,
+            ),
+          );
           oldCount++;
           newCount++;
       }
     }
 
-    hunks.add(DiffHunk(
-      oldStart: oldStart,
-      oldLines: oldCount,
-      newStart: newStart,
-      newLines: newCount,
-      lines: hunkLines,
-    ));
+    hunks.add(
+      DiffHunk(
+        oldStart: oldStart,
+        oldLines: oldCount,
+        newStart: newStart,
+        newLines: newCount,
+        lines: hunkLines,
+      ),
+    );
 
     start = end + 1;
   }
@@ -362,16 +375,16 @@ class DiffColors {
   });
 
   factory DiffColors.light() => const DiffColors(
-        addedBackground: Color(0xFFE6FFE6),
-        addedText: Color(0xFF1A7A1A),
-        removedBackground: Color(0xFFFFE6E6),
-        removedText: Color(0xFF9A1A1A),
-        contextText: Color(0xFF333333),
-        gutterText: Color(0xFF999999),
-        gutterBackground: Color(0xFFF5F5F5),
-        headerBackground: Color(0xFFE8E8F0),
-        headerText: Color(0xFF5555AA),
-      );
+    addedBackground: Color(0xFFE6FFE6),
+    addedText: Color(0xFF1A7A1A),
+    removedBackground: Color(0xFFFFE6E6),
+    removedText: Color(0xFF9A1A1A),
+    contextText: Color(0xFF333333),
+    gutterText: Color(0xFF999999),
+    gutterBackground: Color(0xFFF5F5F5),
+    headerBackground: Color(0xFFE8E8F0),
+    headerText: Color(0xFF5555AA),
+  );
 }
 
 /// Widget that displays a unified diff.
@@ -408,12 +421,14 @@ class DiffView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = colors ??
+    final theme =
+        colors ??
         (Theme.of(context).brightness == Brightness.dark
             ? const DiffColors()
             : DiffColors.light());
 
-    final style = textStyle ??
+    final style =
+        textStyle ??
         TextStyle(
           fontFamily: 'monospace',
           fontSize: 13,
@@ -465,10 +480,7 @@ class DiffView extends StatelessWidget {
   }
 
   Widget _buildHunkSeparator(DiffColors theme) {
-    return Container(
-      height: 1,
-      color: theme.gutterText.withAlpha(51),
-    );
+    return Container(height: 1, color: theme.gutterText.withAlpha(51));
   }
 
   Widget _buildDiffLine(
@@ -479,8 +491,7 @@ class DiffView extends StatelessWidget {
   ) {
     final (bgColor, textColor, prefix) = switch (line.type) {
       DiffLineType.addition => (theme.addedBackground, theme.addedText, '+'),
-      DiffLineType.removal =>
-        (theme.removedBackground, theme.removedText, '-'),
+      DiffLineType.removal => (theme.removedBackground, theme.removedText, '-'),
       DiffLineType.context => (null, theme.contextText, ' '),
       DiffLineType.header => (theme.headerBackground, theme.headerText, ''),
     };
@@ -570,11 +581,7 @@ class ScrollableDiffView extends StatelessWidget {
       child: SingleChildScrollView(
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: DiffView(
-            hunks: hunks,
-            filePath: filePath,
-            colors: colors,
-          ),
+          child: DiffView(hunks: hunks, filePath: filePath, colors: colors),
         ),
       ),
     );

@@ -60,48 +60,42 @@ class Message {
     DateTime? timestamp,
     this.stopReason,
     this.usage,
-  })  : id = id ?? _uuid.v4(),
-        timestamp = timestamp ?? DateTime.now();
+  }) : id = id ?? _uuid.v4(),
+       timestamp = timestamp ?? DateTime.now();
 
   /// Convenience: extract all text from content blocks.
-  String get textContent => content
-      .whereType<TextBlock>()
-      .map((b) => b.text)
-      .join('\n');
+  String get textContent =>
+      content.whereType<TextBlock>().map((b) => b.text).join('\n');
 
   /// Convenience: extract all tool use blocks.
   List<ToolUseBlock> get toolUses => content.whereType<ToolUseBlock>().toList();
 
   /// Create a simple text message.
-  factory Message.user(String text) => Message(
-        role: MessageRole.user,
-        content: [TextBlock(text)],
-      );
+  factory Message.user(String text) =>
+      Message(role: MessageRole.user, content: [TextBlock(text)]);
 
-  factory Message.assistant(String text) => Message(
-        role: MessageRole.assistant,
-        content: [TextBlock(text)],
-      );
+  factory Message.assistant(String text) =>
+      Message(role: MessageRole.assistant, content: [TextBlock(text)]);
 
   /// Convert to Anthropic API format.
   Map<String, dynamic> toApiMap() => {
-        'role': role == MessageRole.user ? 'user' : 'assistant',
-        'content': content.map(_contentBlockToMap).toList(),
-      };
+    'role': role == MessageRole.user ? 'user' : 'assistant',
+    'content': content.map(_contentBlockToMap).toList(),
+  };
 
   static Map<String, dynamic> _contentBlockToMap(ContentBlock block) =>
       switch (block) {
         TextBlock(text: final t) => {'type': 'text', 'text': t},
         ToolUseBlock(id: final id, name: final n, input: final i) => {
-            'type': 'tool_use',
-            'id': id,
-            'name': n,
-            'input': i,
-          },
+          'type': 'tool_use',
+          'id': id,
+          'name': n,
+          'input': i,
+        },
         ToolResultBlock(
           toolUseId: final tid,
           content: final c,
-          isError: final e
+          isError: final e,
         ) =>
           {
             'type': 'tool_result',
@@ -110,9 +104,9 @@ class Message {
             if (e) 'is_error': true,
           },
         ImageBlock(mediaType: final m, base64Data: final d) => {
-            'type': 'image',
-            'source': {'type': 'base64', 'media_type': m, 'data': d},
-          },
+          'type': 'image',
+          'source': {'type': 'base64', 'media_type': m, 'data': d},
+        },
       };
 }
 
@@ -130,12 +124,11 @@ class TokenUsage {
   });
 
   factory TokenUsage.fromJson(Map<String, dynamic> json) => TokenUsage(
-        inputTokens: json['input_tokens'] as int? ?? 0,
-        outputTokens: json['output_tokens'] as int? ?? 0,
-        cacheCreationInputTokens:
-            json['cache_creation_input_tokens'] as int?,
-        cacheReadInputTokens: json['cache_read_input_tokens'] as int?,
-      );
+    inputTokens: json['input_tokens'] as int? ?? 0,
+    outputTokens: json['output_tokens'] as int? ?? 0,
+    cacheCreationInputTokens: json['cache_creation_input_tokens'] as int?,
+    cacheReadInputTokens: json['cache_read_input_tokens'] as int?,
+  );
 
   int get totalTokens => inputTokens + outputTokens;
 }

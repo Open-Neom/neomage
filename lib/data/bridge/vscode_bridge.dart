@@ -3,7 +3,6 @@
 // diagnostics, UI, terminals, and theme integration.
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'bridge_protocol.dart';
 
@@ -88,24 +87,27 @@ class VscodeTheme {
   }
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'kind': kind.index,
-        'colors': colors,
-        'tokenColors': tokenColors
-            .map((k, v) => MapEntry(k, v.toJson())),
-      };
+    'name': name,
+    'kind': kind.index,
+    'colors': colors,
+    'tokenColors': tokenColors.map((k, v) => MapEntry(k, v.toJson())),
+  };
 
   factory VscodeTheme.fromJson(Map<String, dynamic> json) => VscodeTheme(
-        name: json['name'] as String? ?? 'Unknown',
-        kind: VscodeThemeKind.fromIndex(json['kind'] as int? ?? 1),
-        colors: (json['colors'] as Map<String, dynamic>?)
-                ?.map((k, v) => MapEntry(k, v.toString())) ??
-            {},
-        tokenColors: (json['tokenColors'] as Map<String, dynamic>?)?.map(
-                (k, v) => MapEntry(
-                    k, _TokenColor.fromJson(v as Map<String, dynamic>))) ??
-            {},
-      );
+    name: json['name'] as String? ?? 'Unknown',
+    kind: VscodeThemeKind.fromIndex(json['kind'] as int? ?? 1),
+    colors:
+        (json['colors'] as Map<String, dynamic>?)?.map(
+          (k, v) => MapEntry(k, v.toString()),
+        ) ??
+        {},
+    tokenColors:
+        (json['tokenColors'] as Map<String, dynamic>?)?.map(
+          (k, v) =>
+              MapEntry(k, _TokenColor.fromJson(v as Map<String, dynamic>)),
+        ) ??
+        {},
+  );
 }
 
 /// VS Code theme kind.
@@ -116,12 +118,12 @@ enum VscodeThemeKind {
   highContrastDark;
 
   static VscodeThemeKind fromIndex(int index) => switch (index) {
-        0 => light,
-        1 => dark,
-        2 => highContrastLight,
-        3 => highContrastDark,
-        _ => dark,
-      };
+    0 => light,
+    1 => dark,
+    2 => highContrastLight,
+    3 => highContrastDark,
+    _ => dark,
+  };
 }
 
 class _TokenColor {
@@ -132,16 +134,16 @@ class _TokenColor {
   const _TokenColor({this.foreground, this.background, this.fontStyle});
 
   Map<String, dynamic> toJson() => {
-        if (foreground != null) 'foreground': foreground,
-        if (background != null) 'background': background,
-        if (fontStyle != null) 'fontStyle': fontStyle,
-      };
+    if (foreground != null) 'foreground': foreground,
+    if (background != null) 'background': background,
+    if (fontStyle != null) 'fontStyle': fontStyle,
+  };
 
   factory _TokenColor.fromJson(Map<String, dynamic> json) => _TokenColor(
-        foreground: json['foreground'] as String?,
-        background: json['background'] as String?,
-        fontStyle: json['fontStyle'] as String?,
-      );
+    foreground: json['foreground'] as String?,
+    background: json['background'] as String?,
+    fontStyle: json['fontStyle'] as String?,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -165,11 +167,11 @@ class VscodeCommand {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        if (keybinding != null) 'keybinding': keybinding,
-        if (category != null) 'category': category,
-      };
+    'id': id,
+    'title': title,
+    if (keybinding != null) 'keybinding': keybinding,
+    if (category != null) 'category': category,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -187,12 +189,12 @@ enum VscodeDiagnosticSeverity {
   final int value;
 
   static VscodeDiagnosticSeverity fromValue(int v) => switch (v) {
-        0 => error,
-        1 => warning,
-        2 => information,
-        3 => hint,
-        _ => information,
-      };
+    0 => error,
+    1 => warning,
+    2 => information,
+    3 => hint,
+    _ => information,
+  };
 }
 
 /// A single diagnostic entry.
@@ -220,16 +222,16 @@ class VscodeDiagnostic {
   });
 
   Map<String, dynamic> toJson() => {
-        'uri': uri,
-        'range': {
-          'start': {'line': startLine, 'character': startCharacter},
-          'end': {'line': endLine, 'character': endCharacter},
-        },
-        'message': message,
-        'severity': severity.value,
-        if (source != null) 'source': source,
-        if (code != null) 'code': code,
-      };
+    'uri': uri,
+    'range': {
+      'start': {'line': startLine, 'character': startCharacter},
+      'end': {'line': endLine, 'character': endCharacter},
+    },
+    'message': message,
+    'severity': severity.value,
+    if (source != null) 'source': source,
+    if (code != null) 'code': code,
+  };
 
   factory VscodeDiagnostic.fromJson(Map<String, dynamic> json) {
     final range = json['range'] as Map<String, dynamic>;
@@ -242,8 +244,9 @@ class VscodeDiagnostic {
       endLine: end['line'] as int,
       endCharacter: end['character'] as int,
       message: json['message'] as String,
-      severity:
-          VscodeDiagnosticSeverity.fromValue(json['severity'] as int? ?? 0),
+      severity: VscodeDiagnosticSeverity.fromValue(
+        json['severity'] as int? ?? 0,
+      ),
       source: json['source'] as String?,
       code: json['code']?.toString(),
     );
@@ -271,9 +274,9 @@ class VscodeRange {
   bool get isEmpty => startLine == endLine && startCharacter == endCharacter;
 
   Map<String, dynamic> toJson() => {
-        'start': {'line': startLine, 'character': startCharacter},
-        'end': {'line': endLine, 'character': endCharacter},
-      };
+    'start': {'line': startLine, 'character': startCharacter},
+    'end': {'line': endLine, 'character': endCharacter},
+  };
 
   factory VscodeRange.fromJson(Map<String, dynamic> json) {
     final start = json['start'] as Map<String, dynamic>;
@@ -300,34 +303,36 @@ class VscodeSelection extends VscodeRange {
     required this.activeLine,
     required this.activeCharacter,
   }) : super(
-          startLine: anchorLine < activeLine ||
-                  (anchorLine == activeLine &&
-                      anchorCharacter <= activeCharacter)
-              ? anchorLine
-              : activeLine,
-          startCharacter: anchorLine < activeLine ||
-                  (anchorLine == activeLine &&
-                      anchorCharacter <= activeCharacter)
-              ? anchorCharacter
-              : activeCharacter,
-          endLine: anchorLine > activeLine ||
-                  (anchorLine == activeLine &&
-                      anchorCharacter > activeCharacter)
-              ? anchorLine
-              : activeLine,
-          endCharacter: anchorLine > activeLine ||
-                  (anchorLine == activeLine &&
-                      anchorCharacter > activeCharacter)
-              ? anchorCharacter
-              : activeCharacter,
-        );
+         startLine:
+             anchorLine < activeLine ||
+                 (anchorLine == activeLine &&
+                     anchorCharacter <= activeCharacter)
+             ? anchorLine
+             : activeLine,
+         startCharacter:
+             anchorLine < activeLine ||
+                 (anchorLine == activeLine &&
+                     anchorCharacter <= activeCharacter)
+             ? anchorCharacter
+             : activeCharacter,
+         endLine:
+             anchorLine > activeLine ||
+                 (anchorLine == activeLine && anchorCharacter > activeCharacter)
+             ? anchorLine
+             : activeLine,
+         endCharacter:
+             anchorLine > activeLine ||
+                 (anchorLine == activeLine && anchorCharacter > activeCharacter)
+             ? anchorCharacter
+             : activeCharacter,
+       );
 
   @override
   Map<String, dynamic> toJson() => {
-        ...super.toJson(),
-        'anchor': {'line': anchorLine, 'character': anchorCharacter},
-        'active': {'line': activeLine, 'character': activeCharacter},
-      };
+    ...super.toJson(),
+    'anchor': {'line': anchorLine, 'character': anchorCharacter},
+    'active': {'line': activeLine, 'character': activeCharacter},
+  };
 
   factory VscodeSelection.fromJson(Map<String, dynamic> json) {
     final anchor = json['anchor'] as Map<String, dynamic>;
@@ -368,15 +373,15 @@ class VscodeStatusBarItem {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'text': text,
-        if (tooltip != null) 'tooltip': tooltip,
-        if (command != null) 'command': command,
-        if (priority != null) 'priority': priority,
-        'alignment': alignment.value,
-        if (color != null) 'color': color,
-        if (backgroundColor != null) 'backgroundColor': backgroundColor,
-      };
+    'id': id,
+    'text': text,
+    if (tooltip != null) 'tooltip': tooltip,
+    if (command != null) 'command': command,
+    if (priority != null) 'priority': priority,
+    'alignment': alignment.value,
+    if (color != null) 'color': color,
+    if (backgroundColor != null) 'backgroundColor': backgroundColor,
+  };
 }
 
 enum VscodeStatusBarAlignment {
@@ -408,12 +413,12 @@ class VscodeQuickPickItem {
   });
 
   Map<String, dynamic> toJson() => {
-        'label': label,
-        if (description != null) 'description': description,
-        if (detail != null) 'detail': detail,
-        'picked': picked,
-        if (value != null) 'value': value,
-      };
+    'label': label,
+    if (description != null) 'description': description,
+    if (detail != null) 'detail': detail,
+    'picked': picked,
+    if (value != null) 'value': value,
+  };
 
   factory VscodeQuickPickItem.fromJson(Map<String, dynamic> json) =>
       VscodeQuickPickItem(
@@ -455,7 +460,7 @@ class VscodeBridge {
       StreamController.broadcast();
 
   VscodeBridge({BridgeProtocol? protocol})
-      : _protocol = protocol ?? BridgeProtocol() {
+    : _protocol = protocol ?? BridgeProtocol() {
     _registerNotificationHandlers();
   }
 
@@ -469,8 +474,7 @@ class VscodeBridge {
   // ---- Event streams ----
 
   /// Fires when the active editor changes. Emits the document URI.
-  Stream<String> get onDidChangeActiveEditor =>
-      _onDidChangeActiveEditor.stream;
+  Stream<String> get onDidChangeActiveEditor => _onDidChangeActiveEditor.stream;
 
   /// Fires when a document is saved. Emits the document URI.
   Stream<String> get onDidSaveDocument => _onDidSaveDocument.stream;
@@ -530,8 +534,9 @@ class VscodeBridge {
     try {
       final resp = await _protocol.sendRequest('vscode/getTheme', null);
       if (resp.isSuccess && resp.result is Map<String, dynamic>) {
-        _currentTheme =
-            VscodeTheme.fromJson(resp.result as Map<String, dynamic>);
+        _currentTheme = VscodeTheme.fromJson(
+          resp.result as Map<String, dynamic>,
+        );
         _onDidChangeTheme.add(_currentTheme!);
       }
     } catch (_) {
@@ -550,9 +555,9 @@ class VscodeBridge {
   }) {
     return _protocol.sendRequest('vscode/openFile', {
       'uri': uri,
-      if (line != null) 'line': line,
-      if (character != null) 'character': character,
-      if (preview != null) 'preview': preview,
+      'line': ?line,
+      'character': ?character,
+      'preview': ?preview,
     });
   }
 
@@ -588,8 +593,7 @@ class VscodeBridge {
 
   /// Set the selection in the active editor.
   Future<BridgeResponse> setSelection(VscodeSelection selection) {
-    return _protocol.sendRequest(
-        'vscode/setSelection', selection.toJson());
+    return _protocol.sendRequest('vscode/setSelection', selection.toJson());
   }
 
   /// Insert text at the current cursor position.
@@ -633,12 +637,12 @@ class VscodeBridge {
 
   /// Get all diagnostics for a URI.
   Future<List<VscodeDiagnostic>> getDiagnostics(String uri) async {
-    final resp = await _protocol.sendRequest(
-        'vscode/getDiagnostics', {'uri': uri});
+    final resp = await _protocol.sendRequest('vscode/getDiagnostics', {
+      'uri': uri,
+    });
     if (resp.isSuccess && resp.result is List) {
       return (resp.result as List)
-          .map((d) =>
-              VscodeDiagnostic.fromJson(d as Map<String, dynamic>))
+          .map((d) => VscodeDiagnostic.fromJson(d as Map<String, dynamic>))
           .toList();
     }
     return [];
@@ -647,26 +651,41 @@ class VscodeBridge {
   // ---- UI ----
 
   /// Show an information message.
-  Future<String?> showInfoMessage(String message,
-      {List<String>? actions}) async {
+  Future<String?> showInfoMessage(
+    String message, {
+    List<String>? actions,
+  }) async {
     final resp = await _protocol.windowShowMessage(
-        type: 3, message: message, actions: actions);
+      type: 3,
+      message: message,
+      actions: actions,
+    );
     return resp.result as String?;
   }
 
   /// Show a warning message.
-  Future<String?> showWarningMessage(String message,
-      {List<String>? actions}) async {
+  Future<String?> showWarningMessage(
+    String message, {
+    List<String>? actions,
+  }) async {
     final resp = await _protocol.windowShowMessage(
-        type: 2, message: message, actions: actions);
+      type: 2,
+      message: message,
+      actions: actions,
+    );
     return resp.result as String?;
   }
 
   /// Show an error message.
-  Future<String?> showErrorMessage(String message,
-      {List<String>? actions}) async {
+  Future<String?> showErrorMessage(
+    String message, {
+    List<String>? actions,
+  }) async {
     final resp = await _protocol.windowShowMessage(
-        type: 1, message: message, actions: actions);
+      type: 1,
+      message: message,
+      actions: actions,
+    );
     return resp.result as String?;
   }
 
@@ -678,9 +697,9 @@ class VscodeBridge {
     bool password = false,
   }) async {
     final resp = await _protocol.sendRequest('vscode/showInputBox', {
-      if (prompt != null) 'prompt': prompt,
-      if (placeholder != null) 'placeholder': placeholder,
-      if (value != null) 'value': value,
+      'prompt': ?prompt,
+      'placeholder': ?placeholder,
+      'value': ?value,
       'password': password,
     });
     if (resp.isSuccess) return resp.result as String?;
@@ -695,13 +714,12 @@ class VscodeBridge {
   }) async {
     final resp = await _protocol.sendRequest('vscode/showQuickPick', {
       'items': items.map((i) => i.toJson()).toList(),
-      if (placeholder != null) 'placeholder': placeholder,
+      'placeholder': ?placeholder,
       'canPickMany': canPickMany,
     });
     if (resp.isSuccess && resp.result is List) {
       return (resp.result as List)
-          .map((i) =>
-              VscodeQuickPickItem.fromJson(i as Map<String, dynamic>))
+          .map((i) => VscodeQuickPickItem.fromJson(i as Map<String, dynamic>))
           .toList();
     }
     return null;
@@ -716,8 +734,8 @@ class VscodeBridge {
   }) {
     return _protocol.sendRequest('vscode/showProgress', {
       'title': title,
-      if (message != null) 'message': message,
-      if (percentage != null) 'percentage': percentage,
+      'message': ?message,
+      'percentage': ?percentage,
       'cancellable': cancellable,
     });
   }
@@ -725,15 +743,13 @@ class VscodeBridge {
   /// Update a status bar item.
   void updateStatusBarItem(VscodeStatusBarItem item) {
     _statusBarItems[item.id] = item;
-    _protocol.sendNotification(
-        'vscode/updateStatusBarItem', item.toJson());
+    _protocol.sendNotification('vscode/updateStatusBarItem', item.toJson());
   }
 
   /// Remove a status bar item.
   void removeStatusBarItem(String id) {
     _statusBarItems.remove(id);
-    _protocol.sendNotification(
-        'vscode/removeStatusBarItem', {'id': id});
+    _protocol.sendNotification('vscode/removeStatusBarItem', {'id': id});
   }
 
   // ---- Terminal ----
@@ -747,11 +763,11 @@ class VscodeBridge {
     Map<String, String>? env,
   }) async {
     final resp = await _protocol.sendRequest('vscode/createTerminal', {
-      if (name != null) 'name': name,
-      if (shellPath != null) 'shellPath': shellPath,
-      if (shellArgs != null) 'shellArgs': shellArgs,
-      if (cwd != null) 'cwd': cwd,
-      if (env != null) 'env': env,
+      'name': ?name,
+      'shellPath': ?shellPath,
+      'shellArgs': ?shellArgs,
+      'cwd': ?cwd,
+      'env': ?env,
     });
     if (resp.isSuccess) return resp.result as String?;
     return null;
@@ -772,8 +788,9 @@ class VscodeBridge {
 
   /// Close a terminal.
   Future<BridgeResponse> closeTerminal(String terminalId) {
-    return _protocol.sendRequest(
-        'vscode/closeTerminal', {'terminalId': terminalId});
+    return _protocol.sendRequest('vscode/closeTerminal', {
+      'terminalId': terminalId,
+    });
   }
 
   // ---- Commands ----
@@ -781,8 +798,10 @@ class VscodeBridge {
   /// Register a command that the IDE can invoke.
   void registerCommand(VscodeCommand command) {
     _commands[command.id] = command;
-    _protocol.registerHandler('vscode/command/${command.id}',
-        (method, params) async {
+    _protocol.registerHandler('vscode/command/${command.id}', (
+      method,
+      params,
+    ) async {
       final args = params is Map && params.containsKey('args')
           ? params['args'] as List<dynamic>?
           : null;
@@ -795,62 +814,57 @@ class VscodeBridge {
   void unregisterCommand(String commandId) {
     _commands.remove(commandId);
     _protocol.unregisterHandler('vscode/command/$commandId');
-    _protocol.sendNotification(
-        'vscode/unregisterCommand', {'id': commandId});
+    _protocol.sendNotification('vscode/unregisterCommand', {'id': commandId});
   }
 
   // ---- Internal notification handlers ----
 
   void _registerNotificationHandlers() {
-    _protocol.registerNotificationHandler(
-      'vscode/didChangeActiveEditor',
-      (_, params) {
-        if (params is Map && params.containsKey('uri')) {
-          _onDidChangeActiveEditor.add(params['uri'] as String);
-        }
-      },
-    );
+    _protocol.registerNotificationHandler('vscode/didChangeActiveEditor', (
+      _,
+      params,
+    ) {
+      if (params is Map && params.containsKey('uri')) {
+        _onDidChangeActiveEditor.add(params['uri'] as String);
+      }
+    });
 
-    _protocol.registerNotificationHandler(
-      'vscode/didSaveDocument',
-      (_, params) {
-        if (params is Map && params.containsKey('uri')) {
-          _onDidSaveDocument.add(params['uri'] as String);
-        }
-      },
-    );
+    _protocol.registerNotificationHandler('vscode/didSaveDocument', (
+      _,
+      params,
+    ) {
+      if (params is Map && params.containsKey('uri')) {
+        _onDidSaveDocument.add(params['uri'] as String);
+      }
+    });
 
-    _protocol.registerNotificationHandler(
-      'vscode/didChangeConfiguration',
-      (_, params) {
-        if (params is Map<String, dynamic>) {
-          _onDidChangeConfiguration.add(params);
-        }
-      },
-    );
+    _protocol.registerNotificationHandler('vscode/didChangeConfiguration', (
+      _,
+      params,
+    ) {
+      if (params is Map<String, dynamic>) {
+        _onDidChangeConfiguration.add(params);
+      }
+    });
 
-    _protocol.registerNotificationHandler(
-      'vscode/didChangeTheme',
-      (_, params) {
-        if (params is Map<String, dynamic>) {
-          _currentTheme = VscodeTheme.fromJson(params);
-          _onDidChangeTheme.add(_currentTheme!);
-        }
-      },
-    );
+    _protocol.registerNotificationHandler('vscode/didChangeTheme', (_, params) {
+      if (params is Map<String, dynamic>) {
+        _currentTheme = VscodeTheme.fromJson(params);
+        _onDidChangeTheme.add(_currentTheme!);
+      }
+    });
 
-    _protocol.registerNotificationHandler(
-      'vscode/didChangeDiagnostics',
-      (_, params) {
-        if (params is Map && params.containsKey('diagnostics')) {
-          final diagnostics = (params['diagnostics'] as List)
-              .map((d) =>
-                  VscodeDiagnostic.fromJson(d as Map<String, dynamic>))
-              .toList();
-          _onDidChangeDiagnostics.add(diagnostics);
-        }
-      },
-    );
+    _protocol.registerNotificationHandler('vscode/didChangeDiagnostics', (
+      _,
+      params,
+    ) {
+      if (params is Map && params.containsKey('diagnostics')) {
+        final diagnostics = (params['diagnostics'] as List)
+            .map((d) => VscodeDiagnostic.fromJson(d as Map<String, dynamic>))
+            .toList();
+        _onDidChangeDiagnostics.add(diagnostics);
+      }
+    });
   }
 
   // ---- Cleanup ----

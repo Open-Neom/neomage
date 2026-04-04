@@ -64,53 +64,51 @@ Future<GitResult> runGit(
 
 /// Check if a directory is a git repository.
 Future<bool> isGitRepo({String? dir}) async {
-  final result = await runGit(
-    ['rev-parse', '--is-inside-work-tree'],
-    workingDirectory: dir,
-  );
+  final result = await runGit([
+    'rev-parse',
+    '--is-inside-work-tree',
+  ], workingDirectory: dir);
   return result.success && result.output == 'true';
 }
 
 /// Get the current branch name.
 Future<String?> currentBranch({String? dir}) async {
-  final result = await runGit(
-    ['branch', '--show-current'],
-    workingDirectory: dir,
-  );
+  final result = await runGit([
+    'branch',
+    '--show-current',
+  ], workingDirectory: dir);
   return result.success ? result.output : null;
 }
 
 /// Get the repository root directory.
 Future<String?> repoRoot({String? dir}) async {
-  final result = await runGit(
-    ['rev-parse', '--show-toplevel'],
-    workingDirectory: dir,
-  );
+  final result = await runGit([
+    'rev-parse',
+    '--show-toplevel',
+  ], workingDirectory: dir);
   return result.success ? result.output : null;
 }
 
 /// Get the current commit hash.
 Future<String?> currentCommit({String? dir, bool short = false}) async {
-  final result = await runGit(
-    ['rev-parse', if (short) '--short', 'HEAD'],
-    workingDirectory: dir,
-  );
+  final result = await runGit([
+    'rev-parse',
+    if (short) '--short',
+    'HEAD',
+  ], workingDirectory: dir);
   return result.success ? result.output : null;
 }
 
 /// Get git status (porcelain v1 format).
 Future<List<GitStatusEntry>> gitStatus({String? dir}) async {
-  final result = await runGit(
-    ['status', '--porcelain=v1'],
-    workingDirectory: dir,
-  );
+  final result = await runGit([
+    'status',
+    '--porcelain=v1',
+  ], workingDirectory: dir);
 
   if (!result.success) return [];
 
-  return result.output
-      .split('\n')
-      .where((l) => l.length >= 3)
-      .map((line) {
+  return result.output.split('\n').where((l) => l.length >= 3).map((line) {
     final xy = line.substring(0, 2);
     final path = line.substring(3);
 
@@ -153,15 +151,11 @@ Future<String> unstagedDiff({String? dir}) async {
 }
 
 /// Get diff between two refs.
-Future<String> diffBetween(
-  String fromRef,
-  String toRef, {
-  String? dir,
-}) async {
-  final result = await runGit(
-    ['diff', '$fromRef...$toRef'],
-    workingDirectory: dir,
-  );
+Future<String> diffBetween(String fromRef, String toRef, {String? dir}) async {
+  final result = await runGit([
+    'diff',
+    '$fromRef...$toRef',
+  ], workingDirectory: dir);
   return result.success ? result.output : '';
 }
 
@@ -171,10 +165,12 @@ Future<List<String>> recentCommits({
   int count = 10,
   String format = '%h %s',
 }) async {
-  final result = await runGit(
-    ['log', '--oneline', '-$count', '--format=$format'],
-    workingDirectory: dir,
-  );
+  final result = await runGit([
+    'log',
+    '--oneline',
+    '-$count',
+    '--format=$format',
+  ], workingDirectory: dir);
   if (!result.success) return [];
   return result.output.split('\n').where((l) => l.isNotEmpty).toList();
 }
@@ -200,19 +196,22 @@ Future<bool> removeWorktree({
   required String path,
   bool force = false,
 }) async {
-  final result = await runGit(
-    ['worktree', 'remove', if (force) '--force', path],
-    workingDirectory: dir,
-  );
+  final result = await runGit([
+    'worktree',
+    'remove',
+    if (force) '--force',
+    path,
+  ], workingDirectory: dir);
   return result.success;
 }
 
 /// List git worktrees.
 Future<List<String>> listWorktrees({String? dir}) async {
-  final result = await runGit(
-    ['worktree', 'list', '--porcelain'],
-    workingDirectory: dir,
-  );
+  final result = await runGit([
+    'worktree',
+    'list',
+    '--porcelain',
+  ], workingDirectory: dir);
   if (!result.success) return [];
 
   return result.output
@@ -235,10 +234,7 @@ Future<GitResult> commit(String message, {String? dir}) async {
 
 /// Check if there are uncommitted changes.
 Future<bool> hasUncommittedChanges({String? dir}) async {
-  final result = await runGit(
-    ['status', '--porcelain'],
-    workingDirectory: dir,
-  );
+  final result = await runGit(['status', '--porcelain'], workingDirectory: dir);
   return result.success && result.output.isNotEmpty;
 }
 
@@ -247,9 +243,9 @@ Future<String?> trackingRemote({String? dir}) async {
   final branch = await currentBranch(dir: dir);
   if (branch == null) return null;
 
-  final result = await runGit(
-    ['config', 'branch.$branch.remote'],
-    workingDirectory: dir,
-  );
+  final result = await runGit([
+    'config',
+    'branch.$branch.remote',
+  ], workingDirectory: dir);
   return result.success ? result.output : null;
 }

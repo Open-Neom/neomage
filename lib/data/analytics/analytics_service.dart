@@ -65,10 +65,7 @@ class FileAnalyticsSink implements AnalyticsSink {
   final int maxBufferSize;
   bool _enabled = true;
 
-  FileAnalyticsSink({
-    required this.filePath,
-    this.maxBufferSize = 100,
-  });
+  FileAnalyticsSink({required this.filePath, this.maxBufferSize = 100});
 
   @override
   bool get isEnabled => _enabled;

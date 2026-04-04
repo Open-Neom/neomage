@@ -1,4 +1,4 @@
-// TrustDialog — port of openneomclaw/src/components/TrustDialog/
+// TrustDialog — port of neom_claw/src/components/TrustDialog/
 // Ports: TrustDialog.tsx, utils.ts
 //
 // Displays a trust/security confirmation dialog when entering a new project
@@ -21,10 +21,7 @@ class TrustSettingSource {
   final String filePath;
   final TrustSettingType type;
 
-  const TrustSettingSource({
-    required this.filePath,
-    required this.type,
-  });
+  const TrustSettingSource({required this.filePath, required this.type});
 }
 
 enum TrustSettingType {
@@ -101,9 +98,7 @@ class TrustDialogController extends SintController {
   bool get hasMcpServers => mcpServerNames.isNotEmpty;
 
   bool get hasAnyBashExecution =>
-      hasBashPermission ||
-      hasSlashCommandBash.value ||
-      hasSkillsBash.value;
+      hasBashPermission || hasSlashCommandBash.value || hasSkillsBash.value;
 
   bool get hasAnyConcern =>
       hasHooks ||
@@ -127,93 +122,108 @@ class TrustDialogController extends SintController {
       if (hasSlashCommandBash.value) sources.add('slash commands');
       if (hasSkillsBash.value) sources.add('skills');
 
-      items.add(TrustConcernItem(
-        icon: Icons.terminal,
-        title: 'Bash command execution',
-        description: 'Project settings allow running shell commands',
-        sources: sources,
-        severity: TrustConcernSeverity.high,
-      ));
+      items.add(
+        TrustConcernItem(
+          icon: Icons.terminal,
+          title: 'Bash command execution',
+          description: 'Project settings allow running shell commands',
+          sources: sources,
+          severity: TrustConcernSeverity.high,
+        ),
+      );
     }
 
     if (hasMcpServers) {
-      items.add(TrustConcernItem(
-        icon: Icons.dns,
-        title: 'MCP servers',
-        description:
-            'Project configures ${mcpServerNames.length} MCP ${mcpServerNames.length == 1 ? 'server' : 'servers'}: '
-            '${formatListWithAnd(mcpServerNames, limit: 3)}',
-        sources: const ['.neomclaw/settings.json'],
-        severity: TrustConcernSeverity.medium,
-      ));
+      items.add(
+        TrustConcernItem(
+          icon: Icons.dns,
+          title: 'MCP servers',
+          description:
+              'Project configures ${mcpServerNames.length} MCP ${mcpServerNames.length == 1 ? 'server' : 'servers'}: '
+              '${formatListWithAnd(mcpServerNames, limit: 3)}',
+          sources: const ['.neomclaw/settings.json'],
+          severity: TrustConcernSeverity.medium,
+        ),
+      );
     }
 
     if (hasHooks) {
       final sources = hooksSources.map((s) => s.filePath).toList();
-      items.add(TrustConcernItem(
-        icon: Icons.webhook,
-        title: 'Hooks',
-        description: 'Project settings configure hooks that run commands',
-        sources: sources,
-        severity: TrustConcernSeverity.high,
-      ));
+      items.add(
+        TrustConcernItem(
+          icon: Icons.webhook,
+          title: 'Hooks',
+          description: 'Project settings configure hooks that run commands',
+          sources: sources,
+          severity: TrustConcernSeverity.high,
+        ),
+      );
     }
 
     if (hasApiKeyHelper) {
       final sources = apiKeyHelperSources.map((s) => s.filePath).toList();
-      items.add(TrustConcernItem(
-        icon: Icons.key,
-        title: 'API key helper',
-        description: 'Project settings configure an API key helper command',
-        sources: sources,
-        severity: TrustConcernSeverity.high,
-      ));
+      items.add(
+        TrustConcernItem(
+          icon: Icons.key,
+          title: 'API key helper',
+          description: 'Project settings configure an API key helper command',
+          sources: sources,
+          severity: TrustConcernSeverity.high,
+        ),
+      );
     }
 
     if (hasAwsCommands) {
       final sources = awsCommandsSources.map((s) => s.filePath).toList();
-      items.add(TrustConcernItem(
-        icon: Icons.cloud,
-        title: 'AWS commands',
-        description: 'Project settings configure AWS credential commands',
-        sources: sources,
-        severity: TrustConcernSeverity.medium,
-      ));
+      items.add(
+        TrustConcernItem(
+          icon: Icons.cloud,
+          title: 'AWS commands',
+          description: 'Project settings configure AWS credential commands',
+          sources: sources,
+          severity: TrustConcernSeverity.medium,
+        ),
+      );
     }
 
     if (hasGcpCommands) {
       final sources = gcpCommandsSources.map((s) => s.filePath).toList();
-      items.add(TrustConcernItem(
-        icon: Icons.cloud,
-        title: 'GCP commands',
-        description: 'Project settings configure GCP auth commands',
-        sources: sources,
-        severity: TrustConcernSeverity.medium,
-      ));
+      items.add(
+        TrustConcernItem(
+          icon: Icons.cloud,
+          title: 'GCP commands',
+          description: 'Project settings configure GCP auth commands',
+          sources: sources,
+          severity: TrustConcernSeverity.medium,
+        ),
+      );
     }
 
     if (hasOtelHeaders) {
       final sources = otelHeadersSources.map((s) => s.filePath).toList();
-      items.add(TrustConcernItem(
-        icon: Icons.analytics,
-        title: 'OpenTelemetry headers helper',
-        description: 'Project settings configure an OTEL headers helper',
-        sources: sources,
-        severity: TrustConcernSeverity.low,
-      ));
+      items.add(
+        TrustConcernItem(
+          icon: Icons.analytics,
+          title: 'OpenTelemetry headers helper',
+          description: 'Project settings configure an OTEL headers helper',
+          sources: sources,
+          severity: TrustConcernSeverity.low,
+        ),
+      );
     }
 
     if (hasDangerousEnvVars) {
-      final sources =
-          dangerousEnvVarsSources.map((s) => s.filePath).toList();
-      items.add(TrustConcernItem(
-        icon: Icons.warning_amber,
-        title: 'Environment variables',
-        description:
-            'Project settings set environment variables that may be sensitive',
-        sources: sources,
-        severity: TrustConcernSeverity.medium,
-      ));
+      final sources = dangerousEnvVarsSources.map((s) => s.filePath).toList();
+      items.add(
+        TrustConcernItem(
+          icon: Icons.warning_amber,
+          title: 'Environment variables',
+          description:
+              'Project settings set environment variables that may be sensitive',
+          sources: sources,
+          severity: TrustConcernSeverity.medium,
+        ),
+      );
     }
 
     return items;
@@ -272,10 +282,7 @@ class TrustDialog extends StatelessWidget {
         return const SizedBox.shrink();
       }
 
-      return _TrustDialogContent(
-        controller: controller,
-        onDone: onDone,
-      );
+      return _TrustDialogContent(controller: controller, onDone: onDone);
     });
   }
 }
@@ -284,10 +291,7 @@ class _TrustDialogContent extends StatelessWidget {
   final TrustDialogController controller;
   final VoidCallback onDone;
 
-  const _TrustDialogContent({
-    required this.controller,
-    required this.onDone,
-  });
+  const _TrustDialogContent({required this.controller, required this.onDone});
 
   @override
   Widget build(BuildContext context) {
@@ -389,7 +393,9 @@ class _TrustDialogContent extends StatelessWidget {
                     child: Text(
                       'No security concerns detected in project settings.',
                       style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.6,
+                        ),
                         fontSize: 13,
                       ),
                     ),
@@ -399,10 +405,7 @@ class _TrustDialogContent extends StatelessWidget {
                 const Divider(height: 1),
 
                 // Action buttons
-                _TrustDialogActions(
-                  controller: controller,
-                  onDone: onDone,
-                ),
+                _TrustDialogActions(controller: controller, onDone: onDone),
               ],
             ),
           ),
@@ -522,15 +525,17 @@ class _TrustConcernTile extends StatelessWidget {
                           vertical: 1,
                         ),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.05),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.05,
+                          ),
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: Text(
                           source,
                           style: TextStyle(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.5),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.5,
+                            ),
                             fontSize: 11,
                             fontFamily: 'monospace',
                           ),
@@ -554,10 +559,7 @@ class _TrustDialogActions extends StatelessWidget {
   final TrustDialogController controller;
   final VoidCallback onDone;
 
-  const _TrustDialogActions({
-    required this.controller,
-    required this.onDone,
-  });
+  const _TrustDialogActions({required this.controller, required this.onDone});
 
   @override
   Widget build(BuildContext context) {

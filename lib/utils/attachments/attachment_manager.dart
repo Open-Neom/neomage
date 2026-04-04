@@ -1,11 +1,6 @@
-// Attachment manager — port of openneomclaw/src/utils/attachments.ts.
+// Attachment manager — port of neom_claw/src/utils/attachments.ts.
 // File attachments, IDE selections, hook attachments, queued commands,
 // memory references, MCP resources, and attachment normalization for API.
-
-import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
-
-import 'package:path/path.dart' as p;
 
 import '../messages/message_utils.dart';
 
@@ -15,10 +10,7 @@ import '../messages/message_utils.dart';
 const String memoryHeader = '# Memory';
 
 /// Config for todo reminder frequency.
-const todoReminderConfig = (
-  turnsSinceWrite: 10,
-  turnsBetweenReminders: 10,
-);
+const todoReminderConfig = (turnsSinceWrite: 10, turnsBetweenReminders: 10);
 
 /// Config for plan mode attachment frequency.
 const planModeAttachmentConfig = (
@@ -39,14 +31,10 @@ const int maxMemoryLines = 200;
 const int maxMemoryBytes = 4096;
 
 /// Config for relevant memories injection.
-const relevantMemoriesConfig = (
-  maxSessionBytes: 60 * 1024,
-);
+const relevantMemoriesConfig = (maxSessionBytes: 60 * 1024);
 
 /// Config for plan verification reminders.
-const verifyPlanReminderConfig = (
-  turnsBetweenReminders: 10,
-);
+const verifyPlanReminderConfig = (turnsBetweenReminders: 10);
 
 // ─── Attachment Types ───
 
@@ -78,21 +66,19 @@ class FileAttachment extends Attachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'filename': filename,
-        'content': content,
-        'truncated': truncated,
-        'displayPath': displayPath,
-      };
+    'type': type,
+    'filename': filename,
+    'content': content,
+    'truncated': truncated,
+    'displayPath': displayPath,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
     final text = truncated
         ? '<file path="$displayPath">\n$content\n[truncated]\n</file>'
         : '<file path="$displayPath">\n$content\n</file>';
-    return [
-      createUserMessage(content: text, isMeta: true),
-    ];
+    return [createUserMessage(content: text, isMeta: true)];
   }
 }
 
@@ -111,10 +97,10 @@ class CompactFileReferenceAttachment extends Attachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'filename': filename,
-        'displayPath': displayPath,
-      };
+    'type': type,
+    'filename': filename,
+    'displayPath': displayPath,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -146,12 +132,12 @@ class PDFReferenceAttachment extends Attachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'filename': filename,
-        'pageCount': pageCount,
-        'fileSize': fileSize,
-        'displayPath': displayPath,
-      };
+    'type': type,
+    'filename': filename,
+    'pageCount': pageCount,
+    'fileSize': fileSize,
+    'displayPath': displayPath,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -182,11 +168,11 @@ class DirectoryAttachment extends Attachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'path': path,
-        'content': content,
-        'displayPath': displayPath,
-      };
+    'type': type,
+    'path': path,
+    'content': content,
+    'displayPath': displayPath,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -222,14 +208,14 @@ class SelectedLinesInIdeAttachment extends Attachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'ideName': ideName,
-        'lineStart': lineStart,
-        'lineEnd': lineEnd,
-        'filename': filename,
-        'content': content,
-        'displayPath': displayPath,
-      };
+    'type': type,
+    'ideName': ideName,
+    'lineStart': lineStart,
+    'lineEnd': lineEnd,
+    'filename': filename,
+    'content': content,
+    'displayPath': displayPath,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -254,10 +240,7 @@ class OpenedFileInIdeAttachment extends Attachment {
   String get type => 'opened_file_in_ide';
 
   @override
-  Map<String, dynamic> toJson() => {
-        'type': type,
-        'filename': filename,
-      };
+  Map<String, dynamic> toJson() => {'type': type, 'filename': filename};
 
   @override
   List<UserMessage> normalizeForAPI() => [];
@@ -268,20 +251,17 @@ class EditedTextFileAttachment extends Attachment {
   final String filename;
   final String snippet;
 
-  EditedTextFileAttachment({
-    required this.filename,
-    required this.snippet,
-  });
+  EditedTextFileAttachment({required this.filename, required this.snippet});
 
   @override
   String get type => 'edited_text_file';
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'filename': filename,
-        'snippet': snippet,
-      };
+    'type': type,
+    'filename': filename,
+    'snippet': snippet,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -299,20 +279,17 @@ class TodoReminderAttachment extends Attachment {
   final List<Map<String, dynamic>> content;
   final int itemCount;
 
-  TodoReminderAttachment({
-    required this.content,
-    required this.itemCount,
-  });
+  TodoReminderAttachment({required this.content, required this.itemCount});
 
   @override
   String get type => 'todo_reminder';
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'content': content,
-        'itemCount': itemCount,
-      };
+    'type': type,
+    'content': content,
+    'itemCount': itemCount,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -325,9 +302,7 @@ class TodoReminderAttachment extends Attachment {
       buf.writeln('- [$status] $text');
     }
     buf.writeln('</system-reminder>');
-    return [
-      createUserMessage(content: buf.toString(), isMeta: true),
-    ];
+    return [createUserMessage(content: buf.toString(), isMeta: true)];
   }
 }
 
@@ -354,12 +329,12 @@ class QueuedCommandAttachment extends Attachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'prompt': prompt,
-        if (sourceUuid != null) 'source_uuid': sourceUuid,
-        if (imagePasteIds != null) 'imagePasteIds': imagePasteIds,
-        if (commandMode != null) 'commandMode': commandMode,
-      };
+    'type': type,
+    'prompt': prompt,
+    if (sourceUuid != null) 'source_uuid': sourceUuid,
+    if (imagePasteIds != null) 'imagePasteIds': imagePasteIds,
+    if (commandMode != null) 'commandMode': commandMode,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -384,17 +359,13 @@ class OutputStyleAttachment extends Attachment {
   String get type => 'output_style';
 
   @override
-  Map<String, dynamic> toJson() => {
-        'type': type,
-        'style': style,
-      };
+  Map<String, dynamic> toJson() => {'type': type, 'style': style};
 
   @override
   List<UserMessage> normalizeForAPI() {
     return [
       createUserMessage(
-        content:
-            '<system-reminder>\nOutput style: $style\n</system-reminder>',
+        content: '<system-reminder>\nOutput style: $style\n</system-reminder>',
         isMeta: true,
       ),
     ];
@@ -406,20 +377,17 @@ class DiagnosticsAttachment extends Attachment {
   final List<Map<String, dynamic>> files;
   final bool isNew;
 
-  DiagnosticsAttachment({
-    required this.files,
-    this.isNew = false,
-  });
+  DiagnosticsAttachment({required this.files, this.isNew = false});
 
   @override
   String get type => 'diagnostics';
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'files': files,
-        'isNew': isNew,
-      };
+    'type': type,
+    'files': files,
+    'isNew': isNew,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -430,9 +398,7 @@ class DiagnosticsAttachment extends Attachment {
       buf.writeln('  ${file['path']}: ${file['message']}');
     }
     buf.writeln('</system-reminder>');
-    return [
-      createUserMessage(content: buf.toString(), isMeta: true),
-    ];
+    return [createUserMessage(content: buf.toString(), isMeta: true)];
   }
 }
 
@@ -455,12 +421,12 @@ class PlanModeAttachment extends Attachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'reminderType': reminderType,
-        'isSubAgent': isSubAgent,
-        'planFilePath': planFilePath,
-        'planExists': planExists,
-      };
+    'type': type,
+    'reminderType': reminderType,
+    'isSubAgent': isSubAgent,
+    'planFilePath': planFilePath,
+    'planExists': planExists,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -469,7 +435,8 @@ class PlanModeAttachment extends Attachment {
     if (reminderType == 'full') {
       buf.writeln('You are in PLAN MODE. Do not write code or make changes.');
       buf.writeln(
-          'Instead, analyze the task, ask clarifying questions, and create a plan.');
+        'Instead, analyze the task, ask clarifying questions, and create a plan.',
+      );
       if (planExists) {
         buf.writeln('Plan file: $planFilePath');
       }
@@ -477,9 +444,7 @@ class PlanModeAttachment extends Attachment {
       buf.writeln('Reminder: You are in plan mode.');
     }
     buf.writeln('</system-reminder>');
-    return [
-      createUserMessage(content: buf.toString(), isMeta: true),
-    ];
+    return [createUserMessage(content: buf.toString(), isMeta: true)];
   }
 }
 
@@ -504,13 +469,13 @@ class McpResourceAttachment extends Attachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'server': server,
-        'uri': uri,
-        'name': name,
-        if (description != null) 'description': description,
-        'content': content,
-      };
+    'type': type,
+    'server': server,
+    'uri': uri,
+    'name': name,
+    if (description != null) 'description': description,
+    'content': content,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -537,9 +502,9 @@ class RelevantMemoriesAttachment extends Attachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'memories': memories.map((m) => m.toJson()).toList(),
-      };
+    'type': type,
+    'memories': memories.map((m) => m.toJson()).toList(),
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -554,9 +519,7 @@ class RelevantMemoriesAttachment extends Attachment {
       buf.writeln(memory.content);
     }
     buf.writeln('</system-reminder>');
-    return [
-      createUserMessage(content: buf.toString(), isMeta: true),
-    ];
+    return [createUserMessage(content: buf.toString(), isMeta: true)];
   }
 }
 
@@ -577,12 +540,12 @@ class MemoryEntry {
   });
 
   Map<String, dynamic> toJson() => {
-        'path': path,
-        'content': content,
-        'mtimeMs': mtimeMs,
-        if (header != null) 'header': header,
-        if (limit != null) 'limit': limit,
-      };
+    'path': path,
+    'content': content,
+    'mtimeMs': mtimeMs,
+    if (header != null) 'header': header,
+    if (limit != null) 'limit': limit,
+  };
 }
 
 /// Token usage attachment.
@@ -602,11 +565,11 @@ class TokenUsageAttachment extends Attachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'used': used,
-        'total': total,
-        'remaining': remaining,
-      };
+    'type': type,
+    'used': used,
+    'total': total,
+    'remaining': remaining,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -638,11 +601,11 @@ class BudgetUsdAttachment extends Attachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'used': used,
-        'total': total,
-        'remaining': remaining,
-      };
+    'type': type,
+    'used': used,
+    'total': total,
+    'remaining': remaining,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -668,10 +631,7 @@ class DateChangeAttachment extends Attachment {
   String get type => 'date_change';
 
   @override
-  Map<String, dynamic> toJson() => {
-        'type': type,
-        'newDate': newDate,
-      };
+  Map<String, dynamic> toJson() => {'type': type, 'newDate': newDate};
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -690,20 +650,17 @@ class MaxTurnsReachedAttachment extends Attachment {
   final int maxTurns;
   final int turnCount;
 
-  MaxTurnsReachedAttachment({
-    required this.maxTurns,
-    required this.turnCount,
-  });
+  MaxTurnsReachedAttachment({required this.maxTurns, required this.turnCount});
 
   @override
   String get type => 'max_turns_reached';
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'maxTurns': maxTurns,
-        'turnCount': turnCount,
-      };
+    'type': type,
+    'maxTurns': maxTurns,
+    'turnCount': turnCount,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -749,13 +706,13 @@ class HookCancelledAttachment extends HookAttachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'hookName': hookName,
-        'toolUseID': toolUseID,
-        'hookEvent': hookEvent,
-        if (command != null) 'command': command,
-        if (durationMs != null) 'durationMs': durationMs,
-      };
+    'type': type,
+    'hookName': hookName,
+    'toolUseID': toolUseID,
+    'hookEvent': hookEvent,
+    if (command != null) 'command': command,
+    if (durationMs != null) 'durationMs': durationMs,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() => [];
@@ -792,17 +749,17 @@ class HookSuccessAttachment extends HookAttachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'content': content,
-        'hookName': hookName,
-        'toolUseID': toolUseID,
-        'hookEvent': hookEvent,
-        if (stdout != null) 'stdout': stdout,
-        if (stderr != null) 'stderr': stderr,
-        if (exitCode != null) 'exitCode': exitCode,
-        if (command != null) 'command': command,
-        if (durationMs != null) 'durationMs': durationMs,
-      };
+    'type': type,
+    'content': content,
+    'hookName': hookName,
+    'toolUseID': toolUseID,
+    'hookEvent': hookEvent,
+    if (stdout != null) 'stdout': stdout,
+    if (stderr != null) 'stderr': stderr,
+    if (exitCode != null) 'exitCode': exitCode,
+    if (command != null) 'command': command,
+    if (durationMs != null) 'durationMs': durationMs,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() {
@@ -835,11 +792,11 @@ class HookPermissionDecisionAttachment extends HookAttachment {
 
   @override
   Map<String, dynamic> toJson() => {
-        'type': type,
-        'decision': decision,
-        'toolUseID': toolUseID,
-        'hookEvent': hookEvent,
-      };
+    'type': type,
+    'decision': decision,
+    'toolUseID': toolUseID,
+    'hookEvent': hookEvent,
+  };
 
   @override
   List<UserMessage> normalizeForAPI() => [];
@@ -852,37 +809,33 @@ Attachment? parseAttachment(Map<String, dynamic> json) {
   final type = json['type'] as String?;
   return switch (type) {
     'file' => FileAttachment(
-        filename: json['filename'] as String,
-        content: json['content'] as String? ?? '',
-        truncated: json['truncated'] as bool? ?? false,
-        displayPath: json['displayPath'] as String? ?? json['filename'] as String,
-      ),
+      filename: json['filename'] as String,
+      content: json['content'] as String? ?? '',
+      truncated: json['truncated'] as bool? ?? false,
+      displayPath: json['displayPath'] as String? ?? json['filename'] as String,
+    ),
     'compact_file_reference' => CompactFileReferenceAttachment(
-        filename: json['filename'] as String,
-        displayPath: json['displayPath'] as String? ?? json['filename'] as String,
-      ),
+      filename: json['filename'] as String,
+      displayPath: json['displayPath'] as String? ?? json['filename'] as String,
+    ),
     'pdf_reference' => PDFReferenceAttachment(
-        filename: json['filename'] as String,
-        pageCount: json['pageCount'] as int? ?? 0,
-        fileSize: json['fileSize'] as int? ?? 0,
-        displayPath: json['displayPath'] as String? ?? json['filename'] as String,
-      ),
+      filename: json['filename'] as String,
+      pageCount: json['pageCount'] as int? ?? 0,
+      fileSize: json['fileSize'] as int? ?? 0,
+      displayPath: json['displayPath'] as String? ?? json['filename'] as String,
+    ),
     'directory' => DirectoryAttachment(
-        path: json['path'] as String,
-        content: json['content'] as String? ?? '',
-        displayPath: json['displayPath'] as String? ?? json['path'] as String,
-      ),
+      path: json['path'] as String,
+      content: json['content'] as String? ?? '',
+      displayPath: json['displayPath'] as String? ?? json['path'] as String,
+    ),
     'queued_command' => QueuedCommandAttachment(
-        prompt: json['prompt'],
-        sourceUuid: json['source_uuid'] as String?,
-        commandMode: json['commandMode'] as String?,
-      ),
-    'output_style' => OutputStyleAttachment(
-        style: json['style'] as String,
-      ),
-    'date_change' => DateChangeAttachment(
-        newDate: json['newDate'] as String,
-      ),
+      prompt: json['prompt'],
+      sourceUuid: json['source_uuid'] as String?,
+      commandMode: json['commandMode'] as String?,
+    ),
+    'output_style' => OutputStyleAttachment(style: json['style'] as String),
+    'date_change' => DateChangeAttachment(newDate: json['newDate'] as String),
     _ => null,
   };
 }
@@ -906,11 +859,13 @@ List<Attachment> getQueuedCommandAttachments(
   List<Map<String, dynamic>> queuedCommands,
 ) {
   return queuedCommands
-      .map((cmd) => QueuedCommandAttachment(
-            prompt: cmd['prompt'],
-            sourceUuid: cmd['source_uuid'] as String?,
-            imagePasteIds: (cmd['imagePasteIds'] as List?)?.cast<int>(),
-            commandMode: cmd['commandMode'] as String?,
-          ))
+      .map(
+        (cmd) => QueuedCommandAttachment(
+          prompt: cmd['prompt'],
+          sourceUuid: cmd['source_uuid'] as String?,
+          imagePasteIds: (cmd['imagePasteIds'] as List?)?.cast<int>(),
+          commandMode: cmd['commandMode'] as String?,
+        ),
+      )
       .toList();
 }

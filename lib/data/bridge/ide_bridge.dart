@@ -25,24 +25,23 @@ enum IdeType {
 
   /// Human-readable display name.
   String get displayName => switch (this) {
-        vscode => 'VS Code',
-        jetbrains => 'JetBrains',
-        neovim => 'Neovim',
-        emacs => 'Emacs',
-        sublime => 'Sublime Text',
-        custom => 'Custom',
-      };
+    vscode => 'VS Code',
+    jetbrains => 'JetBrains',
+    neovim => 'Neovim',
+    emacs => 'Emacs',
+    sublime => 'Sublime Text',
+    custom => 'Custom',
+  };
 
   /// Parse from string identifier.
   static IdeType fromString(String s) => switch (s.toLowerCase()) {
-        'vscode' || 'code' || 'vs code' => vscode,
-        'jetbrains' || 'intellij' || 'idea' || 'webstorm' || 'pycharm' =>
-          jetbrains,
-        'neovim' || 'nvim' || 'vim' => neovim,
-        'emacs' => emacs,
-        'sublime' || 'sublimetext' || 'subl' => sublime,
-        _ => custom,
-      };
+    'vscode' || 'code' || 'vs code' => vscode,
+    'jetbrains' || 'intellij' || 'idea' || 'webstorm' || 'pycharm' => jetbrains,
+    'neovim' || 'nvim' || 'vim' => neovim,
+    'emacs' => emacs,
+    'sublime' || 'sublimetext' || 'subl' => sublime,
+    _ => custom,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -83,29 +82,29 @@ enum BridgeMessageType {
 
   /// Wire name used in JSON serialization.
   String get wireName => switch (this) {
-        openFile => 'open_file',
-        showDiff => 'show_diff',
-        applyEdit => 'apply_edit',
-        runCommand => 'run_command',
-        getSelection => 'get_selection',
-        getOpenFiles => 'get_open_files',
-        getDiagnostics => 'get_diagnostics',
-        navigate => 'navigate',
-        fileOpened => 'file_opened',
-        editApplied => 'edit_applied',
-        selectionResponse => 'selection_response',
-        diagnosticsResponse => 'diagnostics_response',
-        openFilesResponse => 'open_files_response',
-        commandResult => 'command_result',
-        navigateResult => 'navigate_result',
-        ping => 'ping',
-        pong => 'pong',
-        error => 'error',
-        status => 'status',
-        handshake => 'handshake',
-        handshakeAck => 'handshake_ack',
-        disconnect => 'disconnect',
-      };
+    openFile => 'open_file',
+    showDiff => 'show_diff',
+    applyEdit => 'apply_edit',
+    runCommand => 'run_command',
+    getSelection => 'get_selection',
+    getOpenFiles => 'get_open_files',
+    getDiagnostics => 'get_diagnostics',
+    navigate => 'navigate',
+    fileOpened => 'file_opened',
+    editApplied => 'edit_applied',
+    selectionResponse => 'selection_response',
+    diagnosticsResponse => 'diagnostics_response',
+    openFilesResponse => 'open_files_response',
+    commandResult => 'command_result',
+    navigateResult => 'navigate_result',
+    ping => 'ping',
+    pong => 'pong',
+    error => 'error',
+    status => 'status',
+    handshake => 'handshake',
+    handshakeAck => 'handshake_ack',
+    disconnect => 'disconnect',
+  };
 
   /// Parse from wire name.
   static BridgeMessageType? fromWireName(String name) {
@@ -134,26 +133,27 @@ class BridgeMessage {
     this.payload = const {},
     DateTime? timestamp,
     this.correlationId,
-  })  : id = id ?? _uuid.v4(),
-        timestamp = timestamp ?? DateTime.now();
+  }) : id = id ?? _uuid.v4(),
+       timestamp = timestamp ?? DateTime.now();
 
   /// Create a response message correlated to this request.
-  BridgeMessage respond(BridgeMessageType responseType,
-          [Map<String, dynamic> responsePayload = const {}]) =>
-      BridgeMessage(
-        type: responseType,
-        payload: responsePayload,
-        correlationId: id,
-      );
+  BridgeMessage respond(
+    BridgeMessageType responseType, [
+    Map<String, dynamic> responsePayload = const {},
+  ]) => BridgeMessage(
+    type: responseType,
+    payload: responsePayload,
+    correlationId: id,
+  );
 
   /// Serialize to JSON map for wire transport.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type.wireName,
-        'payload': payload,
-        'timestamp': timestamp.toIso8601String(),
-        if (correlationId != null) 'correlationId': correlationId,
-      };
+    'id': id,
+    'type': type.wireName,
+    'payload': payload,
+    'timestamp': timestamp.toIso8601String(),
+    if (correlationId != null) 'correlationId': correlationId,
+  };
 
   /// Deserialize from JSON map.
   factory BridgeMessage.fromJson(Map<String, dynamic> json) {
@@ -209,24 +209,24 @@ class EditRequest {
   });
 
   Map<String, dynamic> toJson() => {
-        'filePath': filePath,
-        'startLine': startLine,
-        'startColumn': startColumn,
-        'endLine': endLine,
-        'endColumn': endColumn,
-        'newText': newText,
-        if (description != null) 'description': description,
-      };
+    'filePath': filePath,
+    'startLine': startLine,
+    'startColumn': startColumn,
+    'endLine': endLine,
+    'endColumn': endColumn,
+    'newText': newText,
+    if (description != null) 'description': description,
+  };
 
   factory EditRequest.fromJson(Map<String, dynamic> json) => EditRequest(
-        filePath: json['filePath'] as String,
-        startLine: json['startLine'] as int,
-        startColumn: json['startColumn'] as int,
-        endLine: json['endLine'] as int,
-        endColumn: json['endColumn'] as int,
-        newText: json['newText'] as String,
-        description: json['description'] as String?,
-      );
+    filePath: json['filePath'] as String,
+    startLine: json['startLine'] as int,
+    startColumn: json['startColumn'] as int,
+    endLine: json['endLine'] as int,
+    endColumn: json['endColumn'] as int,
+    newText: json['newText'] as String,
+    description: json['description'] as String?,
+  );
 
   /// Convenience: create a full-line replacement.
   factory EditRequest.replaceLine(String filePath, int line, String newText) =>
@@ -241,15 +241,18 @@ class EditRequest {
 
   /// Convenience: create an insertion at a position.
   factory EditRequest.insert(
-          String filePath, int line, int column, String text) =>
-      EditRequest(
-        filePath: filePath,
-        startLine: line,
-        startColumn: column,
-        endLine: line,
-        endColumn: column,
-        newText: text,
-      );
+    String filePath,
+    int line,
+    int column,
+    String text,
+  ) => EditRequest(
+    filePath: filePath,
+    startLine: line,
+    startColumn: column,
+    endLine: line,
+    endColumn: column,
+    newText: text,
+  );
 }
 
 /// Diff display request — show a before/after diff in the IDE.
@@ -269,20 +272,20 @@ class DiffRequest {
   });
 
   Map<String, dynamic> toJson() => {
-        'filePath': filePath,
-        'originalContent': originalContent,
-        'modifiedContent': modifiedContent,
-        if (title != null) 'title': title,
-        if (readOnly != null) 'readOnly': readOnly,
-      };
+    'filePath': filePath,
+    'originalContent': originalContent,
+    'modifiedContent': modifiedContent,
+    if (title != null) 'title': title,
+    if (readOnly != null) 'readOnly': readOnly,
+  };
 
   factory DiffRequest.fromJson(Map<String, dynamic> json) => DiffRequest(
-        filePath: json['filePath'] as String,
-        originalContent: json['originalContent'] as String,
-        modifiedContent: json['modifiedContent'] as String,
-        title: json['title'] as String?,
-        readOnly: json['readOnly'] as bool?,
-      );
+    filePath: json['filePath'] as String,
+    originalContent: json['originalContent'] as String,
+    modifiedContent: json['modifiedContent'] as String,
+    title: json['title'] as String?,
+    readOnly: json['readOnly'] as bool?,
+  );
 }
 
 /// Current editor selection.
@@ -307,13 +310,13 @@ class EditorSelection {
   bool get isMultiLine => startLine != endLine;
 
   Map<String, dynamic> toJson() => {
-        'filePath': filePath,
-        'startLine': startLine,
-        'startColumn': startColumn,
-        'endLine': endLine,
-        'endColumn': endColumn,
-        'selectedText': selectedText,
-      };
+    'filePath': filePath,
+    'startLine': startLine,
+    'startColumn': startColumn,
+    'endLine': endLine,
+    'endColumn': endColumn,
+    'selectedText': selectedText,
+  };
 
   factory EditorSelection.fromJson(Map<String, dynamic> json) =>
       EditorSelection(
@@ -347,27 +350,27 @@ class IdeDiagnostic {
   });
 
   Map<String, dynamic> toJson() => {
-        'filePath': filePath,
-        'line': line,
-        'column': column,
-        'message': message,
-        'severity': severity.name,
-        if (source != null) 'source': source,
-        if (code != null) 'code': code,
-      };
+    'filePath': filePath,
+    'line': line,
+    'column': column,
+    'message': message,
+    'severity': severity.name,
+    if (source != null) 'source': source,
+    if (code != null) 'code': code,
+  };
 
   factory IdeDiagnostic.fromJson(Map<String, dynamic> json) => IdeDiagnostic(
-        filePath: json['filePath'] as String,
-        line: json['line'] as int,
-        column: json['column'] as int,
-        message: json['message'] as String,
-        severity: DiagnosticSeverity.values.firstWhere(
-          (s) => s.name == json['severity'],
-          orElse: () => DiagnosticSeverity.info,
-        ),
-        source: json['source'] as String?,
-        code: json['code'] as String?,
-      );
+    filePath: json['filePath'] as String,
+    line: json['line'] as int,
+    column: json['column'] as int,
+    message: json['message'] as String,
+    severity: DiagnosticSeverity.values.firstWhere(
+      (s) => s.name == json['severity'],
+      orElse: () => DiagnosticSeverity.info,
+    ),
+    source: json['source'] as String?,
+    code: json['code'] as String?,
+  );
 }
 
 /// Severity levels for diagnostics.
@@ -415,17 +418,17 @@ class IdeCapabilities {
   static const minimal = IdeCapabilities(supportsTerminal: true);
 
   Map<String, dynamic> toJson() => {
-        'supportsDiff': supportsDiff,
-        'supportsInlineEdit': supportsInlineEdit,
-        'supportsTerminal': supportsTerminal,
-        'supportsDiagnostics': supportsDiagnostics,
-        'supportsSymbolNavigation': supportsSymbolNavigation,
-        'supportsMultiRoot': supportsMultiRoot,
-        'supportsFileWatcher': supportsFileWatcher,
-        'supportsCodeLens': supportsCodeLens,
-        if (ideVersion != null) 'ideVersion': ideVersion,
-        if (extensionVersion != null) 'extensionVersion': extensionVersion,
-      };
+    'supportsDiff': supportsDiff,
+    'supportsInlineEdit': supportsInlineEdit,
+    'supportsTerminal': supportsTerminal,
+    'supportsDiagnostics': supportsDiagnostics,
+    'supportsSymbolNavigation': supportsSymbolNavigation,
+    'supportsMultiRoot': supportsMultiRoot,
+    'supportsFileWatcher': supportsFileWatcher,
+    'supportsCodeLens': supportsCodeLens,
+    if (ideVersion != null) 'ideVersion': ideVersion,
+    if (extensionVersion != null) 'extensionVersion': extensionVersion,
+  };
 
   factory IdeCapabilities.fromJson(Map<String, dynamic> json) =>
       IdeCapabilities(
@@ -657,28 +660,22 @@ class IdeBridge {
 
   /// Open a file in the IDE editor.
   Future<BridgeMessage> openFile(String filePath, {int? line, int? column}) =>
-      request(BridgeMessage(
-        type: BridgeMessageType.openFile,
-        payload: {
-          'filePath': filePath,
-          if (line != null) 'line': line,
-          if (column != null) 'column': column,
-        },
-      ));
+      request(
+        BridgeMessage(
+          type: BridgeMessageType.openFile,
+          payload: {'filePath': filePath, 'line': ?line, 'column': ?column},
+        ),
+      );
 
   /// Show a diff in the IDE.
-  Future<BridgeMessage> showDiff(DiffRequest diff) =>
-      request(BridgeMessage(
-        type: BridgeMessageType.showDiff,
-        payload: diff.toJson(),
-      ));
+  Future<BridgeMessage> showDiff(DiffRequest diff) => request(
+    BridgeMessage(type: BridgeMessageType.showDiff, payload: diff.toJson()),
+  );
 
   /// Apply a text edit in the IDE.
-  Future<BridgeMessage> applyEdit(EditRequest edit) =>
-      request(BridgeMessage(
-        type: BridgeMessageType.applyEdit,
-        payload: edit.toJson(),
-      ));
+  Future<BridgeMessage> applyEdit(EditRequest edit) => request(
+    BridgeMessage(type: BridgeMessageType.applyEdit, payload: edit.toJson()),
+  );
 
   /// Apply multiple edits atomically (if the IDE supports it).
   Future<List<BridgeMessage>> applyEdits(List<EditRequest> edits) async {
@@ -687,14 +684,12 @@ class IdeBridge {
   }
 
   /// Run a terminal command in the IDE.
-  Future<BridgeMessage> runCommand(String command, {String? cwd}) =>
-      request(BridgeMessage(
-        type: BridgeMessageType.runCommand,
-        payload: {
-          'command': command,
-          if (cwd != null) 'cwd': cwd,
-        },
-      ));
+  Future<BridgeMessage> runCommand(String command, {String? cwd}) => request(
+    BridgeMessage(
+      type: BridgeMessageType.runCommand,
+      payload: {'command': command, 'cwd': ?cwd},
+    ),
+  );
 
   /// Get the current editor selection.
   Future<EditorSelection?> getSelection() async {
@@ -722,15 +717,16 @@ class IdeBridge {
 
   /// Get diagnostics (errors, warnings) from the IDE.
   Future<List<IdeDiagnostic>> getDiagnostics({String? filePath}) async {
-    final response = await request(BridgeMessage(
-      type: BridgeMessageType.getDiagnostics,
-      payload: {if (filePath != null) 'filePath': filePath},
-    ));
+    final response = await request(
+      BridgeMessage(
+        type: BridgeMessageType.getDiagnostics,
+        payload: {'filePath': ?filePath},
+      ),
+    );
     if (response.type == BridgeMessageType.diagnosticsResponse) {
       final diagnostics = response.payload['diagnostics'] as List<dynamic>?;
       return diagnostics
-              ?.map((d) =>
-                  IdeDiagnostic.fromJson(d as Map<String, dynamic>))
+              ?.map((d) => IdeDiagnostic.fromJson(d as Map<String, dynamic>))
               .toList() ??
           [];
     }
@@ -743,16 +739,17 @@ class IdeBridge {
     int? line,
     int? column,
     String? symbol,
-  }) =>
-      request(BridgeMessage(
-        type: BridgeMessageType.navigate,
-        payload: {
-          'filePath': filePath,
-          if (line != null) 'line': line,
-          if (column != null) 'column': column,
-          if (symbol != null) 'symbol': symbol,
-        },
-      ));
+  }) => request(
+    BridgeMessage(
+      type: BridgeMessageType.navigate,
+      payload: {
+        'filePath': filePath,
+        'line': ?line,
+        'column': ?column,
+        'symbol': ?symbol,
+      },
+    ),
+  );
 
   /// Disconnect from the IDE.
   Future<void> disconnect() async {
@@ -771,9 +768,7 @@ class IdeBridge {
     // Complete all pending requests with an error.
     for (final completer in _pendingRequests.values) {
       if (!completer.isCompleted) {
-        completer.completeError(
-          StateError('Bridge connection closed'),
-        );
+        completer.completeError(StateError('Bridge connection closed'));
       }
     }
     _pendingRequests.clear();
@@ -832,17 +827,21 @@ class IdeBridgeServer {
       return;
     }
 
-    WebSocketTransformer.upgrade(request).then((socket) {
-      _handleNewConnection(socket, request);
-    }).catchError((Object e) {
-      // Upgrade failed — nothing to do.
-    });
+    WebSocketTransformer.upgrade(request)
+        .then((socket) {
+          _handleNewConnection(socket, request);
+        })
+        .catchError((Object e) {
+          // Upgrade failed — nothing to do.
+        });
   }
 
   void _handleNewConnection(WebSocket socket, HttpRequest request) {
     // Determine IDE type from query parameters or headers.
     final ideTypeStr =
-        request.uri.queryParameters['ide'] ?? request.headers.value('x-ide-type') ?? 'custom';
+        request.uri.queryParameters['ide'] ??
+        request.headers.value('x-ide-type') ??
+        'custom';
     final ideType = IdeType.fromString(ideTypeStr);
 
     final bridge = IdeBridge(ideType: ideType);
@@ -924,9 +923,9 @@ class StdioBridge {
     required IdeType ideType,
     Stream<List<int>>? stdinStream,
     IOSink? stdoutSink,
-  })  : bridge = IdeBridge(ideType: ideType),
-        _stdin = stdinStream ?? stdin,
-        _stdout = stdoutSink ?? stdout;
+  }) : bridge = IdeBridge(ideType: ideType),
+       _stdin = stdinStream ?? stdin,
+       _stdout = stdoutSink ?? stdout;
 
   /// Start reading from stdin and writing responses to stdout.
   void start() {
@@ -936,17 +935,17 @@ class StdioBridge {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen(
-      (line) {
-        if (line.trim().isEmpty) return;
-        bridge._handleRawMessage(line);
-      },
-      onError: (Object e) {
-        bridge._setState(BridgeConnectionState.error);
-      },
-      onDone: () {
-        bridge._setState(BridgeConnectionState.disconnected);
-      },
-    );
+          (line) {
+            if (line.trim().isEmpty) return;
+            bridge._handleRawMessage(line);
+          },
+          onError: (Object e) {
+            bridge._setState(BridgeConnectionState.error);
+          },
+          onDone: () {
+            bridge._setState(BridgeConnectionState.disconnected);
+          },
+        );
 
     // Intercept outgoing messages and write them to stdout.
     bridge.messages.listen((msg) {
@@ -995,18 +994,9 @@ Map<String, dynamic> generateVscodeManifest({
     'main': './out/extension.js',
     'contributes': {
       'commands': [
-        {
-          'command': 'neom-claw.connect',
-          'title': 'NeomClaw: Connect',
-        },
-        {
-          'command': 'neom-claw.disconnect',
-          'title': 'NeomClaw: Disconnect',
-        },
-        {
-          'command': 'neom-claw.showDiff',
-          'title': 'NeomClaw: Show Diff',
-        },
+        {'command': 'neom-claw.connect', 'title': 'NeomClaw: Connect'},
+        {'command': 'neom-claw.disconnect', 'title': 'NeomClaw: Disconnect'},
+        {'command': 'neom-claw.showDiff', 'title': 'NeomClaw: Show Diff'},
         {
           'command': 'neom-claw.sendSelection',
           'title': 'NeomClaw: Send Selection',
@@ -1047,9 +1037,7 @@ Map<String, dynamic> generateVscodeManifest({
       '@types/node': '^18.0.0',
       'typescript': '^5.0.0',
     },
-    'dependencies': {
-      'ws': '^8.0.0',
-    },
+    'dependencies': {'ws': '^8.0.0'},
   };
 }
 
@@ -1071,14 +1059,8 @@ Map<String, dynamic> generateJetbrainsConfig({
       'url': 'https://anthropic.com',
       'email': 'support@anthropic.com',
     },
-    'ideaVersion': {
-      'sinceBuild': '231.0',
-      'untilBuild': '243.*',
-    },
-    'depends': [
-      'com.intellij.modules.platform',
-      'com.intellij.modules.lang',
-    ],
+    'ideaVersion': {'sinceBuild': '231.0', 'untilBuild': '243.*'},
+    'depends': ['com.intellij.modules.platform', 'com.intellij.modules.lang'],
     'extensions': {
       'defaultExtensionNs': 'com.intellij',
       'applicationService': {
@@ -1089,10 +1071,7 @@ Map<String, dynamic> generateJetbrainsConfig({
         'implementation':
             'com.anthropic.claudecode.bridge.BridgeStartupActivity',
       },
-      'notificationGroup': {
-        'id': 'NeomClaw',
-        'displayType': 'BALLOON',
-      },
+      'notificationGroup': {'id': 'NeomClaw', 'displayType': 'BALLOON'},
     },
     'actions': {
       'group': {
@@ -1145,11 +1124,15 @@ Future<List<BridgeServerInfo>> discoverBridgeServers({
   final futures = <Future<void>>[];
 
   for (final port in ports) {
-    futures.add(_probePort(host, port, timeout).then((info) {
-      if (info != null) results.add(info);
-    }).catchError((Object _) {
-      // Port not available — skip.
-    }));
+    futures.add(
+      _probePort(host, port, timeout)
+          .then((info) {
+            if (info != null) results.add(info);
+          })
+          .catchError((Object _) {
+            // Port not available — skip.
+          }),
+    );
   }
 
   await Future.wait(futures);
@@ -1157,11 +1140,12 @@ Future<List<BridgeServerInfo>> discoverBridgeServers({
 }
 
 Future<BridgeServerInfo?> _probePort(
-    String host, int port, Duration timeout) async {
+  String host,
+  int port,
+  Duration timeout,
+) async {
   try {
-    final socket = await WebSocket.connect(
-      'ws://$host:$port',
-    ).timeout(timeout);
+    final socket = await WebSocket.connect('ws://$host:$port').timeout(timeout);
 
     final completer = Completer<BridgeServerInfo?>();
 
@@ -1172,12 +1156,14 @@ Future<BridgeServerInfo?> _probePort(
             final msg = BridgeMessage.decode(data);
             if (msg.type == BridgeMessageType.handshakeAck ||
                 msg.type == BridgeMessageType.pong) {
-              completer.complete(BridgeServerInfo(
-                host: host,
-                port: port,
-                ideType: msg.payload['ideType'] as String?,
-                protocolVersion: msg.payload['protocolVersion'] as String?,
-              ));
+              completer.complete(
+                BridgeServerInfo(
+                  host: host,
+                  port: port,
+                  ideType: msg.payload['ideType'] as String?,
+                  protocolVersion: msg.payload['protocolVersion'] as String?,
+                ),
+              );
             }
           } catch (_) {
             // Not a valid bridge message.
@@ -1236,21 +1222,16 @@ BridgeMessage statusMessage(String status, {Map<String, dynamic>? extra}) =>
     );
 
 /// Build an error message.
-BridgeMessage errorMessage(String message, {String? code}) =>
-    BridgeMessage(
-      type: BridgeMessageType.error,
-      payload: {'message': message, if (code != null) 'code': code},
-    );
+BridgeMessage errorMessage(String message, {String? code}) => BridgeMessage(
+  type: BridgeMessageType.error,
+  payload: {'message': message, 'code': ?code},
+);
 
 /// Build an open-file request.
 BridgeMessage openFileMessage(String filePath, {int? line, int? column}) =>
     BridgeMessage(
       type: BridgeMessageType.openFile,
-      payload: {
-        'filePath': filePath,
-        if (line != null) 'line': line,
-        if (column != null) 'column': column,
-      },
+      payload: {'filePath': filePath, 'line': ?line, 'column': ?column},
     );
 
 /// Build a show-diff request.

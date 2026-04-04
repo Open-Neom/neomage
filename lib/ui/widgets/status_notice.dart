@@ -1,7 +1,7 @@
 // Status notices and slow operation tracking — comprehensive port of
-// openneomclaw/src/utils/statusNoticeDefinitions.tsx,
-// openneomclaw/src/utils/status.tsx, and
-// openneomclaw/src/utils/slowOperations.ts.
+// neom_claw/src/utils/statusNoticeDefinitions.tsx,
+// neom_claw/src/utils/status.tsx, and
+// neom_claw/src/utils/slowOperations.ts.
 // Provides status property building, notice definitions, and slow operation
 // instrumentation for performance monitoring.
 
@@ -31,8 +31,7 @@ class SlowOperation {
   });
 
   @override
-  String toString() =>
-      '$description (${durationMs.toStringAsFixed(1)}ms)';
+  String toString() => '$description (${durationMs.toStringAsFixed(1)}ms)';
 }
 
 /// Extract the first useful stack frame outside the slow operations module.
@@ -92,8 +91,7 @@ class SlowOperationTimer {
     _stopwatch.stop();
     final duration = _stopwatch.elapsedMilliseconds.toDouble();
     if (duration > thresholdMs) {
-      final fullDescription =
-          '$description${callerFrame(_capturedStack)}';
+      final fullDescription = '$description${callerFrame(_capturedStack)}';
       final op = SlowOperation(
         description: fullDescription,
         durationMs: duration,
@@ -130,11 +128,13 @@ class SlowOperationTracker {
     if (_isLogging) return; // Prevent re-entrancy.
     _isLogging = true;
     try {
-      _operations.add(SlowOperation(
-        description: description,
-        durationMs: durationMs,
-        timestamp: DateTime.now(),
-      ));
+      _operations.add(
+        SlowOperation(
+          description: description,
+          durationMs: durationMs,
+          timestamp: DateTime.now(),
+        ),
+      );
     } finally {
       _isLogging = false;
     }
@@ -155,8 +155,7 @@ class SlowOperationTracker {
   /// Get recent operations (last N).
   List<SlowOperation> recent([int count = 10]) {
     if (_operations.length <= count) return List.unmodifiable(_operations);
-    return List.unmodifiable(
-        _operations.sublist(_operations.length - count));
+    return List.unmodifiable(_operations.sublist(_operations.length - count));
   }
 }
 
@@ -262,28 +261,40 @@ final StatusNoticeDefinition largeMemoryFilesNotice = StatusNoticeDefinition(
           padding: const EdgeInsets.only(bottom: 4),
           child: Row(
             children: [
-              Icon(Icons.warning_amber, size: 16,
-                  color: theme.colorScheme.error),
+              Icon(
+                Icons.warning_amber,
+                size: 16,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text.rich(
-                  TextSpan(children: [
-                    const TextSpan(text: 'Large '),
-                    TextSpan(
+                  TextSpan(
+                    children: [
+                      const TextSpan(text: 'Large '),
+                      TextSpan(
                         text: _displayPath(file.path),
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    TextSpan(
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      TextSpan(
                         text:
                             ' will impact performance (${_formatNumber(file.content.length)} chars'
-                            ' > ${_formatNumber(maxMemoryCharacterCount)})'),
-                    TextSpan(
+                            ' > ${_formatNumber(maxMemoryCharacterCount)})',
+                      ),
+                      TextSpan(
                         text: ' \u00B7 /memory to edit',
                         style: TextStyle(
-                            color: theme.colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.6))),
-                  ]),
+                          color: theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.6,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   style: TextStyle(
-                      fontSize: 12, color: theme.colorScheme.error),
+                    fontSize: 12,
+                    color: theme.colorScheme.error,
+                  ),
                 ),
               ),
             ],
@@ -295,7 +306,8 @@ final StatusNoticeDefinition largeMemoryFilesNotice = StatusNoticeDefinition(
 );
 
 /// Auth conflict: subscriber using external token.
-final StatusNoticeDefinition subscriberExternalTokenNotice = StatusNoticeDefinition(
+final StatusNoticeDefinition
+subscriberExternalTokenNotice = StatusNoticeDefinition(
   id: 'neomclaw-ai-external-token',
   type: StatusNoticeType.warning,
   isActive: (ctx) =>
@@ -375,13 +387,20 @@ final StatusNoticeDefinition bothAuthMethodsNotice = StatusNoticeDefinition(
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber, size: 16, color: theme.colorScheme.error),
+              Icon(
+                Icons.warning_amber,
+                size: 16,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   'Auth conflict: Both a token (${ctx.authTokenSource}) and an API key '
                   '(${ctx.apiKeySource}) are set. This may lead to unexpected behavior.',
-                  style: TextStyle(fontSize: 12, color: theme.colorScheme.error),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.error,
+                  ),
                 ),
               ),
             ],
@@ -395,12 +414,18 @@ final StatusNoticeDefinition bothAuthMethodsNotice = StatusNoticeDefinition(
                 Text(
                   '\u00B7 Trying to use ${ctx.authTokenSource == "neomclaw.ai" ? "neomclaw.ai" : ctx.authTokenSource}? '
                   '${ctx.apiKeySource == "ANTHROPIC_API_KEY" ? "Unset the ANTHROPIC_API_KEY environment variable." : "neomclaw /logout"}',
-                  style: TextStyle(fontSize: 12, color: theme.colorScheme.error),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.error,
+                  ),
                 ),
                 Text(
                   '\u00B7 Trying to use ${ctx.apiKeySource}? '
                   '${ctx.authTokenSource == "neomclaw.ai" ? "neomclaw /logout to sign out of neomclaw.ai." : "Unset the ${ctx.authTokenSource} environment variable."}',
-                  style: TextStyle(fontSize: 12, color: theme.colorScheme.error),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: theme.colorScheme.error,
+                  ),
                 ),
               ],
             ),
@@ -412,7 +437,8 @@ final StatusNoticeDefinition bothAuthMethodsNotice = StatusNoticeDefinition(
 );
 
 /// Large cumulative agent descriptions.
-final StatusNoticeDefinition largeAgentDescriptionsNotice = StatusNoticeDefinition(
+final StatusNoticeDefinition
+largeAgentDescriptionsNotice = StatusNoticeDefinition(
   id: 'large-agent-descriptions',
   type: StatusNoticeType.warning,
   isActive: (ctx) =>
@@ -426,18 +452,24 @@ final StatusNoticeDefinition largeAgentDescriptionsNotice = StatusNoticeDefiniti
         const SizedBox(width: 6),
         Expanded(
           child: Text.rich(
-            TextSpan(children: [
-              TextSpan(
+            TextSpan(
+              children: [
+                TextSpan(
                   text:
                       'Large cumulative agent descriptions will impact performance '
                       '(~${_formatNumber(tokens)} tokens > '
-                      '${_formatNumber(agentDescriptionsThreshold)})'),
-              TextSpan(
+                      '${_formatNumber(agentDescriptionsThreshold)})',
+                ),
+                TextSpan(
                   text: ' \u00B7 /agents to manage',
                   style: TextStyle(
-                      color: theme.colorScheme.onSurfaceVariant
-                          .withValues(alpha: 0.6))),
-            ]),
+                    color: theme.colorScheme.onSurfaceVariant.withValues(
+                      alpha: 0.6,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             style: TextStyle(fontSize: 12, color: theme.colorScheme.error),
           ),
         ),
@@ -475,10 +507,9 @@ List<StatusProperty> buildAccountProperties({
 }) {
   final properties = <StatusProperty>[];
   if (subscription != null) {
-    properties.add(StatusProperty(
-      label: 'Login method',
-      value: '$subscription Account',
-    ));
+    properties.add(
+      StatusProperty(label: 'Login method', value: '$subscription Account'),
+    );
   }
   if (tokenSource != null) {
     properties.add(StatusProperty(label: 'Auth token', value: tokenSource));
@@ -522,16 +553,18 @@ List<StatusProperty> buildApiProviderProperties({
     properties.add(StatusProperty(label: urlLabel, value: baseUrl));
   }
   if (region != null) {
-    final regionLabel =
-        apiProvider == 'bedrock' ? 'AWS region' : 'Default region';
+    final regionLabel = apiProvider == 'bedrock'
+        ? 'AWS region'
+        : 'Default region';
     properties.add(StatusProperty(label: regionLabel, value: region));
   }
   if (gcpProject != null) {
     properties.add(StatusProperty(label: 'GCP project', value: gcpProject));
   }
   if (skipAuth) {
-    properties
-        .add(StatusProperty(value: '${apiProvider.toUpperCase()} auth skipped'));
+    properties.add(
+      StatusProperty(value: '${apiProvider.toUpperCase()} auth skipped'),
+    );
   }
   return properties;
 }
@@ -545,10 +578,9 @@ List<StatusProperty> buildModelProperties({
     StatusProperty(label: 'Model', value: modelDisplay),
   ];
   if (defaultModelDescription != null) {
-    properties.add(StatusProperty(
-      label: 'Default model',
-      value: defaultModelDescription,
-    ));
+    properties.add(
+      StatusProperty(label: 'Default model', value: defaultModelDescription),
+    );
   }
   return properties;
 }
@@ -640,8 +672,7 @@ class StatusNoticeController extends SintController {
 
   /// Refresh slow operations from the tracker.
   void refreshSlowOperations() {
-    slowOperations.value =
-        SlowOperationTracker.instance.recent(20);
+    slowOperations.value = SlowOperationTracker.instance.recent(20);
   }
 
   /// Toggle expanded state.
@@ -652,8 +683,7 @@ class StatusNoticeController extends SintController {
       activeNotices.any((n) => n.type == StatusNoticeType.warning);
 
   /// Whether there are any info notices.
-  bool get hasInfo =>
-      activeNotices.any((n) => n.type == StatusNoticeType.info);
+  bool get hasInfo => activeNotices.any((n) => n.type == StatusNoticeType.info);
 
   /// Total notice count.
   int get noticeCount => activeNotices.length;
@@ -728,33 +758,35 @@ class SlowOperationsPanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            ...ops.map((op) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 60,
-                        child: Text(
-                          '${op.durationMs.toStringAsFixed(0)}ms',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontFamily: 'monospace',
-                            color: theme.colorScheme.error,
-                          ),
+            ...ops.map(
+              (op) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 60,
+                      child: Text(
+                        '${op.durationMs.toStringAsFixed(0)}ms',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontFamily: 'monospace',
+                          color: theme.colorScheme.error,
                         ),
                       ),
-                      Expanded(
-                        child: Text(
-                          op.description,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontFamily: 'monospace',
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    ),
+                    Expanded(
+                      child: Text(
+                        op.description,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontFamily: 'monospace',
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       );

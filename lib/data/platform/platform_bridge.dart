@@ -4,15 +4,7 @@
 import 'package:neom_claw/core/platform/claw_io.dart';
 
 /// Supported platforms.
-enum ClawPlatform {
-  macOS,
-  linux,
-  windows,
-  android,
-  iOS,
-  web,
-  cli,
-}
+enum ClawPlatform { macOS, linux, windows, android, iOS, web, cli }
 
 /// Platform capabilities — what the current platform supports.
 class PlatformCapabilities {
@@ -41,50 +33,50 @@ class PlatformCapabilities {
   });
 
   factory PlatformCapabilities.desktop() => const PlatformCapabilities(
-        hasFileSystem: true,
-        hasProcessSpawn: true,
-        hasStdin: true,
-        hasClipboard: true,
-        hasNotifications: true,
-        hasWindowManagement: true,
-        hasTouchInput: false,
-        hasKeyboard: true,
-      );
+    hasFileSystem: true,
+    hasProcessSpawn: true,
+    hasStdin: true,
+    hasClipboard: true,
+    hasNotifications: true,
+    hasWindowManagement: true,
+    hasTouchInput: false,
+    hasKeyboard: true,
+  );
 
   factory PlatformCapabilities.mobile() => const PlatformCapabilities(
-        hasFileSystem: true,
-        hasProcessSpawn: false,
-        hasStdin: false,
-        hasClipboard: true,
-        hasNotifications: true,
-        hasWindowManagement: false,
-        hasTouchInput: true,
-        hasKeyboard: true,
-        hasVoiceInput: true,
-        hasBiometrics: true,
-      );
+    hasFileSystem: true,
+    hasProcessSpawn: false,
+    hasStdin: false,
+    hasClipboard: true,
+    hasNotifications: true,
+    hasWindowManagement: false,
+    hasTouchInput: true,
+    hasKeyboard: true,
+    hasVoiceInput: true,
+    hasBiometrics: true,
+  );
 
   factory PlatformCapabilities.web() => const PlatformCapabilities(
-        hasFileSystem: false,
-        hasProcessSpawn: false,
-        hasStdin: false,
-        hasClipboard: true,
-        hasNotifications: true,
-        hasWindowManagement: false,
-        hasTouchInput: false,
-        hasKeyboard: true,
-      );
+    hasFileSystem: false,
+    hasProcessSpawn: false,
+    hasStdin: false,
+    hasClipboard: true,
+    hasNotifications: true,
+    hasWindowManagement: false,
+    hasTouchInput: false,
+    hasKeyboard: true,
+  );
 
   factory PlatformCapabilities.cli() => const PlatformCapabilities(
-        hasFileSystem: true,
-        hasProcessSpawn: true,
-        hasStdin: true,
-        hasClipboard: false,
-        hasNotifications: false,
-        hasWindowManagement: false,
-        hasTouchInput: false,
-        hasKeyboard: true,
-      );
+    hasFileSystem: true,
+    hasProcessSpawn: true,
+    hasStdin: true,
+    hasClipboard: false,
+    hasNotifications: false,
+    hasWindowManagement: false,
+    hasTouchInput: false,
+    hasKeyboard: true,
+  );
 }
 
 /// Platform bridge — detects current platform and provides capabilities.
@@ -101,9 +93,9 @@ class PlatformBridge {
     required Map<String, String> environment,
     required String homeDir,
     required String configDir,
-  })  : _environment = environment,
-        _homeDir = homeDir,
-        _configDir = configDir;
+  }) : _environment = environment,
+       _homeDir = homeDir,
+       _configDir = configDir;
 
   /// Create with auto-detection.
   factory PlatformBridge.detect() {
@@ -190,8 +182,7 @@ class PlatformBridge {
   }
 
   /// Path separator for the current platform.
-  String get pathSeparator =>
-      platform == ClawPlatform.windows ? '\\' : '/';
+  String get pathSeparator => platform == ClawPlatform.windows ? '\\' : '/';
 
   /// Get platform-appropriate temp directory.
   String get tempDir => Directory.systemTemp.path;
@@ -217,8 +208,7 @@ class PlatformBridge {
     return switch (platform) {
       ClawPlatform.macOS ||
       ClawPlatform.linux ||
-      ClawPlatform.windows =>
-        PlatformCapabilities.desktop(),
+      ClawPlatform.windows => PlatformCapabilities.desktop(),
       ClawPlatform.android || ClawPlatform.iOS => PlatformCapabilities.mobile(),
       ClawPlatform.web => PlatformCapabilities.web(),
       ClawPlatform.cli => PlatformCapabilities.cli(),

@@ -1,12 +1,10 @@
-// Conversation recovery — port of openneomclaw/src/utils/conversationRecovery.ts.
+// Conversation recovery — port of neom_claw/src/utils/conversationRecovery.ts.
 // Session/conversation recovery logic: deserialization, interrupt detection,
 // skill state restoration, and full resume loading.
 
 import 'dart:async';
 
 import 'package:neom_claw/utils/messages/message_utils.dart' hide Message;
-import 'package:neom_claw/utils/session/session_storage.dart';
-import 'package:neom_claw/domain/models/logs.dart' hide SerializedMessage, LogOption;
 
 // ─── Local Type Stubs ────────────────────────────────────────────────────────
 //
@@ -35,8 +33,8 @@ class Message {
     this.isCompactSummary,
     this.attachment,
     this.permissionMode,
-  })  : uuid = uuid ?? DateTime.now().microsecondsSinceEpoch.toString(),
-        timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String();
+  }) : uuid = uuid ?? DateTime.now().microsecondsSinceEpoch.toString(),
+       timestamp = timestamp ?? DateTime.now().toUtc().toIso8601String();
 
   Message copyWith({
     MessageType? type,
@@ -48,18 +46,17 @@ class Message {
     bool? isCompactSummary,
     Attachment? attachment,
     String? permissionMode,
-  }) =>
-      Message(
-        type: type ?? this.type,
-        content: content ?? this.content,
-        uuid: uuid ?? this.uuid,
-        timestamp: timestamp ?? this.timestamp,
-        isMeta: isMeta ?? this.isMeta,
-        isApiErrorMessage: isApiErrorMessage ?? this.isApiErrorMessage,
-        isCompactSummary: isCompactSummary ?? this.isCompactSummary,
-        attachment: attachment ?? this.attachment,
-        permissionMode: permissionMode ?? this.permissionMode,
-      );
+  }) => Message(
+    type: type ?? this.type,
+    content: content ?? this.content,
+    uuid: uuid ?? this.uuid,
+    timestamp: timestamp ?? this.timestamp,
+    isMeta: isMeta ?? this.isMeta,
+    isApiErrorMessage: isApiErrorMessage ?? this.isApiErrorMessage,
+    isCompactSummary: isCompactSummary ?? this.isCompactSummary,
+    attachment: attachment ?? this.attachment,
+    permissionMode: permissionMode ?? this.permissionMode,
+  );
 }
 
 /// Alias for a user message after normalisation.
@@ -106,10 +103,7 @@ class TranscriptLoadResult {
   final Map<String, TranscriptMessage> messages;
   final Set<String> leafUuids;
 
-  const TranscriptLoadResult({
-    required this.messages,
-    required this.leafUuids,
-  });
+  const TranscriptLoadResult({required this.messages, required this.leafUuids});
 }
 
 /// Log option with loaded messages for recovery.
@@ -220,15 +214,9 @@ class TeleportRemoteResponse {
   final List<Message> log;
   final String? branch;
 
-  const TeleportRemoteResponse({
-    required this.log,
-    this.branch,
-  });
+  const TeleportRemoteResponse({required this.log, this.branch});
 
-  TeleportRemoteResponse copyWith({
-    List<Message>? log,
-    String? branch,
-  }) =>
+  TeleportRemoteResponse copyWith({List<Message>? log, String? branch}) =>
       TeleportRemoteResponse(
         log: log ?? this.log,
         branch: branch ?? this.branch,
@@ -290,10 +278,10 @@ class FileHistorySnapshot {
       );
 
   Map<String, dynamic> toJson() => {
-        'filePath': filePath,
-        'content': content,
-        'timestamp': timestamp,
-      };
+    'filePath': filePath,
+    'content': content,
+    'timestamp': timestamp,
+  };
 }
 
 /// Attribution snapshot message.
@@ -301,10 +289,7 @@ class AttributionSnapshotMessage {
   final String id;
   final Map<String, dynamic> data;
 
-  const AttributionSnapshotMessage({
-    required this.id,
-    required this.data,
-  });
+  const AttributionSnapshotMessage({required this.id, required this.data});
 
   factory AttributionSnapshotMessage.fromJson(Map<String, dynamic> json) =>
       AttributionSnapshotMessage(
@@ -312,10 +297,7 @@ class AttributionSnapshotMessage {
         data: json['data'] as Map<String, dynamic>,
       );
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'data': data,
-      };
+  Map<String, dynamic> toJson() => {'id': id, 'data': data};
 }
 
 /// Content replacement record for tool result storage.
@@ -338,10 +320,10 @@ class ContentReplacementRecord {
       );
 
   Map<String, dynamic> toJson() => {
-        'toolUseId': toolUseId,
-        'originalContent': originalContent,
-        'replacementContent': replacementContent,
-      };
+    'toolUseId': toolUseId,
+    'originalContent': originalContent,
+    'replacementContent': replacementContent,
+  };
 }
 
 /// Context collapse commit entry.
@@ -364,10 +346,10 @@ class ContextCollapseCommitEntry {
       );
 
   Map<String, dynamic> toJson() => {
-        'commitHash': commitHash,
-        'message': message,
-        'timestamp': timestamp,
-      };
+    'commitHash': commitHash,
+    'message': message,
+    'timestamp': timestamp,
+  };
 }
 
 /// Context collapse snapshot entry.
@@ -386,10 +368,7 @@ class ContextCollapseSnapshotEntry {
         timestamp: json['timestamp'] as int,
       );
 
-  Map<String, dynamic> toJson() => {
-        'content': content,
-        'timestamp': timestamp,
-      };
+  Map<String, dynamic> toJson() => {'content': content, 'timestamp': timestamp};
 }
 
 /// Persisted worktree session metadata.
@@ -412,10 +391,10 @@ class PersistedWorktreeSession {
       );
 
   Map<String, dynamic> toJson() => {
-        'worktreePath': worktreePath,
-        'branchName': branchName,
-        if (originalBranch != null) 'originalBranch': originalBranch,
-      };
+    'worktreePath': worktreePath,
+    'branchName': branchName,
+    if (originalBranch != null) 'originalBranch': originalBranch,
+  };
 }
 
 /// Session mode.
@@ -544,7 +523,8 @@ Message migrateLegacyAttachmentTypes(
 
   // Backfill displayPath for attachments from old sessions.
   if (!attachmentMap.containsKey('displayPath')) {
-    final path = attachmentMap['filename'] as String? ??
+    final path =
+        attachmentMap['filename'] as String? ??
         attachmentMap['path'] as String? ??
         attachmentMap['skillDir'] as String?;
     if (path != null) {
@@ -609,19 +589,20 @@ DeserializeResult deserializeMessagesWithInterruptDetection(
     }
 
     // Filter out unresolved tool uses and any synthetic messages that follow.
-    final filteredToolUses =
-        filterUnresolvedToolUses(migratedMessages);
+    final filteredToolUses = filterUnresolvedToolUses(migratedMessages);
 
     // Filter out orphaned thinking-only assistant messages that can cause API
     // errors during resume. These occur when streaming yields separate messages
     // per content block and interleaved user messages prevent proper merging.
-    final filteredThinking =
-        filterOrphanedThinkingOnlyMessages(filteredToolUses);
+    final filteredThinking = filterOrphanedThinkingOnlyMessages(
+      filteredToolUses,
+    );
 
     // Filter out assistant messages with only whitespace text content.
     // This can happen when model outputs "\n\n" before thinking, user cancels.
-    final filteredMessages =
-        filterWhitespaceOnlyAssistantMessages(filteredThinking);
+    final filteredMessages = filterWhitespaceOnlyAssistantMessages(
+      filteredThinking,
+    );
 
     final internalState = _detectTurnInterruption(filteredMessages);
 
@@ -636,8 +617,7 @@ DeserializeResult deserializeMessagesWithInterruptDetection(
       final normalized = normalizeMessages([continuationMessage]);
       final normalizedMsg = normalized.first;
       filteredMessages.add(normalizedMsg);
-      turnInterruptionState =
-          TurnInterruptionPrompt(message: normalizedMsg as NormalizedUserMessage);
+      turnInterruptionState = TurnInterruptionPrompt(message: normalizedMsg);
     } else {
       turnInterruptionState = internalState;
     }
@@ -686,9 +666,7 @@ int _findLastRelevantIndex(List<Message> messages) {
 /// System and progress messages are skipped when finding the last turn-relevant
 /// message -- they are bookkeeping artifacts that should not mask a genuine
 /// interruption. Attachments are kept as part of the turn.
-TurnInterruptionState _detectTurnInterruption(
-  List<Message> messages,
-) {
+TurnInterruptionState _detectTurnInterruption(List<Message> messages) {
   if (messages.isEmpty) {
     return const TurnInterruptionNone();
   }
@@ -735,9 +713,7 @@ TurnInterruptionState _detectTurnInterruption(
       return const _TurnInterruptionMidTurn();
     }
     // Plain text user prompt -- CC hadn't started responding.
-    return TurnInterruptionPrompt(
-      message: lastMessage as NormalizedUserMessage,
-    );
+    return TurnInterruptionPrompt(message: lastMessage);
   }
 
   if (lastMessage.type == MessageType.attachment) {
@@ -772,9 +748,7 @@ bool _isTerminalToolResult(
     final msgContent = msg.content;
     if (msgContent is! List) continue;
     for (final b in msgContent) {
-      if (b is Map &&
-          b['type'] == 'tool_use' &&
-          b['id'] == toolUseId) {
+      if (b is Map && b['type'] == 'tool_use' && b['id'] == toolUseId) {
         final name = b['name'] as String?;
         return name != null && kTerminalToolNames.contains(name);
       }
@@ -786,12 +760,8 @@ bool _isTerminalToolResult(
 // ─── Skill state restoration ─────────────────────────────────────────────────
 
 /// Callback type for adding an invoked skill to global state.
-typedef AddInvokedSkillCallback = void Function(
-  String name,
-  String path,
-  String content,
-  String? agentId,
-);
+typedef AddInvokedSkillCallback =
+    void Function(String name, String path, String content, String? agentId);
 
 /// Callback type for suppressing the next skill listing.
 typedef SuppressNextSkillListingCallback = void Function();
@@ -849,10 +819,7 @@ class LoadMessagesResult {
   final List<SerializedMessage> messages;
   final String? sessionId;
 
-  const LoadMessagesResult({
-    required this.messages,
-    this.sessionId,
-  });
+  const LoadMessagesResult({required this.messages, this.sessionId});
 }
 
 /// Chain-walk a transcript JSONL by path. Same sequence loadFullLog runs
@@ -912,8 +879,7 @@ Future<ConversationResumeResult?> loadConversationForResume({
   required String Function() getCwd,
   required AddInvokedSkillCallback addInvokedSkill,
   required SuppressNextSkillListingCallback suppressNextSkillListing,
-  Future<List<Message>> Function({String? sessionId})?
-      processSessionStartHooks,
+  Future<List<Message>> Function({String? sessionId})? processSessionStartHooks,
   Future<void> Function(LogOption log, String sessionId)? copyPlanForResume,
   Future<void> Function(LogOption log)? copyFileHistoryForResume,
   Future<Set<String>> Function()? listLiveSessions,
@@ -935,14 +901,11 @@ Future<ConversationResumeResult?> loadConversationForResume({
           // UDS unavailable -- treat all sessions as continuable.
         }
       }
-      log = logs.cast<LogOption?>().firstWhere(
-        (l) {
-          if (l == null) return false;
-          final id = getSessionIdFromLog(l);
-          return id == null || !skip.contains(id);
-        },
-        orElse: () => null,
-      );
+      log = logs.cast<LogOption?>().firstWhere((l) {
+        if (l == null) return false;
+        final id = getSessionIdFromLog(l);
+        return id == null || !skip.contains(id);
+      }, orElse: () => null);
     } else if (sourceJsonlFile != null) {
       // --resume with a .jsonl path.
       final loaded = await loadMessagesFromJsonlPath(sourceJsonlFile);
@@ -1004,8 +967,7 @@ Future<ConversationResumeResult?> loadConversationForResume({
 
     // Process session start hooks for resume.
     if (processSessionStartHooks != null) {
-      final hookMessages =
-          await processSessionStartHooks(sessionId: sessionId);
+      final hookMessages = await processSessionStartHooks(sessionId: sessionId);
       messages.addAll(hookMessages);
     }
 
@@ -1025,8 +987,8 @@ Future<ConversationResumeResult?> loadConversationForResume({
       tag: log?.tag,
       mode: log?.mode != null
           ? (log!.mode == 'coordinator'
-              ? SessionMode.coordinator
-              : SessionMode.normal)
+                ? SessionMode.coordinator
+                : SessionMode.normal)
           : null,
       worktreeSession: log?.worktreeSession,
       prNumber: log?.prNumber,
@@ -1141,25 +1103,13 @@ bool isToolUseResultMessage(Message message) {
 }
 
 /// Create a user message.
-Message createUserMessage({
-  required String content,
-  bool isMeta = false,
-}) {
-  return Message(
-    type: MessageType.user,
-    content: content,
-    isMeta: isMeta,
-  );
+Message createUserMessage({required String content, bool isMeta = false}) {
+  return Message(type: MessageType.user, content: content, isMeta: isMeta);
 }
 
 /// Create an assistant message.
-Message createAssistantMessage({
-  required String content,
-}) {
-  return Message(
-    type: MessageType.assistant,
-    content: content,
-  );
+Message createAssistantMessage({required String content}) {
+  return Message(type: MessageType.assistant, content: content);
 }
 
 /// Normalize messages for API consumption.

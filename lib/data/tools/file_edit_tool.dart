@@ -1,4 +1,4 @@
-// FileEditTool — faithful port of openneomclaw/src/tools/FileEditTool.
+// FileEditTool — faithful port of neom_claw/src/tools/FileEditTool.
 // Performs exact string replacements in files.
 //
 // Includes full ports of:
@@ -6,14 +6,12 @@
 //   - utils.ts: quote normalization, desanitization, patch generation,
 //     snippet extraction, edit equivalence checking
 
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 
-import '../../domain/models/permissions.dart';
 import 'tool.dart';
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -75,7 +73,10 @@ String? findActualString(String fileContent, String searchString) {
   final normalizedFile = normalizeQuotes(fileContent);
   final searchIndex = normalizedFile.indexOf(normalizedSearch);
   if (searchIndex != -1) {
-    return fileContent.substring(searchIndex, searchIndex + searchString.length);
+    return fileContent.substring(
+      searchIndex,
+      searchIndex + searchString.length,
+    );
   }
   return null;
 }
@@ -88,9 +89,11 @@ String preserveQuoteStyle(
   String newString,
 ) {
   if (oldString == actualOldString) return newString;
-  final hasDouble = actualOldString.contains(leftDoubleCurlyQuote) ||
+  final hasDouble =
+      actualOldString.contains(leftDoubleCurlyQuote) ||
       actualOldString.contains(rightDoubleCurlyQuote);
-  final hasSingle = actualOldString.contains(leftSingleCurlyQuote) ||
+  final hasSingle =
+      actualOldString.contains(leftSingleCurlyQuote) ||
       actualOldString.contains(rightSingleCurlyQuote);
   if (!hasDouble && !hasSingle) return newString;
   var result = newString;
@@ -118,9 +121,11 @@ String _applyCurlyDoubleQuotes(String str) {
   final result = <String>[];
   for (var i = 0; i < chars.length; i++) {
     if (chars[i] == '"') {
-      result.add(_isOpeningContext(chars, i)
-          ? leftDoubleCurlyQuote
-          : rightDoubleCurlyQuote);
+      result.add(
+        _isOpeningContext(chars, i)
+            ? leftDoubleCurlyQuote
+            : rightDoubleCurlyQuote,
+      );
     } else {
       result.add(chars[i]);
     }
@@ -141,9 +146,11 @@ String _applyCurlySingleQuotes(String str) {
       if (prevIsLetter && nextIsLetter) {
         result.add(rightSingleCurlyQuote);
       } else {
-        result.add(_isOpeningContext(chars, i)
-            ? leftSingleCurlyQuote
-            : rightSingleCurlyQuote);
+        result.add(
+          _isOpeningContext(chars, i)
+              ? leftSingleCurlyQuote
+              : rightSingleCurlyQuote,
+        );
       }
     } else {
       result.add(chars[i]);
@@ -305,10 +312,15 @@ NormalizedEditInput normalizeFileEditInput(
   String filePath,
   List<FileEdit> edits,
 ) {
-  if (edits.isEmpty) return NormalizedEditInput(filePath: filePath, edits: edits);
+  if (edits.isEmpty) {
+    return NormalizedEditInput(filePath: filePath, edits: edits);
+  }
 
   // Markdown uses two trailing spaces as a hard line break
-  final isMarkdown = RegExp(r'\.(md|mdx)$', caseSensitive: false).hasMatch(filePath);
+  final isMarkdown = RegExp(
+    r'\.(md|mdx)$',
+    caseSensitive: false,
+  ).hasMatch(filePath);
 
   try {
     final file = File(filePath);
@@ -318,8 +330,9 @@ NormalizedEditInput normalizeFileEditInput(
     final fileContent = file.readAsStringSync();
 
     final normalizedEdits = edits.map((edit) {
-      final normalizedNewString =
-          isMarkdown ? edit.newString : stripTrailingWhitespace(edit.newString);
+      final normalizedNewString = isMarkdown
+          ? edit.newString
+          : stripTrailingWhitespace(edit.newString);
 
       // If exact string match works, keep it as is
       if (fileContent.contains(edit.oldString)) {
@@ -459,8 +472,11 @@ SnippetResult getSnippet(
 }) {
   final before = originalFile.split(oldString)[0];
   final replacementLine = '\n'.allMatches(before).length;
-  final newFileLines =
-      applyEditToFile(originalFile, oldString, newString).split(RegExp(r'\r?\n'));
+  final newFileLines = applyEditToFile(
+    originalFile,
+    oldString,
+    newString,
+  ).split(RegExp(r'\r?\n'));
 
   final startLine = max(0, replacementLine - contextLines);
   final endLine =
@@ -559,14 +575,14 @@ class FileEditOutput {
   });
 
   Map<String, dynamic> toMetadata() => {
-        'success': success,
-        'filePath': filePath,
-        'linesChanged': linesChanged,
-        'replaceAll': replaceAll,
-        'userModified': userModified,
-        if (backupPath != null) 'backupPath': backupPath,
-        'occurrencesReplaced': occurrencesReplaced,
-      };
+    'success': success,
+    'filePath': filePath,
+    'linesChanged': linesChanged,
+    'replaceAll': replaceAll,
+    'userModified': userModified,
+    if (backupPath != null) 'backupPath': backupPath,
+    'occurrencesReplaced': occurrencesReplaced,
+  };
 }
 
 /// Encoding detection result.
@@ -680,7 +696,7 @@ String formatFileSize(int bytes) {
 // ── Main FileEditTool ──────────────────────────────────────────────────
 
 /// Edit file with exact string replacement -- full port of
-/// openneomclaw FileEditTool.
+/// neom_claw FileEditTool.
 ///
 /// Features:
 /// - Exact string replacement (oldString -> newString)
@@ -725,32 +741,30 @@ class FileEditTool extends Tool with FileWriteToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'file_path': {
-            'type': 'string',
-            'description': 'The absolute path to the file to modify',
-          },
-          'old_string': {
-            'type': 'string',
-            'description': 'The text to replace',
-          },
-          'new_string': {
-            'type': 'string',
-            'description':
-                'The text to replace it with (must be different from old_string)',
-          },
-          'replace_all': {
-            'default': false,
-            'type': 'boolean',
-            'description': 'Replace all occurrences of old_string (default false)',
-          },
-        },
-        'required': ['file_path', 'old_string', 'new_string'],
-      };
+    'type': 'object',
+    'properties': {
+      'file_path': {
+        'type': 'string',
+        'description': 'The absolute path to the file to modify',
+      },
+      'old_string': {'type': 'string', 'description': 'The text to replace'},
+      'new_string': {
+        'type': 'string',
+        'description':
+            'The text to replace it with (must be different from old_string)',
+      },
+      'replace_all': {
+        'default': false,
+        'type': 'boolean',
+        'description': 'Replace all occurrences of old_string (default false)',
+      },
+    },
+    'required': ['file_path', 'old_string', 'new_string'],
+  };
 
   @override
-  bool get isAvailable => Platform.isMacOS || Platform.isLinux || Platform.isWindows;
+  bool get isAvailable =>
+      Platform.isMacOS || Platform.isLinux || Platform.isWindows;
 
   @override
   String get userFacingName => 'Edit';
@@ -787,7 +801,9 @@ class FileEditTool extends Tool with FileWriteToolMixin {
       return ToolResult.error('Missing required parameter: file_path');
     }
     if (!p.isAbsolute(filePath)) {
-      return ToolResult.error('file_path must be an absolute path, got: $filePath');
+      return ToolResult.error(
+        'file_path must be an absolute path, got: $filePath',
+      );
     }
     if (oldString == null) {
       return ToolResult.error('Missing required parameter: old_string');
@@ -832,7 +848,12 @@ class FileEditTool extends Tool with FileWriteToolMixin {
         try {
           final dir = Directory(p.dirname(absoluteFilePath));
           if (!dir.existsSync()) dir.createSync(recursive: true);
-          writeTextContent(absoluteFilePath, newString, 'utf-8', LineEndingType.lf);
+          writeTextContent(
+            absoluteFilePath,
+            newString,
+            'utf-8',
+            LineEndingType.lf,
+          );
           return ToolResult.success(
             'The file $filePath has been created successfully.',
           );
@@ -849,11 +870,18 @@ class FileEditTool extends Tool with FileWriteToolMixin {
     // File exists with empty old_string -- only valid if file is empty
     if (oldString.isEmpty) {
       if (meta.content.trim().isNotEmpty) {
-        return ToolResult.error('Cannot create new file - file already exists.');
+        return ToolResult.error(
+          'Cannot create new file - file already exists.',
+        );
       }
       // Empty file with empty old_string is valid
       try {
-        writeTextContent(absoluteFilePath, newString, meta.encoding, meta.lineEndings);
+        writeTextContent(
+          absoluteFilePath,
+          newString,
+          meta.encoding,
+          meta.lineEndings,
+        );
         return ToolResult.success(
           'The file $filePath has been updated successfully.',
         );
@@ -871,7 +899,8 @@ class FileEditTool extends Tool with FileWriteToolMixin {
 
     try {
       // Use findActualString for quote normalization
-      final actualOldString = findActualString(meta.content, oldString) ?? oldString;
+      final actualOldString =
+          findActualString(meta.content, oldString) ?? oldString;
 
       // Check if old_string exists
       if (!meta.content.contains(actualOldString)) {
@@ -890,7 +919,11 @@ class FileEditTool extends Tool with FileWriteToolMixin {
       }
 
       // Preserve curly quotes in new_string
-      final actualNewString = preserveQuoteStyle(oldString, actualOldString, newString);
+      final actualNewString = preserveQuoteStyle(
+        oldString,
+        actualOldString,
+        newString,
+      );
 
       // Apply the edit
       final updatedFile = replaceAll
@@ -902,7 +935,12 @@ class FileEditTool extends Tool with FileWriteToolMixin {
       if (!dir.existsSync()) dir.createSync(recursive: true);
 
       // Write to disk
-      writeTextContent(absoluteFilePath, updatedFile, meta.encoding, meta.lineEndings);
+      writeTextContent(
+        absoluteFilePath,
+        updatedFile,
+        meta.encoding,
+        meta.lineEndings,
+      );
 
       // Build diff
       final diff = _buildDiff(meta.content, updatedFile, filePath);
@@ -931,7 +969,10 @@ class FileEditTool extends Tool with FileWriteToolMixin {
         resultBuf.write(' All occurrences were successfully replaced.');
       }
 
-      return ToolResult.success(resultBuf.toString(), metadata: output.toMetadata());
+      return ToolResult.success(
+        resultBuf.toString(),
+        metadata: output.toMetadata(),
+      );
     } catch (e) {
       return ToolResult.error('Error editing file: $e');
     }
@@ -953,11 +994,15 @@ class FileEditTool extends Tool with FileWriteToolMixin {
       buf.writeln('Hint: old_string uses spaces but the file may use tabs.');
     }
     if (content.toLowerCase().contains(oldString.toLowerCase())) {
-      buf.writeln('Hint: A case-insensitive match was found. Check capitalization.');
+      buf.writeln(
+        'Hint: A case-insensitive match was found. Check capitalization.',
+      );
     }
     final trimmed = oldString.trim();
     if (trimmed != oldString && content.contains(trimmed)) {
-      buf.writeln('Hint: Match found when ignoring leading/trailing whitespace.');
+      buf.writeln(
+        'Hint: Match found when ignoring leading/trailing whitespace.',
+      );
     }
 
     buf.writeln('String: $oldString');
@@ -1017,7 +1062,9 @@ class FileEditTool extends Tool with FileWriteToolMixin {
   String _expandPath(String path) {
     if (path.startsWith('~/') || path == '~') {
       final home =
-          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
+          Platform.environment['HOME'] ??
+          Platform.environment['USERPROFILE'] ??
+          '';
       return p.join(home, path.substring(path.startsWith('~/') ? 2 : 1));
     }
     if (!p.isAbsolute(path)) return p.join(Directory.current.path, path);

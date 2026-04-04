@@ -26,10 +26,7 @@ class HeatmapOptions {
   final int terminalWidth;
   final bool showMonthLabels;
 
-  const HeatmapOptions({
-    this.terminalWidth = 80,
-    this.showMonthLabels = true,
-  });
+  const HeatmapOptions({this.terminalWidth = 80, this.showMonthLabels = true});
 }
 
 /// Daily activity data point.
@@ -37,10 +34,7 @@ class DailyActivity {
   final String date;
   final int messageCount;
 
-  const DailyActivity({
-    required this.date,
-    required this.messageCount,
-  });
+  const DailyActivity({required this.date, required this.messageCount});
 }
 
 /// Pre-calculated percentile thresholds.
@@ -49,11 +43,7 @@ class _Percentiles {
   final int p50;
   final int p75;
 
-  const _Percentiles({
-    required this.p25,
-    required this.p50,
-    required this.p75,
-  });
+  const _Percentiles({required this.p25, required this.p50, required this.p75});
 }
 
 // ---------------------------------------------------------------------------
@@ -77,11 +67,9 @@ String _gray(String text) {
 
 /// Pre-calculates percentiles from activity data for intensity calculations.
 _Percentiles? _calculatePercentiles(List<DailyActivity> dailyActivity) {
-  final counts = dailyActivity
-      .map((a) => a.messageCount)
-      .where((c) => c > 0)
-      .toList()
-    ..sort();
+  final counts =
+      dailyActivity.map((a) => a.messageCount).where((c) => c > 0).toList()
+        ..sort();
 
   if (counts.isEmpty) return null;
 
@@ -156,12 +144,12 @@ String generateHeatmap(
   final todayDate = DateTime(today.year, today.month, today.day);
 
   // Find the Sunday of the current week
-  final currentWeekStart =
-      todayDate.subtract(Duration(days: todayDate.weekday % 7));
+  final currentWeekStart = todayDate.subtract(
+    Duration(days: todayDate.weekday % 7),
+  );
 
   // Go back (width - 1) weeks from the current week start
-  final startDate =
-      currentWeekStart.subtract(Duration(days: (width - 1) * 7));
+  final startDate = currentWeekStart.subtract(Duration(days: (width - 1) * 7));
 
   // Generate grid (7 rows for days of week, width columns for weeks)
   final grid = List.generate(7, (_) => List.filled(width, ''));
@@ -203,13 +191,22 @@ String generateHeatmap(
   // Month labels
   if (showMonthLabels) {
     const monthNames = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
 
     final uniqueMonths = monthStarts.map((m) => m.month).toList();
-    final labelWidth =
-        (width / max(uniqueMonths.length, 1)).floor();
+    final labelWidth = (width / max(uniqueMonths.length, 1)).floor();
     final monthLabels = uniqueMonths
         .map((month) => monthNames[month - 1].padRight(labelWidth))
         .join('');
@@ -222,8 +219,7 @@ String generateHeatmap(
 
   // Grid
   for (int day = 0; day < 7; day++) {
-    final label =
-        [1, 3, 5].contains(day) ? dayLabels[day].padRight(3) : '   ';
+    final label = [1, 3, 5].contains(day) ? dayLabels[day].padRight(3) : '   ';
     final row = '$label ${grid[day].join('')}';
     lines.add(row);
   }
@@ -327,10 +323,30 @@ class PlanController extends SintController {
 
   static String _defaultWordSlug() {
     const words = [
-      'alpha', 'beta', 'gamma', 'delta', 'echo', 'foxtrot',
-      'golf', 'hotel', 'india', 'juliet', 'kilo', 'lima',
-      'mike', 'november', 'oscar', 'papa', 'quebec', 'romeo',
-      'sierra', 'tango', 'uniform', 'victor', 'whiskey', 'xray',
+      'alpha',
+      'beta',
+      'gamma',
+      'delta',
+      'echo',
+      'foxtrot',
+      'golf',
+      'hotel',
+      'india',
+      'juliet',
+      'kilo',
+      'lima',
+      'mike',
+      'november',
+      'oscar',
+      'papa',
+      'quebec',
+      'romeo',
+      'sierra',
+      'tango',
+      'uniform',
+      'victor',
+      'whiskey',
+      'xray',
     ];
     final random = Random();
     return '${words[random.nextInt(words.length)]}-'
@@ -349,7 +365,7 @@ class PlanController extends SintController {
       }
       _planSlugCache[sessionId] = slug!;
     }
-    return slug!;
+    return slug;
   }
 
   /// Set a specific plan slug for a session (used when resuming).
@@ -371,10 +387,7 @@ class PlanController extends SintController {
   ///
   /// For main conversation (no agentId), returns {planSlug}.md.
   /// For subagents (agentId provided), returns {planSlug}-agent-{agentId}.md.
-  String getPlanFilePath({
-    required String sessionId,
-    String? agentId,
-  }) {
+  String getPlanFilePath({required String sessionId, String? agentId}) {
     final planSlug = getPlanSlug(sessionId);
     if (agentId == null) {
       return '$plansDirectory/$planSlug.md';
@@ -383,14 +396,8 @@ class PlanController extends SintController {
   }
 
   /// Get the plan content for a session.
-  String? getPlan({
-    required String sessionId,
-    String? agentId,
-  }) {
-    final filePath = getPlanFilePath(
-      sessionId: sessionId,
-      agentId: agentId,
-    );
+  String? getPlan({required String sessionId, String? agentId}) {
+    final filePath = getPlanFilePath(sessionId: sessionId, agentId: agentId);
     try {
       return File(filePath).readAsStringSync();
     } on FileSystemException {
@@ -426,7 +433,7 @@ class PlanController extends SintController {
     try {
       await File(planPath).readAsString();
       return true;
-    } on FileSystemException catch (e) {
+    } on FileSystemException {
       if (!isRemoteSession) return false;
 
       // Try file snapshot first
@@ -524,9 +531,9 @@ class PlanController extends SintController {
           msg.subtype == 'file_snapshot' &&
           msg.snapshotFiles != null) {
         return msg.snapshotFiles!.cast<FileSnapshotEntry?>().firstWhere(
-              (f) => f?.key == key,
-              orElse: () => null,
-            );
+          (f) => f?.key == key,
+          orElse: () => null,
+        );
       }
     }
     return null;
@@ -593,38 +600,113 @@ class _McpPattern {
 }
 
 final List<_McpPattern> _mcpServerPatterns = [
-  _McpPattern(RegExp(r'^sourcegraph$', caseSensitive: false), CodeIndexingTool.sourcegraph),
+  _McpPattern(
+    RegExp(r'^sourcegraph$', caseSensitive: false),
+    CodeIndexingTool.sourcegraph,
+  ),
   _McpPattern(RegExp(r'^cody$', caseSensitive: false), CodeIndexingTool.cody),
-  _McpPattern(RegExp(r'^openctx$', caseSensitive: false), CodeIndexingTool.openctx),
+  _McpPattern(
+    RegExp(r'^openctx$', caseSensitive: false),
+    CodeIndexingTool.openctx,
+  ),
   _McpPattern(RegExp(r'^aider$', caseSensitive: false), CodeIndexingTool.aider),
-  _McpPattern(RegExp(r'^continue$', caseSensitive: false), CodeIndexingTool.continueAi),
-  _McpPattern(RegExp(r'^github[-_]?copilot$', caseSensitive: false), CodeIndexingTool.githubCopilot),
-  _McpPattern(RegExp(r'^copilot$', caseSensitive: false), CodeIndexingTool.githubCopilot),
-  _McpPattern(RegExp(r'^cursor$', caseSensitive: false), CodeIndexingTool.cursor),
+  _McpPattern(
+    RegExp(r'^continue$', caseSensitive: false),
+    CodeIndexingTool.continueAi,
+  ),
+  _McpPattern(
+    RegExp(r'^github[-_]?copilot$', caseSensitive: false),
+    CodeIndexingTool.githubCopilot,
+  ),
+  _McpPattern(
+    RegExp(r'^copilot$', caseSensitive: false),
+    CodeIndexingTool.githubCopilot,
+  ),
+  _McpPattern(
+    RegExp(r'^cursor$', caseSensitive: false),
+    CodeIndexingTool.cursor,
+  ),
   _McpPattern(RegExp(r'^tabby$', caseSensitive: false), CodeIndexingTool.tabby),
-  _McpPattern(RegExp(r'^codeium$', caseSensitive: false), CodeIndexingTool.codeium),
-  _McpPattern(RegExp(r'^tabnine$', caseSensitive: false), CodeIndexingTool.tabnine),
-  _McpPattern(RegExp(r'^augment[-_]?code$', caseSensitive: false), CodeIndexingTool.augment),
-  _McpPattern(RegExp(r'^augment$', caseSensitive: false), CodeIndexingTool.augment),
-  _McpPattern(RegExp(r'^windsurf$', caseSensitive: false), CodeIndexingTool.windsurf),
+  _McpPattern(
+    RegExp(r'^codeium$', caseSensitive: false),
+    CodeIndexingTool.codeium,
+  ),
+  _McpPattern(
+    RegExp(r'^tabnine$', caseSensitive: false),
+    CodeIndexingTool.tabnine,
+  ),
+  _McpPattern(
+    RegExp(r'^augment[-_]?code$', caseSensitive: false),
+    CodeIndexingTool.augment,
+  ),
+  _McpPattern(
+    RegExp(r'^augment$', caseSensitive: false),
+    CodeIndexingTool.augment,
+  ),
+  _McpPattern(
+    RegExp(r'^windsurf$', caseSensitive: false),
+    CodeIndexingTool.windsurf,
+  ),
   _McpPattern(RegExp(r'^aide$', caseSensitive: false), CodeIndexingTool.aide),
-  _McpPattern(RegExp(r'^codestory$', caseSensitive: false), CodeIndexingTool.aide),
-  _McpPattern(RegExp(r'^pieces$', caseSensitive: false), CodeIndexingTool.pieces),
+  _McpPattern(
+    RegExp(r'^codestory$', caseSensitive: false),
+    CodeIndexingTool.aide,
+  ),
+  _McpPattern(
+    RegExp(r'^pieces$', caseSensitive: false),
+    CodeIndexingTool.pieces,
+  ),
   _McpPattern(RegExp(r'^qodo$', caseSensitive: false), CodeIndexingTool.qodo),
-  _McpPattern(RegExp(r'^amazon[-_]?q$', caseSensitive: false), CodeIndexingTool.amazonQ),
-  _McpPattern(RegExp(r'^gemini[-_]?code[-_]?assist$', caseSensitive: false), CodeIndexingTool.gemini),
-  _McpPattern(RegExp(r'^gemini$', caseSensitive: false), CodeIndexingTool.gemini),
+  _McpPattern(
+    RegExp(r'^amazon[-_]?q$', caseSensitive: false),
+    CodeIndexingTool.amazonQ,
+  ),
+  _McpPattern(
+    RegExp(r'^gemini[-_]?code[-_]?assist$', caseSensitive: false),
+    CodeIndexingTool.gemini,
+  ),
+  _McpPattern(
+    RegExp(r'^gemini$', caseSensitive: false),
+    CodeIndexingTool.gemini,
+  ),
   _McpPattern(RegExp(r'^hound$', caseSensitive: false), CodeIndexingTool.hound),
-  _McpPattern(RegExp(r'^seagoat$', caseSensitive: false), CodeIndexingTool.seagoat),
+  _McpPattern(
+    RegExp(r'^seagoat$', caseSensitive: false),
+    CodeIndexingTool.seagoat,
+  ),
   _McpPattern(RegExp(r'^bloop$', caseSensitive: false), CodeIndexingTool.bloop),
-  _McpPattern(RegExp(r'^gitloop$', caseSensitive: false), CodeIndexingTool.gitloop),
-  _McpPattern(RegExp(r'^claude[-_]?context$', caseSensitive: false), CodeIndexingTool.neomClawContext),
-  _McpPattern(RegExp(r'^code[-_]?index[-_]?mcp$', caseSensitive: false), CodeIndexingTool.codeIndexMcp),
-  _McpPattern(RegExp(r'^code[-_]?index$', caseSensitive: false), CodeIndexingTool.codeIndexMcp),
-  _McpPattern(RegExp(r'^local[-_]?code[-_]?search$', caseSensitive: false), CodeIndexingTool.localCodeSearch),
-  _McpPattern(RegExp(r'^codebase$', caseSensitive: false), CodeIndexingTool.autodevCodebase),
-  _McpPattern(RegExp(r'^autodev[-_]?codebase$', caseSensitive: false), CodeIndexingTool.autodevCodebase),
-  _McpPattern(RegExp(r'^code[-_]?context$', caseSensitive: false), CodeIndexingTool.neomClawContext),
+  _McpPattern(
+    RegExp(r'^gitloop$', caseSensitive: false),
+    CodeIndexingTool.gitloop,
+  ),
+  _McpPattern(
+    RegExp(r'^claude[-_]?context$', caseSensitive: false),
+    CodeIndexingTool.neomClawContext,
+  ),
+  _McpPattern(
+    RegExp(r'^code[-_]?index[-_]?mcp$', caseSensitive: false),
+    CodeIndexingTool.codeIndexMcp,
+  ),
+  _McpPattern(
+    RegExp(r'^code[-_]?index$', caseSensitive: false),
+    CodeIndexingTool.codeIndexMcp,
+  ),
+  _McpPattern(
+    RegExp(r'^local[-_]?code[-_]?search$', caseSensitive: false),
+    CodeIndexingTool.localCodeSearch,
+  ),
+  _McpPattern(
+    RegExp(r'^codebase$', caseSensitive: false),
+    CodeIndexingTool.autodevCodebase,
+  ),
+  _McpPattern(
+    RegExp(r'^autodev[-_]?codebase$', caseSensitive: false),
+    CodeIndexingTool.autodevCodebase,
+  ),
+  _McpPattern(
+    RegExp(r'^code[-_]?context$', caseSensitive: false),
+    CodeIndexingTool.neomClawContext,
+  ),
 ];
 
 /// Detects if a bash command is using a code indexing CLI tool.
@@ -829,8 +911,15 @@ String toolUseSearchText(dynamic input) {
 
   // Primary argument fields
   for (final k in [
-    'command', 'pattern', 'file_path', 'path', 'prompt',
-    'description', 'query', 'url', 'skill',
+    'command',
+    'pattern',
+    'file_path',
+    'path',
+    'prompt',
+    'description',
+    'query',
+    'url',
+    'skill',
   ]) {
     final v = input[k];
     if (v is String) parts.add(v);

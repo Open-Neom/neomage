@@ -78,7 +78,9 @@ String truncateLines(String text, int maxLines, {String suffix = '\n...'}) {
 
 /// Wrap text in an XML tag.
 String xmlTag(String tag, String content, {Map<String, String>? attrs}) {
-  final attrStr = attrs?.entries.map((e) => ' ${e.key}="${escapeXml(e.value)}"').join('') ?? '';
+  final attrStr =
+      attrs?.entries.map((e) => ' ${e.key}="${escapeXml(e.value)}"').join('') ??
+      '';
   return '<$tag$attrStr>\n$content\n</$tag>';
 }
 
@@ -98,8 +100,7 @@ String? parseXmlTag(String text, String tag) {
 String base64Encode(String text) => base64.encode(utf8.encode(text));
 
 /// Base64 decode string.
-String base64Decode(String encoded) =>
-    utf8.decode(base64.decode(encoded));
+String base64Decode(String encoded) => utf8.decode(base64.decode(encoded));
 
 /// Sanitize a filename (remove unsafe characters).
 String sanitizeFilename(String name) {
@@ -142,8 +143,10 @@ int simpleHash(String text) {
 /// Check if text likely contains markdown syntax.
 bool containsMarkdown(String text) {
   if (text.length > 500) {
-    return RegExp(r'[*_`#\[>\-|~]|^\d+\.', multiLine: true)
-        .hasMatch(text.substring(0, 500));
+    return RegExp(
+      r'[*_`#\[>\-|~]|^\d+\.',
+      multiLine: true,
+    ).hasMatch(text.substring(0, 500));
   }
   return RegExp(r'[*_`#\[>\-|~]|^\d+\.', multiLine: true).hasMatch(text);
 }

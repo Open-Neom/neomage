@@ -1,4 +1,4 @@
-// Cleanup manager — port of openneomclaw cleanup.ts + gracefulShutdown.ts +
+// Cleanup manager — port of neom_claw cleanup.ts + gracefulShutdown.ts +
 // backgroundHousekeeping.ts.
 // Session/file cleanup, graceful shutdown coordination, and background
 // housekeeping operations.
@@ -169,8 +169,11 @@ Future<CleanupResult> cleanupOldMessageFiles() async {
   final errorPath = _getErrorsDir();
   final baseCachePath = _getBaseLogsDir();
 
-  var result =
-      await _cleanupOldFilesInDirectory(errorPath, cutoffDate, isMessagePath: false);
+  var result = await _cleanupOldFilesInDirectory(
+    errorPath,
+    cutoffDate,
+    isMessagePath: false,
+  );
 
   // Clean up MCP logs.
   try {
@@ -178,10 +181,15 @@ Future<CleanupResult> cleanupOldMessageFiles() async {
     if (!await baseDir.exists()) return result;
 
     await for (final entity in baseDir.list()) {
-      if (entity is Directory && p.basename(entity.path).startsWith('mcp-logs-')) {
-        result = result +
-            await _cleanupOldFilesInDirectory(entity.path, cutoffDate,
-                isMessagePath: true);
+      if (entity is Directory &&
+          p.basename(entity.path).startsWith('mcp-logs-')) {
+        result =
+            result +
+            await _cleanupOldFilesInDirectory(
+              entity.path,
+              cutoffDate,
+              isMessagePath: true,
+            );
         await _tryRmdir(entity.path);
       }
     }
@@ -370,23 +378,25 @@ Future<CleanupResult> cleanupOldFileHistoryBackups() async {
 
     final sessionDirs = dirents.whereType<Directory>().toList();
 
-    await Future.wait(sessionDirs.map((sessionDir) async {
-      try {
-        final stat = await FileStat.stat(sessionDir.path);
-        if (stat.modified.isBefore(cutoffDate)) {
-          await sessionDir.delete(recursive: true);
+    await Future.wait(
+      sessionDirs.map((sessionDir) async {
+        try {
+          final stat = await FileStat.stat(sessionDir.path);
+          if (stat.modified.isBefore(cutoffDate)) {
+            await sessionDir.delete(recursive: true);
+            result = CleanupResult(
+              messages: result.messages + 1,
+              errors: result.errors,
+            );
+          }
+        } catch (_) {
           result = CleanupResult(
-            messages: result.messages + 1,
-            errors: result.errors,
+            messages: result.messages,
+            errors: result.errors + 1,
           );
         }
-      } catch (_) {
-        result = CleanupResult(
-          messages: result.messages,
-          errors: result.errors + 1,
-        );
-      }
-    }));
+      }),
+    );
 
     await _tryRmdir(fileHistoryDir);
   } catch (_) {}
@@ -495,21 +505,14 @@ Future<void> cleanupOldMessageFilesInBackground() async {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Exit reason enumeration.
-enum ExitReason {
-  userRequest,
-  signal,
-  error,
-  other,
-}
+enum ExitReason { userRequest, signal, error, other }
 
 /// Callback type for cleanup functions registered at shutdown.
 typedef CleanupCallback = Future<void> Function();
 
 /// Callback type for session-end hooks.
-typedef SessionEndHooksFn = Future<void> Function(
-  ExitReason reason, {
-  int? timeoutMs,
-});
+typedef SessionEndHooksFn =
+    Future<void> Function(ExitReason reason, {int? timeoutMs});
 
 /// Callback type for analytics shutdown.
 typedef AnalyticsShutdownFn = Future<void> Function();
@@ -660,7 +663,8 @@ Future<void> gracefulShutdown({
   const sessionEndTimeoutMs = 1500;
 
   // Failsafe: guarantee process exits even if cleanup hangs.
-  final failsafeBudget = const Duration(milliseconds: 5000).inMilliseconds >
+  final failsafeBudget =
+      const Duration(milliseconds: 5000).inMilliseconds >
           sessionEndTimeoutMs + 3500
       ? const Duration(milliseconds: 5000)
       : Duration(milliseconds: sessionEndTimeoutMs + 3500);
@@ -740,7 +744,8 @@ void startBackgroundHousekeeping() {
   Future<void> runVerySlowOps() async {
     // If the user did something in the last minute, defer.
     if (_getIsInteractive() &&
-        _getLastInteractionTime() > DateTime.now().millisecondsSinceEpoch - 60000) {
+        _getLastInteractionTime() >
+            DateTime.now().millisecondsSinceEpoch - 60000) {
       Timer(_delayVerySlowOps, () {
         runVerySlowOps();
       });
@@ -754,7 +759,8 @@ void startBackgroundHousekeeping() {
 
     // If the user did something in the last minute, defer.
     if (_getIsInteractive() &&
-        _getLastInteractionTime() > DateTime.now().millisecondsSinceEpoch - 60000) {
+        _getLastInteractionTime() >
+            DateTime.now().millisecondsSinceEpoch - 60000) {
       Timer(_delayVerySlowOps, () {
         runVerySlowOps();
       });
@@ -859,10 +865,9 @@ void _logDiag(String level, String event, [Map<String, dynamic>? data]) {
   };
 
   try {
-    File(logFile).writeAsStringSync(
-      '${_jsonEncode(entry)}\n',
-      mode: FileMode.append,
-    );
+    File(
+      logFile,
+    ).writeAsStringSync('${_jsonEncode(entry)}\n', mode: FileMode.append);
   } catch (_) {}
 }
 
@@ -900,6 +905,7 @@ class _RealJsonEncoder {
   void writeTo(Object? value, StringBuffer sink) {
     sink.write(_encode(value));
   }
+
   static String _encode(Object? value) {
     if (value == null) return 'null';
     if (value is bool) return value.toString();
@@ -909,12 +915,14 @@ class _RealJsonEncoder {
       return '[${value.map(_encode).join(',')}]';
     }
     if (value is Map) {
-      final entries = value.entries
-          .map((e) => '"${_escapeString(e.key.toString())}":${_encode(e.value)}');
+      final entries = value.entries.map(
+        (e) => '"${_escapeString(e.key.toString())}":${_encode(e.value)}',
+      );
       return '{${entries.join(',')}}';
     }
     return '"${_escapeString(value.toString())}"';
   }
+
   static String _escapeString(String s) {
     return s
         .replaceAll('\\', '\\\\')

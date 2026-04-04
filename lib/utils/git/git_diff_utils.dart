@@ -1,4 +1,4 @@
-// Port of openneomclaw gitDiff.ts + git.ts + ghPrStatus.ts + detectRepository.ts
+// Port of neom_claw gitDiff.ts + git.ts + ghPrStatus.ts + detectRepository.ts
 //
 // Git operations, diff parsing, repository detection, and PR status utilities
 // for the neom_claw package.
@@ -74,10 +74,7 @@ class GitDiffResult {
 
 /// Result from parseGitNumstat.
 class NumstatResult {
-  const NumstatResult({
-    required this.stats,
-    required this.perFileStats,
-  });
+  const NumstatResult({required this.stats, required this.perFileStats});
 
   final GitDiffStats stats;
   final Map<String, PerFileStats> perFileStats;
@@ -105,7 +102,14 @@ class ToolUseDiff {
 }
 
 /// PR review state.
-enum PrReviewState { approved, pending, changesRequested, draft, merged, closed }
+enum PrReviewState {
+  approved,
+  pending,
+  changesRequested,
+  draft,
+  merged,
+  closed,
+}
 
 /// Pull request status.
 class PrStatus {
@@ -135,10 +139,7 @@ class ParsedRepository {
 
 /// Git file status (tracked vs untracked).
 class GitFileStatus {
-  const GitFileStatus({
-    required this.tracked,
-    required this.untracked,
-  });
+  const GitFileStatus({required this.tracked, required this.untracked});
 
   final List<String> tracked;
   final List<String> untracked;
@@ -264,26 +265,31 @@ String resolveCanonicalGitRoot(String gitRoot) {
     final gitContent = gitFile.readAsStringSync().trim();
     if (!gitContent.startsWith('gitdir:')) return gitRoot;
 
-    final worktreeGitDir =
-        p.normalize(p.join(gitRoot, gitContent.substring('gitdir:'.length).trim()));
+    final worktreeGitDir = p.normalize(
+      p.join(gitRoot, gitContent.substring('gitdir:'.length).trim()),
+    );
 
     final commondirFile = File(p.join(worktreeGitDir, 'commondir'));
-    final commonDir =
-        p.normalize(p.join(worktreeGitDir, commondirFile.readAsStringSync().trim()));
+    final commonDir = p.normalize(
+      p.join(worktreeGitDir, commondirFile.readAsStringSync().trim()),
+    );
 
     // Validate structure matches git worktree add
-    if (p.normalize(p.dirname(worktreeGitDir)) != p.join(commonDir, 'worktrees')) {
+    if (p.normalize(p.dirname(worktreeGitDir)) !=
+        p.join(commonDir, 'worktrees')) {
       return gitRoot;
     }
 
     // Validate back-link
     try {
-      final backlink = File(p.join(worktreeGitDir, 'gitdir'))
-          .readAsStringSync()
-          .trim();
+      final backlink = File(
+        p.join(worktreeGitDir, 'gitdir'),
+      ).readAsStringSync().trim();
       final resolvedBacklink = File(backlink).resolveSymbolicLinksSync();
-      final resolvedGitRoot =
-          p.join(Directory(gitRoot).resolveSymbolicLinksSync(), '.git');
+      final resolvedGitRoot = p.join(
+        Directory(gitRoot).resolveSymbolicLinksSync(),
+        '.git',
+      );
       if (resolvedBacklink != resolvedGitRoot) return gitRoot;
     } catch (_) {
       return gitRoot;
@@ -331,10 +337,7 @@ Future<_CmdResult> _runGit(
       args,
       workingDirectory: cwd,
     ).timeout(Duration(milliseconds: timeoutMs));
-    return _CmdResult(
-      stdout: result.stdout as String,
-      code: result.exitCode,
-    );
+    return _CmdResult(stdout: result.stdout as String, code: result.exitCode);
   } catch (_) {
     return const _CmdResult(stdout: '', code: -1);
   }
@@ -399,29 +402,27 @@ Future<String> getHead({String? cwd}) async {
 
 /// Get current branch name.
 Future<String> getBranch({String? cwd}) async {
-  final result = await _runGit(
-    ['rev-parse', '--abbrev-ref', 'HEAD'],
-    cwd: cwd,
-  );
+  final result = await _runGit(['rev-parse', '--abbrev-ref', 'HEAD'], cwd: cwd);
   return result.stdout.trim();
 }
 
 /// Get the default branch (main/master/etc).
 Future<String> getDefaultBranch({String? cwd}) async {
   // Try symbolic-ref first
-  final result = await _runGit(
-    ['symbolic-ref', 'refs/remotes/origin/HEAD'],
-    cwd: cwd,
-  );
+  final result = await _runGit([
+    'symbolic-ref',
+    'refs/remotes/origin/HEAD',
+  ], cwd: cwd);
   if (result.code == 0 && result.stdout.trim().isNotEmpty) {
     return result.stdout.trim().replaceFirst('refs/remotes/origin/', '');
   }
   // Fallback: check common branch names
   for (final branch in ['main', 'master']) {
-    final check = await _runGit(
-      ['rev-parse', '--verify', 'origin/$branch'],
-      cwd: cwd,
-    );
+    final check = await _runGit([
+      'rev-parse',
+      '--verify',
+      'origin/$branch',
+    ], cwd: cwd);
     if (check.code == 0) return branch;
   }
   return 'main';
@@ -429,10 +430,11 @@ Future<String> getDefaultBranch({String? cwd}) async {
 
 /// Get the remote URL.
 Future<String?> getRemoteUrl({String? cwd}) async {
-  final result = await _runGit(
-    ['config', '--get', 'remote.origin.url'],
-    cwd: cwd,
-  );
+  final result = await _runGit([
+    'config',
+    '--get',
+    'remote.origin.url',
+  ], cwd: cwd);
   final url = result.stdout.trim();
   return url.isEmpty ? null : url;
 }
@@ -498,10 +500,7 @@ Future<bool> getIsHeadOnRemote({String? cwd}) async {
 
 /// Check if there are unpushed commits.
 Future<bool> hasUnpushedCommits({String? cwd}) async {
-  final result = await _runGit(
-    ['rev-list', '--count', '@{u}..HEAD'],
-    cwd: cwd,
-  );
+  final result = await _runGit(['rev-list', '--count', '@{u}..HEAD'], cwd: cwd);
   return result.code == 0 && (int.tryParse(result.stdout.trim()) ?? 0) > 0;
 }
 
@@ -515,15 +514,14 @@ Future<bool> getIsClean({String? cwd, bool ignoreUntracked = false}) async {
 
 /// Get a list of changed files (porcelain output).
 Future<List<String>> getChangedFiles({String? cwd}) async {
-  final result = await _runGit(
-    ['--no-optional-locks', 'status', '--porcelain'],
-    cwd: cwd,
-  );
-  return result.stdout
-      .trim()
-      .split('\n')
-      .where((line) => line.isNotEmpty)
-      .map((line) {
+  final result = await _runGit([
+    '--no-optional-locks',
+    'status',
+    '--porcelain',
+  ], cwd: cwd);
+  return result.stdout.trim().split('\n').where((line) => line.isNotEmpty).map((
+    line,
+  ) {
     final trimmed = line.trim();
     final spaceIdx = trimmed.indexOf(' ');
     return spaceIdx >= 0 ? trimmed.substring(spaceIdx + 1).trim() : trimmed;
@@ -532,10 +530,11 @@ Future<List<String>> getChangedFiles({String? cwd}) async {
 
 /// Get file status (tracked vs untracked).
 Future<GitFileStatus> getFileStatus({String? cwd}) async {
-  final result = await _runGit(
-    ['--no-optional-locks', 'status', '--porcelain'],
-    cwd: cwd,
-  );
+  final result = await _runGit([
+    '--no-optional-locks',
+    'status',
+    '--porcelain',
+  ], cwd: cwd);
 
   final tracked = <String>[];
   final untracked = <String>[];
@@ -562,17 +561,19 @@ Future<bool> stashToCleanState({String? cwd, String? message}) async {
 
     final fileStatus = await getFileStatus(cwd: cwd);
     if (fileStatus.untracked.isNotEmpty) {
-      final addResult = await _runGit(
-        ['add', ...fileStatus.untracked],
-        cwd: cwd,
-      );
+      final addResult = await _runGit([
+        'add',
+        ...fileStatus.untracked,
+      ], cwd: cwd);
       if (addResult.code != 0) return false;
     }
 
-    final result = await _runGit(
-      ['stash', 'push', '--message', stashMessage],
-      cwd: cwd,
-    );
+    final result = await _runGit([
+      'stash',
+      'push',
+      '--message',
+      stashMessage,
+    ], cwd: cwd);
     return result.code == 0;
   } catch (_) {
     return false;
@@ -617,19 +618,24 @@ Future<String?> getGithubRepo({String? cwd}) async {
 /// Find the best remote branch to use as a base.
 Future<String?> findRemoteBase({String? cwd}) async {
   // Try tracking branch
-  final tracking = await _runGit(
-    ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'],
-    cwd: cwd,
-  );
+  final tracking = await _runGit([
+    'rev-parse',
+    '--abbrev-ref',
+    '--symbolic-full-name',
+    '@{u}',
+  ], cwd: cwd);
   if (tracking.code == 0 && tracking.stdout.trim().isNotEmpty) {
     return tracking.stdout.trim();
   }
 
   // Try remote show
-  final remoteRefs = await _runGit(
-    ['remote', 'show', 'origin', '--', 'HEAD'],
-    cwd: cwd,
-  );
+  final remoteRefs = await _runGit([
+    'remote',
+    'show',
+    'origin',
+    '--',
+    'HEAD',
+  ], cwd: cwd);
   if (remoteRefs.code == 0) {
     final match = RegExp(r'HEAD branch: (\S+)').firstMatch(remoteRefs.stdout);
     if (match != null) return 'origin/${match.group(1)}';
@@ -637,10 +643,7 @@ Future<String?> findRemoteBase({String? cwd}) async {
 
   // Check common branches
   for (final candidate in ['origin/main', 'origin/staging', 'origin/master']) {
-    final check = await _runGit(
-      ['rev-parse', '--verify', candidate],
-      cwd: cwd,
-    );
+    final check = await _runGit(['rev-parse', '--verify', candidate], cwd: cwd);
     if (check.code == 0) return candidate;
   }
 
@@ -697,26 +700,26 @@ Future<GitDiffResult?> fetchGitDiff({String? cwd}) async {
   if (await _isInTransientGitState(cwd: cwd)) return null;
 
   // Quick probe with --shortstat
-  final shortstat = await _runGit(
-    ['--no-optional-locks', 'diff', 'HEAD', '--shortstat'],
-    cwd: cwd,
-  );
+  final shortstat = await _runGit([
+    '--no-optional-locks',
+    'diff',
+    'HEAD',
+    '--shortstat',
+  ], cwd: cwd);
   if (shortstat.code == 0) {
     final quickStats = parseShortstat(shortstat.stdout);
     if (quickStats != null && quickStats.filesCount > _maxFilesForDetails) {
-      return GitDiffResult(
-        stats: quickStats,
-        perFileStats: {},
-        hunks: {},
-      );
+      return GitDiffResult(stats: quickStats, perFileStats: {}, hunks: {});
     }
   }
 
   // Get stats via --numstat
-  final numstat = await _runGit(
-    ['--no-optional-locks', 'diff', 'HEAD', '--numstat'],
-    cwd: cwd,
-  );
+  final numstat = await _runGit([
+    '--no-optional-locks',
+    'diff',
+    'HEAD',
+    '--numstat',
+  ], cwd: cwd);
   if (numstat.code != 0) return null;
 
   final result = parseGitNumstat(numstat.stdout);
@@ -738,7 +741,8 @@ Future<GitDiffResult?> fetchGitDiff({String? cwd}) async {
 
   return GitDiffResult(
     stats: GitDiffStats(
-      filesCount: stats.filesCount + (perFileStats.length - result.perFileStats.length),
+      filesCount:
+          stats.filesCount + (perFileStats.length - result.perFileStats.length),
       linesAdded: stats.linesAdded,
       linesRemoved: stats.linesRemoved,
     ),
@@ -748,14 +752,17 @@ Future<GitDiffResult?> fetchGitDiff({String? cwd}) async {
 }
 
 /// Fetch git diff hunks on-demand.
-Future<Map<String, List<StructuredPatchHunk>>> fetchGitDiffHunks({String? cwd}) async {
+Future<Map<String, List<StructuredPatchHunk>>> fetchGitDiffHunks({
+  String? cwd,
+}) async {
   if (!await getIsGit(cwd: cwd)) return {};
   if (await _isInTransientGitState(cwd: cwd)) return {};
 
-  final result = await _runGit(
-    ['--no-optional-locks', 'diff', 'HEAD'],
-    cwd: cwd,
-  );
+  final result = await _runGit([
+    '--no-optional-locks',
+    'diff',
+    'HEAD',
+  ], cwd: cwd);
   if (result.code != 0) return {};
 
   return parseGitDiff(result.stdout);
@@ -808,7 +815,8 @@ Map<String, List<StructuredPatchHunk>> parseGitDiff(String stdout) {
   final result = <String, List<StructuredPatchHunk>>{};
   if (stdout.trim().isEmpty) return result;
 
-  final fileDiffs = stdout.split(RegExp(r'^diff --git ', multiLine: true))
+  final fileDiffs = stdout
+      .split(RegExp(r'^diff --git ', multiLine: true))
       .where((s) => s.isNotEmpty)
       .toList();
 
@@ -890,7 +898,9 @@ Future<ToolUseDiff?> fetchSingleFileGitDiff(String absoluteFilePath) async {
   final gitRoot = findGitRoot(p.dirname(absoluteFilePath));
   if (gitRoot == null) return null;
 
-  final gitPath = p.relative(absoluteFilePath, from: gitRoot).replaceAll(p.separator, '/');
+  final gitPath = p
+      .relative(absoluteFilePath, from: gitRoot)
+      .replaceAll(p.separator, '/');
   final repository = getCachedRepository();
 
   // Check if tracked
@@ -965,7 +975,8 @@ ToolUseDiff _parseRawDiffToToolUseDiff(
 }
 
 Future<String> _getDiffRef(String gitRoot) async {
-  final baseBranch = Platform.environment['NEOMCLAW_BASE_REF'] ??
+  final baseBranch =
+      Platform.environment['NEOMCLAW_BASE_REF'] ??
       await getDefaultBranch(cwd: gitRoot);
   final result = await _runGit(
     ['--no-optional-locks', 'merge-base', 'HEAD', baseBranch],
@@ -1011,7 +1022,12 @@ Future<bool> _isInTransientGitState({String? cwd}) async {
   final gitDir = await getGitDir(cwd ?? Directory.current.path);
   if (gitDir == null) return false;
 
-  for (final file in ['MERGE_HEAD', 'REBASE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD']) {
+  for (final file in [
+    'MERGE_HEAD',
+    'REBASE_HEAD',
+    'CHERRY_PICK_HEAD',
+    'REVERT_HEAD',
+  ]) {
     if (File(p.join(gitDir, file)).existsSync()) return true;
   }
   return false;
@@ -1021,13 +1037,19 @@ Future<Map<String, PerFileStats>?> _fetchUntrackedFiles(
   int maxFiles, {
   String? cwd,
 }) async {
-  final result = await _runGit(
-    ['--no-optional-locks', 'ls-files', '--others', '--exclude-standard'],
-    cwd: cwd,
-  );
+  final result = await _runGit([
+    '--no-optional-locks',
+    'ls-files',
+    '--others',
+    '--exclude-standard',
+  ], cwd: cwd);
   if (result.code != 0 || result.stdout.trim().isEmpty) return null;
 
-  final paths = result.stdout.trim().split('\n').where((l) => l.isNotEmpty).toList();
+  final paths = result.stdout
+      .trim()
+      .split('\n')
+      .where((l) => l.isNotEmpty)
+      .toList();
   if (paths.isEmpty) return null;
 
   final perFileStats = <String, PerFileStats>{};
@@ -1073,7 +1095,12 @@ Future<PrStatus?> fetchPrStatus({String? cwd}) async {
   try {
     final result = await Process.run(
       'gh',
-      ['pr', 'view', '--json', 'number,url,reviewDecision,isDraft,headRefName,state'],
+      [
+        'pr',
+        'view',
+        '--json',
+        'number,url,reviewDecision,isDraft,headRefName,state',
+      ],
       workingDirectory: cwd,
     ).timeout(const Duration(milliseconds: _ghTimeoutMs));
 
@@ -1161,8 +1188,9 @@ ParsedRepository? parseGitRemote(String input) {
   final trimmed = input.trim();
 
   // SSH format: git@host:owner/repo.git
-  final sshMatch = RegExp(r'^git@([^:]+):([^/]+)/([^/]+?)(?:\.git)?$')
-      .firstMatch(trimmed);
+  final sshMatch = RegExp(
+    r'^git@([^:]+):([^/]+)/([^/]+?)(?:\.git)?$',
+  ).firstMatch(trimmed);
   if (sshMatch != null) {
     final host = sshMatch.group(1)!;
     if (!_looksLikeRealHostname(host)) return null;
@@ -1206,7 +1234,9 @@ String? parseGitHubRepository(String input) {
   }
 
   // Check "owner/repo" format
-  if (!trimmed.contains('://') && !trimmed.contains('@') && trimmed.contains('/')) {
+  if (!trimmed.contains('://') &&
+      !trimmed.contains('@') &&
+      trimmed.contains('/')) {
     final parts = trimmed.split('/');
     if (parts.length == 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
       final repo = parts[1].replaceAll(RegExp(r'\.git$'), '');
@@ -1255,10 +1285,11 @@ Future<PreservedGitState?> preserveGitStateForIssue({String? cwd}) async {
       );
     }
 
-    final mergeBase = await _runGit(
-      ['merge-base', 'HEAD', remoteBase],
-      cwd: cwd,
-    );
+    final mergeBase = await _runGit([
+      'merge-base',
+      'HEAD',
+      remoteBase,
+    ], cwd: cwd);
     if (mergeBase.code != 0 || mergeBase.stdout.trim().isEmpty) {
       final patch = await _runGit(['diff', 'HEAD'], cwd: cwd);
       return PreservedGitState(
@@ -1286,7 +1317,8 @@ Future<PreservedGitState?> preserveGitStateForIssue({String? cwd}) async {
     final branchResult = results[3];
 
     String? formatPatch;
-    if (formatPatchResult.code == 0 && formatPatchResult.stdout.trim().isNotEmpty) {
+    if (formatPatchResult.code == 0 &&
+        formatPatchResult.stdout.trim().isNotEmpty) {
       formatPatch = formatPatchResult.stdout;
     }
 

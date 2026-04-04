@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 // ── Enums ──────────────────────────────────────────────────────────────────
 
@@ -29,20 +28,10 @@ enum BuddyState {
 }
 
 /// Tone / verbosity of buddy suggestions.
-enum BuddyPersonality {
-  helpful,
-  concise,
-  detailed,
-  playful,
-}
+enum BuddyPersonality { helpful, concise, detailed, playful }
 
 /// Semantic category of a suggestion.
-enum SuggestionCategory {
-  tip,
-  shortcut,
-  warning,
-  encouragement,
-}
+enum SuggestionCategory { tip, shortcut, warning, encouragement }
 
 // ── Data classes ───────────────────────────────────────────────────────────
 
@@ -467,7 +456,9 @@ class _BuddyWidgetState extends State<BuddyWidget>
       items: [
         const PopupMenuItem(value: 'tips', child: Text('Show all tips')),
         const PopupMenuItem(
-            value: 'personality', child: Text('Change personality')),
+          value: 'personality',
+          child: Text('Change personality'),
+        ),
         const PopupMenuItem(value: 'disable', child: Text('Disable buddy')),
       ],
     ).then((value) {
@@ -551,7 +542,9 @@ class _BuddyWidgetState extends State<BuddyWidget>
       height: 36,
       decoration: BoxDecoration(shape: BoxShape.circle, color: color),
       child: Icon(
-        _state == BuddyState.celebrating ? Icons.celebration : Icons.auto_fix_high,
+        _state == BuddyState.celebrating
+            ? Icons.celebration
+            : Icons.auto_fix_high,
         size: 18,
         color: theme.colorScheme.onPrimary,
       ),
@@ -587,17 +580,17 @@ class _BuddyWidgetState extends State<BuddyWidget>
           Icon(iconData, size: 16, color: theme.colorScheme.primary),
           const SizedBox(width: 8),
           Flexible(
-            child: Text(
-              suggestion.text,
-              style: theme.textTheme.bodySmall,
-            ),
+            child: Text(suggestion.text, style: theme.textTheme.bodySmall),
           ),
           if (suggestion.dismissible) ...[
             const SizedBox(width: 6),
             GestureDetector(
               onTap: _dismiss,
-              child: Icon(Icons.close, size: 14,
-                  color: theme.colorScheme.onSurfaceVariant),
+              child: Icon(
+                Icons.close,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ],

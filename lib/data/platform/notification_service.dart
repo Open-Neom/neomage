@@ -122,7 +122,7 @@ class NotificationService {
   static const _maxHistory = 100;
 
   NotificationService({List<NotificationBackend>? backends})
-      : _backends = backends ?? [InAppNotificationBackend()];
+    : _backends = backends ?? [InAppNotificationBackend()];
 
   /// Event stream.
   Stream<NotificationEvent> get events => _events.stream;
@@ -167,27 +167,24 @@ class NotificationService {
       notify(
         title: isError ? 'Tool Failed' : 'Tool Complete',
         body: toolName,
-        priority:
-            isError ? NotificationPriority.high : NotificationPriority.low,
+        priority: isError
+            ? NotificationPriority.high
+            : NotificationPriority.low,
         category: 'tool',
       );
 
   /// Show an agent completion notification.
   Future<void> notifyAgentComplete(String agentId, String description) =>
-      notify(
-        title: 'Agent Complete',
-        body: description,
-        category: 'agent',
-      );
+      notify(title: 'Agent Complete', body: description, category: 'agent');
 
   /// Show a permission request notification.
   Future<void> notifyPermissionRequired(String toolName) => notify(
-        title: 'Permission Required',
-        body: '$toolName needs approval',
-        priority: NotificationPriority.high,
-        category: 'permission',
-        autoHide: null, // Don't auto-hide
-      );
+    title: 'Permission Required',
+    body: '$toolName needs approval',
+    priority: NotificationPriority.high,
+    category: 'permission',
+    autoHide: null, // Don't auto-hide
+  );
 
   /// Dismiss a notification.
   Future<void> dismiss(String notificationId) async {

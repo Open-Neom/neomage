@@ -13,10 +13,8 @@ class FileChange {
   final FileChangeType type;
   final DateTime timestamp;
 
-  FileChange({
-    required this.path,
-    required this.type,
-  }) : timestamp = DateTime.now();
+  FileChange({required this.path, required this.type})
+    : timestamp = DateTime.now();
 
   @override
   String toString() => 'FileChange(${type.name}: $path)';
@@ -33,7 +31,7 @@ class WatchSubscription {
     required this.id,
     required this.path,
     required StreamSubscription<FileSystemEvent> subscription,
-  })  : _subscription = subscription;
+  }) : _subscription = subscription;
 
   bool get isActive => _active;
 

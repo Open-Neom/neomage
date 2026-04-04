@@ -1,9 +1,8 @@
-// Ripgrep utilities — port of openneomclaw/src/utils/ripgrep.ts.
+// Ripgrep utilities — port of neom_claw/src/utils/ripgrep.ts.
 // Ripgrep command building, execution, result parsing, streaming, and
 // file counting. Adapted for Dart/Flutter with dart:io process management.
 
 import 'dart:async';
-import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math';
 
@@ -58,7 +57,8 @@ RipgrepConfig getRipgrepConfig({
 }) {
   if (_cachedConfig != null) return _cachedConfig!;
 
-  final wantsSystem = useSystemRipgrep ?? _isEnvDefinedFalsy('USE_BUILTIN_RIPGREP');
+  final wantsSystem =
+      useSystemRipgrep ?? _isEnvDefinedFalsy('USE_BUILTIN_RIPGREP');
 
   // Try system ripgrep if user wants it.
   if (wantsSystem) {
@@ -85,11 +85,9 @@ RipgrepConfig getRipgrepConfig({
   }
 
   // Fall back to vendored binary.
-  final rgRoot = vendorRoot ?? p.join(
-    p.dirname(Platform.resolvedExecutable),
-    'vendor',
-    'ripgrep',
-  );
+  final rgRoot =
+      vendorRoot ??
+      p.join(p.dirname(Platform.resolvedExecutable), 'vendor', 'ripgrep');
   final platformDir = '${_getArch()}-${_getPlatformName()}';
   final rgBinary = Platform.isWindows ? 'rg.exe' : 'rg';
   final command = p.join(rgRoot, platformDir, rgBinary);
@@ -110,11 +108,7 @@ void resetRipgrepConfig() {
 /// Public accessor for ripgrep command components.
 ({String rgPath, List<String> rgArgs, String? argv0}) ripgrepCommand() {
   final config = getRipgrepConfig();
-  return (
-    rgPath: config.command,
-    rgArgs: config.args,
-    argv0: config.argv0,
-  );
+  return (rgPath: config.command, rgArgs: config.args, argv0: config.argv0);
 }
 
 // ─── Error types ─────────────────────────────────────────────────────────────
@@ -170,10 +164,9 @@ Future<_RipgrepRawResult> _ripGrepRaw(
   final fullArgs = [...rgArgs, ...threadArgs, ...args, target];
 
   // Allow timeout to be configured, otherwise use platform defaults.
-  final effectiveTimeout = timeout ??
-      Duration(
-        milliseconds: _isWsl() ? kWslTimeoutMs : kDefaultTimeoutMs,
-      );
+  final effectiveTimeout =
+      timeout ??
+      Duration(milliseconds: _isWsl() ? kWslTimeoutMs : kDefaultTimeoutMs);
 
   final completer = Completer<_RipgrepRawResult>();
 
@@ -192,24 +185,24 @@ Future<_RipgrepRawResult> _ripGrepRaw(
     final stdoutSub = process.stdout
         .transform(const SystemEncoding().decoder)
         .listen((data) {
-      if (!stdoutTruncated) {
-        stdoutBuffer.write(data);
-        if (stdoutBuffer.length > kMaxBufferSize) {
-          stdoutTruncated = true;
-        }
-      }
-    });
+          if (!stdoutTruncated) {
+            stdoutBuffer.write(data);
+            if (stdoutBuffer.length > kMaxBufferSize) {
+              stdoutTruncated = true;
+            }
+          }
+        });
 
     final stderrSub = process.stderr
         .transform(const SystemEncoding().decoder)
         .listen((data) {
-      if (!stderrTruncated) {
-        stderrBuffer.write(data);
-        if (stderrBuffer.length > kMaxBufferSize) {
-          stderrTruncated = true;
-        }
-      }
-    });
+          if (!stderrTruncated) {
+            stderrBuffer.write(data);
+            if (stderrBuffer.length > kMaxBufferSize) {
+              stderrTruncated = true;
+            }
+          }
+        });
 
     // Set up timeout.
     Timer? killTimer;
@@ -232,12 +225,14 @@ Future<_RipgrepRawResult> _ripGrepRaw(
     await stdoutSub.cancel();
     await stderrSub.cancel();
 
-    completer.complete(_RipgrepRawResult(
-      exitCode: exitCode,
-      stdout: stdoutBuffer.toString(),
-      stderr: stderrBuffer.toString(),
-      signal: signal,
-    ));
+    completer.complete(
+      _RipgrepRawResult(
+        exitCode: exitCode,
+        stdout: stdoutBuffer.toString(),
+        stderr: stderrBuffer.toString(),
+        signal: signal,
+      ),
+    );
   } catch (e) {
     if (!completer.isCompleted) {
       completer.completeError(e);
@@ -267,16 +262,16 @@ Future<void> ripGrepStream(
   await _codesignRipgrepIfNecessary();
   final (:rgPath, :rgArgs, :argv0) = ripgrepCommand();
 
-  final process = await Process.start(
-    rgPath,
-    [...rgArgs, ...args, target],
-    environment: argv0 != null ? {'ARGV0': argv0} : null,
-  );
+  final process = await Process.start(rgPath, [
+    ...rgArgs,
+    ...args,
+    target,
+  ], environment: argv0 != null ? {'ARGV0': argv0} : null);
 
   String remainder = '';
-  await process.stdout
-      .transform(const SystemEncoding().decoder)
-      .forEach((chunk) {
+  await process.stdout.transform(const SystemEncoding().decoder).forEach((
+    chunk,
+  ) {
     final data = remainder + chunk;
     final lines = data.split('\n');
     remainder = lines.removeLast();
@@ -316,11 +311,11 @@ Future<int> ripGrepFileCount(
   await _codesignRipgrepIfNecessary();
   final (:rgPath, :rgArgs, :argv0) = ripgrepCommand();
 
-  final process = await Process.start(
-    rgPath,
-    [...rgArgs, ...args, target],
-    environment: argv0 != null ? {'ARGV0': argv0} : null,
-  );
+  final process = await Process.start(rgPath, [
+    ...rgArgs,
+    ...args,
+    target,
+  ], environment: argv0 != null ? {'ARGV0': argv0} : null);
 
   int lines = 0;
   await process.stdout.forEach((chunk) {
@@ -391,12 +386,7 @@ Future<List<String>> _ripGrepWithRetry(
 
   // If we hit EAGAIN and haven't retried yet, retry with single-threaded mode.
   if (!isRetry && _isEagainError(result.stderr)) {
-    return _ripGrepWithRetry(
-      args,
-      target,
-      timeout: timeout,
-      isRetry: true,
-    );
+    return _ripGrepWithRetry(args, target, timeout: timeout, isRetry: true);
   }
 
   // For all other errors, try to return partial results if available.
@@ -466,7 +456,8 @@ Future<int?> countFilesRoundedRg(
 
   // Skip file counting if we're in the home directory to avoid triggering
   // macOS TCC permission dialogs for Desktop, Downloads, Documents, etc.
-  final homeDir = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
+  final homeDir =
+      Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
   if (p.equals(p.canonicalize(dirPath), p.canonicalize(homeDir))) {
     _fileCountCache[cacheKey] = null;
     return null;
@@ -552,11 +543,11 @@ Future<void> _testRipgrepOnFirstUse() async {
     final result = await Process.run(
       config.command,
       [...config.args, '--version'],
-      environment:
-          config.argv0 != null ? {'ARGV0': config.argv0!} : null,
+      environment: config.argv0 != null ? {'ARGV0': config.argv0!} : null,
     );
 
-    final working = result.exitCode == 0 &&
+    final working =
+        result.exitCode == 0 &&
         result.stdout is String &&
         (result.stdout as String).startsWith('ripgrep ');
 
@@ -592,10 +583,11 @@ Future<void> _codesignRipgrepIfNecessary() async {
 
   // First, check to see if ripgrep is already signed.
   try {
-    final checkResult = await Process.run(
-      'codesign',
-      ['-vv', '-d', builtinPath],
-    );
+    final checkResult = await Process.run('codesign', [
+      '-vv',
+      '-d',
+      builtinPath,
+    ]);
     final output = checkResult.stdout as String;
     final needsSigned = output.contains('linker-signed');
     if (!needsSigned) return;
@@ -617,11 +609,7 @@ Future<void> _codesignRipgrepIfNecessary() async {
       // Log but don't throw -- ripgrep might still work.
     }
 
-    await Process.run('xattr', [
-      '-d',
-      'com.apple.quarantine',
-      builtinPath,
-    ]);
+    await Process.run('xattr', ['-d', 'com.apple.quarantine', builtinPath]);
   } catch (_) {
     // Best effort.
   }
@@ -639,10 +627,9 @@ bool _isEnvDefinedFalsy(String name) {
 /// Find an executable on the system PATH.
 String? _findExecutable(String name) {
   try {
-    final result = Process.runSync(
-      Platform.isWindows ? 'where' : 'which',
-      [name],
-    );
+    final result = Process.runSync(Platform.isWindows ? 'where' : 'which', [
+      name,
+    ]);
     if (result.exitCode == 0) {
       final path = (result.stdout as String).trim().split('\n').first;
       return path.isNotEmpty ? path : null;
@@ -655,7 +642,8 @@ String? _findExecutable(String name) {
 String _getArch() {
   // Dart doesn't directly expose architecture, but we can infer it.
   // This is a simplified version.
-  if (Platform.version.contains('arm64') || Platform.version.contains('aarch64')) {
+  if (Platform.version.contains('arm64') ||
+      Platform.version.contains('aarch64')) {
     return 'arm64';
   }
   return 'x64';

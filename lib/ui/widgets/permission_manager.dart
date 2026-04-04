@@ -9,8 +9,8 @@ import 'package:flutter/material.dart';
 class PermissionRuleDisplay {
   final String pattern;
   final String behavior; // 'allow', 'deny', 'ask'
-  final String scope;    // 'tool', 'file', 'command', 'mcp'
-  final String source;   // 'user', 'project', 'local', 'policy'
+  final String scope; // 'tool', 'file', 'command', 'mcp'
+  final String source; // 'user', 'project', 'local', 'policy'
   final String? description;
   final DateTime? createdAt;
   final int hitCount;
@@ -28,7 +28,7 @@ class PermissionRuleDisplay {
 
 /// Permission mode display info.
 class PermissionModeDisplay {
-  final String mode;    // 'default', 'accept-edits', 'plan', 'full-auto'
+  final String mode; // 'default', 'accept-edits', 'plan', 'full-auto'
   final String label;
   final String description;
   final IconData icon;
@@ -46,7 +46,8 @@ class PermissionModeDisplay {
     PermissionModeDisplay(
       mode: 'default',
       label: 'Default',
-      description: 'Ask permission for file writes and commands. Reads are always allowed.',
+      description:
+          'Ask permission for file writes and commands. Reads are always allowed.',
       icon: Icons.security,
       color: Colors.blue,
     ),
@@ -102,7 +103,7 @@ class PermissionManagerWidget extends StatefulWidget {
 
 class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
   String _filterScope = 'all';
-  String _filterSource = 'all';
+  final String _filterSource = 'all';
   String _filterBehavior = 'all';
 
   List<PermissionRuleDisplay> get _filteredRules {
@@ -219,15 +220,15 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                         color: isActive
                             ? mode.color.withValues(alpha: 0.15)
                             : (isDark
-                                ? Colors.white.withValues(alpha: 0.04)
-                                : Colors.black.withValues(alpha: 0.03)),
+                                  ? Colors.white.withValues(alpha: 0.04)
+                                  : Colors.black.withValues(alpha: 0.03)),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: isActive
                               ? mode.color
                               : (isDark
-                                  ? Colors.white.withValues(alpha: 0.1)
-                                  : Colors.black.withValues(alpha: 0.1)),
+                                    ? Colors.white.withValues(alpha: 0.1)
+                                    : Colors.black.withValues(alpha: 0.1)),
                           width: isActive ? 2 : 1,
                         ),
                       ),
@@ -236,17 +237,14 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                         children: [
                           Row(
                             children: [
-                              Icon(mode.icon,
-                                  size: 18, color: mode.color),
+                              Icon(mode.icon, size: 18, color: mode.color),
                               const SizedBox(width: 6),
                               Text(
                                 mode.label,
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 13,
-                                  color: isDark
-                                      ? Colors.white
-                                      : Colors.black87,
+                                  color: isDark ? Colors.white : Colors.black87,
                                 ),
                               ),
                             ],
@@ -256,9 +254,7 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                             mode.description,
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark
-                                  ? Colors.white54
-                                  : Colors.black45,
+                              color: isDark ? Colors.white54 : Colors.black45,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -303,7 +299,9 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                 label: const Text('Add Rule', style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                 ),
               ),
             ],
@@ -330,13 +328,19 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
               }),
               const SizedBox(width: 12),
               _filterChip('Allow', 'allow', _filterBehavior, (v) {
-                setState(() => _filterBehavior = v == _filterBehavior ? 'all' : v);
+                setState(
+                  () => _filterBehavior = v == _filterBehavior ? 'all' : v,
+                );
               }),
               _filterChip('Deny', 'deny', _filterBehavior, (v) {
-                setState(() => _filterBehavior = v == _filterBehavior ? 'all' : v);
+                setState(
+                  () => _filterBehavior = v == _filterBehavior ? 'all' : v,
+                );
               }),
               _filterChip('Ask', 'ask', _filterBehavior, (v) {
-                setState(() => _filterBehavior = v == _filterBehavior ? 'all' : v);
+                setState(
+                  () => _filterBehavior = v == _filterBehavior ? 'all' : v,
+                );
               }),
             ],
           ),
@@ -358,14 +362,11 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                   itemCount: _filteredRules.length,
                   itemBuilder: (context, index) {
                     final rule = _filteredRules[index];
-                    final originalIndex =
-                        widget.rules.indexOf(rule);
+                    final originalIndex = widget.rules.indexOf(rule);
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 4),
-                      color: isDark
-                          ? const Color(0xFF1E1E36)
-                          : Colors.white,
+                      color: isDark ? const Color(0xFF1E1E36) : Colors.white,
                       child: ListTile(
                         dense: true,
                         leading: Icon(
@@ -375,11 +376,11 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                         ),
                         title: Row(
                           children: [
-                            Icon(_scopeIcon(rule.scope),
-                                size: 14,
-                                color: isDark
-                                    ? Colors.white38
-                                    : Colors.black38),
+                            Icon(
+                              _scopeIcon(rule.scope),
+                              size: 14,
+                              color: isDark ? Colors.white38 : Colors.black38,
+                            ),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
@@ -387,9 +388,7 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                                 style: TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 13,
-                                  color: isDark
-                                      ? Colors.white
-                                      : Colors.black87,
+                                  color: isDark ? Colors.white : Colors.black87,
                                 ),
                               ),
                             ),
@@ -399,10 +398,13 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                           children: [
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 1),
+                                horizontal: 4,
+                                vertical: 1,
+                              ),
                               decoration: BoxDecoration(
-                                color: _behaviorColor(rule.behavior)
-                                    .withValues(alpha: 0.15),
+                                color: _behaviorColor(
+                                  rule.behavior,
+                                ).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(3),
                               ),
                               child: Text(
@@ -410,8 +412,7 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                                 style: TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
-                                  color:
-                                      _behaviorColor(rule.behavior),
+                                  color: _behaviorColor(rule.behavior),
                                 ),
                               ),
                             ),
@@ -420,9 +421,7 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                               'from ${rule.source}',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: isDark
-                                    ? Colors.white30
-                                    : Colors.black26,
+                                color: isDark ? Colors.white30 : Colors.black26,
                               ),
                             ),
                             if (rule.hitCount > 0) ...[
@@ -443,21 +442,28 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              onPressed: () => _showEditRuleDialog(
-                                  originalIndex, rule),
+                              onPressed: () =>
+                                  _showEditRuleDialog(originalIndex, rule),
                               icon: const Icon(Icons.edit, size: 16),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(
-                                  minWidth: 28, minHeight: 28),
+                                minWidth: 28,
+                                minHeight: 28,
+                              ),
                             ),
                             IconButton(
                               onPressed: () =>
                                   widget.onDeleteRule(originalIndex),
-                              icon: const Icon(Icons.delete_outline,
-                                  size: 16, color: Colors.red),
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 16,
+                                color: Colors.red,
+                              ),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(
-                                  minWidth: 28, minHeight: 28),
+                                minWidth: 28,
+                                minHeight: 28,
+                              ),
                             ),
                           ],
                         ),
@@ -470,8 +476,12 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
     );
   }
 
-  Widget _filterChip(String label, String value, String current,
-      ValueChanged<String> onSelected) {
+  Widget _filterChip(
+    String label,
+    String value,
+    String current,
+    ValueChanged<String> onSelected,
+  ) {
     final isActive = current == value;
     return Padding(
       padding: const EdgeInsets.only(right: 4),
@@ -508,10 +518,12 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
   @override
   void initState() {
     super.initState();
-    _patternController =
-        TextEditingController(text: widget.existingRule?.pattern ?? '');
-    _descriptionController =
-        TextEditingController(text: widget.existingRule?.description ?? '');
+    _patternController = TextEditingController(
+      text: widget.existingRule?.pattern ?? '',
+    );
+    _descriptionController = TextEditingController(
+      text: widget.existingRule?.description ?? '',
+    );
     _behavior = widget.existingRule?.behavior ?? 'allow';
     _scope = widget.existingRule?.scope ?? 'tool';
   }
@@ -553,8 +565,7 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
                 ButtonSegment(value: 'ask', label: Text('Ask')),
               ],
               selected: {_behavior},
-              onSelectionChanged: (s) =>
-                  setState(() => _behavior = s.first),
+              onSelectionChanged: (s) => setState(() => _behavior = s.first),
             ),
             const SizedBox(height: 12),
 
@@ -569,8 +580,7 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
                 ButtonSegment(value: 'mcp', label: Text('MCP')),
               ],
               selected: {_scope},
-              onSelectionChanged: (s) =>
-                  setState(() => _scope = s.first),
+              onSelectionChanged: (s) => setState(() => _scope = s.first),
             ),
             const SizedBox(height: 12),
 
@@ -595,16 +605,18 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
             final pattern = _patternController.text.trim();
             if (pattern.isEmpty) return;
 
-            widget.onSave(PermissionRuleDisplay(
-              pattern: pattern,
-              behavior: _behavior,
-              scope: _scope,
-              source: 'user',
-              description: _descriptionController.text.trim().isEmpty
-                  ? null
-                  : _descriptionController.text.trim(),
-              createdAt: DateTime.now(),
-            ));
+            widget.onSave(
+              PermissionRuleDisplay(
+                pattern: pattern,
+                behavior: _behavior,
+                scope: _scope,
+                source: 'user',
+                description: _descriptionController.text.trim().isEmpty
+                    ? null
+                    : _descriptionController.text.trim(),
+                createdAt: DateTime.now(),
+              ),
+            );
           },
           child: const Text('Save'),
         ),

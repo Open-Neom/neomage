@@ -23,11 +23,12 @@ typedef OnToolResult = void Function(String toolName, ToolResult result);
 typedef OnApiError = void Function(ApiError error);
 
 /// Callback for permission prompts — returns true if allowed.
-typedef OnPermissionRequest = Future<bool> Function(
-  String toolName,
-  Map<String, dynamic> input,
-  PermissionExplanation? explanation,
-);
+typedef OnPermissionRequest =
+    Future<bool> Function(
+      String toolName,
+      Map<String, dynamic> input,
+      PermissionExplanation? explanation,
+    );
 
 /// Callback for compaction events.
 typedef OnCompaction = void Function(CompactionResult result);
@@ -98,14 +99,14 @@ class QueryEngine {
 
       // Phase 1: Microcompact old tool results before API call
       if (config.enableMicrocompact && compactionService != null) {
-        conversationMessages =
-            compactionService!.microcompact(conversationMessages);
+        conversationMessages = compactionService!.microcompact(
+          conversationMessages,
+        );
       }
 
       // Phase 2: Auto-compact if approaching context limit
       if (config.enableCompaction && compactionService != null) {
-        final compactionResult =
-            await compactionService!.autoCompactIfNeeded(
+        final compactionResult = await compactionService!.autoCompactIfNeeded(
           messages: conversationMessages,
           systemPrompt: systemPrompt,
           contextWindow: config.contextWindow,
@@ -146,33 +147,33 @@ class QueryEngine {
             onPermissionRequest,
           );
           if (!permResult) {
-            toolResults.add(ToolResultBlock(
-              toolUseId: toolUse.id,
-              content: 'Permission denied by user for ${toolUse.name}.',
-              isError: true,
-            ));
+            toolResults.add(
+              ToolResultBlock(
+                toolUseId: toolUse.id,
+                content: 'Permission denied by user for ${toolUse.name}.',
+                isError: true,
+              ),
+            );
             continue;
           }
         }
 
         onToolUse?.call(toolUse.name, toolUse.input);
 
-        final result =
-            await toolRegistry.execute(toolUse.name, toolUse.input);
+        final result = await toolRegistry.execute(toolUse.name, toolUse.input);
 
         onToolResult?.call(toolUse.name, result);
 
-        toolResults.add(ToolResultBlock(
-          toolUseId: toolUse.id,
-          content: result.content,
-          isError: result.isError,
-        ));
+        toolResults.add(
+          ToolResultBlock(
+            toolUseId: toolUse.id,
+            content: result.content,
+            isError: result.isError,
+          ),
+        );
       }
 
-      final userMessage = Message(
-        role: MessageRole.user,
-        content: toolResults,
-      );
+      final userMessage = Message(role: MessageRole.user, content: toolResults);
       conversationMessages.add(userMessage);
 
       // Track tool results for session memory
@@ -180,7 +181,8 @@ class QueryEngine {
     }
 
     return Message.assistant(
-        '[Max turns reached (${config.maxTurns}). Stopping tool use loop.]');
+      '[Max turns reached (${config.maxTurns}). Stopping tool use loop.]',
+    );
   }
 
   /// Check permission for a tool use.
@@ -194,8 +196,7 @@ class QueryEngine {
 
     // Check tool's own permission logic
     if (permissionContext != null) {
-      final decision =
-          await tool.checkPermissions(input, permissionContext!);
+      final decision = await tool.checkPermissions(input, permissionContext!);
       switch (decision) {
         case AllowDecision():
           return true;
@@ -257,11 +258,13 @@ class QueryEngine {
             }
           } else if (toolUseBuffers.containsKey(idx)) {
             final state = toolUseBuffers[idx]!;
-            contentBlocks.add(ToolUseBlock(
-              id: state.id,
-              name: state.name,
-              input: state.parsedInput,
-            ));
+            contentBlocks.add(
+              ToolUseBlock(
+                id: state.id,
+                name: state.name,
+                input: state.parsedInput,
+              ),
+            );
           }
 
         case MessageDeltaEvent(stopReason: final sr, usage: final u):

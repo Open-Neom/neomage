@@ -14,19 +14,19 @@ class GlobTool extends Tool with ReadOnlyToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'pattern': {
-            'type': 'string',
-            'description': 'Glob pattern to match (e.g. "**/*.dart")',
-          },
-          'path': {
-            'type': 'string',
-            'description': 'Directory to search in (default: current directory)',
-          },
-        },
-        'required': ['pattern'],
-      };
+    'type': 'object',
+    'properties': {
+      'pattern': {
+        'type': 'string',
+        'description': 'Glob pattern to match (e.g. "**/*.dart")',
+      },
+      'path': {
+        'type': 'string',
+        'description': 'Directory to search in (default: current directory)',
+      },
+    },
+    'required': ['pattern'],
+  };
 
   @override
   bool get isAvailable =>

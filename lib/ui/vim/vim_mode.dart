@@ -16,13 +16,13 @@ enum VimMode {
   replace;
 
   String get label => switch (this) {
-        normal => 'NORMAL',
-        insert => 'INSERT',
-        visual => 'VISUAL',
-        visualLine => 'V-LINE',
-        command => 'COMMAND',
-        replace => 'REPLACE',
-      };
+    normal => 'NORMAL',
+    insert => 'INSERT',
+    visual => 'VISUAL',
+    visualLine => 'V-LINE',
+    command => 'COMMAND',
+    replace => 'REPLACE',
+  };
 }
 
 enum VimOperator {
@@ -34,22 +34,22 @@ enum VimOperator {
   format;
 
   String get char => switch (this) {
-        delete => 'd',
-        change => 'c',
-        yank => 'y',
-        indent => '>',
-        unindent => '<',
-        format => 'gq',
-      };
+    delete => 'd',
+    change => 'c',
+    yank => 'y',
+    indent => '>',
+    unindent => '<',
+    format => 'gq',
+  };
 
   static VimOperator? fromChar(String ch) => switch (ch) {
-        'd' => delete,
-        'c' => change,
-        'y' => yank,
-        '>' => indent,
-        '<' => unindent,
-        _ => null,
-      };
+    'd' => delete,
+    'c' => change,
+    'y' => yank,
+    '>' => indent,
+    '<' => unindent,
+    _ => null,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -98,8 +98,11 @@ class FindCharMotion extends VimMotion {
   final String char;
   final bool forward;
   final bool before; // t/T vs f/F
-  const FindCharMotion(
-      {required this.char, required this.forward, this.before = false});
+  const FindCharMotion({
+    required this.char,
+    required this.forward,
+    this.before = false,
+  });
 }
 
 class MatchBracketMotion extends VimMotion {
@@ -230,15 +233,15 @@ class VimState {
   int _undoGroupCounter = 0;
 
   VimState()
-      : mode = VimMode.normal,
-        cursor = const CursorPosition(0, 0),
-        count = 0,
-        register = VimRegister(),
-        lastSearch = '',
-        lastSearchForward = true,
-        lastChange = '',
-        commandBuffer = '',
-        replaceMode = false;
+    : mode = VimMode.normal,
+      cursor = const CursorPosition(0, 0),
+      count = 0,
+      register = VimRegister(),
+      lastSearch = '',
+      lastSearchForward = true,
+      lastChange = '',
+      commandBuffer = '',
+      replaceMode = false;
 
   int get effectiveCount => count == 0 ? 1 : count;
 
@@ -249,11 +252,9 @@ class VimState {
   }
 
   void pushUndo(List<String> lines, CursorPosition pos) {
-    _undoStack.add(_UndoEntry(
-      lines: List.of(lines),
-      cursor: pos,
-      group: _undoGroupCounter,
-    ));
+    _undoStack.add(
+      _UndoEntry(lines: List.of(lines), cursor: pos, group: _undoGroupCounter),
+    );
     _redoStack.clear();
   }
 
@@ -263,11 +264,9 @@ class VimState {
   _UndoEntry? popRedo() => _redoStack.isEmpty ? null : _redoStack.removeLast();
 
   void pushRedo(List<String> lines, CursorPosition pos) {
-    _redoStack.add(_UndoEntry(
-      lines: List.of(lines),
-      cursor: pos,
-      group: _undoGroupCounter,
-    ));
+    _redoStack.add(
+      _UndoEntry(lines: List.of(lines), cursor: pos, group: _undoGroupCounter),
+    );
   }
 }
 
@@ -275,8 +274,11 @@ class _UndoEntry {
   final List<String> lines;
   final CursorPosition cursor;
   final int group;
-  const _UndoEntry(
-      {required this.lines, required this.cursor, required this.group});
+  const _UndoEntry({
+    required this.lines,
+    required this.cursor,
+    required this.group,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -301,8 +303,9 @@ class VimStatusLine {
     final modeLabel = state.mode.label;
     final line = state.cursor.line + 1;
     final col = state.cursor.column + 1;
-    final pct =
-        totalLines == 0 ? 'Top' : '${(line * 100 ~/ totalLines).clamp(0, 100)}%';
+    final pct = totalLines == 0
+        ? 'Top'
+        : '${(line * 100 ~/ totalLines).clamp(0, 100)}%';
 
     final left = '-- $modeLabel -- $fileName$modMark';
     final right = '$line,$col   $pct';
@@ -402,8 +405,7 @@ VimCommand parseVimCommand(String input) {
   if (trimmed == 'wq' || trimmed == 'x') return const WriteQuitCommand();
 
   // :s/old/new/[g][c]
-  final subMatch =
-      RegExp(r'^s/([^/]*)/([^/]*)/?([gc]*)$').firstMatch(trimmed);
+  final subMatch = RegExp(r'^s/([^/]*)/([^/]*)/?([gc]*)$').firstMatch(trimmed);
   if (subMatch != null) {
     final flags = subMatch.group(3) ?? '';
     return SubstituteCommand(
@@ -516,7 +518,8 @@ class VimKeyHandler {
     }
 
     // Double-operator (dd, yy, cc, >>, <<)
-    if (state.pendingOperator != null && VimOperator.fromChar(key) == state.pendingOperator) {
+    if (state.pendingOperator != null &&
+        VimOperator.fromChar(key) == state.pendingOperator) {
       _applyOperatorOnLines(state.pendingOperator!, state.effectiveCount);
       state.resetPartial();
       return true;
@@ -526,7 +529,11 @@ class VimKeyHandler {
     final motion = _parseMotion(key);
     if (motion != null) {
       if (state.pendingOperator != null) {
-        _applyOperatorWithMotion(state.pendingOperator!, motion, state.effectiveCount);
+        _applyOperatorWithMotion(
+          state.pendingOperator!,
+          motion,
+          state.effectiveCount,
+        );
         state.resetPartial();
       } else {
         _moveCursor(motion, state.effectiveCount);
@@ -542,7 +549,8 @@ class VimKeyHandler {
         return true;
       case 'a':
         state.cursor = state.cursor.copyWith(
-            column: min(state.cursor.column + 1, _currentLineLength()));
+          column: min(state.cursor.column + 1, _currentLineLength()),
+        );
         _enterInsert();
         return true;
       case 'o':
@@ -639,7 +647,10 @@ class VimKeyHandler {
         case 'g':
           if (state.pendingOperator != null) {
             _applyOperatorWithMotion(
-                state.pendingOperator!, const FirstLineMotion(), 1);
+              state.pendingOperator!,
+              const FirstLineMotion(),
+              1,
+            );
             state.resetPartial();
           } else {
             final targetLine = state.count > 0 ? state.count - 1 : 0;
@@ -648,9 +659,7 @@ class VimKeyHandler {
           }
           return true;
         case 'q':
-          if (state.pendingOperator == null) {
-            state.pendingOperator = VimOperator.format;
-          }
+          state.pendingOperator ??= VimOperator.format;
           return true;
       }
       return false;
@@ -661,36 +670,43 @@ class VimKeyHandler {
   }
 
   VimMotion? _parseMotion(String key) => switch (key) {
-        'h' => const CharMotion(-1),
-        'l' => const CharMotion(1),
-        'j' => const LineMotion(1),
-        'k' => const LineMotion(-1),
-        'w' => const WordMotion(forward: true),
-        'b' => const WordMotion(forward: false),
-        'e' => const WordMotion(forward: true, end: true),
-        '0' => const LinePositionMotion(LinePosition.start),
-        '\$' => const LinePositionMotion(LinePosition.end),
-        '^' => const LinePositionMotion(LinePosition.firstNonBlank),
-        '{' => const ParagraphMotion(forward: false),
-        '}' => const ParagraphMotion(forward: true),
-        'G' => const LastLineMotion(),
-        '%' => const MatchBracketMotion(),
-        _ => null,
-      };
+    'h' => const CharMotion(-1),
+    'l' => const CharMotion(1),
+    'j' => const LineMotion(1),
+    'k' => const LineMotion(-1),
+    'w' => const WordMotion(forward: true),
+    'b' => const WordMotion(forward: false),
+    'e' => const WordMotion(forward: true, end: true),
+    '0' => const LinePositionMotion(LinePosition.start),
+    '\$' => const LinePositionMotion(LinePosition.end),
+    '^' => const LinePositionMotion(LinePosition.firstNonBlank),
+    '{' => const ParagraphMotion(forward: false),
+    '}' => const ParagraphMotion(forward: true),
+    'G' => const LastLineMotion(),
+    '%' => const MatchBracketMotion(),
+    _ => null,
+  };
 
   // -- Cursor movement ------------------------------------------------------
 
   void _moveCursor(VimMotion motion, int count) {
     switch (motion) {
       case CharMotion m:
-        final newCol = (state.cursor.column + m.delta * count)
-            .clamp(0, max(0, _currentLineLength() - 1));
+        final newCol = (state.cursor.column + m.delta * count).clamp(
+          0,
+          max(0, _currentLineLength() - 1),
+        );
         state.cursor = state.cursor.copyWith(column: newCol.toInt());
       case LineMotion m:
-        final newLine =
-            (state.cursor.line + m.delta * count).clamp(0, _lines.length - 1);
+        final newLine = (state.cursor.line + m.delta * count).clamp(
+          0,
+          _lines.length - 1,
+        );
         final maxCol = max(0, _lineLength(newLine) - 1);
-        state.cursor = CursorPosition(newLine, min(state.cursor.column, maxCol));
+        state.cursor = CursorPosition(
+          newLine,
+          min(state.cursor.column, maxCol),
+        );
       case WordMotion m:
         for (int i = 0; i < count; i++) {
           _moveWord(forward: m.forward, toEnd: m.end);
@@ -700,8 +716,9 @@ class VimKeyHandler {
           case LinePosition.start:
             state.cursor = state.cursor.copyWith(column: 0);
           case LinePosition.end:
-            state.cursor = state.cursor
-                .copyWith(column: max(0, _currentLineLength() - 1));
+            state.cursor = state.cursor.copyWith(
+              column: max(0, _currentLineLength() - 1),
+            );
           case LinePosition.firstNonBlank:
             final line = _currentLine();
             final idx = line.indexOf(RegExp(r'\S'));
@@ -814,8 +831,7 @@ class VimKeyHandler {
         state.register.delete(text);
         _lines.removeRange(startLine, endLine);
         if (_lines.isEmpty) _lines.add('');
-        state.cursor = CursorPosition(
-            min(startLine, _lines.length - 1), 0);
+        state.cursor = CursorPosition(min(startLine, _lines.length - 1), 0);
         _moveToFirstNonBlank();
         _modified = true;
       case VimOperator.change:
@@ -889,8 +905,10 @@ class VimKeyHandler {
         _modified = true;
       case VimOperator.format:
         final textLines = _lines.sublist(sLine, eLine + 1);
-        final joined =
-            textLines.join(' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+        final joined = textLines
+            .join(' ')
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .trim();
         final wrapped = _wrapText(joined, 80);
         _lines.removeRange(sLine, eLine + 1);
         _lines.insertAll(sLine, wrapped);
@@ -1041,8 +1059,7 @@ class VimKeyHandler {
       if (_lines.isEmpty) _lines.add('');
       state.cursor = CursorPosition(min(sLine, _lines.length - 1), 0);
     } else {
-      final (sL, sC, eL, eC) =
-          _orderPositions(anchor, state.cursor);
+      final (sL, sC, eL, eC) = _orderPositions(anchor, state.cursor);
       final text = _extractRange(sL, sC, eL, eC);
       state.register.delete(text);
       _deleteRange(sL, sC, eL, eC);
@@ -1062,8 +1079,7 @@ class VimKeyHandler {
       final text = _lines.sublist(sLine, eLine + 1).join('\n');
       state.register.yank(text);
     } else {
-      final (sL, sC, eL, eC) =
-          _orderPositions(anchor, state.cursor);
+      final (sL, sC, eL, eC) = _orderPositions(anchor, state.cursor);
       state.register.yank(_extractRange(sL, sC, eL, eC));
     }
     state.mode = VimMode.normal;
@@ -1105,8 +1121,10 @@ class VimKeyHandler {
     }
     if (key == 'Backspace') {
       if (state.commandBuffer.isNotEmpty) {
-        state.commandBuffer =
-            state.commandBuffer.substring(0, state.commandBuffer.length - 1);
+        state.commandBuffer = state.commandBuffer.substring(
+          0,
+          state.commandBuffer.length - 1,
+        );
       }
       if (state.commandBuffer.isEmpty) {
         state.mode = VimMode.normal;
@@ -1183,8 +1201,9 @@ class VimKeyHandler {
       } else {
         _lines[state.cursor.line] = line + key;
       }
-      state.cursor =
-          state.cursor.copyWith(column: min(col + 1, _lines[state.cursor.line].length - 1));
+      state.cursor = state.cursor.copyWith(
+        column: min(col + 1, _lines[state.cursor.line].length - 1),
+      );
       _modified = true;
       return true;
     }
@@ -1201,12 +1220,11 @@ class VimKeyHandler {
     if (col < line.length) {
       final deleted = line.substring(col, end);
       state.register.delete(deleted);
-      _lines[state.cursor.line] =
-          line.substring(0, col) + line.substring(end);
+      _lines[state.cursor.line] = line.substring(0, col) + line.substring(end);
       _modified = true;
-      if (state.cursor.column >= _currentLineLength() && state.cursor.column > 0) {
-        state.cursor =
-            state.cursor.copyWith(column: _currentLineLength() - 1);
+      if (state.cursor.column >= _currentLineLength() &&
+          state.cursor.column > 0) {
+        state.cursor = state.cursor.copyWith(column: _currentLineLength() - 1);
       }
     }
     state.lastChange = '${count > 1 ? count : ""}x';
@@ -1235,8 +1253,7 @@ class VimKeyHandler {
 
   void _openLineBelow() {
     state.pushUndo(_lines, state.cursor);
-    final indent =
-        RegExp(r'^(\s*)').firstMatch(_currentLine())?.group(1) ?? '';
+    final indent = RegExp(r'^(\s*)').firstMatch(_currentLine())?.group(1) ?? '';
     _lines.insert(state.cursor.line + 1, indent);
     state.cursor = CursorPosition(state.cursor.line + 1, indent.length);
     _enterInsert();
@@ -1245,8 +1262,7 @@ class VimKeyHandler {
 
   void _openLineAbove() {
     state.pushUndo(_lines, state.cursor);
-    final indent =
-        RegExp(r'^(\s*)').firstMatch(_currentLine())?.group(1) ?? '';
+    final indent = RegExp(r'^(\s*)').firstMatch(_currentLine())?.group(1) ?? '';
     _lines.insert(state.cursor.line, indent);
     state.cursor = CursorPosition(state.cursor.line, indent.length);
     _enterInsert();
@@ -1295,12 +1311,14 @@ class VimKeyHandler {
     final col = state.cursor.column;
     if (col < line.length) {
       final ch = line[col];
-      final toggled =
-          ch == ch.toUpperCase() ? ch.toLowerCase() : ch.toUpperCase();
+      final toggled = ch == ch.toUpperCase()
+          ? ch.toLowerCase()
+          : ch.toUpperCase();
       _lines[state.cursor.line] =
           line.substring(0, col) + toggled + line.substring(col + 1);
-      state.cursor = state.cursor
-          .copyWith(column: min(col + 1, _currentLineLength() - 1));
+      state.cursor = state.cursor.copyWith(
+        column: min(col + 1, _currentLineLength() - 1),
+      );
       _modified = true;
     }
   }
@@ -1335,8 +1353,7 @@ class VimKeyHandler {
         }
       } else {
         for (int i = 0; i < _lines.length; i++) {
-          final lineIdx =
-              (startLine - i + _lines.length) % _lines.length;
+          final lineIdx = (startLine - i + _lines.length) % _lines.length;
           final line = _lines[lineIdx];
           final searchUntil = (i == 0) ? state.cursor.column : line.length;
           final matches = re.allMatches(line.substring(0, searchUntil));
@@ -1458,7 +1475,9 @@ class VimKeyHandler {
     for (int i = sLine + 1; i < eLine; i++) {
       buf.write('\n${_lines[i]}');
     }
-    buf.write('\n${_lines[eLine].substring(0, min(eCol + 1, _lines[eLine].length))}');
+    buf.write(
+      '\n${_lines[eLine].substring(0, min(eCol + 1, _lines[eLine].length))}',
+    );
     return buf.toString();
   }
 
@@ -1469,8 +1488,9 @@ class VimKeyHandler {
           line.substring(0, sCol) + line.substring(min(eCol + 1, line.length));
     } else {
       final before = _lines[sLine].substring(0, sCol);
-      final after = _lines[eLine]
-          .substring(min(eCol + 1, _lines[eLine].length));
+      final after = _lines[eLine].substring(
+        min(eCol + 1, _lines[eLine].length),
+      );
       _lines[sLine] = before + after;
       _lines.removeRange(sLine + 1, eLine + 1);
     }

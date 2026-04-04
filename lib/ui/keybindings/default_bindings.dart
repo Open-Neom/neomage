@@ -1,4 +1,4 @@
-// Default keybindings — comprehensive port of openneomclaw/src/keybindings/defaultBindings.ts.
+// Default keybindings — comprehensive port of neom_claw/src/keybindings/defaultBindings.ts.
 // All standard keyboard shortcuts for the application, organized by context.
 // Includes platform-specific bindings and feature-gated shortcuts.
 
@@ -21,8 +21,7 @@ String _getPlatform() {
 /// Platform-specific image paste shortcut:
 /// - Windows: alt+v (ctrl+v is system paste)
 /// - Other platforms: ctrl+v
-String get _imagePasteKey =>
-    _getPlatform() == 'windows' ? 'alt+v' : 'ctrl+v';
+String get _imagePasteKey => _getPlatform() == 'windows' ? 'alt+v' : 'ctrl+v';
 
 /// Platform-specific mode cycle shortcut:
 /// - Windows without VT mode: meta+m (shift+tab not reliable)
@@ -176,234 +175,282 @@ const List<String> allKeybindingActions = [
 /// Returns the default keybinding blocks in config format.
 /// These are loaded first, then user keybindings.json overrides them.
 List<KeybindingBlock> getDefaultBindingBlocks() => [
-      // ── Global ──
-      const KeybindingBlock(context: 'Global', bindings: {
-        // ctrl+c and ctrl+d use special time-based double-press handling.
-        // They ARE defined here so the resolver can find them, but they
-        // CANNOT be rebound by users.
-        'ctrl+c': 'app:interrupt',
-        'ctrl+d': 'app:exit',
-        'ctrl+l': 'app:redraw',
-        'ctrl+t': 'app:toggleTodos',
-        'ctrl+o': 'app:toggleTranscript',
-        'ctrl+shift+o': 'app:toggleTeammatePreview',
-        'ctrl+r': 'history:search',
-        'ctrl+shift+f': 'app:globalSearch',
-        'cmd+shift+f': 'app:globalSearch',
-        'ctrl+shift+p': 'app:quickOpen',
-        'cmd+shift+p': 'app:quickOpen',
-      }),
+  // ── Global ──
+  const KeybindingBlock(
+    context: 'Global',
+    bindings: {
+      // ctrl+c and ctrl+d use special time-based double-press handling.
+      // They ARE defined here so the resolver can find them, but they
+      // CANNOT be rebound by users.
+      'ctrl+c': 'app:interrupt',
+      'ctrl+d': 'app:exit',
+      'ctrl+l': 'app:redraw',
+      'ctrl+t': 'app:toggleTodos',
+      'ctrl+o': 'app:toggleTranscript',
+      'ctrl+shift+o': 'app:toggleTeammatePreview',
+      'ctrl+r': 'history:search',
+      'ctrl+shift+f': 'app:globalSearch',
+      'cmd+shift+f': 'app:globalSearch',
+      'ctrl+shift+p': 'app:quickOpen',
+      'cmd+shift+p': 'app:quickOpen',
+    },
+  ),
 
-      // ── Chat ──
-      KeybindingBlock(context: 'Chat', bindings: {
-        'escape': 'chat:cancel',
-        // ctrl+x chord prefix avoids shadowing readline editing keys.
-        'ctrl+x ctrl+k': 'chat:killAgents',
-        _modeCycleKey: 'chat:cycleMode',
-        'meta+p': 'chat:modelPicker',
-        'meta+o': 'chat:fastMode',
-        'meta+t': 'chat:thinkingToggle',
-        'enter': 'chat:submit',
-        'up': 'history:previous',
-        'down': 'history:next',
-        // Undo has two bindings:
-        // - ctrl+_ for legacy terminals (send \x1f control char)
-        // - ctrl+shift+- for Kitty protocol
-        'ctrl+_': 'chat:undo',
-        'ctrl+shift+-': 'chat:undo',
-        // External editor bindings
-        'ctrl+x ctrl+e': 'chat:externalEditor',
-        'ctrl+g': 'chat:externalEditor',
-        'ctrl+s': 'chat:stash',
-        // Image paste shortcut (platform-specific)
-        _imagePasteKey: 'chat:imagePaste',
-        'shift+up': 'chat:messageActions',
-      }),
+  // ── Chat ──
+  KeybindingBlock(
+    context: 'Chat',
+    bindings: {
+      'escape': 'chat:cancel',
+      // ctrl+x chord prefix avoids shadowing readline editing keys.
+      'ctrl+x ctrl+k': 'chat:killAgents',
+      _modeCycleKey: 'chat:cycleMode',
+      'meta+p': 'chat:modelPicker',
+      'meta+o': 'chat:fastMode',
+      'meta+t': 'chat:thinkingToggle',
+      'enter': 'chat:submit',
+      'up': 'history:previous',
+      'down': 'history:next',
+      // Undo has two bindings:
+      // - ctrl+_ for legacy terminals (send \x1f control char)
+      // - ctrl+shift+- for Kitty protocol
+      'ctrl+_': 'chat:undo',
+      'ctrl+shift+-': 'chat:undo',
+      // External editor bindings
+      'ctrl+x ctrl+e': 'chat:externalEditor',
+      'ctrl+g': 'chat:externalEditor',
+      'ctrl+s': 'chat:stash',
+      // Image paste shortcut (platform-specific)
+      _imagePasteKey: 'chat:imagePaste',
+      'shift+up': 'chat:messageActions',
+    },
+  ),
 
-      // ── Autocomplete ──
-      const KeybindingBlock(context: 'Autocomplete', bindings: {
-        'tab': 'autocomplete:accept',
-        'escape': 'autocomplete:dismiss',
-        'up': 'autocomplete:previous',
-        'down': 'autocomplete:next',
-      }),
+  // ── Autocomplete ──
+  const KeybindingBlock(
+    context: 'Autocomplete',
+    bindings: {
+      'tab': 'autocomplete:accept',
+      'escape': 'autocomplete:dismiss',
+      'up': 'autocomplete:previous',
+      'down': 'autocomplete:next',
+    },
+  ),
 
-      // ── Settings ──
-      const KeybindingBlock(context: 'Settings', bindings: {
-        'escape': 'confirm:no',
-        'up': 'select:previous',
-        'down': 'select:next',
-        'k': 'select:previous',
-        'j': 'select:next',
-        'ctrl+p': 'select:previous',
-        'ctrl+n': 'select:next',
-        'space': 'select:accept',
-        'enter': 'settings:close',
-        '/': 'settings:search',
-        'r': 'settings:retry',
-      }),
+  // ── Settings ──
+  const KeybindingBlock(
+    context: 'Settings',
+    bindings: {
+      'escape': 'confirm:no',
+      'up': 'select:previous',
+      'down': 'select:next',
+      'k': 'select:previous',
+      'j': 'select:next',
+      'ctrl+p': 'select:previous',
+      'ctrl+n': 'select:next',
+      'space': 'select:accept',
+      'enter': 'settings:close',
+      '/': 'settings:search',
+      'r': 'settings:retry',
+    },
+  ),
 
-      // ── Confirmation / Permission Dialog ──
-      const KeybindingBlock(context: 'Confirmation', bindings: {
-        'y': 'confirm:yes',
-        'n': 'confirm:no',
-        'enter': 'confirm:yes',
-        'escape': 'confirm:no',
-        'up': 'confirm:previous',
-        'down': 'confirm:next',
-        'tab': 'confirm:nextField',
-        'space': 'confirm:toggle',
-        'shift+tab': 'confirm:cycleMode',
-        'ctrl+e': 'confirm:toggleExplanation',
-        'ctrl+d': 'permission:toggleDebug',
-      }),
+  // ── Confirmation / Permission Dialog ──
+  const KeybindingBlock(
+    context: 'Confirmation',
+    bindings: {
+      'y': 'confirm:yes',
+      'n': 'confirm:no',
+      'enter': 'confirm:yes',
+      'escape': 'confirm:no',
+      'up': 'confirm:previous',
+      'down': 'confirm:next',
+      'tab': 'confirm:nextField',
+      'space': 'confirm:toggle',
+      'shift+tab': 'confirm:cycleMode',
+      'ctrl+e': 'confirm:toggleExplanation',
+      'ctrl+d': 'permission:toggleDebug',
+    },
+  ),
 
-      // ── Tabs ──
-      const KeybindingBlock(context: 'Tabs', bindings: {
-        'tab': 'tabs:next',
-        'shift+tab': 'tabs:previous',
-        'right': 'tabs:next',
-        'left': 'tabs:previous',
-      }),
+  // ── Tabs ──
+  const KeybindingBlock(
+    context: 'Tabs',
+    bindings: {
+      'tab': 'tabs:next',
+      'shift+tab': 'tabs:previous',
+      'right': 'tabs:next',
+      'left': 'tabs:previous',
+    },
+  ),
 
-      // ── Transcript ──
-      const KeybindingBlock(context: 'Transcript', bindings: {
-        'ctrl+e': 'transcript:toggleShowAll',
-        'ctrl+c': 'transcript:exit',
-        'escape': 'transcript:exit',
-        'q': 'transcript:exit',
-      }),
+  // ── Transcript ──
+  const KeybindingBlock(
+    context: 'Transcript',
+    bindings: {
+      'ctrl+e': 'transcript:toggleShowAll',
+      'ctrl+c': 'transcript:exit',
+      'escape': 'transcript:exit',
+      'q': 'transcript:exit',
+    },
+  ),
 
-      // ── History Search ──
-      const KeybindingBlock(context: 'HistorySearch', bindings: {
-        'ctrl+r': 'historySearch:next',
-        'escape': 'historySearch:accept',
-        'tab': 'historySearch:accept',
-        'ctrl+c': 'historySearch:cancel',
-        'enter': 'historySearch:execute',
-      }),
+  // ── History Search ──
+  const KeybindingBlock(
+    context: 'HistorySearch',
+    bindings: {
+      'ctrl+r': 'historySearch:next',
+      'escape': 'historySearch:accept',
+      'tab': 'historySearch:accept',
+      'ctrl+c': 'historySearch:cancel',
+      'enter': 'historySearch:execute',
+    },
+  ),
 
-      // ── Task ──
-      const KeybindingBlock(context: 'Task', bindings: {
-        'ctrl+b': 'task:background',
-      }),
+  // ── Task ──
+  const KeybindingBlock(
+    context: 'Task',
+    bindings: {'ctrl+b': 'task:background'},
+  ),
 
-      // ── Theme Picker ──
-      const KeybindingBlock(context: 'ThemePicker', bindings: {
-        'ctrl+t': 'theme:toggleSyntaxHighlighting',
-      }),
+  // ── Theme Picker ──
+  const KeybindingBlock(
+    context: 'ThemePicker',
+    bindings: {'ctrl+t': 'theme:toggleSyntaxHighlighting'},
+  ),
 
-      // ── Scroll ──
-      const KeybindingBlock(context: 'Scroll', bindings: {
-        'pageup': 'scroll:pageUp',
-        'pagedown': 'scroll:pageDown',
-        'wheelup': 'scroll:lineUp',
-        'wheeldown': 'scroll:lineDown',
-        'ctrl+home': 'scroll:top',
-        'ctrl+end': 'scroll:bottom',
-        'ctrl+shift+c': 'selection:copy',
-        'cmd+c': 'selection:copy',
-      }),
+  // ── Scroll ──
+  const KeybindingBlock(
+    context: 'Scroll',
+    bindings: {
+      'pageup': 'scroll:pageUp',
+      'pagedown': 'scroll:pageDown',
+      'wheelup': 'scroll:lineUp',
+      'wheeldown': 'scroll:lineDown',
+      'ctrl+home': 'scroll:top',
+      'ctrl+end': 'scroll:bottom',
+      'ctrl+shift+c': 'selection:copy',
+      'cmd+c': 'selection:copy',
+    },
+  ),
 
-      // ── Help ──
-      const KeybindingBlock(context: 'Help', bindings: {
-        'escape': 'help:dismiss',
-      }),
+  // ── Help ──
+  const KeybindingBlock(context: 'Help', bindings: {'escape': 'help:dismiss'}),
 
-      // ── Attachments ──
-      const KeybindingBlock(context: 'Attachments', bindings: {
-        'right': 'attachments:next',
-        'left': 'attachments:previous',
-        'backspace': 'attachments:remove',
-        'delete': 'attachments:remove',
-        'down': 'attachments:exit',
-        'escape': 'attachments:exit',
-      }),
+  // ── Attachments ──
+  const KeybindingBlock(
+    context: 'Attachments',
+    bindings: {
+      'right': 'attachments:next',
+      'left': 'attachments:previous',
+      'backspace': 'attachments:remove',
+      'delete': 'attachments:remove',
+      'down': 'attachments:exit',
+      'escape': 'attachments:exit',
+    },
+  ),
 
-      // ── Footer ──
-      const KeybindingBlock(context: 'Footer', bindings: {
-        'up': 'footer:up',
-        'ctrl+p': 'footer:up',
-        'down': 'footer:down',
-        'ctrl+n': 'footer:down',
-        'right': 'footer:next',
-        'left': 'footer:previous',
-        'enter': 'footer:openSelected',
-        'escape': 'footer:clearSelection',
-      }),
+  // ── Footer ──
+  const KeybindingBlock(
+    context: 'Footer',
+    bindings: {
+      'up': 'footer:up',
+      'ctrl+p': 'footer:up',
+      'down': 'footer:down',
+      'ctrl+n': 'footer:down',
+      'right': 'footer:next',
+      'left': 'footer:previous',
+      'enter': 'footer:openSelected',
+      'escape': 'footer:clearSelection',
+    },
+  ),
 
-      // ── Message Selector (rewind dialog) ──
-      const KeybindingBlock(context: 'MessageSelector', bindings: {
-        'up': 'messageSelector:up',
-        'down': 'messageSelector:down',
-        'k': 'messageSelector:up',
-        'j': 'messageSelector:down',
-        'ctrl+p': 'messageSelector:up',
-        'ctrl+n': 'messageSelector:down',
-        'ctrl+up': 'messageSelector:top',
-        'shift+up': 'messageSelector:top',
-        'meta+up': 'messageSelector:top',
-        'shift+k': 'messageSelector:top',
-        'ctrl+down': 'messageSelector:bottom',
-        'shift+down': 'messageSelector:bottom',
-        'meta+down': 'messageSelector:bottom',
-        'shift+j': 'messageSelector:bottom',
-        'enter': 'messageSelector:select',
-      }),
+  // ── Message Selector (rewind dialog) ──
+  const KeybindingBlock(
+    context: 'MessageSelector',
+    bindings: {
+      'up': 'messageSelector:up',
+      'down': 'messageSelector:down',
+      'k': 'messageSelector:up',
+      'j': 'messageSelector:down',
+      'ctrl+p': 'messageSelector:up',
+      'ctrl+n': 'messageSelector:down',
+      'ctrl+up': 'messageSelector:top',
+      'shift+up': 'messageSelector:top',
+      'meta+up': 'messageSelector:top',
+      'shift+k': 'messageSelector:top',
+      'ctrl+down': 'messageSelector:bottom',
+      'shift+down': 'messageSelector:bottom',
+      'meta+down': 'messageSelector:bottom',
+      'shift+j': 'messageSelector:bottom',
+      'enter': 'messageSelector:select',
+    },
+  ),
 
-      // ── Message Actions ──
-      const KeybindingBlock(context: 'MessageActions', bindings: {
-        'up': 'messageActions:prev',
-        'down': 'messageActions:next',
-        'k': 'messageActions:prev',
-        'j': 'messageActions:next',
-        'meta+up': 'messageActions:top',
-        'meta+down': 'messageActions:bottom',
-        'super+up': 'messageActions:top',
-        'super+down': 'messageActions:bottom',
-        'shift+up': 'messageActions:prevUser',
-        'shift+down': 'messageActions:nextUser',
-        'escape': 'messageActions:escape',
-        'ctrl+c': 'messageActions:ctrlc',
-        'enter': 'messageActions:enter',
-        'c': 'messageActions:c',
-        'p': 'messageActions:p',
-      }),
+  // ── Message Actions ──
+  const KeybindingBlock(
+    context: 'MessageActions',
+    bindings: {
+      'up': 'messageActions:prev',
+      'down': 'messageActions:next',
+      'k': 'messageActions:prev',
+      'j': 'messageActions:next',
+      'meta+up': 'messageActions:top',
+      'meta+down': 'messageActions:bottom',
+      'super+up': 'messageActions:top',
+      'super+down': 'messageActions:bottom',
+      'shift+up': 'messageActions:prevUser',
+      'shift+down': 'messageActions:nextUser',
+      'escape': 'messageActions:escape',
+      'ctrl+c': 'messageActions:ctrlc',
+      'enter': 'messageActions:enter',
+      'c': 'messageActions:c',
+      'p': 'messageActions:p',
+    },
+  ),
 
-      // ── Diff Dialog ──
-      const KeybindingBlock(context: 'DiffDialog', bindings: {
-        'escape': 'diff:dismiss',
-        'left': 'diff:previousSource',
-        'right': 'diff:nextSource',
-        'up': 'diff:previousFile',
-        'down': 'diff:nextFile',
-        'enter': 'diff:viewDetails',
-      }),
+  // ── Diff Dialog ──
+  const KeybindingBlock(
+    context: 'DiffDialog',
+    bindings: {
+      'escape': 'diff:dismiss',
+      'left': 'diff:previousSource',
+      'right': 'diff:nextSource',
+      'up': 'diff:previousFile',
+      'down': 'diff:nextFile',
+      'enter': 'diff:viewDetails',
+    },
+  ),
 
-      // ── Model Picker ──
-      const KeybindingBlock(context: 'ModelPicker', bindings: {
-        'left': 'modelPicker:decreaseEffort',
-        'right': 'modelPicker:increaseEffort',
-      }),
+  // ── Model Picker ──
+  const KeybindingBlock(
+    context: 'ModelPicker',
+    bindings: {
+      'left': 'modelPicker:decreaseEffort',
+      'right': 'modelPicker:increaseEffort',
+    },
+  ),
 
-      // ── Select (used by /model, /resume, permission prompts, etc.) ──
-      const KeybindingBlock(context: 'Select', bindings: {
-        'up': 'select:previous',
-        'down': 'select:next',
-        'j': 'select:next',
-        'k': 'select:previous',
-        'ctrl+n': 'select:next',
-        'ctrl+p': 'select:previous',
-        'enter': 'select:accept',
-        'escape': 'select:cancel',
-      }),
+  // ── Select (used by /model, /resume, permission prompts, etc.) ──
+  const KeybindingBlock(
+    context: 'Select',
+    bindings: {
+      'up': 'select:previous',
+      'down': 'select:next',
+      'j': 'select:next',
+      'k': 'select:previous',
+      'ctrl+n': 'select:next',
+      'ctrl+p': 'select:previous',
+      'enter': 'select:accept',
+      'escape': 'select:cancel',
+    },
+  ),
 
-      // ── Plugin ──
-      const KeybindingBlock(context: 'Plugin', bindings: {
-        'space': 'plugin:toggle',
-        'i': 'plugin:install',
-      }),
-    ];
+  // ── Plugin ──
+  const KeybindingBlock(
+    context: 'Plugin',
+    bindings: {'space': 'plugin:toggle', 'i': 'plugin:install'},
+  ),
+];
 
 // ════════════════════════════════════════════════════════════════════════════
 // Flat parsed binding list
@@ -437,9 +484,5 @@ ParsedBinding chord(String keys, String action, KeybindingContext context) {
 
 /// Create an unbinding (null action) ParsedBinding.
 ParsedBinding unbind(String keys, KeybindingContext context) {
-  return ParsedBinding(
-    chord: parseChord(keys),
-    action: null,
-    context: context,
-  );
+  return ParsedBinding(chord: parseChord(keys), action: null, context: context);
 }

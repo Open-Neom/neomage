@@ -1,4 +1,4 @@
-// Session storage — port of openneomclaw/src/utils/sessionStorage.ts.
+// Session storage — port of neom_claw/src/utils/sessionStorage.ts.
 // Session persistence, transcript JSONL read/write, message chain management,
 // session listing, metadata caching, and project directory resolution.
 
@@ -7,7 +7,6 @@ import 'dart:convert';
 import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
-import 'package:uuid/uuid.dart';
 
 // ─── Constants ───
 
@@ -74,8 +73,7 @@ class SessionMetadata {
   });
 
   /// Display title: custom > AI-generated > first prompt > session ID.
-  String get displayTitle =>
-      customTitle ?? aiTitle ?? firstPrompt ?? sessionId;
+  String get displayTitle => customTitle ?? aiTitle ?? firstPrompt ?? sessionId;
 }
 
 /// Worktree session state.
@@ -108,13 +106,13 @@ class WorktreeSessionInfo {
   }
 
   Map<String, dynamic> toJson() => {
-        'originalCwd': originalCwd,
-        'worktreePath': worktreePath,
-        'worktreeName': worktreeName,
-        if (originalBranch != null) 'originalBranch': originalBranch,
-        'sessionId': sessionId,
-        if (hookBased != null) 'hookBased': hookBased,
-      };
+    'originalCwd': originalCwd,
+    'worktreePath': worktreePath,
+    'worktreeName': worktreeName,
+    if (originalBranch != null) 'originalBranch': originalBranch,
+    'sessionId': sessionId,
+    if (hookBased != null) 'hookBased': hookBased,
+  };
 }
 
 /// PR link metadata.
@@ -162,10 +160,10 @@ class AgentMetadata {
   }
 
   Map<String, dynamic> toJson() => {
-        'agentType': agentType,
-        if (worktreePath != null) 'worktreePath': worktreePath,
-        if (description != null) 'description': description,
-      };
+    'agentType': agentType,
+    if (worktreePath != null) 'worktreePath': worktreePath,
+    if (description != null) 'description': description,
+  };
 }
 
 /// Remote agent metadata.
@@ -213,18 +211,18 @@ class RemoteAgentMetadata {
   }
 
   Map<String, dynamic> toJson() => {
-        'taskId': taskId,
-        'remoteTaskType': remoteTaskType,
-        'sessionId': sessionId,
-        'title': title,
-        'command': command,
-        'spawnedAt': spawnedAt,
-        if (toolUseId != null) 'toolUseId': toolUseId,
-        if (isLongRunning != null) 'isLongRunning': isLongRunning,
-        if (isUltraplan != null) 'isUltraplan': isUltraplan,
-        if (isRemoteReview != null) 'isRemoteReview': isRemoteReview,
-        if (remoteTaskMetadata != null) 'remoteTaskMetadata': remoteTaskMetadata,
-      };
+    'taskId': taskId,
+    'remoteTaskType': remoteTaskType,
+    'sessionId': sessionId,
+    'title': title,
+    'command': command,
+    'spawnedAt': spawnedAt,
+    if (toolUseId != null) 'toolUseId': toolUseId,
+    if (isLongRunning != null) 'isLongRunning': isLongRunning,
+    if (isUltraplan != null) 'isUltraplan': isUltraplan,
+    if (isRemoteReview != null) 'isRemoteReview': isRemoteReview,
+    if (remoteTaskMetadata != null) 'remoteTaskMetadata': remoteTaskMetadata,
+  };
 }
 
 /// A JSONL log entry.
@@ -235,10 +233,7 @@ class LogEntry {
   const LogEntry({required this.type, required this.data});
 
   factory LogEntry.fromJson(Map<String, dynamic> json) {
-    return LogEntry(
-      type: json['type'] as String? ?? 'unknown',
-      data: json,
-    );
+    return LogEntry(type: json['type'] as String? ?? 'unknown', data: json);
   }
 
   String toJsonLine() => jsonEncode(data);
@@ -276,7 +271,7 @@ class SessionStorage {
   Future<void>? _activeDrain;
 
   /// Flush interval in milliseconds.
-  int _flushIntervalMs = _defaultFlushIntervalMs;
+  final int _flushIntervalMs = _defaultFlushIntervalMs;
 
   /// Pending write counter for flush synchronization.
   int _pendingWriteCount = 0;
@@ -383,8 +378,7 @@ class SessionStorage {
 
     // First user/assistant message materializes the session file.
     if (_sessionFile == null &&
-        messages.any(
-            (m) => m['type'] == 'user' || m['type'] == 'assistant')) {
+        messages.any((m) => m['type'] == 'user' || m['type'] == 'assistant')) {
       await _materializeSessionFile();
     }
 
@@ -399,7 +393,7 @@ class SessionStorage {
         if (isCompactBoundary && parentUuid != null)
           'logicalParentUuid': parentUuid,
         'isSidechain': isSidechain,
-        if (agentId != null) 'agentId': agentId,
+        'agentId': ?agentId,
         ...message,
         'sessionId': _sessionId,
         'cwd': cwd,
@@ -578,9 +572,7 @@ class SessionStorage {
   // ─── Read Operations ───
 
   /// Load a transcript from a JSONL file.
-  Future<List<Map<String, dynamic>>> loadTranscriptFile(
-    String filePath,
-  ) async {
+  Future<List<Map<String, dynamic>>> loadTranscriptFile(String filePath) async {
     final file = File(filePath);
     if (!await file.exists()) return [];
 
@@ -639,26 +631,24 @@ class SessionStorage {
     }
 
     // Extract first prompt from transcript messages.
-    if (firstPrompt == null) {
-      for (final line in lines) {
-        if (line.isEmpty) continue;
-        try {
-          final parsed = jsonDecode(line) as Map<String, dynamic>;
-          if (parsed['type'] == 'user') {
-            final content = parsed['message']?['content'];
-            final text = content is String ? content : null;
-            if (text != null &&
-                text.isNotEmpty &&
-                !_skipFirstPromptPattern.hasMatch(text)) {
-              firstPrompt = text.length > 200
-                  ? '${text.substring(0, 200).trim()}\u2026'
-                  : text;
-              break;
-            }
+    for (final line in lines) {
+      if (line.isEmpty) continue;
+      try {
+        final parsed = jsonDecode(line) as Map<String, dynamic>;
+        if (parsed['type'] == 'user') {
+          final content = parsed['message']?['content'];
+          final text = content is String ? content : null;
+          if (text != null &&
+              text.isNotEmpty &&
+              !_skipFirstPromptPattern.hasMatch(text)) {
+            firstPrompt = text.length > 200
+                ? '${text.substring(0, 200).trim()}\u2026'
+                : text;
+            break;
           }
-        } catch (_) {
-          // Skip malformed lines.
         }
+      } catch (_) {
+        // Skip malformed lines.
       }
     }
 
@@ -726,8 +716,7 @@ class SessionStorage {
     final path = _getAgentMetadataPath(agentId);
     try {
       final raw = await File(path).readAsString();
-      return AgentMetadata.fromJson(
-          jsonDecode(raw) as Map<String, dynamic>);
+      return AgentMetadata.fromJson(jsonDecode(raw) as Map<String, dynamic>);
     } on FileSystemException {
       return null;
     }
@@ -736,8 +725,9 @@ class SessionStorage {
   // ─── Private Helpers ───
 
   String _getAgentMetadataPath(String agentId) {
-    return getAgentTranscriptPath(agentId)
-        .replaceFirst(RegExp(r'\.jsonl$'), '.meta.json');
+    return getAgentTranscriptPath(
+      agentId,
+    ).replaceFirst(RegExp(r'\.jsonl$'), '.meta.json');
   }
 
   /// Sanitize a path for use as a config key / directory name.
@@ -804,7 +794,9 @@ class SessionStorage {
   void _enqueueWrite(String filePath, LogEntry entry) {
     _writeQueues.putIfAbsent(filePath, () => []);
     final completer = Completer<void>();
-    _writeQueues[filePath]!.add(_QueuedWrite(entry: entry, completer: completer));
+    _writeQueues[filePath]!.add(
+      _QueuedWrite(entry: entry, completer: completer),
+    );
     _scheduleDrain();
   }
 
@@ -873,10 +865,9 @@ class SessionStorage {
   /// Synchronously append an entry to a file (for metadata re-append).
   void _appendEntryToFileSync(String filePath, Map<String, dynamic> entry) {
     try {
-      File(filePath).writeAsStringSync(
-        '${jsonEncode(entry)}\n',
-        mode: FileMode.append,
-      );
+      File(
+        filePath,
+      ).writeAsStringSync('${jsonEncode(entry)}\n', mode: FileMode.append);
     } catch (_) {
       // Best-effort.
     }
@@ -1004,6 +995,5 @@ bool isChainParticipant(Map<String, dynamic> message) {
 
 /// Check if an entry is a compact boundary message.
 bool isCompactBoundaryMessage(Map<String, dynamic> entry) {
-  return entry['type'] == 'system' &&
-      entry['subtype'] == 'compact_boundary';
+  return entry['type'] == 'system' && entry['subtype'] == 'compact_boundary';
 }

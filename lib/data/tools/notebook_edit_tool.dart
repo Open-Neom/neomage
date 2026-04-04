@@ -45,7 +45,8 @@ class NotebookEditInput {
       cellIndex: (map['cell_index'] as num?)?.toInt() ?? 0,
       cellType: map['cell_type'] as String?,
       source: map['source'] as String? ?? map['content'] as String?,
-      newIndex: (map['new_index'] as num?)?.toInt() ??
+      newIndex:
+          (map['new_index'] as num?)?.toInt() ??
           (map['target_index'] as num?)?.toInt(),
     );
   }
@@ -78,8 +79,7 @@ class NotebookEditInput {
       errors.add('new_index/target_index is required for move');
     }
 
-    if (cellType != null &&
-        !['code', 'markdown', 'raw'].contains(cellType)) {
+    if (cellType != null && !['code', 'markdown', 'raw'].contains(cellType)) {
       errors.add('cell_type must be one of: code, markdown, raw');
     }
 
@@ -102,9 +102,9 @@ class NotebookEditOutput {
   });
 
   Map<String, dynamic> toMetadata() => {
-        'success': success,
-        'cellCount': cellCount,
-      };
+    'success': success,
+    'cellCount': cellCount,
+  };
 
   @override
   String toString() =>
@@ -159,43 +159,42 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
 
   @override
   Map<String, dynamic> get inputSchema => {
-        'type': 'object',
-        'properties': {
-          'notebook_path': {
-            'type': 'string',
-            'description':
-                'The absolute path to the Jupyter notebook file to edit',
-          },
-          'command': {
-            'type': 'string',
-            'enum': ['add', 'edit', 'delete', 'move'],
-            'description': 'The operation to perform on the cell',
-          },
-          'cell_index': {
-            'type': 'integer',
-            'description':
-                'The 0-indexed cell number to operate on. For add, '
-                    'the new cell is inserted at this position.',
-          },
-          'cell_type': {
-            'type': 'string',
-            'enum': ['code', 'markdown', 'raw'],
-            'description':
-                'The type of the cell. Defaults to code for add. '
-                    'For edit, changes the cell type if provided.',
-          },
-          'source': {
-            'type': 'string',
-            'description': 'The new source content for the cell',
-          },
-          'new_index': {
-            'type': 'integer',
-            'description': 'Destination index for move operations',
-          },
-        },
-        'required': ['notebook_path', 'command'],
-        'additionalProperties': false,
-      };
+    'type': 'object',
+    'properties': {
+      'notebook_path': {
+        'type': 'string',
+        'description': 'The absolute path to the Jupyter notebook file to edit',
+      },
+      'command': {
+        'type': 'string',
+        'enum': ['add', 'edit', 'delete', 'move'],
+        'description': 'The operation to perform on the cell',
+      },
+      'cell_index': {
+        'type': 'integer',
+        'description':
+            'The 0-indexed cell number to operate on. For add, '
+            'the new cell is inserted at this position.',
+      },
+      'cell_type': {
+        'type': 'string',
+        'enum': ['code', 'markdown', 'raw'],
+        'description':
+            'The type of the cell. Defaults to code for add. '
+            'For edit, changes the cell type if provided.',
+      },
+      'source': {
+        'type': 'string',
+        'description': 'The new source content for the cell',
+      },
+      'new_index': {
+        'type': 'integer',
+        'description': 'Destination index for move operations',
+      },
+    },
+    'required': ['notebook_path', 'command'],
+    'additionalProperties': false,
+  };
 
   @override
   bool get isAvailable =>
@@ -275,10 +274,10 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
         'delete' => _deleteCell(cells, parsed),
         'move' => _moveCell(cells, parsed),
         _ => NotebookEditOutput(
-            success: false,
-            message: 'Unknown command: ${parsed.command}',
-            cellCount: cells.length,
-          ),
+          success: false,
+          message: 'Unknown command: ${parsed.command}',
+          cellCount: cells.length,
+        ),
       };
 
       if (!result.success) {
@@ -325,7 +324,8 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
     if (!_isValidIndex(input.cellIndex, cells.length)) {
       return NotebookEditOutput(
         success: false,
-        message: 'Cell index ${input.cellIndex} out of range '
+        message:
+            'Cell index ${input.cellIndex} out of range '
             '(0..${cells.length - 1})',
         cellCount: cells.length,
       );
@@ -369,7 +369,8 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
     if (!_isValidIndex(input.cellIndex, cells.length)) {
       return NotebookEditOutput(
         success: false,
-        message: 'Cell index ${input.cellIndex} out of range '
+        message:
+            'Cell index ${input.cellIndex} out of range '
             '(0..${cells.length - 1})',
         cellCount: cells.length,
       );
@@ -391,7 +392,8 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
     if (!_isValidIndex(input.cellIndex, cells.length)) {
       return NotebookEditOutput(
         success: false,
-        message: 'Source index ${input.cellIndex} out of range '
+        message:
+            'Source index ${input.cellIndex} out of range '
             '(0..${cells.length - 1})',
         cellCount: cells.length,
       );
@@ -426,8 +428,7 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
-  bool _isValidIndex(int index, int length) =>
-      index >= 0 && index < length;
+  bool _isValidIndex(int index, int length) => index >= 0 && index < length;
 
   /// Build a new notebook cell structure.
   Map<String, dynamic> _buildCell(String type, String source) {

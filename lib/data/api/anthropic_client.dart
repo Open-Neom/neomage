@@ -22,15 +22,15 @@ class AnthropicClient extends ApiProvider {
   static const _betaHeaders = 'tools-2024-04-04,prompt-caching-2024-07-31';
 
   AnthropicClient(this.config, {this.retryConfig = RetryConfig.defaultConfig})
-      : assert(config.apiKey != null);
+    : assert(config.apiKey != null);
 
   Map<String, String> get _headers => {
-        'Content-Type': 'application/json',
-        'x-api-key': config.apiKey!,
-        'anthropic-version': _apiVersion,
-        'anthropic-beta': _betaHeaders,
-        ...config.extraHeaders,
-      };
+    'Content-Type': 'application/json',
+    'x-api-key': config.apiKey!,
+    'anthropic-version': _apiVersion,
+    'anthropic-beta': _betaHeaders,
+    ...config.extraHeaders,
+  };
 
   @override
   Stream<StreamEvent> createMessageStream({
@@ -65,10 +65,7 @@ class AnthropicClient extends ApiProvider {
         body: errorBody,
         retryAfterHeader: response.headers['retry-after'],
       );
-      yield ErrorEvent(
-        message: classified.message,
-        type: classified.type.name,
-      );
+      yield ErrorEvent(message: classified.message, type: classified.type.name);
       return;
     }
 
@@ -138,9 +135,7 @@ class AnthropicClient extends ApiProvider {
   }
 
   /// Parse Anthropic SSE stream into StreamEvents.
-  Stream<StreamEvent> _parseSSEStream(
-    http.ByteStream byteStream,
-  ) async* {
+  Stream<StreamEvent> _parseSSEStream(http.ByteStream byteStream) async* {
     final lineStream = byteStream
         .transform(utf8.decoder)
         .transform(const LineSplitter());
@@ -166,46 +161,40 @@ class AnthropicClient extends ApiProvider {
     }
   }
 
-  StreamEvent? _parseEvent(String type, Map<String, dynamic> data) =>
-      switch (type) {
-        'message_start' => MessageStartEvent(
-            messageId: data['message']?['id'] ?? '',
-            model: data['message']?['model'] ?? config.model,
-          ),
-        'content_block_start' => ContentBlockStartEvent(
-            index: data['index'] as int,
-            block: _parseContentBlock(data['content_block']),
-          ),
-        'content_block_delta' => _parseDelta(data),
-        'content_block_stop' => ContentBlockStopEvent(
-            index: data['index'] as int,
-          ),
-        'message_delta' => MessageDeltaEvent(
-            stopReason: _parseStopReason(data['delta']?['stop_reason']),
-            usage: data['usage'] != null
-                ? TokenUsage.fromJson(data['usage'])
-                : null,
-          ),
-        'message_stop' => const MessageStopEvent(),
-        'error' => ErrorEvent(
-            message: data['error']?['message'] ?? 'Unknown error',
-            type: data['error']?['type'],
-          ),
-        _ => null,
-      };
+  StreamEvent? _parseEvent(
+    String type,
+    Map<String, dynamic> data,
+  ) => switch (type) {
+    'message_start' => MessageStartEvent(
+      messageId: data['message']?['id'] ?? '',
+      model: data['message']?['model'] ?? config.model,
+    ),
+    'content_block_start' => ContentBlockStartEvent(
+      index: data['index'] as int,
+      block: _parseContentBlock(data['content_block']),
+    ),
+    'content_block_delta' => _parseDelta(data),
+    'content_block_stop' => ContentBlockStopEvent(index: data['index'] as int),
+    'message_delta' => MessageDeltaEvent(
+      stopReason: _parseStopReason(data['delta']?['stop_reason']),
+      usage: data['usage'] != null ? TokenUsage.fromJson(data['usage']) : null,
+    ),
+    'message_stop' => const MessageStopEvent(),
+    'error' => ErrorEvent(
+      message: data['error']?['message'] ?? 'Unknown error',
+      type: data['error']?['type'],
+    ),
+    _ => null,
+  };
 
   ContentBlockDeltaEvent? _parseDelta(Map<String, dynamic> data) {
     final delta = data['delta'] as Map<String, dynamic>?;
     if (delta == null) return null;
 
-    final text = delta['text'] as String? ??
-        delta['partial_json'] as String? ??
-        '';
+    final text =
+        delta['text'] as String? ?? delta['partial_json'] as String? ?? '';
 
-    return ContentBlockDeltaEvent(
-      index: data['index'] as int,
-      text: text,
-    );
+    return ContentBlockDeltaEvent(index: data['index'] as int, text: text);
   }
 
   ContentBlock _parseContentBlock(Map<String, dynamic>? block) {
@@ -213,21 +202,21 @@ class AnthropicClient extends ApiProvider {
     return switch (block['type']) {
       'text' => TextBlock(block['text'] as String? ?? ''),
       'tool_use' => ToolUseBlock(
-          id: block['id'] as String,
-          name: block['name'] as String,
-          input: (block['input'] as Map<String, dynamic>?) ?? {},
-        ),
+        id: block['id'] as String,
+        name: block['name'] as String,
+        input: (block['input'] as Map<String, dynamic>?) ?? {},
+      ),
       _ => const TextBlock(''),
     };
   }
 
   StopReason? _parseStopReason(String? reason) => switch (reason) {
-        'end_turn' => StopReason.endTurn,
-        'max_tokens' => StopReason.maxTokens,
-        'tool_use' => StopReason.toolUse,
-        'stop_sequence' => StopReason.stopSequence,
-        _ => null,
-      };
+    'end_turn' => StopReason.endTurn,
+    'max_tokens' => StopReason.maxTokens,
+    'tool_use' => StopReason.toolUse,
+    'stop_sequence' => StopReason.stopSequence,
+    _ => null,
+  };
 
   Message _parseMessageResponse(Map<String, dynamic> json) {
     final content = (json['content'] as List)
@@ -239,9 +228,7 @@ class AnthropicClient extends ApiProvider {
       role: MessageRole.assistant,
       content: content,
       stopReason: _parseStopReason(json['stop_reason'] as String?),
-      usage: json['usage'] != null
-          ? TokenUsage.fromJson(json['usage'])
-          : null,
+      usage: json['usage'] != null ? TokenUsage.fromJson(json['usage']) : null,
     );
   }
 }

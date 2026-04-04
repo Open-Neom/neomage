@@ -2,13 +2,7 @@
 // Model Context Protocol type definitions.
 
 /// MCP transport types.
-enum McpTransportType {
-  stdio,
-  sse,
-  http,
-  webSocket,
-  sdk,
-}
+enum McpTransportType { stdio, sse, http, webSocket, sdk }
 
 /// MCP server configuration.
 sealed class McpServerConfig {
@@ -78,18 +72,11 @@ class McpWebSocketConfig extends McpServerConfig {
 /// In-process SDK transport.
 class McpSdkConfig extends McpServerConfig {
   const McpSdkConfig({required super.name, super.env})
-      : super(transport: McpTransportType.sdk);
+    : super(transport: McpTransportType.sdk);
 }
 
 /// Config scope — where the config was loaded from.
-enum McpConfigScope {
-  local,
-  user,
-  project,
-  dynamic,
-  enterprise,
-  managed,
-}
+enum McpConfigScope { local, user, project, dynamic, enterprise, managed }
 
 /// MCP server connection state.
 sealed class McpServerConnection {
@@ -133,10 +120,7 @@ class PendingMcpServer extends McpServerConnection {
 }
 
 class DisabledMcpServer extends McpServerConnection {
-  const DisabledMcpServer({
-    required super.serverName,
-    required super.config,
-  });
+  const DisabledMcpServer({required super.serverName, required super.config});
 }
 
 /// Information about an MCP-provided tool.

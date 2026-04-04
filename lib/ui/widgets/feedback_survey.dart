@@ -1,4 +1,4 @@
-// FeedbackSurvey — port of openneomclaw/src/components/FeedbackSurvey/
+// FeedbackSurvey — port of neom_claw/src/components/FeedbackSurvey/
 // Ports: FeedbackSurvey.tsx, FeedbackSurveyView.tsx, useFeedbackSurvey.tsx,
 // useSurveyState.tsx, TranscriptSharePrompt.tsx, submitTranscriptShare.ts,
 // useDebouncedDigitInput.ts, useMemorySurvey.tsx, usePostCompactSurvey.tsx
@@ -17,24 +17,11 @@ import 'package:sint/sint.dart';
 
 // ─── Feedback response types ───
 
-enum FeedbackSurveyResponse {
-  dismissed,
-  bad,
-  fine,
-  good,
-}
+enum FeedbackSurveyResponse { dismissed, bad, fine, good }
 
-enum TranscriptShareResponse {
-  share,
-  skip,
-  dontAskAgain,
-}
+enum TranscriptShareResponse { share, skip, dontAskAgain }
 
-enum FeedbackSurveyType {
-  session,
-  memory,
-  postCompact,
-}
+enum FeedbackSurveyType { session, memory, postCompact }
 
 // ─── Survey state enum ───
 
@@ -98,13 +85,14 @@ class FeedbackSurveyController extends SintController {
   DateTime? _timeLastShown;
   int? _submitCountAtLastAppearance;
   final DateTime _sessionStartTime = DateTime.now();
-  int _submitCountAtSessionStart = 0;
+  final int _submitCountAtSessionStart = 0;
 
   // Probability gate: roll once when eligible, not on every check
   bool _probabilityPassed = false;
   int? _lastEligibleSubmitCount;
 
   // Appearance tracking
+  // ignore: unused_field
   String? _currentAppearanceId;
 
   // Thanks timer
@@ -160,8 +148,7 @@ class FeedbackSurveyController extends SintController {
 
     // Minimum turns since last shown
     if (_submitCountAtLastAppearance != null) {
-      final turnsSinceLastShown =
-          submitCount - _submitCountAtLastAppearance!;
+      final turnsSinceLastShown = submitCount - _submitCountAtLastAppearance!;
       if (turnsSinceLastShown < cfg.minUserTurnsBetweenFeedback) {
         return false;
       }
@@ -315,8 +302,8 @@ class FeedbackSurvey extends StatelessWidget {
             lastResponse: controller.lastResponse.value,
             onRequestFeedback:
                 controller.lastResponse.value == FeedbackSurveyResponse.good
-                    ? controller.requestFeedback
-                    : null,
+                ? controller.requestFeedback
+                : null,
           );
 
         case FeedbackSurveyState.transcriptPrompt:
@@ -330,10 +317,9 @@ class FeedbackSurvey extends StatelessWidget {
             child: Text(
               'Sharing transcript...',
               style: TextStyle(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.5),
                 fontSize: 13,
               ),
             ),
@@ -349,10 +335,7 @@ class FeedbackSurvey extends StatelessWidget {
                 const SizedBox(width: 4),
                 Text(
                   'Thanks for sharing your transcript!',
-                  style: TextStyle(
-                    color: Colors.green[700],
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.green[700], fontSize: 13),
                 ),
               ],
             ),
@@ -371,11 +354,7 @@ class FeedbackSurveyView extends StatelessWidget {
   static const _defaultMessage =
       'How is NeomClaw doing this session? (optional)';
 
-  const FeedbackSurveyView({
-    super.key,
-    required this.onSelect,
-    this.message,
-  });
+  const FeedbackSurveyView({super.key, required this.onSelect, this.message});
 
   @override
   Widget build(BuildContext context) {
@@ -474,10 +453,7 @@ class _SurveyOption extends StatelessWidget {
             children: [
               TextSpan(
                 text: digit,
-                style: TextStyle(
-                  color: Colors.cyan[400],
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.cyan[400], fontSize: 13),
               ),
               TextSpan(
                 text: ': $label',
@@ -500,10 +476,7 @@ class _FeedbackSurveyThanks extends StatelessWidget {
   final FeedbackSurveyResponse? lastResponse;
   final VoidCallback? onRequestFeedback;
 
-  const _FeedbackSurveyThanks({
-    this.lastResponse,
-    this.onRequestFeedback,
-  });
+  const _FeedbackSurveyThanks({this.lastResponse, this.onRequestFeedback});
 
   @override
   Widget build(BuildContext context) {
@@ -557,8 +530,9 @@ class _FeedbackSurveyThanks extends StatelessWidget {
                         TextSpan(
                           text: ': Share more details',
                           style: TextStyle(
-                            color: theme.colorScheme.onSurface
-                                .withValues(alpha: 0.6),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.6,
+                            ),
                             fontSize: 12,
                           ),
                         ),
@@ -648,8 +622,7 @@ class TranscriptSharePrompt extends StatelessWidget {
                 _SurveyOption(
                   digit: '3',
                   label: "Don't ask again",
-                  onTap: () =>
-                      onSelect(TranscriptShareResponse.dontAskAgain),
+                  onTap: () => onSelect(TranscriptShareResponse.dontAskAgain),
                 ),
               ],
             ),

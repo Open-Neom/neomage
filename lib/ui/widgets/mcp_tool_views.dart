@@ -1,4 +1,4 @@
-// McpToolViews — port of openneomclaw/src/components/mcp/
+// McpToolViews — port of neom_claw/src/components/mcp/
 // Ports: MCPToolListView.tsx, MCPToolDetailView.tsx, ElicitationDialog.tsx,
 // CapabilitiesSection.tsx, McpParsingWarnings.tsx, MCPReconnect.tsx,
 // MCPAgentServerMenu.tsx, MCPStdioServerMenu.tsx, MCPRemoteServerMenu.tsx
@@ -15,7 +15,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:sint/sint.dart';
 
 // ─── MCP tool models ───
@@ -57,12 +56,7 @@ class McpServerCapabilities {
 }
 
 /// MCP server connection status.
-enum McpServerStatus {
-  connected,
-  connecting,
-  disconnected,
-  error,
-}
+enum McpServerStatus { connected, connecting, disconnected, error }
 
 /// MCP server info model.
 class McpServerInfo {
@@ -150,9 +144,9 @@ class McpToolViewsController extends SintController {
     final server = selectedServer;
     if (server == null) return null;
     return server.tools.cast<McpToolInfo?>().firstWhere(
-          (t) => t?.name == name,
-          orElse: () => null,
-        );
+      (t) => t?.name == name,
+      orElse: () => null,
+    );
   }
 
   /// Filtered tools based on search query.
@@ -162,9 +156,11 @@ class McpToolViewsController extends SintController {
     final query = searchQuery.value.toLowerCase();
     if (query.isEmpty) return server.tools;
     return server.tools
-        .where((t) =>
-            t.name.toLowerCase().contains(query) ||
-            (t.description?.toLowerCase().contains(query) ?? false))
+        .where(
+          (t) =>
+              t.name.toLowerCase().contains(query) ||
+              (t.description?.toLowerCase().contains(query) ?? false),
+        )
         .toList();
   }
 
@@ -248,10 +244,7 @@ class McpToolViewsController extends SintController {
   }
 
   /// Respond to an elicitation request.
-  void respondToElicitation(
-    String requestId,
-    Map<String, String> values,
-  ) {
+  void respondToElicitation(String requestId, Map<String, String> values) {
     pendingElicitations.removeWhere((e) => e.requestId == requestId);
     // In real implementation, would send response to MCP server
   }
@@ -269,11 +262,7 @@ class McpToolListView extends StatelessWidget {
   final String serverId;
   final VoidCallback? onBack;
 
-  const McpToolListView({
-    super.key,
-    required this.serverId,
-    this.onBack,
-  });
+  const McpToolListView({super.key, required this.serverId, this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -288,7 +277,9 @@ class McpToolListView extends StatelessWidget {
           child: Text(
             'Server not found',
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         );
@@ -358,7 +349,9 @@ class McpToolListView extends StatelessWidget {
                       Text(
                         '${server.tools.length} tools',
                         style: TextStyle(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
                           fontSize: 12,
                         ),
                       ),
@@ -370,8 +363,7 @@ class McpToolListView extends StatelessWidget {
                   TextButton.icon(
                     icon: const Icon(Icons.refresh, size: 16),
                     label: const Text('Reconnect'),
-                    onPressed: () =>
-                        controller.reconnectServer(serverId),
+                    onPressed: () => controller.reconnectServer(serverId),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
@@ -428,7 +420,9 @@ class McpToolListView extends StatelessWidget {
                             ? 'No tools match your search'
                             : 'No tools available',
                         style: TextStyle(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
                           fontSize: 13,
                         ),
                       ),
@@ -551,10 +545,7 @@ class McpToolDetailView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Server
-                  _InfoRow(
-                    label: 'Server',
-                    value: tool.serverName,
-                  ),
+                  _InfoRow(label: 'Server', value: tool.serverName),
 
                   const SizedBox(height: 12),
 
@@ -563,7 +554,9 @@ class McpToolDetailView extends StatelessWidget {
                     Text(
                       'Description',
                       style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -584,7 +577,9 @@ class McpToolDetailView extends StatelessWidget {
                     Text(
                       'Input Schema',
                       style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -612,8 +607,7 @@ class _SchemaView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final properties =
-        (schema['properties'] as Map<String, dynamic>?) ?? {};
+    final properties = (schema['properties'] as Map<String, dynamic>?) ?? {};
     final required_ =
         (schema['required'] as List<dynamic>?)?.cast<String>() ?? [];
 
@@ -666,7 +660,9 @@ class _SchemaView extends StatelessWidget {
                     Text(
                       type,
                       style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                         fontSize: 11,
                         fontFamily: 'monospace',
                       ),
@@ -776,7 +772,9 @@ class _McpToolTile extends StatelessWidget {
                     Text(
                       tool.description!,
                       style: TextStyle(
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.4,
+                        ),
                         fontSize: 11,
                       ),
                       maxLines: 1,
@@ -842,10 +840,7 @@ class _ServerStatusDot extends StatelessWidget {
     return Container(
       width: 8,
       height: 8,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }
@@ -877,10 +872,7 @@ class _InfoRow extends StatelessWidget {
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
-              color: theme.colorScheme.onSurface,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 13),
           ),
         ),
       ],
@@ -922,10 +914,7 @@ class CapabilitiesSection extends StatelessWidget {
             ),
             child: Text(
               cap.key,
-              style: TextStyle(
-                color: theme.colorScheme.primary,
-                fontSize: 11,
-              ),
+              style: TextStyle(color: theme.colorScheme.primary, fontSize: 11),
             ),
           );
         }).toList(),
@@ -977,16 +966,18 @@ class McpParsingWarnings extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          ...warnings.map((warning) => Padding(
-                padding: const EdgeInsets.only(left: 20, top: 2),
-                child: Text(
-                  '\u2022 $warning',
-                  style: TextStyle(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                    fontSize: 12,
-                  ),
+          ...warnings.map(
+            (warning) => Padding(
+              padding: const EdgeInsets.only(left: 20, top: 2),
+              child: Text(
+                '\u2022 $warning',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  fontSize: 12,
                 ),
-              )),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1024,11 +1015,7 @@ class McpReconnect extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.link_off,
-                size: 16,
-                color: theme.colorScheme.error,
-              ),
+              Icon(Icons.link_off, size: 16, color: theme.colorScheme.error),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1150,8 +1137,9 @@ class _ElicitationDialogState extends State<ElicitationDialog> {
                           Text(
                             'from ${widget.request.serverName}',
                             style: TextStyle(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.5),
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.5,
+                              ),
                               fontSize: 12,
                             ),
                           ),
@@ -1279,7 +1267,7 @@ class _ElicitationDialogState extends State<ElicitationDialog> {
             )
           else if (field.type == 'enum' && field.enumValues != null)
             DropdownButtonFormField<String>(
-              value: _values[field.name]?.isNotEmpty == true
+              initialValue: _values[field.name]?.isNotEmpty == true
                   ? _values[field.name]
                   : null,
               items: field.enumValues!.map((v) {
@@ -1321,8 +1309,7 @@ class _ElicitationDialogState extends State<ElicitationDialog> {
                 hintText: field.defaultValue,
               ),
               validator: field.required
-                  ? (v) =>
-                      v == null || v.isEmpty ? 'Required' : null
+                  ? (v) => v == null || v.isEmpty ? 'Required' : null
                   : null,
             ),
         ],

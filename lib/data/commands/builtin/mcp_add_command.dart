@@ -1,5 +1,5 @@
 // /mcp add command — adds MCP servers to the configuration.
-// Faithful port of openneomclaw/src/commands/mcp/addCommand.ts (280 TS LOC).
+// Faithful port of neom_claw/src/commands/mcp/addCommand.ts (280 TS LOC).
 //
 // Supports three transport types (stdio, sse, http), environment variables,
 // custom headers, OAuth configuration (client-id, client-secret, callback-port),
@@ -12,7 +12,6 @@ import 'package:neom_claw/core/platform/claw_io.dart';
 
 import 'package:path/path.dart' as p;
 
-import '../../../domain/models/message.dart';
 import '../../tools/tool.dart';
 import '../command.dart';
 
@@ -62,11 +61,7 @@ String describeMcpConfigFilePath(McpConfigScope scope) {
 // ============================================================================
 
 /// MCP transport protocol.
-enum McpTransport {
-  stdio,
-  sse,
-  http,
-}
+enum McpTransport { stdio, sse, http }
 
 /// Parse a transport string, defaulting to [stdio].
 McpTransport ensureTransport(String? transport) {
@@ -125,18 +120,11 @@ class SseMcpServerConfig implements McpServerConfig {
   final Map<String, String>? headers;
   final Map<String, dynamic>? oauth;
 
-  const SseMcpServerConfig({
-    required this.url,
-    this.headers,
-    this.oauth,
-  });
+  const SseMcpServerConfig({required this.url, this.headers, this.oauth});
 
   @override
   Map<String, dynamic> toJson() {
-    final result = <String, dynamic>{
-      'type': type,
-      'url': url,
-    };
+    final result = <String, dynamic>{'type': type, 'url': url};
     if (headers != null && headers!.isNotEmpty) result['headers'] = headers;
     if (oauth != null && oauth!.isNotEmpty) result['oauth'] = oauth;
     return result;
@@ -151,18 +139,11 @@ class HttpMcpServerConfig implements McpServerConfig {
   final Map<String, String>? headers;
   final Map<String, dynamic>? oauth;
 
-  const HttpMcpServerConfig({
-    required this.url,
-    this.headers,
-    this.oauth,
-  });
+  const HttpMcpServerConfig({required this.url, this.headers, this.oauth});
 
   @override
   Map<String, dynamic> toJson() {
-    final result = <String, dynamic>{
-      'type': type,
-      'url': url,
-    };
+    final result = <String, dynamic>{'type': type, 'url': url};
     if (headers != null && headers!.isNotEmpty) result['headers'] = headers;
     if (oauth != null && oauth!.isNotEmpty) result['oauth'] = oauth;
     return result;
@@ -236,7 +217,8 @@ String _resolveConfigPath(McpConfigScope scope, String cwd) {
     case McpConfigScope.local:
       return p.join(cwd, '.neomclaw', 'mcp.json');
     case McpConfigScope.user:
-      final home = Platform.environment['HOME'] ??
+      final home =
+          Platform.environment['HOME'] ??
           Platform.environment['USERPROFILE'] ??
           '';
       return p.join(home, '.neomclaw', 'mcp.json');
@@ -522,7 +504,9 @@ class McpAddCommand extends LocalCommand {
         if (options.clientId == null) missing.add('--client-id');
         if (!options.clientSecret) missing.add('--client-secret');
         if (!hasXaaIdpSettings()) {
-          missing.add("'neomclaw mcp xaa setup' (settings.xaaIdp not configured)");
+          missing.add(
+            "'neomclaw mcp xaa setup' (settings.xaaIdp not configured)",
+          );
         }
         if (missing.isNotEmpty) {
           return TextCommandResult(
@@ -536,7 +520,8 @@ class McpAddCommand extends LocalCommand {
 
       // Check if the command looks like a URL (likely incorrect usage).
       final cmd = options.commandOrUrl;
-      final looksLikeUrl = cmd.startsWith('http://') ||
+      final looksLikeUrl =
+          cmd.startsWith('http://') ||
           cmd.startsWith('https://') ||
           cmd.startsWith('localhost') ||
           cmd.endsWith('/sse') ||
@@ -545,8 +530,9 @@ class McpAddCommand extends LocalCommand {
       final output = StringBuffer();
 
       if (transport == McpTransport.sse) {
-        final headers =
-            options.headers != null ? parseHeaders(options.headers!) : null;
+        final headers = options.headers != null
+            ? parseHeaders(options.headers!)
+            : null;
         final oauth = buildOAuthConfig(
           clientId: options.clientId,
           callbackPort: options.callbackPort,
@@ -570,8 +556,9 @@ class McpAddCommand extends LocalCommand {
           );
         }
       } else if (transport == McpTransport.http) {
-        final headers =
-            options.headers != null ? parseHeaders(options.headers!) : null;
+        final headers = options.headers != null
+            ? parseHeaders(options.headers!)
+            : null;
         final oauth = buildOAuthConfig(
           clientId: options.clientId,
           callbackPort: options.callbackPort,
