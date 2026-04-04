@@ -123,7 +123,6 @@ class SyncKeys {
 // Constants
 // ═══════════════════════════════════════════════════════════════════════════
 
-const _settingsSyncTimeoutMs = 10000;
 const _defaultMaxRetries = 3;
 const _maxFileSizeBytes = 500 * 1024; // 500 KB per file
 

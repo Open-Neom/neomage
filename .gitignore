@@ -3,6 +3,12 @@
 *.log
 *.pyc
 *.swp
+
+# Itzli model artifacts (too large for git)
+adapters/
+*.gguf
+*.bin
+*.safetensors
 .DS_Store
 .atom/
 .build/

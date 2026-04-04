@@ -295,7 +295,6 @@ class SessionMemoryCompactConfig {
 const defaultSmCompactConfig = SessionMemoryCompactConfig();
 
 SessionMemoryCompactConfig _smCompactConfig = defaultSmCompactConfig;
-bool _smConfigInitialized = false;
 
 SessionMemoryCompactConfig getSessionMemoryCompactConfig() => _smCompactConfig;
 
@@ -305,7 +304,6 @@ void setSessionMemoryCompactConfig(SessionMemoryCompactConfig config) {
 
 void resetSessionMemoryCompactConfig() {
   _smCompactConfig = defaultSmCompactConfig;
-  _smConfigInitialized = false;
 }
 
 // ---------------------------------------------------------------------------
@@ -559,7 +557,6 @@ const errorMessageIncompleteResponse =
 // ---------------------------------------------------------------------------
 
 const _ptlRetryMarker = '[earlier conversation truncated for compaction retry]';
-const _maxPtlRetries = 3;
 
 /// Drops the oldest API-round groups from messages until tokenGap is covered.
 /// Returns null when nothing can be dropped without leaving an empty summarize set.
@@ -933,7 +930,7 @@ String getCompactPrompt({String? customInstructions}) {
   return prompt;
 }
 
-/// Formats the compact summary by stripping the <analysis> drafting scratchpad.
+/// Formats the compact summary by stripping the `<analysis>` drafting scratchpad.
 String formatCompactSummary(String summary) {
   var formatted = summary;
 

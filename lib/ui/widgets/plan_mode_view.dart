@@ -224,26 +224,6 @@ class _PlanModeViewState extends State<PlanModeView>
     super.dispose();
   }
 
-  PlanStep? get _activeStep {
-    for (final phase in widget.plan.phases) {
-      for (final step in phase.steps) {
-        if (step.status == PlanStepStatus.active) return step;
-        final sub = _findActive(step.substeps);
-        if (sub != null) return sub;
-      }
-    }
-    return null;
-  }
-
-  PlanStep? _findActive(List<PlanStep> steps) {
-    for (final s in steps) {
-      if (s.status == PlanStepStatus.active) return s;
-      final sub = _findActive(s.substeps);
-      if (sub != null) return sub;
-    }
-    return null;
-  }
-
   String _formatDuration(Duration d) {
     final h = d.inHours;
     final m = d.inMinutes.remainder(60);
@@ -508,13 +488,13 @@ class _PlanModeViewState extends State<PlanModeView>
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: isActive
-                      ? Colors.cyanAccent.withOpacity(0.06)
+                      ? Colors.cyanAccent.withValues(alpha: 0.06)
                       : const Color(0xFF303030),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
                     color: isActive
-                        ? Colors.cyanAccent.withOpacity(
-                            0.3 + _pulseAnimation.value * 0.5,
+                        ? Colors.cyanAccent.withValues(
+                            alpha: 0.3 + _pulseAnimation.value * 0.5,
                           )
                         : Colors.grey.shade700,
                     width: isActive ? 1.5 : 0.5,
@@ -680,7 +660,7 @@ class _ActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: color.withOpacity(0.15),
+      color: color.withValues(alpha: 0.15),
       borderRadius: BorderRadius.circular(4),
       child: InkWell(
         onTap: onTap,

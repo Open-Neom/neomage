@@ -1077,7 +1077,7 @@ class McpCapabilities {
   /// Parse capabilities from a server's initialize response.
   factory McpCapabilities.fromInitializeResult(Map<String, dynamic> result) {
     final caps = result['capabilities'] as Map<String, dynamic>? ?? {};
-    final _info = result['serverInfo'] as Map<String, dynamic>?;
+    final info = result['serverInfo'] as Map<String, dynamic>?;
     return McpCapabilities(
       supportsTools: caps.containsKey('tools'),
       supportsResources: caps.containsKey('resources'),

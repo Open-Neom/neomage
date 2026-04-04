@@ -425,7 +425,7 @@ class _BuddyWidgetState extends State<BuddyWidget>
           child: ListView.separated(
             shrinkWrap: true,
             itemCount: tips.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
+            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (_, i) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Text(tips[i], style: const TextStyle(fontSize: 13)),
@@ -568,7 +568,7 @@ class _BuddyWidgetState extends State<BuddyWidget>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

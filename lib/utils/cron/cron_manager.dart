@@ -419,12 +419,6 @@ class CronTask {
   );
 }
 
-/// Cron file JSON shape.
-class _CronFile {
-  final List<CronTask> tasks;
-  const _CronFile({required this.tasks});
-}
-
 const String _cronFileRel = '.neomclaw/scheduled_tasks.json';
 
 /// Path to the cron file. [dir] defaults to the project root.

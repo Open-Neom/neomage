@@ -529,7 +529,7 @@ class _LogPanelState extends State<LogPanel> {
                         ),
                       ),
                       selected: active,
-                      selectedColor: l.color.withOpacity(0.35),
+                      selectedColor: l.color.withValues(alpha: 0.35),
                       backgroundColor: Colors.grey.shade800,
                       checkmarkColor: Colors.white,
                       onSelected: (_) => _toggleLevel(l),
@@ -696,7 +696,7 @@ class _LevelBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: level.color.withOpacity(0.2),
+        color: level.color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -758,7 +758,7 @@ class _LogEntryTile extends StatelessWidget {
                     vertical: 1,
                   ),
                   decoration: BoxDecoration(
-                    color: entry.level.color.withOpacity(0.15),
+                    color: entry.level.color.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(3),
                   ),
                   child: Text(

@@ -1271,11 +1271,11 @@ class BuiltInLifecycleHooks {
     var totalInput = 0;
     var totalOutput = 0;
     var totalCost = 0.0;
-    DateTime? _sessionStart;
+    DateTime? sessionStart;
 
     return SessionLifecycle(
       onSessionStart: (event) async {
-        _sessionStart = event.timestamp;
+        sessionStart = event.timestamp;
         totalInput = 0;
         totalOutput = 0;
         totalCost = 0.0;

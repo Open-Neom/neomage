@@ -297,7 +297,7 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
   bool get strict => true;
 
   @override
-  int? get maxResultSizeChars => maxResultSizeChars;
+  int? get maxResultSizeChars => 100000;
 
   @override
   String get userFacingName => 'Search';

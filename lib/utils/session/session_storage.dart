@@ -22,9 +22,6 @@ const int _liteReadBufSize = 64 * 1024;
 /// Default flush interval for batched writes (ms).
 const int _defaultFlushIntervalMs = 100;
 
-/// Fast flush interval for remote persistence (ms).
-const int _remoteFlushIntervalMs = 10;
-
 /// Maximum bytes per write chunk.
 const int _maxChunkBytes = 100 * 1024 * 1024;
 
@@ -294,6 +291,7 @@ class SessionStorage {
   final Map<String, Set<String>> _sessionMessageSets = {};
 
   /// Cached existing session file paths.
+  // ignore: unused_field
   final Map<String, String> _existingSessionFiles = {};
 
   /// Agent transcript subdirectories.

@@ -3,24 +3,52 @@ import '../../domain/models/tool_definition.dart';
 
 /// Supported API provider types.
 enum ApiProviderType {
+  /// Google Gemini models.
   gemini,
+
+  /// Alibaba Qwen (DashScope) models.
   qwen,
+
+  /// OpenAI and OpenAI-compatible APIs.
   openai,
+
+  /// DeepSeek models.
   deepseek,
+
+  /// Anthropic Claude models.
   anthropic,
+
+  /// Local Ollama instance.
   ollama,
+
+  /// AWS Bedrock.
   bedrock,
+
+  /// Google Vertex AI.
   vertex,
+
+  /// Custom OpenAI-compatible endpoint.
   custom,
 }
 
 /// Configuration for the API provider.
 class ApiConfig {
+  /// The provider backend to use.
   final ApiProviderType type;
+
+  /// Base URL for the API endpoint.
   final String baseUrl;
+
+  /// API key for authentication (null for keyless providers like Ollama).
   final String? apiKey;
+
+  /// Model identifier to use for completions.
   final String model;
+
+  /// Maximum output tokens per completion.
   final int maxTokens;
+
+  /// Additional HTTP headers sent with every request.
   final Map<String, String> extraHeaders;
 
   const ApiConfig({
@@ -119,41 +147,64 @@ sealed class StreamEvent {
   const StreamEvent();
 }
 
+/// Emitted when a new message begins streaming.
 class MessageStartEvent extends StreamEvent {
+  /// Unique identifier for this message.
   final String messageId;
+
+  /// The model that generated this message.
   final String model;
   const MessageStartEvent({required this.messageId, required this.model});
 }
 
+/// Emitted when a new content block (text or tool use) starts.
 class ContentBlockStartEvent extends StreamEvent {
+  /// Index of this content block within the message.
   final int index;
+
+  /// The initial content block data.
   final ContentBlock block;
   const ContentBlockStartEvent({required this.index, required this.block});
 }
 
+/// Emitted when incremental text is appended to a content block.
 class ContentBlockDeltaEvent extends StreamEvent {
+  /// Index of the content block being updated.
   final int index;
+
+  /// The incremental text fragment.
   final String text;
   const ContentBlockDeltaEvent({required this.index, required this.text});
 }
 
+/// Emitted when a content block finishes streaming.
 class ContentBlockStopEvent extends StreamEvent {
+  /// Index of the completed content block.
   final int index;
   const ContentBlockStopEvent({required this.index});
 }
 
+/// Emitted with final message metadata (stop reason, token usage).
 class MessageDeltaEvent extends StreamEvent {
+  /// Why the model stopped generating.
   final StopReason? stopReason;
+
+  /// Token usage statistics for this message.
   final TokenUsage? usage;
   const MessageDeltaEvent({this.stopReason, this.usage});
 }
 
+/// Emitted when the message stream is complete.
 class MessageStopEvent extends StreamEvent {
   const MessageStopEvent();
 }
 
+/// Emitted when an error occurs during streaming.
 class ErrorEvent extends StreamEvent {
+  /// Human-readable error description.
   final String message;
+
+  /// Error type identifier (e.g., 'api_error', 'overloaded_error').
   final String? type;
   const ErrorEvent({required this.message, this.type});
 }

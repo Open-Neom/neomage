@@ -1044,6 +1044,7 @@ class InternetAddress {
   }) async => [];
 }
 
+// ignore: constant_identifier_names
 enum InternetAddressType { IPv4, IPv6, unix, any }
 
 class Socket {

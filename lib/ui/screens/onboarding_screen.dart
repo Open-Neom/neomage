@@ -244,7 +244,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       );
 
       // Persist workspace prefs via SharedPreferences (AppSettings).
-      final _settings = await AppSettings.load();
+      final settings = await AppSettings.load();
       // Permission mode is stored as a string for simplicity.
       // Workspace dir, git toggle, NEOMCLAW.md are handled by the engine.
 

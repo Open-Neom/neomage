@@ -715,6 +715,7 @@ SecurityResult bashCommandIsSafe(String command) {
 }
 
 /// Deprecated version of bashCommandIsSafe for heredoc recursive calls.
+// ignore: non_constant_identifier_names
 SecurityResult bashCommandIsSafe_DEPRECATED(String command) {
   return bashCommandIsSafe(command);
 }

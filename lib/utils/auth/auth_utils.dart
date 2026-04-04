@@ -1084,7 +1084,7 @@ refreshAndGetAwsCredentials() async {
     }
   }
 
-  final _refreshed = await _runAwsAuthRefresh();
+  final refreshed = await _runAwsAuthRefresh();
   final credentials = await _getAwsCredsFromCredentialExport();
 
   if (credentials != null) {

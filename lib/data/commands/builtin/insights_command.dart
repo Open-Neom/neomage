@@ -535,7 +535,7 @@ class InsightsExport {
 // Helper Functions
 // ============================================================================
 
-/// Safely cast a dynamic value to Map<String, int>.
+/// Safely cast a dynamic value to `Map<String, int>`.
 Map<String, int> _castMapInt(dynamic value) {
   if (value is Map) {
     return value.map((k, v) => MapEntry(k.toString(), (v as num).toInt()));
@@ -543,7 +543,7 @@ Map<String, int> _castMapInt(dynamic value) {
   return {};
 }
 
-/// Safely cast a dynamic value to List<double>.
+/// Safely cast a dynamic value to `List<double>`.
 List<double> _castListDouble(dynamic value) {
   if (value is List) {
     return value.map((v) => (v as num).toDouble()).toList();
@@ -551,7 +551,7 @@ List<double> _castListDouble(dynamic value) {
   return [];
 }
 
-/// Safely cast a dynamic value to List<int>.
+/// Safely cast a dynamic value to `List<int>`.
 List<int> _castListInt(dynamic value) {
   if (value is List) {
     return value.map((v) => (v as num).toInt()).toList();
@@ -559,7 +559,7 @@ List<int> _castListInt(dynamic value) {
   return [];
 }
 
-/// Safely cast a dynamic value to List<String>.
+/// Safely cast a dynamic value to `List<String>`.
 List<String> _castListString(dynamic value) {
   if (value is List) {
     return value.map((v) => v.toString()).toList();

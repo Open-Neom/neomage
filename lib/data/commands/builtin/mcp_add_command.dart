@@ -323,9 +323,9 @@ class McpAddOptions {
 
   /// Parse from a raw argument string.
   /// Expected format mirrors the CLI:
-  ///   /mcp add [--scope <scope>] [--transport <t>] [-e KEY=val]
-  ///            [-H "Header: val"] [--client-id <id>] [--client-secret]
-  ///            [--callback-port <port>] [--xaa] <name> <command> [args...]
+  ///   `/mcp add [--scope <scope>] [--transport <t>] [-e KEY=val]`
+  ///            `[-H "Header: val"] [--client-id <id>] [--client-secret]`
+  ///            `[--callback-port <port>] [--xaa] <name> <command> [args...]`
   factory McpAddOptions.parse(String rawArgs) {
     final tokens = _tokenize(rawArgs);
     String? scope;
@@ -448,13 +448,13 @@ class McpAddOptions {
 ///   - http:  Standard HTTP transport
 ///
 /// Options:
-///   -s, --scope <scope>         Configuration scope (local, user, project)
-///   -t, --transport <transport> Transport type (stdio, sse, http)
-///   -e, --env <KEY=val>         Environment variables for stdio servers
-///   -H, --header <Header: val>  Headers for HTTP/SSE servers
-///   --client-id <id>            OAuth client ID for HTTP/SSE servers
+///   `-s, --scope <scope>`         Configuration scope (local, user, project)
+///   `-t, --transport <transport>` Transport type (stdio, sse, http)
+///   `-e, --env <KEY=val>`         Environment variables for stdio servers
+///   `-H, --header <Header: val>`  Headers for HTTP/SSE servers
+///   `--client-id <id>`            OAuth client ID for HTTP/SSE servers
 ///   --client-secret             Prompt for OAuth client secret
-///   --callback-port <port>      Fixed OAuth callback port
+///   `--callback-port <port>`      Fixed OAuth callback port
 ///   --xaa                       Enable XAA (SEP-990) authentication
 class McpAddCommand extends LocalCommand {
   /// Callback to get the current working directory.

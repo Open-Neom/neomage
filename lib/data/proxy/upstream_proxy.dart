@@ -428,7 +428,7 @@ class UpstreamProxy {
     final targetBase = _config.targetUrl.endsWith('/')
         ? _config.targetUrl.substring(0, _config.targetUrl.length - 1)
         : _config.targetUrl;
-    final _fullPath = '$targetBase${req.path}';
+    final fullPath = '$targetBase${req.path}';
     // The proxy URL is used as the actual HTTP target; the real target is
     // communicated via the X-Target-Url header.
     return Uri.parse('$proxyBase${req.path}');

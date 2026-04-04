@@ -176,30 +176,30 @@ class ClawColorScheme {
   /// Serialise the scheme to a plain map for persistence / export.
   Map<String, int> toMap() {
     return {
-      'primary': primary.value,
-      'primaryVariant': primaryVariant.value,
-      'secondary': secondary.value,
-      'secondaryVariant': secondaryVariant.value,
-      'background': background.value,
-      'surface': surface.value,
-      'surfaceVariant': surfaceVariant.value,
-      'error': error.value,
-      'onPrimary': onPrimary.value,
-      'onSecondary': onSecondary.value,
-      'onBackground': onBackground.value,
-      'onSurface': onSurface.value,
-      'onError': onError.value,
-      'border': border.value,
-      'borderVariant': borderVariant.value,
-      'muted': muted.value,
-      'mutedForeground': mutedForeground.value,
-      'accent': accent.value,
-      'accentForeground': accentForeground.value,
-      'destructive': destructive.value,
-      'destructiveForeground': destructiveForeground.value,
-      'success': success.value,
-      'warning': warning.value,
-      'info': info.value,
+      'primary': primary.toARGB32(),
+      'primaryVariant': primaryVariant.toARGB32(),
+      'secondary': secondary.toARGB32(),
+      'secondaryVariant': secondaryVariant.toARGB32(),
+      'background': background.toARGB32(),
+      'surface': surface.toARGB32(),
+      'surfaceVariant': surfaceVariant.toARGB32(),
+      'error': error.toARGB32(),
+      'onPrimary': onPrimary.toARGB32(),
+      'onSecondary': onSecondary.toARGB32(),
+      'onBackground': onBackground.toARGB32(),
+      'onSurface': onSurface.toARGB32(),
+      'onError': onError.toARGB32(),
+      'border': border.toARGB32(),
+      'borderVariant': borderVariant.toARGB32(),
+      'muted': muted.toARGB32(),
+      'mutedForeground': mutedForeground.toARGB32(),
+      'accent': accent.toARGB32(),
+      'accentForeground': accentForeground.toARGB32(),
+      'destructive': destructive.toARGB32(),
+      'destructiveForeground': destructiveForeground.toARGB32(),
+      'success': success.toARGB32(),
+      'warning': warning.toARGB32(),
+      'info': info.toARGB32(),
     };
   }
 
@@ -442,7 +442,7 @@ class ClawTextTheme {
     'fontFamily': s.fontFamily,
     'fontSize': s.fontSize,
     'fontWeight': s.fontWeight?.index,
-    'color': s.color?.value,
+    'color': s.color?.toARGB32(),
   };
 }
 
@@ -560,15 +560,15 @@ class SyntaxTheme {
   final Color punctuation;
 
   Map<String, int> toMap() => {
-    'keyword': keyword.value,
-    'string': string.value,
-    'comment': comment.value,
-    'number': number.value,
-    'type': type.value,
-    'function': function_.value,
-    'variable': variable.value,
-    'operator': operator_.value,
-    'punctuation': punctuation.value,
+    'keyword': keyword.toARGB32(),
+    'string': string.toARGB32(),
+    'comment': comment.toARGB32(),
+    'number': number.toARGB32(),
+    'type': type.toARGB32(),
+    'function': function_.toARGB32(),
+    'variable': variable.toARGB32(),
+    'operator': operator_.toARGB32(),
+    'punctuation': punctuation.toARGB32(),
   };
 
   factory SyntaxTheme.fromMap(Map<String, dynamic> m) {

@@ -613,12 +613,6 @@ class CliComputerExecutor extends ComputerExecutor {
   ComputerUseCapabilities get capabilities =>
       ComputerUseCapabilities(hostBundleId: cliHostBundleId);
 
-  /// Filter out terminal bundle ID from allowed list.
-  List<String> _withoutTerminal(List<String> allowed) {
-    if (_terminalBundleId == null) return List.from(allowed);
-    return allowed.where((id) => id != _terminalBundleId).toList();
-  }
-
   /// Compute target dimensions for screenshots.
   /// Logical -> physical -> API target dims.
   List<int> _computeTargetDims(int logicalW, int logicalH, double scaleFactor) {
@@ -682,7 +676,7 @@ class CliComputerExecutor extends ComputerExecutor {
   Future<DisplayGeometry> getDisplaySize([int? displayId]) async {
     // Get display size via native module or system_profiler
     try {
-      final _result = await Process.run('system_profiler', [
+      final result = await Process.run('system_profiler', [
         'SPDisplaysDataType',
       ]);
       // Parse display info — simplified for port
@@ -713,7 +707,7 @@ class CliComputerExecutor extends ComputerExecutor {
     bool? doHide,
   }) async {
     final d = await getDisplaySize(preferredDisplayId);
-    final _targetDims = _computeTargetDims(d.width, d.height, d.scaleFactor);
+    final targetDims = _computeTargetDims(d.width, d.height, d.scaleFactor);
     // Would call Swift native module for actual capture
     return const ResolvePrepareCaptureResult();
   }
@@ -812,7 +806,7 @@ class CliComputerExecutor extends ComputerExecutor {
 
   @override
   Future<void> writeClipboard(String text) async {
-    final _result = await Process.run(
+    final result = await Process.run(
       'pbcopy',
       [],
       environment: {},
@@ -997,7 +991,7 @@ class CliComputerExecutor extends ComputerExecutor {
   Future<List<RunningApp>> listRunningApps() async {
     final apps = <RunningApp>[];
     try {
-      final _result = await Process.run('osascript', [
+      final result = await Process.run('osascript', [
         '-e',
         'tell application "System Events" to get {bundle identifier, name} of every process whose background only is false',
       ]);

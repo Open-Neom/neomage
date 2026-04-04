@@ -849,7 +849,7 @@ class ClawAvatar extends StatelessWidget {
                 width: size,
                 height: size,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _fallback(fg),
+                errorBuilder: (_, _, _) => _fallback(fg),
               )
             : _fallback(fg),
       ),
@@ -959,7 +959,7 @@ class _ClawLoadingIndicatorState extends State<ClawLoadingIndicator>
   Widget _buildDots(Color color) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (_, __) => Row(
+      builder: (_, _) => Row(
         mainAxisSize: MainAxisSize.min,
         children: List.generate(3, (i) {
           final offset = (i * 0.33);
@@ -984,7 +984,7 @@ class _ClawLoadingIndicatorState extends State<ClawLoadingIndicator>
   Widget _buildShimmer(Color color) {
     return AnimatedBuilder(
       animation: _controller,
-      builder: (_, __) => Container(
+      builder: (_, _) => Container(
         width: widget.size * 4,
         height: widget.size,
         decoration: BoxDecoration(

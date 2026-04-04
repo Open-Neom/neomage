@@ -145,13 +145,6 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
     }
   }
 
-  String _formatDuration(Duration d) {
-    if (d.inMinutes < 1) return '${d.inSeconds}s';
-    if (d.inHours < 1) return '${d.inMinutes}m';
-    if (d.inDays < 1) return '${d.inHours}h ${d.inMinutes % 60}m';
-    return '${d.inDays}d';
-  }
-
   String _formatDate(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);

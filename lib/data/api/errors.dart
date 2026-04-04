@@ -55,11 +55,22 @@ const String promptTooLongErrorMessage = 'Prompt is too long';
 
 /// A classified API error with context.
 class ApiError {
+  /// The classified error category.
   final ApiErrorType type;
+
+  /// Human-readable error description.
   final String message;
+
+  /// HTTP status code, if applicable.
   final int? statusCode;
+
+  /// Value of the Retry-After header, if present.
   final String? retryAfter;
+
+  /// Number of tokens exceeding the context window (for promptTooLong errors).
   final int? tokenGap;
+
+  /// The raw error payload from the API response.
   final Map<String, dynamic>? rawError;
 
   const ApiError({
@@ -71,6 +82,7 @@ class ApiError {
     this.rawError,
   });
 
+  /// Whether this error type is safe to retry automatically.
   bool get isRetryable => switch (type) {
     ApiErrorType.rateLimited => true,
     ApiErrorType.overloaded => true,
@@ -80,6 +92,7 @@ class ApiError {
     _ => false,
   };
 
+  /// Whether this is an authentication or authorization error.
   bool get isAuthError =>
       type == ApiErrorType.authenticationError ||
       type == ApiErrorType.permissionDenied;

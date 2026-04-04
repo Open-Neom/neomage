@@ -575,8 +575,8 @@ Future<void> handlePromptSubmit({
   final pastedTextRefs = parseReferences(
     input,
   ).where((r) => pastedContents[r.id]?.type == 'text').toList();
-  final _pastedTextCount = pastedTextRefs.length;
-  final _pastedTextBytes = pastedTextRefs.fold<int>(
+  final pastedTextCount = pastedTextRefs.length;
+  final pastedTextBytes = pastedTextRefs.fold<int>(
     0,
     (sum, r) => sum + (pastedContents[r.id]?.content.length ?? 0),
   );
@@ -609,7 +609,7 @@ Future<void> handlePromptSubmit({
       setPastedContents({});
       helpers.clearBuffer();
 
-      final _context = params.getToolUseContext(
+      final context = params.getToolUseContext(
         params.messages,
         [],
         Object(), // placeholder abort controller
@@ -620,32 +620,6 @@ Future<void> handlePromptSubmit({
       // through the command registry. The TS version calls
       // immediateCommand.load() and then impl.call(onDone, context, args).
       // Simplified here since Flutter uses a different UI layer.
-
-      bool _doneWasCalled = false;
-      void onDone(String? result, {String? nextInput, bool? submitNextInput}) {
-        _doneWasCalled = true;
-        params.setToolJSX(
-          jsx: null,
-          shouldHidePromptInput: false,
-          clearLocalJSX: true,
-        );
-        if (result != null && params.addNotification != null) {
-          params.addNotification!(
-            AppNotification(
-              key: 'immediate-${immediateCommand.name}',
-              text: result,
-              priority: 'immediate',
-            ),
-          );
-        }
-        if (nextInput != null) {
-          if (submitNextInput == true) {
-            enqueue(QueuedCommand(value: nextInput));
-          } else {
-            onInputChange(nextInput);
-          }
-        }
-      }
 
       if (immediateCommand.load != null) {
         await immediateCommand.load!(commandArgs);
@@ -762,7 +736,7 @@ Future<void> _executeUserInput({
     // Compute workload tag. Only tag when EVERY command agrees on the same
     // non-null workload.
     final firstWorkload = commands.isNotEmpty ? commands[0].workload : null;
-    final _turnWorkload =
+    final turnWorkload =
         firstWorkload != null &&
             commands.every((c) => c.workload == firstWorkload)
         ? firstWorkload
@@ -887,15 +861,6 @@ const _editorOverrides = <String, String>{
   'code': 'code -w', // VS Code: wait for file to be closed
   'subl': 'subl --wait', // Sublime Text: wait for file to be closed
 };
-
-/// GUI editors that open in a separate window.
-const _guiEditorNames = {'code', 'subl', 'atom', 'mate', 'webstorm', 'idea'};
-
-/// Check if an editor is a GUI editor (opens a separate window).
-bool _isGuiEditor(String editor) {
-  final base = p.basename(editor).split(' ').first;
-  return _guiEditorNames.contains(base);
-}
 
 /// Edit a file in an external editor (synchronous).
 ///

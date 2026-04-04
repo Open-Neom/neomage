@@ -17,35 +17,46 @@ class AuthService {
 
   final FlutterSecureStorage _secureStorage;
 
+  /// Creates an auth service with optional custom [secureStorage].
   AuthService({FlutterSecureStorage? secureStorage})
     : _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   // ── API Key Management ──
 
+  /// Retrieve the stored Anthropic API key.
   Future<String?> getAnthropicApiKey() =>
       _secureStorage.read(key: _anthropicKeyKey);
 
+  /// Store the Anthropic API key securely.
   Future<void> setAnthropicApiKey(String key) =>
       _secureStorage.write(key: _anthropicKeyKey, value: key);
 
+  /// Retrieve the stored OpenAI API key.
   Future<String?> getOpenAiApiKey() => _secureStorage.read(key: _openaiKeyKey);
 
+  /// Store the OpenAI API key securely.
   Future<void> setOpenAiApiKey(String key) =>
       _secureStorage.write(key: _openaiKeyKey, value: key);
 
+  /// Retrieve the stored Gemini API key.
   Future<String?> getGeminiApiKey() => _secureStorage.read(key: _geminiKeyKey);
 
+  /// Store the Gemini API key securely.
   Future<void> setGeminiApiKey(String key) =>
       _secureStorage.write(key: _geminiKeyKey, value: key);
 
+  /// Retrieve the stored Qwen API key.
   Future<String?> getQwenApiKey() => _secureStorage.read(key: _qwenKeyKey);
 
+  /// Store the Qwen API key securely.
   Future<void> setQwenApiKey(String key) =>
       _secureStorage.write(key: _qwenKeyKey, value: key);
 
+  /// Retrieve the stored DeepSeek API key.
   Future<String?> getDeepSeekApiKey() =>
       _secureStorage.read(key: _deepseekKeyKey);
 
+  /// Store the DeepSeek API key securely.
   Future<void> setDeepSeekApiKey(String key) =>
       _secureStorage.write(key: _deepseekKeyKey, value: key);
 
@@ -70,6 +81,7 @@ class AuthService {
         _ => Future.value(),
       };
 
+  /// Delete all stored API keys from secure storage.
   Future<void> clearAllKeys() async {
     await _secureStorage.delete(key: _anthropicKeyKey);
     await _secureStorage.delete(key: _openaiKeyKey);
@@ -80,6 +92,7 @@ class AuthService {
 
   // ── Provider Configuration ──
 
+  /// Persist the selected provider type, model, and optional base URL.
   Future<void> saveProviderConfig({
     required ApiProviderType type,
     required String model,
@@ -93,6 +106,7 @@ class AuthService {
     }
   }
 
+  /// Load the full [ApiConfig] from stored preferences and secure keys.
   Future<ApiConfig?> loadApiConfig() async {
     final prefs = await SharedPreferences.getInstance();
     final typeStr = prefs.getString(_providerTypeKey);
@@ -160,6 +174,7 @@ class AuthService {
     }
   }
 
+  /// Returns true if a valid API configuration can be loaded.
   Future<bool> hasValidConfig() async {
     final config = await loadApiConfig();
     return config != null;

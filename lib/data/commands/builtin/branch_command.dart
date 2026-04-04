@@ -554,7 +554,7 @@ class BranchCommand extends LocalCommand {
   final String Function() getTranscriptPath;
 
   /// Callback to resume into a different session.
-  /// Signature: (sessionId, forkPath, mode) => Future<void>.
+  /// Signature: (sessionId, forkPath, mode) => `Future<void>`.
   final Future<void> Function(String sessionId, String forkPath, String mode)?
   onResume;
 

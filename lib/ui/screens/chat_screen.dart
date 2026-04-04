@@ -107,7 +107,7 @@ class _ChatScreenState extends State<ChatScreen>
   }
 
   Future<void> _loadSettings() async {
-    final _settings = await AppSettings.load();
+    final settings = await AppSettings.load();
     // Load the actually configured model from auth service
     try {
       final authService = Sint.find<AuthService>();
@@ -1395,7 +1395,7 @@ class _CommandPaletteOverlay extends StatelessWidget {
                   Flexible(
                     child: ValueListenableBuilder<TextEditingValue>(
                       valueListenable: searchController,
-                      builder: (_, value, __) {
+                      builder: (_, value, _) {
                         final query = value.text.toLowerCase();
                         final filtered = query.isEmpty
                             ? commands
@@ -1565,7 +1565,7 @@ class _AnimatedThinkingDots extends StatelessWidget {
         children: [
           AnimatedBuilder(
             animation: controller,
-            builder: (_, __) {
+            builder: (_, _) {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(3, (i) {

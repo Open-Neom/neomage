@@ -292,7 +292,7 @@ const Map<String, String> apiFrameworkIndicators = {
 ///   - CLI: terminal-based testing with Tmux sessions
 ///   - API: HTTP endpoint testing with curl/httpie
 ///
-/// Skills are created at .neomclaw/skills/<verifier-name>/SKILL.md and are
+/// Skills are created at `.neomclaw/skills/<verifier-name>/SKILL.md` and are
 /// automatically discovered by the Verify agent when the folder name contains
 /// "verifier" (case-insensitive).
 class InitVerifiersCommand extends PromptCommand {

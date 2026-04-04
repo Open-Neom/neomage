@@ -1,11 +1,13 @@
 // Typed wrappers for session and agent IDs.
 // Dart doesn't have branded types, so we use extension types for zero-cost wrapping.
 
+/// Zero-cost typed wrapper for session identifiers.
 extension type const SessionId(String value) implements String {
   /// Cast a raw string to SessionId.
   factory SessionId.from(String id) => SessionId(id);
 }
 
+/// Zero-cost typed wrapper for agent identifiers.
 extension type const AgentId(String value) implements String {
   /// Cast a raw string to AgentId.
   factory AgentId.from(String id) => AgentId(id);

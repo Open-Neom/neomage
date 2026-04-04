@@ -652,16 +652,6 @@ class BackgroundTasksController extends SintController {
     tasks.refresh();
   }
 
-  /// Clamp selection index to valid range.
-  void _clampSelection() {
-    final total = allSelectableItems.length;
-    if (total == 0) {
-      selectedIndex.value = 0;
-    } else if (selectedIndex.value >= total) {
-      selectedIndex.value = total - 1;
-    }
-  }
-
   TaskListItem _toListItem(BackgroundTaskState task) {
     switch (task.type) {
       case BackgroundTaskType.localBash:

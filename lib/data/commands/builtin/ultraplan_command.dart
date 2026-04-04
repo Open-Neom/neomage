@@ -341,7 +341,7 @@ class UltraplanController extends SintController {
       // Check eligibility.
       final eligibility = await checkRemoteAgentEligibility();
       if (!eligibility.eligible) {
-        final _reasons = eligibility.errors
+        final reasons = eligibility.errors
             .map(formatPreconditionError)
             .join('\n');
         // In production, this enqueues a pending notification.
@@ -350,7 +350,7 @@ class UltraplanController extends SintController {
       }
 
       // Build the prompt.
-      final _prompt = buildUltraplanPrompt(blurb, seedPlan: seedPlan);
+      final prompt = buildUltraplanPrompt(blurb, seedPlan: seedPlan);
 
       // In the full implementation, this calls teleportToRemote() which:
       // 1. Bundles the current workspace context
@@ -393,7 +393,7 @@ class UltraplanController extends SintController {
   /// then either sets pendingChoice (for local execution) or completes
   /// the task (for remote execution).
   void _startDetachedPoll(String taskId, String sessionId, String url) {
-    final _started = DateTime.now().millisecondsSinceEpoch;
+    final started = DateTime.now().millisecondsSinceEpoch;
     bool failed = false;
 
     () async {
@@ -460,7 +460,7 @@ class UltraplanController extends SintController {
     pendingChoice.value = null;
     launchPending.value = null;
 
-    final _url = getRemoteSessionUrl(sessionId);
+    final url = getRemoteSessionUrl(sessionId);
 
     // In production, this also:
     // 1. Archives the remote session via API
@@ -482,7 +482,7 @@ class UltraplanController extends SintController {
 /// using Opus. The user can edit and approve the plan in the browser, then
 /// execute it in the web session or send it back to the local CLI.
 ///
-/// Usage: /ultraplan <prompt>
+/// Usage: `/ultraplan <prompt>`
 /// Or include "ultraplan" anywhere in your prompt.
 class UltraplanCommand extends LocalUiCommand {
   @override
@@ -530,7 +530,7 @@ class UltraplanCommand extends LocalUiCommand {
     }
 
     // Build the prompt.
-    final _prompt = buildUltraplanPrompt(blurb);
+    final prompt = buildUltraplanPrompt(blurb);
 
     // In the full implementation, this would:
     // 1. Set ultraplanLaunchPending in app state (shows pre-launch dialog)

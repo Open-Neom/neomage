@@ -496,7 +496,7 @@ class TeleportView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Sint.find<TeleportController>();
-    final _theme = Theme.of(context);
+    final theme = Theme.of(context);
 
     return Obx(() {
       // Show error state.
@@ -936,7 +936,7 @@ class _TeleportSessionListView extends StatelessWidget {
               : ListView.separated(
                   padding: const EdgeInsets.all(8),
                   itemCount: sessions.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 4),
+                  separatorBuilder: (_, _) => const SizedBox(height: 4),
                   itemBuilder: (context, index) {
                     final session = sessions[index];
                     return _SessionTile(

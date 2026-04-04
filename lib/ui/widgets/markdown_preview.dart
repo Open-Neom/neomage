@@ -754,7 +754,7 @@ class MarkdownPreview extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: accentColor.withOpacity(0.08),
+          color: accentColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(6),
           border: Border(left: BorderSide(color: accentColor, width: 3)),
         ),
@@ -1059,7 +1059,7 @@ class MarkdownPreview extends StatelessWidget {
               style: TextStyle(
                 color: theme.linkColor,
                 decoration: TextDecoration.underline,
-                decorationColor: theme.linkColor.withOpacity(0.4),
+                decorationColor: theme.linkColor.withValues(alpha: 0.4),
               ),
               // GestureRecognizer would need StatefulWidget; use onLinkTap callback
             ),
@@ -1074,7 +1074,7 @@ class MarkdownPreview extends StatelessWidget {
                   child: node.url.startsWith('http')
                       ? Image.network(
                           node.url,
-                          errorBuilder: (_, __, ___) =>
+                          errorBuilder: (_, _, _) =>
                               _imagePlaceholder(node.alt),
                           loadingBuilder: (_, child, progress) {
                             if (progress == null) return child;

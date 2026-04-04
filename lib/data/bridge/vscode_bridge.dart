@@ -16,6 +16,7 @@ class VscodeTheme {
   final String name;
   final VscodeThemeKind kind;
   final Map<String, String> colors;
+  // ignore: library_private_types_in_public_api
   final Map<String, _TokenColor> tokenColors;
 
   VscodeTheme({

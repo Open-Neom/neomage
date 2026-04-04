@@ -438,7 +438,7 @@ class ContextAnalyzer extends SintController {
     List<Map<String, dynamic>> messages,
     List<Map<String, dynamic>> tools,
   )
-  _countTokensWithFallback = (_, __) async => null;
+  _countTokensWithFallback = (_, _) async => null;
 
   /// Callback for rough token estimation.
   int Function(String text) _roughTokenCountEstimation = (text) =>

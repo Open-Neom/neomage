@@ -2,23 +2,54 @@ import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();
 
-enum MessageRole { user, assistant, system }
+/// The role of a message sender in the conversation.
+enum MessageRole {
+  /// A human user message.
+  user,
 
-enum StopReason { endTurn, maxTokens, toolUse, stopSequence }
+  /// An AI assistant response.
+  assistant,
+
+  /// A system-level instruction.
+  system,
+}
+
+/// Reason the model stopped generating output.
+enum StopReason {
+  /// The model finished its response naturally.
+  endTurn,
+
+  /// The response was truncated due to token limits.
+  maxTokens,
+
+  /// The model invoked a tool and awaits the result.
+  toolUse,
+
+  /// A stop sequence was encountered.
+  stopSequence,
+}
 
 /// A content block within a message — mirrors Anthropic's content block types.
 sealed class ContentBlock {
   const ContentBlock();
 }
 
+/// A plain text content block.
 class TextBlock extends ContentBlock {
+  /// The text content.
   final String text;
   const TextBlock(this.text);
 }
 
+/// A tool invocation content block.
 class ToolUseBlock extends ContentBlock {
+  /// Unique identifier for this tool call.
   final String id;
+
+  /// Name of the tool being invoked.
   final String name;
+
+  /// JSON input parameters for the tool.
   final Map<String, dynamic> input;
   const ToolUseBlock({
     required this.id,
@@ -27,9 +58,15 @@ class ToolUseBlock extends ContentBlock {
   });
 }
 
+/// The result returned from a tool execution.
 class ToolResultBlock extends ContentBlock {
+  /// The ID of the tool call this result corresponds to.
   final String toolUseId;
+
+  /// The textual output from the tool.
   final String content;
+
+  /// Whether the tool execution resulted in an error.
   final bool isError;
   const ToolResultBlock({
     required this.toolUseId,
@@ -38,19 +75,34 @@ class ToolResultBlock extends ContentBlock {
   });
 }
 
+/// A base64-encoded image content block.
 class ImageBlock extends ContentBlock {
+  /// MIME type of the image (e.g., 'image/png').
   final String mediaType;
+
+  /// Base64-encoded image data.
   final String base64Data;
   const ImageBlock({required this.mediaType, required this.base64Data});
 }
 
 /// A single message in the conversation.
 class Message {
+  /// Unique identifier for this message.
   final String id;
+
+  /// The role of the message sender.
   final MessageRole role;
+
+  /// Content blocks containing text, images, or tool interactions.
   final List<ContentBlock> content;
+
+  /// When this message was created.
   final DateTime timestamp;
+
+  /// Why the model stopped generating (assistant messages only).
   final StopReason? stopReason;
+
+  /// Token usage statistics (assistant messages only).
   final TokenUsage? usage;
 
   Message({
@@ -74,6 +126,7 @@ class Message {
   factory Message.user(String text) =>
       Message(role: MessageRole.user, content: [TextBlock(text)]);
 
+  /// Create a simple text message from the assistant.
   factory Message.assistant(String text) =>
       Message(role: MessageRole.assistant, content: [TextBlock(text)]);
 
@@ -110,10 +163,18 @@ class Message {
       };
 }
 
+/// Token usage statistics for an API call.
 class TokenUsage {
+  /// Number of input tokens consumed.
   final int inputTokens;
+
+  /// Number of output tokens generated.
   final int outputTokens;
+
+  /// Tokens used to create a new cache entry (Anthropic prompt caching).
   final int? cacheCreationInputTokens;
+
+  /// Tokens read from an existing cache entry (Anthropic prompt caching).
   final int? cacheReadInputTokens;
 
   const TokenUsage({
@@ -123,6 +184,7 @@ class TokenUsage {
     this.cacheReadInputTokens,
   });
 
+  /// Deserialize from an API JSON response.
   factory TokenUsage.fromJson(Map<String, dynamic> json) => TokenUsage(
     inputTokens: json['input_tokens'] as int? ?? 0,
     outputTokens: json['output_tokens'] as int? ?? 0,
@@ -130,5 +192,6 @@ class TokenUsage {
     cacheReadInputTokens: json['cache_read_input_tokens'] as int?,
   );
 
+  /// Total tokens (input + output).
   int get totalTokens => inputTokens + outputTokens;
 }

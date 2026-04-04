@@ -562,7 +562,7 @@ class ConversationEngine {
     );
 
     final textBuffer = StringBuffer();
-    final _thinkingBuffer = StringBuffer();
+    final thinkingBuffer = StringBuffer();
     final accumulators = <int, Map<String, dynamic>>{};
     var blockIndex = 0;
 

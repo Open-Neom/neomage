@@ -142,10 +142,8 @@ enum SessionActivityReason { apiCall, toolExec }
 void Function()? _activityCallback;
 int _activityRefcount = 0;
 final Map<SessionActivityReason, int> _activeReasons = {};
-int? _oldestActivityStartedAt;
 Timer? _heartbeatTimer;
 Timer? _idleTimer;
-bool _cleanupRegistered = false;
 
 void _startHeartbeatTimer() {
   _clearIdleTimer();
@@ -206,7 +204,6 @@ void startSessionActivity(SessionActivityReason reason) {
   _activityRefcount++;
   _activeReasons[reason] = (_activeReasons[reason] ?? 0) + 1;
   if (_activityRefcount == 1) {
-    _oldestActivityStartedAt = DateTime.now().millisecondsSinceEpoch;
     if (_activityCallback != null && _heartbeatTimer == null) {
       _startHeartbeatTimer();
     }

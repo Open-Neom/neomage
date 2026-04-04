@@ -600,7 +600,7 @@ Future<bool> _spawnDetached(
   String? cwd,
 }) async {
   try {
-    final _process = await Process.start(
+    final process = await Process.start(
       command,
       args,
       mode: ProcessStartMode.detached,
@@ -926,9 +926,9 @@ Future<int> handleDeepLinkUri(String uri) async {
   final cwd = action.cwd ?? _homeDir();
 
   // Read FETCH_HEAD age for repo links
-  DateTime? _lastFetch;
+  DateTime? lastFetch;
   if (action.repo != null) {
-    _lastFetch = await readLastFetchTime(cwd);
+    lastFetch = await readLastFetchTime(cwd);
   }
 
   final launched = await launchInTerminal(

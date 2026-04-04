@@ -260,7 +260,9 @@ class VimState {
 
   void beginUndoGroup() => _undoGroupCounter++;
 
+  // ignore: library_private_types_in_public_api
   _UndoEntry? popUndo() => _undoStack.isEmpty ? null : _undoStack.removeLast();
+  // ignore: library_private_types_in_public_api
   _UndoEntry? popRedo() => _redoStack.isEmpty ? null : _redoStack.removeLast();
 
   void pushRedo(List<String> lines, CursorPosition pos) {
@@ -462,8 +464,10 @@ class VimKeyHandler {
     this.onStatusMessage,
   }) : _lines = lines;
 
+  // ignore: unnecessary_getters_setters
   List<String> get lines => _lines;
   bool get modified => _modified;
+  // ignore: unnecessary_getters_setters
   set lines(List<String> value) => _lines = value;
 
   /// Main entry point — returns true if the key was consumed.

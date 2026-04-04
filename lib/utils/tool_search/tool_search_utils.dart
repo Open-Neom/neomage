@@ -590,17 +590,17 @@ class ToolSearchController extends SintController {
     DeferredToolsDeltaScanContext? scanContext,
   }) {
     final announced = <String>{};
-    int _attachmentCount = 0;
-    int _dtdCount = 0;
+    int attachmentCount = 0;
+    int dtdCount = 0;
     final attachmentTypesSeen = <String>{};
 
     for (final msg in messages) {
       if (msg.type != 'attachment') continue;
-      _attachmentCount++;
+      attachmentCount++;
       final attachmentType = msg.attachment?['type'] as String?;
       if (attachmentType != null) attachmentTypesSeen.add(attachmentType);
       if (attachmentType != 'deferred_tools_delta') continue;
-      _dtdCount++;
+      dtdCount++;
       final addedNames = msg.attachment?['addedNames'];
       if (addedNames is List) {
         for (final n in addedNames) {

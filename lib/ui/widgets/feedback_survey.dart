@@ -268,13 +268,6 @@ class FeedbackSurveyController extends SintController {
 
 const _responseInputs = ['0', '1', '2', '3'];
 
-final _inputToResponse = <String, FeedbackSurveyResponse>{
-  '0': FeedbackSurveyResponse.dismissed,
-  '1': FeedbackSurveyResponse.bad,
-  '2': FeedbackSurveyResponse.fine,
-  '3': FeedbackSurveyResponse.good,
-};
-
 bool isValidResponseInput(String input) => _responseInputs.contains(input);
 
 // ─── FeedbackSurvey widget (mirrors FeedbackSurvey.tsx) ───

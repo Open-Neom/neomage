@@ -621,7 +621,6 @@ const _datadogLogsEndpoint =
 const _datadogClientToken = 'pubbbf48e6d78dae54bceaa4acf463299bf';
 const _defaultFlushIntervalMs = 15000;
 const _maxBatchSize = 100;
-const _networkTimeoutMs = 5000;
 const _numUserBuckets = 30;
 
 /// Datadog event tracking service with batched log dispatch.

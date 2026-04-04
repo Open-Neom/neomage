@@ -140,7 +140,7 @@ class _InputBarState extends State<InputBar> {
 
   void _showAttachMenu() {
     final cs = Theme.of(context).colorScheme;
-    final _isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
@@ -262,12 +262,6 @@ class _InputBarState extends State<InputBar> {
     };
   }
 
-  String _formatSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
   @override
   void dispose() {
     _controller.dispose();
@@ -278,7 +272,7 @@ class _InputBarState extends State<InputBar> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final _isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
@@ -299,7 +293,7 @@ class _InputBarState extends State<InputBar> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _attachments.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
                     itemBuilder: (_, i) => _AttachmentChip(
                       attachment: _attachments[i],
                       onRemove: () => _removeAttachment(i),

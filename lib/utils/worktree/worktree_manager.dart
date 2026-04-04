@@ -971,7 +971,7 @@ class WorktreeManager extends SintController {
       await _performPostCreationSetup(gitRoot, result.worktreePath);
     } else {
       // Bump mtime so periodic cleanup doesn't consider this stale
-      final _now = DateTime.now();
+      final now = DateTime.now();
       try {
         await Process.run('touch', [result.worktreePath]);
       } catch (_) {}
@@ -1238,7 +1238,7 @@ class WorktreeManager extends SintController {
 
     // Parse worktree name from args
     String? worktreeName;
-    bool _forceClassicTmux = false;
+    bool forceClassicTmux = false;
 
     for (int i = 0; i < args.length; i++) {
       final arg = args[i];
@@ -1249,7 +1249,7 @@ class WorktreeManager extends SintController {
       } else if (arg.startsWith('--worktree=')) {
         worktreeName = arg.substring('--worktree='.length);
       } else if (arg == '--tmux=classic') {
-        _forceClassicTmux = true;
+        forceClassicTmux = true;
       }
     }
 
@@ -1352,7 +1352,7 @@ class WorktreeManager extends SintController {
       ...newArgs,
     ];
 
-    final _tmuxResult = Process.runSync(
+    final tmuxResult = Process.runSync(
       'tmux',
       tmuxArgs,
       workingDirectory: worktreeDir,

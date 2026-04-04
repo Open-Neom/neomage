@@ -67,9 +67,8 @@ class BootstrapProgress {
   int _currentIndex;
   final Stopwatch _totalTimer;
 
-  BootstrapProgress({required List<BootstrapStep> steps})
-    : steps = steps,
-      _currentIndex = 0,
+  BootstrapProgress({required this.steps})
+    : _currentIndex = 0,
       _totalTimer = Stopwatch();
 
   int get currentIndex => _currentIndex;
@@ -384,7 +383,7 @@ Future<EnvironmentCheck> _checkDiskSpace() async {
 
 Future<EnvironmentCheck> _checkWritePermissions() async {
   try {
-    final _home = Platform.environment['HOME'] ?? '/tmp';
+    final home = Platform.environment['HOME'] ?? '/tmp';
     final configDir = Directory('/.neomclaw');
     if (!configDir.existsSync()) {
       configDir.createSync(recursive: true);
@@ -685,7 +684,7 @@ Future<Map<String, dynamic>> loadAllSettings({
   required String projectDir,
   String? configDir,
 }) async {
-  final _home = Platform.environment['HOME'] ?? '';
+  final home = Platform.environment['HOME'] ?? '';
   final cfgDir = configDir ?? '/.neomclaw';
 
   // Layer settings: user -> project -> local -> policy

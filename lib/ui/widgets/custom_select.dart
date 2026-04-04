@@ -337,6 +337,7 @@ class SelectController<T> extends SintController {
   }
 
   /// Get the visible options for rendering.
+  // ignore: library_private_types_in_public_api
   List<_VisibleOption<T>> get visibleOptions {
     final from = visibleFromIndex.value;
     final to = math.min(visibleToIndex.value, options.length);

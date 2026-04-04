@@ -18,10 +18,10 @@ class RetryConfig {
   /// Maximum consecutive 529 errors before giving up.
   final int max529Retries;
 
-  /// Whether to retry indefinitely (for unattended sessions).
+  /// Whether to retry indefinitely for unattended sessions.
   final bool persistent;
 
-  /// Maximum backoff for persistent retries.
+  /// Maximum backoff in milliseconds for persistent retries.
   final int persistentMaxBackoffMs;
 
   const RetryConfig({
@@ -33,8 +33,10 @@ class RetryConfig {
     this.persistentMaxBackoffMs = 5 * 60 * 1000,
   });
 
+  /// Default retry configuration for interactive sessions.
   static const RetryConfig defaultConfig = RetryConfig();
 
+  /// Conservative retry configuration for background tasks.
   static const RetryConfig backgroundConfig = RetryConfig(
     maxRetries: 3,
     max529Retries: 1,
@@ -43,10 +45,16 @@ class RetryConfig {
 
 /// Context tracked across retry attempts.
 class RetryContext {
+  /// Current attempt number (starts at 0).
   int attempt;
+
+  /// Number of consecutive 529 (overloaded) errors.
   int consecutive529s;
+
+  /// Timestamp of the most recent retry.
   DateTime? lastRetry;
 
+  /// Creates a fresh retry context with zero attempts.
   RetryContext() : attempt = 0, consecutive529s = 0;
 }
 
@@ -119,8 +127,13 @@ RetryDecision shouldRetry({
 
 /// Decision about whether to retry.
 class RetryDecision {
+  /// Whether the operation should be retried.
   final bool shouldRetry;
+
+  /// How long to wait before retrying (null if aborting).
   final Duration? delay;
+
+  /// Reason for aborting (null if retrying).
   final String? abortReason;
 
   const RetryDecision._({
@@ -129,9 +142,11 @@ class RetryDecision {
     this.abortReason,
   });
 
+  /// Create a decision to retry after the given [delay].
   factory RetryDecision.retry(Duration delay) =>
       RetryDecision._(shouldRetry: true, delay: delay);
 
+  /// Create a decision to abort with the given [reason].
   factory RetryDecision.abort(String reason) =>
       RetryDecision._(shouldRetry: false, abortReason: reason);
 }

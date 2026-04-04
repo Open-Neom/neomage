@@ -178,6 +178,7 @@ class TeamsDialogController extends SintController {
 
   TeamsDialogController({this.initialTeams, required this.onDone});
 
+  // ignore: library_private_types_in_public_api
   late final Rx<_DialogLevel> dialogLevel;
   final selectedIndex = 0.obs;
   final refreshKey = 0.obs;

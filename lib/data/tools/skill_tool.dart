@@ -259,7 +259,7 @@ String _getCommandDescription(SkillCommand cmd) {
 
 /// Format a single command for the listing.
 String _formatCommandDescription(SkillCommand cmd) {
-  final _displayName = cmd.userFacingName ?? cmd.name;
+  final displayName = cmd.userFacingName ?? cmd.name;
   return '- ${cmd.name}: ${_getCommandDescription(cmd)}';
 }
 
@@ -725,7 +725,7 @@ class SkillTool extends Tool {
       // In a full implementation this would run a sub-agent with the skill
       // content. For the port, we simulate the forked execution pattern.
       final resultText = 'Skill execution completed';
-      final _durationMs = DateTime.now().difference(startTime).inMilliseconds;
+      final durationMs = DateTime.now().difference(startTime).inMilliseconds;
 
       return ToolResult.success(
         'Skill "$commandName" completed (forked execution).\n\n'

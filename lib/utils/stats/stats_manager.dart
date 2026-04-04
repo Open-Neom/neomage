@@ -549,7 +549,7 @@ class StatsManager extends SintController {
   // -------------------------------------------------------------------------
 
   static String _defaultConfigHome() {
-    final _home =
+    final home =
         Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '.';
@@ -576,7 +576,7 @@ class StatsManager extends SintController {
       await _statsCacheLockFuture;
     }
 
-    late void Function() _releaseLock;
+    late void Function() releaseLock;
     _statsCacheLockFuture = Future<void>(() {
       // The completer is effectively resolved when releaseLock is called.
     });

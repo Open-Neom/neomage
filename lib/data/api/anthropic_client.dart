@@ -16,11 +16,15 @@ class AnthropicClient extends ApiProvider {
   @override
   final ApiConfig config;
 
+  /// Retry configuration for transient errors.
   final RetryConfig retryConfig;
 
   static const _apiVersion = '2023-06-01';
   static const _betaHeaders = 'tools-2024-04-04,prompt-caching-2024-07-31';
 
+  /// Creates a client with the given Anthropic [config].
+  ///
+  /// Requires [config.apiKey] to be non-null.
   AnthropicClient(this.config, {this.retryConfig = RetryConfig.defaultConfig})
     : assert(config.apiKey != null);
 
@@ -32,6 +36,7 @@ class AnthropicClient extends ApiProvider {
     ...config.extraHeaders,
   };
 
+  /// Stream a message completion via the Anthropic Messages API.
   @override
   Stream<StreamEvent> createMessageStream({
     required List<Message> messages,
@@ -73,6 +78,7 @@ class AnthropicClient extends ApiProvider {
     client.close();
   }
 
+  /// Send a non-streaming message completion with automatic retry.
   @override
   Future<Message> createMessage({
     required List<Message> messages,

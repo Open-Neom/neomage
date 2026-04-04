@@ -129,7 +129,7 @@ class OllamaSetupScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final ctrl = Sint.put(OllamaSetupController());
     final cs = Theme.of(context).colorScheme;
-    final _isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
@@ -751,7 +751,7 @@ class _CustomPullFieldState extends State<_CustomPullField> {
 
   @override
   Widget build(BuildContext context) {
-    final _cs = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
 
     return Row(
       children: [

@@ -668,12 +668,3 @@ bool _isWsl() {
     return false;
   }
 }
-
-/// Count occurrences of a character in a string or buffer.
-int _countChar(List<int> data, int charCode) {
-  int count = 0;
-  for (final byte in data) {
-    if (byte == charCode) count++;
-  }
-  return count;
-}

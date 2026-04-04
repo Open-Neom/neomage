@@ -101,7 +101,7 @@ class BridgeConfig {
   /// Whether bridge is in outbound-only mode.
   bool outboundOnly;
 
-  /// Initial session name (if provided via /remote-control <name>).
+  /// Initial session name (if provided via `/remote-control <name>`).
   String? initialName;
 
   /// Whether bridge is currently connected.

@@ -23,6 +23,7 @@ class OpenAiShim extends ApiProvider {
   @override
   final ApiConfig config;
 
+  /// Creates a shim with the given [config] for an OpenAI-compatible provider.
   OpenAiShim(this.config);
 
   Map<String, String> get _headers => {
@@ -150,6 +151,7 @@ class OpenAiShim extends ApiProvider {
 
   // ── OpenAI → Anthropic event conversion ──
 
+  /// Stream a chat completion, translating OpenAI SSE events to Anthropic format.
   @override
   Stream<StreamEvent> createMessageStream({
     required List<Message> messages,
@@ -295,6 +297,7 @@ class OpenAiShim extends ApiProvider {
     }
   }
 
+  /// Send a non-streaming chat completion and return the response as a [Message].
   @override
   Future<Message> createMessage({
     required List<Message> messages,

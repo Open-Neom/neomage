@@ -264,7 +264,7 @@ class ParsedAddress {
 }
 
 /// Parse a recipient address into scheme + target.
-/// Supports "bridge:<session-id>", "uds:<socket-path>", or bare names.
+/// Supports `bridge:<session-id>`, `uds:<socket-path>`, or bare names.
 ParsedAddress parseAddress(String to) {
   if (to.startsWith('bridge:')) {
     return ParsedAddress(scheme: 'bridge', target: to.substring(7));
@@ -835,7 +835,7 @@ class SendMessageTool extends Tool {
     }
 
     final teamContext = getTeamContext?.call();
-    final _teamName = teamContext?.teamName;
+    final teamName = teamContext?.teamName;
 
     final approvalResponse = {
       'type': 'plan_approval_response',

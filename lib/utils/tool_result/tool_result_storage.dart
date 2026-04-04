@@ -274,6 +274,7 @@ class ToolResultStorage extends SintController {
 
   final String projectDir;
   final String sessionId;
+  // ignore: unused_field
   final String _originalCwd;
 
   /// Persistence threshold overrides keyed by tool name.

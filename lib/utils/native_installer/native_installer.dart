@@ -134,7 +134,7 @@ bool isDistroFamily(OsReleaseInfo osRelease, List<String> families) {
 }
 
 /// Detects if the currently running instance was installed via mise.
-/// mise installs to: ~/.local/share/mise/installs/<tool>/<version>/
+/// mise installs to: `~/.local/share/mise/installs/<tool>/<version>/`
 bool detectMise() {
   final execPath = Platform.resolvedExecutable;
   return RegExp(
@@ -144,7 +144,7 @@ bool detectMise() {
 }
 
 /// Detects if the currently running instance was installed via asdf.
-/// asdf installs to: ~/.asdf/installs/<tool>/<version>/
+/// asdf installs to: `~/.asdf/installs/<tool>/<version>/`
 bool detectAsdf() {
   final execPath = Platform.resolvedExecutable;
   return RegExp(
