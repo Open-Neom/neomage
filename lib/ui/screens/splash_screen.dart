@@ -3,6 +3,7 @@ import 'package:sint/sint.dart';
 
 import '../../claw_routes.dart';
 import '../../data/auth/auth_service.dart';
+import '../../utils/constants/neom_claw_assets.dart';
 import '../controllers/chat_controller.dart';
 
 /// Initial route — checks auth config and redirects.
@@ -41,6 +42,21 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              NeomClawAssets.appIcon,
+              width: 120,
+              height: 120,
+            ),
+            const SizedBox(height: 24),
+            const CircularProgressIndicator(),
+          ],
+        ),
+      ),
+    );
   }
 }

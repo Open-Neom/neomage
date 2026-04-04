@@ -366,6 +366,7 @@ export 'utils/constants/oauth.dart';
 export 'utils/constants/system.dart';
 export 'utils/constants/xml_tags.dart';
 export 'utils/constants/spinner_verbs.dart';
+export 'utils/constants/neom_claw_assets.dart';
 export 'utils/constants/full_constants.dart'
     hide ErrorMessages, binaryExtensions, defaultIgnorePatterns;
 export 'utils/git_utils.dart' hide GitFileStatus;

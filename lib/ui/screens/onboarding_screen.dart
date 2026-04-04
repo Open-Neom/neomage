@@ -14,6 +14,7 @@ import '../../data/api/openai_shim.dart';
 import '../../data/auth/auth_service.dart';
 import '../../domain/models/message.dart';
 import '../../utils/config/settings.dart';
+import '../../utils/constants/neom_claw_assets.dart';
 import '../controllers/chat_controller.dart';
 
 // ---------------------------------------------------------------------------
@@ -517,17 +518,12 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               scale: _logoScale,
               child: FadeTransition(
                 opacity: _logoOpacity,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: cs.primaryContainer,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Icon(
-                    Icons.terminal_rounded,
-                    size: 56,
-                    color: cs.onPrimaryContainer,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.asset(
+                    NeomClawAssets.appIcon,
+                    width: 100,
+                    height: 100,
                   ),
                 ),
               ),

@@ -441,7 +441,7 @@ class ClawTextTheme {
   static Map<String, dynamic> _styleToMap(TextStyle s) => {
     'fontFamily': s.fontFamily,
     'fontSize': s.fontSize,
-    'fontWeight': s.fontWeight?.index,
+    'fontWeight': s.fontWeight?.value,
     'color': s.color?.toARGB32(),
   };
 }
