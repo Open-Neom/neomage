@@ -6,8 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:sint/sint.dart';
 
 import '../../claw_routes.dart';
+import '../../data/api/anthropic_client.dart';
 import '../../data/api/api_provider.dart';
+import '../../data/api/openai_shim.dart';
 import '../../data/auth/auth_service.dart';
+import '../../domain/models/message.dart';
 import '../../utils/config/settings.dart';
 import '../controllers/chat_controller.dart';
 
@@ -179,10 +182,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     });
 
     try {
-      // Simulate a lightweight ping — in production this would call the
-      // provider's /models endpoint or a simple completion.
-      await Future.delayed(const Duration(seconds: 1));
-
       final key = _apiKeyController.text.trim();
       final hasKey = key.isNotEmpty;
       final isLocal = _providerType == ApiProviderType.ollama;
@@ -197,25 +196,99 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         return;
       }
 
-      // Rudimentary validation of key format.
-      final looksValid =
-          isLocal ||
-          (key.startsWith('sk-') && key.length > 20) ||
-          key.length > 10;
+      // Build a real ApiConfig and provider, then send a minimal request.
+      final baseUrl = _providerType == ApiProviderType.custom
+          ? _baseUrlController.text.trim()
+          : null;
+
+      final config = _buildApiConfig(
+        type: _providerType,
+        apiKey: key,
+        model: _selectedModel,
+        baseUrl: baseUrl,
+      );
+
+      final provider = _providerType == ApiProviderType.anthropic
+          ? AnthropicClient(config)
+          : OpenAiShim(config);
+
+      // Send a tiny completion to verify the key works.
+      final stream = provider.createMessageStream(
+        messages: [
+          Message(
+            role: MessageRole.user,
+            content: [TextBlock('Hi')],
+          ),
+        ],
+        systemPrompt: 'Reply with "ok".',
+        maxTokens: 8,
+      );
+
+      // We only need the first event — if we get one, the key is valid.
+      await stream.first.timeout(const Duration(seconds: 10));
 
       setState(() {
         _testingConnection = false;
-        _connectionTestResult = looksValid
-            ? _ConnectionTestResult.success()
-            : _ConnectionTestResult.failure('API key format looks invalid');
+        _connectionTestResult = _ConnectionTestResult.success();
       });
     } catch (e) {
+      final msg = e.toString();
+      // Make common errors user-friendly.
+      final friendlyMsg = msg.contains('401') || msg.contains('Unauthorized')
+          ? 'Invalid API key'
+          : msg.contains('403') || msg.contains('Forbidden')
+              ? 'API key does not have access to this model'
+              : msg.contains('TimeoutException')
+                  ? 'Connection timed out — check your network'
+                  : msg.contains('SocketException')
+                      ? 'Cannot reach API server — check your network'
+                      : 'Connection failed: ${msg.length > 100 ? '${msg.substring(0, 100)}...' : msg}';
+
       setState(() {
         _testingConnection = false;
-        _connectionTestResult = _ConnectionTestResult.failure(e.toString());
+        _connectionTestResult = _ConnectionTestResult.failure(friendlyMsg);
       });
     }
   }
+
+  ApiConfig _buildApiConfig({
+    required ApiProviderType type,
+    required String apiKey,
+    required String model,
+    String? baseUrl,
+  }) => switch (type) {
+    ApiProviderType.gemini => ApiConfig.gemini(
+      apiKey: apiKey,
+      model: model,
+    ),
+    ApiProviderType.qwen => ApiConfig.qwen(
+      apiKey: apiKey,
+      model: model,
+    ),
+    ApiProviderType.deepseek => ApiConfig.deepseek(
+      apiKey: apiKey,
+      model: model,
+    ),
+    ApiProviderType.anthropic => ApiConfig.anthropic(
+      apiKey: apiKey,
+      model: model,
+    ),
+    ApiProviderType.openai => ApiConfig.openai(
+      apiKey: apiKey,
+      model: model,
+      baseUrl: baseUrl ?? 'https://api.openai.com/v1',
+    ),
+    ApiProviderType.ollama => ApiConfig.ollama(
+      model: model,
+      baseUrl: baseUrl ?? 'http://localhost:11434/v1',
+    ),
+    _ => ApiConfig(
+      type: type,
+      baseUrl: baseUrl ?? 'https://api.openai.com/v1',
+      apiKey: apiKey,
+      model: model,
+    ),
+  };
 
   // ── Finish onboarding ──
 
@@ -223,13 +296,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     setState(() => _finishing = true);
 
     try {
-      // Persist API configuration.
+      // Persist API configuration — save key for the correct provider.
       final key = _apiKeyController.text.trim();
 
-      if (_providerType == ApiProviderType.anthropic) {
-        await _authService.setAnthropicApiKey(key);
-      } else if (key.isNotEmpty) {
-        await _authService.setOpenAiApiKey(key);
+      if (key.isNotEmpty) {
+        await _authService.setApiKeyForProvider(_providerType, key);
       }
 
       final model = _selectedModel;
@@ -382,7 +453,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     currentPage: _featuresPage,
                     onPageChanged: (p) => setState(() => _featuresPage = p),
                   ),
-                  _CompletionStep(finishing: _finishing, onStart: _finish),
+                  _CompletionStep(
+                    finishing: _finishing,
+                    onStart: _finish,
+                    onBack: _back,
+                  ),
                 ],
               ),
             ),
@@ -1321,8 +1396,13 @@ class _FeatureSlide {
 class _CompletionStep extends StatelessWidget {
   final bool finishing;
   final VoidCallback onStart;
+  final VoidCallback onBack;
 
-  const _CompletionStep({required this.finishing, required this.onStart});
+  const _CompletionStep({
+    required this.finishing,
+    required this.onStart,
+    required this.onBack,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1381,6 +1461,12 @@ class _CompletionStep extends StatelessWidget {
                     : const Icon(Icons.chat_bubble_outline),
                 label: Text(finishing ? 'Initializing...' : 'Start Chatting'),
               ),
+            ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: finishing ? null : onBack,
+              icon: const Icon(Icons.arrow_back, size: 16),
+              label: const Text('Back to settings'),
             ),
           ],
         ),
