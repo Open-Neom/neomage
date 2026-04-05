@@ -808,7 +808,7 @@ class _ConversationMessageState extends State<ConversationMessage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Content — no bubble background, clean left-aligned like Itzli
+            // Content — no bubble background, clean left-aligned like SAIA
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Column(

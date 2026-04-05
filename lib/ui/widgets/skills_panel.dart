@@ -1,5 +1,5 @@
 // Skills Panel — Browse, search, and load skill modules into the session.
-// Modeled after Itzli's skills tab with two loading modes:
+// Modeled after SAIA's skills tab with two loading modes:
 //   - Load in Session: sends the skill content as a visible prompt
 //   - Load in Context: silently injects the skill into the system context
 

@@ -140,14 +140,30 @@ class AnthropicClient extends ApiProvider {
       'model': config.model,
       'max_tokens': maxTokens ?? config.maxTokens,
       'system': [
-        {'type': 'text', 'text': systemPrompt},
+        {
+          'type': 'text',
+          'text': systemPrompt,
+          'cache_control': {'type': 'ephemeral'},
+        },
       ],
       'messages': messages.map((m) => m.toApiMap()).toList(),
       if (stream) 'stream': true,
     };
 
     if (tools.isNotEmpty) {
-      body['tools'] = tools.map((t) => t.toApiMap()).toList();
+      // Sort tools alphabetically for deterministic ordering — ensures
+      // Anthropic's server-side prompt cache hits across requests even
+      // when tools are registered in different order.
+      final sorted = List<ToolDefinition>.from(tools)
+        ..sort((a, b) => a.name.compareTo(b.name));
+
+      // Mark the last tool with cache_control so the entire prefix
+      // (system prompt + tools) is cached server-side by Anthropic.
+      final toolMaps = sorted.map((t) => t.toApiMap()).toList();
+      if (toolMaps.isNotEmpty) {
+        toolMaps.last['cache_control'] = {'type': 'ephemeral'};
+      }
+      body['tools'] = toolMaps;
     }
 
     return body;

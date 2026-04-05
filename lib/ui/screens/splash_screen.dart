@@ -11,7 +11,7 @@ import '../controllers/chat_controller.dart';
 /// Animated splash screen — 5-second intro with logo entrance, light particles,
 /// tagline sequence, then auto-navigate to onboarding or chat.
 ///
-/// Based on the Itzli splash pattern: master timeline drives phased animations,
+/// Based on the SAIA splash pattern: master timeline drives phased animations,
 /// particle system via CustomPainter, ambient glow pulse, expanding light rings.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
