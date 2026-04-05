@@ -1,7 +1,6 @@
 name: neomage
-description: >-
-  Multi-provider AI agent engine for Flutter. API clients for Gemini, OpenAI,
-  Anthropic, DeepSeek, Qwen and Ollama with tool execution, skills, and MCP.
+description: Agnostic AI agent engine for Flutter. API clients for AI
+  Providers and Ollama with tool execution, skills and MCP.
 version: 1.0.0
 homepage: https://github.com/Open-Neom/neomage
 repository: https://github.com/Open-Neom/neomage

@@ -17,6 +17,7 @@
 .swiftpm/
 migrate_working_dir/
 
+example/build/
 # IntelliJ related
 *.iml
 *.ipr
