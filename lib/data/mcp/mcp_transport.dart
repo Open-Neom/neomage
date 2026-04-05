@@ -1,9 +1,9 @@
-// MCP transport layer — port of neom_claw/src/services/mcp/ transports.
+// MCP transport layer — port of neomage/src/services/mcp/ transports.
 // Stdio, SSE, HTTP, WebSocket transports, JSON-RPC protocol, server lifecycle.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'mcp_types.dart';
@@ -1254,7 +1254,7 @@ class McpServerLifecycle {
     this.maxRestartAttempts = 5,
     this.healthCheckInterval = const Duration(seconds: 30),
     this.initializeTimeout = const Duration(seconds: 30),
-    this.clientName = 'flutter_claw',
+    this.clientName = 'neomage',
     this.clientVersion = '0.1.0',
     this.protocolVersion = '2024-11-05',
   });

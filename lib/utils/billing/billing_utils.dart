@@ -4,7 +4,7 @@
 // attribution text generation, privacy level controls.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ============================================================================
 // Privacy Level
@@ -25,11 +25,11 @@ enum PrivacyLevel { defaultLevel, noTelemetry, essentialTraffic }
 /// Get the current privacy level based on environment variables.
 ///
 /// The resolved level is the most restrictive signal from:
-///   NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC -> essentialTraffic
+///   MAGE_DISABLE_NONESSENTIAL_TRAFFIC -> essentialTraffic
 ///   DISABLE_TELEMETRY                        -> noTelemetry
 PrivacyLevel getPrivacyLevel() {
   if (Platform.environment.containsKey(
-    'NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC',
+    'MAGE_DISABLE_NONESSENTIAL_TRAFFIC',
   )) {
     return PrivacyLevel.essentialTraffic;
   }
@@ -40,7 +40,7 @@ PrivacyLevel getPrivacyLevel() {
 }
 
 /// True when all nonessential network traffic should be suppressed.
-/// Equivalent to the old NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC check.
+/// Equivalent to the old MAGE_DISABLE_NONESSENTIAL_TRAFFIC check.
 bool isEssentialTrafficOnly() {
   return getPrivacyLevel() == PrivacyLevel.essentialTraffic;
 }
@@ -56,9 +56,9 @@ bool isTelemetryDisabled() {
 /// "unset X to re-enable" messages.
 String? getEssentialTrafficOnlyReason() {
   if (Platform.environment.containsKey(
-    'NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC',
+    'MAGE_DISABLE_NONESSENTIAL_TRAFFIC',
   )) {
-    return 'NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC';
+    return 'MAGE_DISABLE_NONESSENTIAL_TRAFFIC';
   }
   return null;
 }
@@ -68,7 +68,7 @@ String? getEssentialTrafficOnlyReason() {
 // ============================================================================
 
 /// Cost structure for a model (per million tokens).
-/// @see https://platform.neomclaw.com/docs/en/about-claude/pricing
+/// @see https://platform.neomage.com/docs/en/about-claude/pricing
 class ModelCosts {
   final double inputTokens;
   final double outputTokens;
@@ -201,7 +201,7 @@ typedef AnalyticsLogger =
 
 /// Known model cost mappings.
 /// @[MODEL LAUNCH]: Add a pricing entry for the new model below.
-/// Costs from https://platform.neomclaw.com/docs/en/about-claude/pricing
+/// Costs from https://platform.neomage.com/docs/en/about-claude/pricing
 final Map<ModelShortName, ModelCosts> modelCosts = {
   'claude-3-5-haiku': costHaiku35,
   'claude-haiku-4-5': costHaiku45,
@@ -404,7 +404,7 @@ typedef SubscriptionType = String;
 /// to determine if the user can see billing information.
 bool hasConsoleBillingAccess({
   required bool Function() isDisableCostWarnings,
-  required bool Function() isNeomClawAiSubscriber,
+  required bool Function() isNeomageAiSubscriber,
   required AuthTokenSource Function() getAuthTokenSource,
   required bool Function() hasApiKey,
   required BillingConfig Function() getGlobalConfig,
@@ -414,7 +414,7 @@ bool hasConsoleBillingAccess({
     return false;
   }
 
-  final isSubscriber = isNeomClawAiSubscriber();
+  final isSubscriber = isNeomageAiSubscriber();
 
   // This might be wrong if user is signed into Max but also using an API key,
   // but we already show a warning on launch in that case.
@@ -451,12 +451,12 @@ void setMockBillingAccessOverride(bool? value) {
   _mockBillingAccessOverride = value;
 }
 
-/// Check if user has NeomClaw AI billing access.
+/// Check if user has Neomage AI billing access.
 ///
 /// Consumer plans (Max/Pro) - individual users always have billing access.
 /// Team/Enterprise - check for admin or billing roles.
-bool hasNeomClawAiBillingAccess({
-  required bool Function() isNeomClawAiSubscriber,
+bool hasNeomageAiBillingAccess({
+  required bool Function() isNeomageAiSubscriber,
   required SubscriptionType? Function() getSubscriptionType,
   required BillingConfig Function() getGlobalConfig,
 }) {
@@ -465,7 +465,7 @@ bool hasNeomClawAiBillingAccess({
     return _mockBillingAccessOverride!;
   }
 
-  if (!isNeomClawAiSubscriber()) {
+  if (!isNeomageAiSubscriber()) {
     return false;
   }
 
@@ -490,17 +490,17 @@ bool hasNeomClawAiBillingAccess({
 
 /// Determines if the current request is billed as extra usage.
 ///
-/// Extra usage applies to NeomClaw AI subscribers when:
+/// Extra usage applies to Neomage AI subscribers when:
 /// - Fast mode is enabled
 /// - Using Opus 4.6 or Sonnet 4.6 with 1M context (unless Opus 1M is merged)
 bool isBilledAsExtraUsage({
   required String? model,
   required bool isFastMode,
   required bool isOpus1mMerged,
-  required bool Function() isNeomClawAiSubscriber,
+  required bool Function() isNeomageAiSubscriber,
   required bool Function(String) has1mContext,
 }) {
-  if (!isNeomClawAiSubscriber()) return false;
+  if (!isNeomageAiSubscriber()) return false;
   if (isFastMode) return true;
   if (model == null || !has1mContext(model)) return false;
 
@@ -527,9 +527,9 @@ class AttributionTexts {
 
 /// Attribution data summary.
 class AttributionDataSummary {
-  final int neomClawPercent;
+  final int neomagePercent;
 
-  const AttributionDataSummary({required this.neomClawPercent});
+  const AttributionDataSummary({required this.neomagePercent});
 }
 
 /// Full attribution data from commit analysis.
@@ -757,9 +757,9 @@ AttributionTexts getAttributionTexts({
   final isKnownPublicModel = getPublicModelDisplayName(model) != null;
   final modelName = isInternalModelRepoCached() || isKnownPublicModel
       ? getPublicModelName(model)
-      : 'NeomClaw Opus 4.6';
+      : 'Neomage Opus 4.6';
   const defaultAttribution =
-      'Generated with [NeomClaw](https://github.com/Open-Neom/neom_claw)';
+      'Generated with [Neomage](https://github.com/Open-Neom/neomage)';
   final defaultCommit = isDisableCoAuthoredBy()
       ? ''
       : 'Co-Authored-By: $modelName <noreply@anthropic.com>';
@@ -813,12 +813,12 @@ Future<AttributionData?> getPrAttributionData(
   }
 }
 
-/// Get enhanced PR attribution text with NeomClaw contribution stats.
+/// Get enhanced PR attribution text with Neomage contribution stats.
 ///
-/// Format: "Generated with NeomClaw (93% 3-shotted by claude-opus-4-5)"
+/// Format: "Generated with Neomage (93% 3-shotted by claude-opus-4-5)"
 ///
 /// Rules:
-/// - Shows NeomClaw contribution percentage from commit attribution
+/// - Shows Neomage contribution percentage from commit attribution
 /// - Shows N-shotted where N is the prompt count
 /// - Shows short model name
 /// - Returns default attribution if stats can't be computed
@@ -866,7 +866,7 @@ Future<String> getEnhancedPrAttribution({
   }
 
   const defaultAttribution =
-      'Generated with [NeomClaw](https://github.com/Open-Neom/neom_claw)';
+      'Generated with [Neomage](https://github.com/Open-Neom/neomage)';
 
   // Get AppState.
   final appState = getAppState();
@@ -882,7 +882,7 @@ Future<String> getEnhancedPrAttribution({
   final transcriptStats = results[1] as TranscriptStats;
   final isInternal = results[2] as bool;
 
-  final neomClawPercent = attributionData?.summary.neomClawPercent ?? 0;
+  final neomagePercent = attributionData?.summary.neomagePercent ?? 0;
   final promptCount = transcriptStats.promptCount;
   final memoryAccessCount = transcriptStats.memoryAccessCount;
 
@@ -893,7 +893,7 @@ Future<String> getEnhancedPrAttribution({
       : sanitizeModelName(rawModelName);
 
   // If no attribution data, return default.
-  if (neomClawPercent == 0 && promptCount == 0 && memoryAccessCount == 0) {
+  if (neomagePercent == 0 && promptCount == 0 && memoryAccessCount == 0) {
     return defaultAttribution;
   }
 
@@ -902,8 +902,8 @@ Future<String> getEnhancedPrAttribution({
       ? ', $memoryAccessCount ${memoryAccessCount == 1 ? 'memory' : 'memories'} recalled'
       : '';
   final summary =
-      'Generated with [NeomClaw](https://github.com/Open-Neom/neom_claw) '
-      '($neomClawPercent% $promptCount-shotted by $shortModelName$memSuffix)';
+      'Generated with [Neomage](https://github.com/Open-Neom/neomage) '
+      '($neomagePercent% $promptCount-shotted by $shortModelName$memSuffix)';
 
   return summary;
 }

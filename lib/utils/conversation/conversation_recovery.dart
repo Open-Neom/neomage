@@ -1,10 +1,10 @@
-// Conversation recovery — port of neom_claw/src/utils/conversationRecovery.ts.
+// Conversation recovery — port of neomage/src/utils/conversationRecovery.ts.
 // Session/conversation recovery logic: deserialization, interrupt detection,
 // skill state restoration, and full resume loading.
 
 import 'dart:async';
 
-import 'package:neom_claw/utils/messages/message_utils.dart' hide Message;
+import 'package:neomage/utils/messages/message_utils.dart' hide Message;
 
 // ─── Local Type Stubs ────────────────────────────────────────────────────────
 //

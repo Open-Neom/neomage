@@ -1,13 +1,13 @@
 /// File access history tracking with backup/restore support.
 ///
-/// Ported from neom_claw/src/utils/fileHistory.ts (1115 LOC).
+/// Ported from neomage/src/utils/fileHistory.ts (1115 LOC).
 ///
 /// Provides checkpoint-based file history that tracks edits, creates backups,
 /// allows rewinding to previous snapshots, and computes diff statistics.
 library;
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:sint/sint.dart';
 
@@ -175,7 +175,7 @@ class DiffStats {
 /// Usage:
 /// ```dart
 /// final manager = Sint.put(FileHistoryManager(
-///   configHomeDir: '/home/user/.neomclaw',
+///   configHomeDir: '/home/user/.neomage',
 ///   sessionId: 'abc-123',
 ///   originalCwd: '/path/to/project',
 /// ));

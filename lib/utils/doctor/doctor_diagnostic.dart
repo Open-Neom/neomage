@@ -1,11 +1,11 @@
-// Doctor diagnostic — port of neom_claw doctorDiagnostic.ts +
+// Doctor diagnostic — port of neomage doctorDiagnostic.ts +
 // doctorContextWarnings.ts + diagLogs.ts + debug.ts + debugFilter.ts.
 // Installation diagnostics, context warnings, debug logging with
 // buffered writer, and debug message filtering.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -49,7 +49,7 @@ class DiagnosticLogEntry {
 /// Returns the diagnostic log file path from the environment, or `null` if
 /// diagnostics logging is not configured.
 String? _getDiagnosticLogFile() {
-  return Platform.environment['NEOMCLAW_DIAGNOSTICS_FILE'];
+  return Platform.environment['MAGE_DIAGNOSTICS_FILE'];
 }
 
 /// Logs diagnostic information to a logfile. This information is sent via
@@ -169,11 +169,11 @@ DebugLogLevel? _cachedMinDebugLogLevel;
 
 /// Returns the minimum log level to include in debug output.
 ///
-/// Set `NEOMCLAW_DEBUG_LOG_LEVEL=verbose` to include high-volume
+/// Set `MAGE_DEBUG_LOG_LEVEL=verbose` to include high-volume
 /// diagnostics that would otherwise drown out useful debug output.
 DebugLogLevel getMinDebugLogLevel() {
   if (_cachedMinDebugLogLevel != null) return _cachedMinDebugLogLevel!;
-  final raw = Platform.environment['NEOMCLAW_DEBUG_LOG_LEVEL']
+  final raw = Platform.environment['MAGE_DEBUG_LOG_LEVEL']
       ?.toLowerCase()
       .trim();
   if (raw != null && _debugLogLevelByName.containsKey(raw)) {
@@ -468,20 +468,20 @@ void setSessionId(String id) => _sessionId = id;
 /// Returns the current session ID.
 String getSessionId() => _sessionId;
 
-/// Returns the NeomClaw config home directory, defaulting to `~/.claude`.
-String _getNeomClawConfigHomeDir() {
-  return Platform.environment['NEOMCLAW_CONFIG_DIR'] ??
-      p.join(Platform.environment['HOME'] ?? '.', '.neomclaw');
+/// Returns the Neomage config home directory, defaulting to `~/.neomage`.
+String _getNeomageConfigHomeDir() {
+  return Platform.environment['MAGE_CONFIG_DIR'] ??
+      p.join(Platform.environment['HOME'] ?? '.', '.neomage');
 }
 
 /// Returns the path for the debug log file.
 ///
-/// Priority: `--debug-file` flag > `NEOMCLAW_DEBUG_LOGS_DIR` env >
-/// `~/.neomclaw/debug/<sessionId>.txt`.
+/// Priority: `--debug-file` flag > `MAGE_DEBUG_LOGS_DIR` env >
+/// `~/.neomage/debug/<sessionId>.txt`.
 String getDebugLogPath() {
   return getDebugFilePath() ??
-      Platform.environment['NEOMCLAW_DEBUG_LOGS_DIR'] ??
-      p.join(_getNeomClawConfigHomeDir(), 'debug', '$_sessionId.txt');
+      Platform.environment['MAGE_DEBUG_LOGS_DIR'] ??
+      p.join(_getNeomageConfigHomeDir(), 'debug', '$_sessionId.txt');
 }
 
 /// Whether the symlink has already been updated this session.
@@ -923,9 +923,9 @@ Future<String> getInstallationPath({bool Function()? isInBundledMode}) async {
       // Fallback.
     }
 
-    // Check which neomclaw.
+    // Check which neomage.
     try {
-      final result = await Process.run('which', ['neomclaw']);
+      final result = await Process.run('which', ['neomage']);
       if (result.exitCode == 0) {
         final path = (result.stdout as String).trim();
         if (path.isNotEmpty) return path;
@@ -936,7 +936,7 @@ Future<String> getInstallationPath({bool Function()? isInBundledMode}) async {
 
     // Check common locations.
     final home = env['HOME'] ?? '.';
-    final localBin = p.join(home, '.local', 'bin', 'neomclaw');
+    final localBin = p.join(home, '.local', 'bin', 'neomage');
     if (await File(localBin).exists()) return localBin;
 
     return 'native';
@@ -957,7 +957,7 @@ String getInvokedBinary({bool Function()? isInBundledMode}) {
   }
 }
 
-/// Detects multiple NeomClaw installations on the system.
+/// Detects multiple Neomage installations on the system.
 Future<List<DetectedInstallation>> detectMultipleInstallations({
   Future<bool> Function()? localInstallationExists,
 }) async {
@@ -965,7 +965,7 @@ Future<List<DetectedInstallation>> detectMultipleInstallations({
   final home = Platform.environment['HOME'] ?? '.';
 
   // Check for local installation.
-  final localPath = p.join(home, '.neomclaw', 'local');
+  final localPath = p.join(home, '.neomage', 'local');
   if (localInstallationExists != null && await localInstallationExists()) {
     installations.add(DetectedInstallation(type: 'npm-local', path: localPath));
   }
@@ -983,8 +983,8 @@ Future<List<DetectedInstallation>> detectMultipleInstallations({
       if (npmPrefix.isNotEmpty) {
         final isWindows = Platform.isWindows;
         final globalBinPath = isWindows
-            ? p.join(npmPrefix, 'neomclaw')
-            : p.join(npmPrefix, 'bin', 'neomclaw');
+            ? p.join(npmPrefix, 'neomage')
+            : p.join(npmPrefix, 'bin', 'neomage');
 
         if (await File(globalBinPath).exists()) {
           installations.add(
@@ -992,7 +992,7 @@ Future<List<DetectedInstallation>> detectMultipleInstallations({
           );
         } else {
           // Check for orphaned packages.
-          const packagesToCheck = ['@anthropic-ai/neom-claw'];
+          const packagesToCheck = ['@anthropic-ai/neomage'];
           for (final packageName in packagesToCheck) {
             final globalPackagePath = isWindows
                 ? p.join(npmPrefix, 'node_modules', packageName)
@@ -1014,7 +1014,7 @@ Future<List<DetectedInstallation>> detectMultipleInstallations({
   }
 
   // Check for native installation.
-  final nativeBinPath = p.join(home, '.local', 'bin', 'neomclaw');
+  final nativeBinPath = p.join(home, '.local', 'bin', 'neomage');
   if (await File(nativeBinPath).exists()) {
     installations.add(
       DetectedInstallation(type: 'native', path: nativeBinPath),
@@ -1022,7 +1022,7 @@ Future<List<DetectedInstallation>> detectMultipleInstallations({
   }
 
   // Also check if config indicates native installation.
-  final nativeDataPath = p.join(home, '.local', 'share', 'neomclaw');
+  final nativeDataPath = p.join(home, '.local', 'share', 'neomage');
   if (await Directory(nativeDataPath).exists()) {
     if (!installations.any((i) => i.type == 'native')) {
       installations.add(
@@ -1108,7 +1108,7 @@ Future<List<DiagnosticWarning>> detectConfigurationIssues(
         DiagnosticWarning(
           issue:
               "Running from local installation but config install method is '$configInstallMethod'",
-          fix: 'Consider using native installation: neomclaw install',
+          fix: 'Consider using native installation: neomage install',
         ),
       );
     }
@@ -1120,7 +1120,7 @@ Future<List<DiagnosticWarning>> detectConfigurationIssues(
         DiagnosticWarning(
           issue:
               "Running native installation but config install method is '$configInstallMethod'",
-          fix: 'Run neomclaw install to update configuration',
+          fix: 'Run neomage install to update configuration',
         ),
       );
     }
@@ -1132,7 +1132,7 @@ Future<List<DiagnosticWarning>> detectConfigurationIssues(
     warnings.add(
       DiagnosticWarning(
         issue: 'Local installation exists but not being used',
-        fix: 'Consider using native installation: neomclaw install',
+        fix: 'Consider using native installation: neomage install',
       ),
     );
   }
@@ -1232,7 +1232,7 @@ Future<DiagnosticInfo> getDoctorDiagnostic({
         warnings.add(
           DiagnosticWarning(
             issue: 'Leftover npm global installation at ${install.path}',
-            fix: 'Run: npm -g uninstall @anthropic-ai/neom-claw',
+            fix: 'Run: npm -g uninstall @anthropic-ai/neomage',
           ),
         );
       } else if (install.type == 'npm-global-orphan') {
@@ -1269,7 +1269,7 @@ Future<DiagnosticInfo> getDoctorDiagnostic({
         DiagnosticWarning(
           issue: 'Insufficient permissions for auto-updates',
           fix:
-              'Do one of: (1) Re-install node without sudo, or (2) Use `neomclaw install` for native installation',
+              'Do one of: (1) Re-install node without sudo, or (2) Use `neomage install` for native installation',
         ),
       );
     }
@@ -1322,7 +1322,7 @@ const int mcpToolsThreshold = 25000;
 /// Default threshold for agent descriptions token count.
 const int agentDescriptionsThreshold = 5000;
 
-/// Default max memory character count for a single NEOMCLAW.md file.
+/// Default max memory character count for a single NEOMAGE.md file.
 const int maxMemoryCharacterCount = 40000;
 
 /// Severity level for context warnings.
@@ -1336,7 +1336,7 @@ enum ContextWarningSeverity {
 
 /// Type of context warning.
 enum ContextWarningType {
-  neomclawmdFiles('neomclawmd_files'),
+  neomagemdFiles('neomagemd_files'),
   agentDescriptions('agent_descriptions'),
   mcpTools('mcp_tools'),
   unreachableRules('unreachable_rules');
@@ -1382,27 +1382,27 @@ class ContextWarning {
 /// All context warnings grouped by type.
 class ContextWarnings {
   const ContextWarnings({
-    this.neomClawMdWarning,
+    this.neomageMdWarning,
     this.agentWarning,
     this.mcpWarning,
     this.unreachableRulesWarning,
   });
 
-  final ContextWarning? neomClawMdWarning;
+  final ContextWarning? neomageMdWarning;
   final ContextWarning? agentWarning;
   final ContextWarning? mcpWarning;
   final ContextWarning? unreachableRulesWarning;
 
   /// Returns `true` if any warnings are present.
   bool get hasWarnings =>
-      neomClawMdWarning != null ||
+      neomageMdWarning != null ||
       agentWarning != null ||
       mcpWarning != null ||
       unreachableRulesWarning != null;
 
   /// Returns all non-null warnings as a flat list.
   List<ContextWarning> get all => [
-    ?neomClawMdWarning,
+    ?neomageMdWarning,
     ?agentWarning,
     ?mcpWarning,
     ?unreachableRulesWarning,
@@ -1420,11 +1420,11 @@ class MemoryFileInfo {
   final String content;
 }
 
-/// Check for large NEOMCLAW.md files.
+/// Check for large NEOMAGE.md files.
 ///
 /// [memoryFiles]            All loaded memory files.
 /// [maxCharacterCount]      Per-file character threshold (default 40 000).
-ContextWarning? checkNeomClawMdFiles(
+ContextWarning? checkNeomageMdFiles(
   List<MemoryFileInfo> memoryFiles, {
   int maxCharacterCount = maxMemoryCharacterCount,
 }) {
@@ -1442,11 +1442,11 @@ ContextWarning? checkNeomClawMdFiles(
       .toList();
 
   final message = largeFiles.length == 1
-      ? 'Large NEOMCLAW.md file detected (${largeFiles[0].content.length} chars > $maxCharacterCount)'
-      : '${largeFiles.length} large NEOMCLAW.md files detected (each > $maxCharacterCount chars)';
+      ? 'Large NEOMAGE.md file detected (${largeFiles[0].content.length} chars > $maxCharacterCount)'
+      : '${largeFiles.length} large NEOMAGE.md files detected (each > $maxCharacterCount chars)';
 
   return ContextWarning(
-    type: ContextWarningType.neomclawmdFiles,
+    type: ContextWarningType.neomagemdFiles,
     severity: ContextWarningSeverity.warning,
     message: message,
     details: details,
@@ -1660,7 +1660,7 @@ Future<ContextWarnings> checkContextWarnings({
 }) async {
   // All checks are synchronous in this port, but we preserve the async
   // signature for API compatibility.
-  final neomClawMdWarning = checkNeomClawMdFiles(memoryFiles);
+  final neomageMdWarning = checkNeomageMdFiles(memoryFiles);
   final agentWarning = checkAgentDescriptions(agents);
   final mcpWarning = checkMcpTools(
     tools,
@@ -1670,7 +1670,7 @@ Future<ContextWarnings> checkContextWarnings({
   final unreachableRulesWarning = checkUnreachableRules(unreachableRules);
 
   return ContextWarnings(
-    neomClawMdWarning: neomClawMdWarning,
+    neomageMdWarning: neomageMdWarning,
     agentWarning: agentWarning,
     mcpWarning: mcpWarning,
     unreachableRulesWarning: unreachableRulesWarning,

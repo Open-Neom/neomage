@@ -1,10 +1,10 @@
-// LSP service — port of neom_claw/src/services/lsp/.
+// LSP service — port of neomage/src/services/lsp/.
 // Language Server Protocol client for code intelligence.
 // Manages LSP server lifecycles, file synchronization, and diagnostics.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// LSP server states.
 enum LspServerState { stopped, starting, running, stopping, error }

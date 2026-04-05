@@ -10,7 +10,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:sint/sint.dart';
@@ -191,11 +191,11 @@ const int _maxReleaseNotesShown = 5;
 
 /// URL for the public changelog.
 const String changelogUrl =
-    'https://github.com/anthropics/neom-claw/blob/main/CHANGELOG.md';
+    'https://github.com/anthropics/neomage/blob/main/CHANGELOG.md';
 
 /// URL for raw changelog content.
 const String _rawChangelogUrl =
-    'https://raw.githubusercontent.com/anthropics/neom-claw/refs/heads/main/CHANGELOG.md';
+    'https://raw.githubusercontent.com/anthropics/neomage/refs/heads/main/CHANGELOG.md';
 
 /// Result of checking for release notes.
 class ReleaseNotesResult {

@@ -1,4 +1,4 @@
-// ConversationEngine — port of neom_claw/src/services/conversation/.
+// ConversationEngine — port of neomage/src/services/conversation/.
 // Core agentic loop: message → API → tool use → result → repeat.
 
 import 'dart:async';

@@ -1,4 +1,4 @@
-// TaskDetailViews — faithful port of neom_claw/src/components/tasks/
+// TaskDetailViews — faithful port of neomage/src/components/tasks/
 // Ports: ShellDetailDialog, AsyncAgentDetailDialog, RemoteSessionDetailDialog,
 // InProcessTeammateDetailDialog, DreamDetailDialog, ShellProgress,
 // RemoteSessionProgress, renderToolActivity, and related types.
@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';
 
+import '../../utils/constants/neomage_translation_constants.dart';
 import 'background_tasks_panel.dart';
 import 'design_system.dart';
 
@@ -53,7 +54,7 @@ String renderToolActivity(ToolActivity activity) {
 /// Port of formatToolUseSummary() from RemoteSessionDetailDialog.tsx.
 String formatToolUseSummary(String name, dynamic input) {
   if (name == 'ExitPlanModeTool') {
-    return 'Review the plan in NeomClaw on the web';
+    return 'Review the plan in Neomage on the web';
   }
   if (input == null || input is! Map) return name;
 
@@ -112,11 +113,11 @@ class TaskStatusTextWidget extends StatelessWidget {
   Color _color(BuildContext context) {
     switch (status) {
       case TaskStatus.completed:
-        return ClawColors.success;
+        return NeomageColors.success;
       case TaskStatus.failed:
-        return ClawColors.error;
+        return NeomageColors.error;
       case TaskStatus.killed:
-        return ClawColors.warning;
+        return NeomageColors.warning;
       default:
         return Theme.of(context).colorScheme.onSurfaceVariant;
     }
@@ -187,7 +188,7 @@ class RemoteSessionProgressWidget extends StatelessWidget {
         Icon(
           running ? Icons.play_arrow : Icons.check_circle,
           size: 14,
-          color: running ? ClawColors.info : ClawColors.success,
+          color: running ? NeomageColors.info : NeomageColors.success,
         ),
         const SizedBox(width: 4),
         Text(
@@ -348,7 +349,7 @@ class ShellDetailDialog extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: ClawColors.codeBg,
+                color: NeomageColors.codeBg,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -356,7 +357,7 @@ class ShellDetailDialog extends StatelessWidget {
                 style: const TextStyle(
                   fontFamily: 'monospace',
                   fontSize: 13,
-                  color: ClawColors.codeText,
+                  color: NeomageColors.codeText,
                 ),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
@@ -415,7 +416,7 @@ class ShellDetailDialog extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: ClawColors.codeBg,
+                          color: NeomageColors.codeBg,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: SingleChildScrollView(
@@ -425,7 +426,7 @@ class ShellDetailDialog extends StatelessWidget {
                             style: const TextStyle(
                               fontFamily: 'monospace',
                               fontSize: 12,
-                              color: ClawColors.codeText,
+                              color: NeomageColors.codeText,
                             ),
                           ),
                         ),
@@ -445,14 +446,14 @@ class ShellDetailDialog extends StatelessWidget {
                 if (shell.status == TaskStatus.running && onKillShell != null)
                   TextButton.icon(
                     icon: const Icon(Icons.stop, size: 16),
-                    label: const Text('Stop'),
+                    label: Text(NeomageTranslationConstants.stop.tr),
                     style: TextButton.styleFrom(
-                      foregroundColor: ClawColors.error,
+                      foregroundColor: NeomageColors.error,
                     ),
                     onPressed: onKillShell,
                   ),
                 const SizedBox(width: 8),
-                TextButton(onPressed: onDone, child: const Text('Close')),
+                TextButton(onPressed: onDone, child: Text(NeomageTranslationConstants.close.tr)),
               ],
             ),
           ],
@@ -649,7 +650,7 @@ class AsyncAgentDetailDialog extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: ClawColors.codeBg,
+                color: NeomageColors.codeBg,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -657,7 +658,7 @@ class AsyncAgentDetailDialog extends StatelessWidget {
                 style: const TextStyle(
                   fontFamily: 'monospace',
                   fontSize: 12,
-                  color: ClawColors.codeText,
+                  color: NeomageColors.codeText,
                 ),
               ),
             ),
@@ -687,14 +688,14 @@ class AsyncAgentDetailDialog extends StatelessWidget {
                 if (agent.status == TaskStatus.running && onKillAgent != null)
                   TextButton.icon(
                     icon: const Icon(Icons.stop, size: 16),
-                    label: const Text('Stop'),
+                    label: Text(NeomageTranslationConstants.stop.tr),
                     style: TextButton.styleFrom(
-                      foregroundColor: ClawColors.error,
+                      foregroundColor: NeomageColors.error,
                     ),
                     onPressed: onKillAgent,
                   ),
                 const SizedBox(width: 8),
-                TextButton(onPressed: onDone, child: const Text('Close')),
+                TextButton(onPressed: onDone, child: Text(NeomageTranslationConstants.close.tr)),
               ],
             ),
           ],
@@ -907,15 +908,15 @@ class RemoteSessionDetailDialog extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: ClawColors.infoBg,
+                  color: NeomageColors.infoBg,
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color: ClawColors.info.withValues(alpha: 0.3),
+                    color: NeomageColors.info.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.rate_review, size: 16, color: ClawColors.info),
+                    Icon(Icons.rate_review, size: 16, color: NeomageColors.info),
                     const SizedBox(width: 8),
                     const Text(
                       'Remote review session',
@@ -932,10 +933,10 @@ class RemoteSessionDetailDialog extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: ClawColors.warningBg,
+                    color: NeomageColors.warningBg,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: ClawColors.warning.withValues(alpha: 0.3),
+                      color: NeomageColors.warning.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -943,7 +944,7 @@ class RemoteSessionDetailDialog extends StatelessWidget {
                       Icon(
                         Icons.account_tree,
                         size: 16,
-                        color: ClawColors.warning,
+                        color: NeomageColors.warning,
                       ),
                       const SizedBox(width: 8),
                       const Text(
@@ -964,14 +965,14 @@ class RemoteSessionDetailDialog extends StatelessWidget {
                 if (running && onKill != null)
                   TextButton.icon(
                     icon: const Icon(Icons.stop, size: 16),
-                    label: const Text('Stop'),
+                    label: Text(NeomageTranslationConstants.stop.tr),
                     style: TextButton.styleFrom(
-                      foregroundColor: ClawColors.error,
+                      foregroundColor: NeomageColors.error,
                     ),
                     onPressed: onKill,
                   ),
                 const SizedBox(width: 8),
-                TextButton(onPressed: onDone, child: const Text('Close')),
+                TextButton(onPressed: onDone, child: Text(NeomageTranslationConstants.close.tr)),
               ],
             ),
           ],
@@ -1059,7 +1060,7 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
     final theme = Theme.of(context);
     final identity = teammate.identity;
     final agentName = identity?.agentName ?? 'teammate';
-    final agentColor = identity?.color ?? ClawColors.info;
+    final agentColor = identity?.color ?? NeomageColors.info;
 
     // Derive activity text (port of describeTeammateActivity)
     final activity = _describeTeammateActivity(teammate);
@@ -1132,8 +1133,8 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
                   color: teammate.isIdle
                       ? theme.colorScheme.onSurfaceVariant
                       : teammate.awaitingApproval
-                      ? ClawColors.warning
-                      : ClawColors.success,
+                      ? NeomageColors.warning
+                      : NeomageColors.success,
                 ),
                 const SizedBox(width: 6),
                 Obx(
@@ -1175,7 +1176,7 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
                     teammate.status == TaskStatus.running)
                   TextButton.icon(
                     icon: const Icon(Icons.visibility, size: 16),
-                    label: const Text('Foreground'),
+                    label: Text(NeomageTranslationConstants.foreground.tr),
                     onPressed: onForeground,
                   ),
                 if (onKill != null &&
@@ -1183,15 +1184,15 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
                   const SizedBox(width: 8),
                   TextButton.icon(
                     icon: const Icon(Icons.stop, size: 16),
-                    label: const Text('Stop'),
+                    label: Text(NeomageTranslationConstants.stop.tr),
                     style: TextButton.styleFrom(
-                      foregroundColor: ClawColors.error,
+                      foregroundColor: NeomageColors.error,
                     ),
                     onPressed: onKill,
                   ),
                 ],
                 const SizedBox(width: 8),
-                TextButton(onPressed: onDone, child: const Text('Close')),
+                TextButton(onPressed: onDone, child: Text(NeomageTranslationConstants.close.tr)),
               ],
             ),
           ],
@@ -1335,14 +1336,14 @@ class DreamDetailDialog extends StatelessWidget {
                 Icon(
                   running ? Icons.play_arrow : Icons.check_circle,
                   size: 16,
-                  color: running ? ClawColors.info : ClawColors.success,
+                  color: running ? NeomageColors.info : NeomageColors.success,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   running ? 'Running' : task.status.name,
                   style: TextStyle(
                     fontSize: 13,
-                    color: running ? ClawColors.info : ClawColors.success,
+                    color: running ? NeomageColors.info : NeomageColors.success,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1365,14 +1366,14 @@ class DreamDetailDialog extends StatelessWidget {
                 if (running && onKill != null)
                   TextButton.icon(
                     icon: const Icon(Icons.stop, size: 16),
-                    label: const Text('Stop'),
+                    label: Text(NeomageTranslationConstants.stop.tr),
                     style: TextButton.styleFrom(
-                      foregroundColor: ClawColors.error,
+                      foregroundColor: NeomageColors.error,
                     ),
                     onPressed: onKill,
                   ),
                 const SizedBox(width: 8),
-                TextButton(onPressed: onDone, child: const Text('Close')),
+                TextButton(onPressed: onDone, child: Text(NeomageTranslationConstants.close.tr)),
               ],
             ),
           ],
@@ -1416,14 +1417,14 @@ Color getTaskStatusColor(
   bool hasError = false,
   bool shutdownRequested = false,
 }) {
-  if (hasError) return ClawColors.error;
-  if (awaitingApproval) return ClawColors.warning;
-  if (shutdownRequested) return ClawColors.warning;
-  if (isIdle) return ClawColors.darkTextTertiary;
-  if (status == TaskStatus.completed) return ClawColors.success;
-  if (status == TaskStatus.failed) return ClawColors.error;
-  if (status == TaskStatus.killed) return ClawColors.warning;
-  return ClawColors.darkTextTertiary;
+  if (hasError) return NeomageColors.error;
+  if (awaitingApproval) return NeomageColors.warning;
+  if (shutdownRequested) return NeomageColors.warning;
+  if (isIdle) return NeomageColors.darkTextTertiary;
+  if (status == TaskStatus.completed) return NeomageColors.success;
+  if (status == TaskStatus.failed) return NeomageColors.error;
+  if (status == TaskStatus.killed) return NeomageColors.warning;
+  return NeomageColors.darkTextTertiary;
 }
 
 /// Returns true if the given task status is terminal (finished).

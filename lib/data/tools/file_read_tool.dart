@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
@@ -96,7 +96,7 @@ class _MagicBytes {
   static const wasm = [0x00, 0x61, 0x73, 0x6D];
 }
 
-/// Read file contents — full port of neom_claw/src/tools/FileReadTool.
+/// Read file contents — full port of neomage/src/tools/FileReadTool.
 ///
 /// Features:
 /// - Binary file detection via magic bytes
@@ -127,9 +127,16 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
 
   @override
   String get description =>
-      'Reads a file from the local filesystem. Returns file contents with '
-      'line numbers in cat -n format. Supports text files, images (returns '
-      'metadata), PDFs (with page selection), and Jupyter notebooks.';
+      'Reads a file from the local filesystem. You can access any file directly by using this tool.\n\n'
+      'Usage:\n'
+      '- The file_path parameter must be an absolute path, not a relative path.\n'
+      '- By default, it reads up to 2000 lines starting from the beginning of the file.\n'
+      '- When you already know which part of the file you need, only read that part using offset and limit.\n'
+      '- Results are returned using cat -n format, with line numbers starting at 1.\n'
+      '- This tool can read images (PNG, JPG, etc), PDFs (use pages parameter for large PDFs), '
+      'and Jupyter notebooks (.ipynb).\n'
+      '- This tool can only read files, not directories. To read a directory, use `ls` via the Bash tool.\n'
+      '- If the user provides a path to a file, assume that path is valid.';
 
   @override
   String get prompt =>
@@ -405,7 +412,7 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
     buf.writeln();
     buf.writeln(
       'This is an image file. When reading an image file the contents '
-      'are presented visually as NeomClaw is a multimodal LLM.',
+      'are presented visually as Neomage is a multimodal LLM.',
     );
 
     final output = FileReadOutput(

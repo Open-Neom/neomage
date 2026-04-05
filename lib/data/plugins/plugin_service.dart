@@ -1,10 +1,10 @@
-// Plugin service — ported from openclaude src/services/plugins/.
+// Plugin service — ported from neomagent src/services/plugins/.
 // Unified service combining plugin loader, operations, manifest validation,
 // lifecycle management, and CLI command wrappers.
 
 import 'dart:convert';
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import '../../domain/models/plugin.dart';
 import '../mcp/mcp_types.dart';
@@ -35,10 +35,10 @@ const List<PluginScope> validUpdateScopes = [
 
 /// Scopes at which a plugin can be installed.
 enum PluginScope {
-  /// User-global scope (~/.neomclaw/plugins/).
+  /// User-global scope (~/.neomage/plugins/).
   user,
 
-  /// Project scope (.neomclaw/plugins/).
+  /// Project scope (.neomage/plugins/).
   project,
 
   /// Local-override scope (project, but gitignored).
@@ -382,12 +382,12 @@ Future<List<LoadedPlugin>> loadAllPlugins({String? projectRoot}) async {
       Platform.environment['USERPROFILE'] ??
       '/tmp';
 
-  // 1. User plugins: ~/.neomclaw/plugins/
-  plugins.addAll(await loadPluginsFromDir('$homeDir/.neomclaw/plugins'));
+  // 1. User plugins: ~/.neomage/plugins/
+  plugins.addAll(await loadPluginsFromDir('$homeDir/.neomage/plugins'));
 
-  // 2. Project plugins: .neomclaw/plugins/
+  // 2. Project plugins: .neomage/plugins/
   if (projectRoot != null) {
-    plugins.addAll(await loadPluginsFromDir('$projectRoot/.neomclaw/plugins'));
+    plugins.addAll(await loadPluginsFromDir('$projectRoot/.neomage/plugins'));
   }
 
   return plugins;

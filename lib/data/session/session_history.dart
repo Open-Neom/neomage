@@ -1,8 +1,8 @@
-// Session history — port of neom_claw/src/assistant/sessionHistory.ts.
+// Session history — port of neomage/src/assistant/sessionHistory.ts.
 // Persistence and resume for conversation sessions.
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import '../../domain/models/message.dart';
 

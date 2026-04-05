@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../domain/models/message.dart';
+import 'package:neomage/domain/models/message.dart';
 import 'message_renderer.dart';
 
-/// Displays streaming text with a blinking cursor using the full MessageRenderer.
+/// Displays streaming text aligned left (assistant style) with a blinking cursor.
 class StreamingText extends StatelessWidget {
   final String text;
   final String? toolName;
@@ -13,36 +13,32 @@ class StreamingText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final maxWidth = screenWidth < 600
+        ? screenWidth * 0.82
+        : screenWidth * 0.65;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Assistant',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white38 : Colors.black38,
-                ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        margin: const EdgeInsets.only(top: 8, bottom: 4, right: 48, left: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (toolName != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: _ToolIndicator(name: toolName!),
               ),
-              if (toolName != null) ...[
-                const SizedBox(width: 8),
-                _ToolIndicator(name: toolName!),
-              ],
-            ],
-          ),
-          const SizedBox(height: 4),
-          text.isEmpty
-              ? _ThinkingDots()
-              : MessageRenderer(
-                  block: TextBlock('$text\u258C'),
-                ),
-        ],
+            text.isEmpty
+                ? _ThinkingDots()
+                : MessageRenderer(
+                    block: TextBlock('$text\u258C'),
+                  ),
+          ],
+        ),
       ),
     );
   }
@@ -55,10 +51,10 @@ class _ToolIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.tertiaryContainer,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -68,8 +64,14 @@ class _ToolIndicator extends StatelessWidget {
             height: 10,
             child: CircularProgressIndicator(strokeWidth: 1.5),
           ),
-          const SizedBox(width: 4),
-          Text(name, style: const TextStyle(fontSize: 10)),
+          const SizedBox(width: 6),
+          Text(
+            name,
+            style: TextStyle(
+              fontSize: 11,
+              color: Theme.of(context).colorScheme.onTertiaryContainer,
+            ),
+          ),
         ],
       ),
     );

@@ -1,9 +1,9 @@
-// Search service — port of neom_claw search functionality.
+// Search service — port of neomage search functionality.
 // Provides file search, content search, symbol search, and search history.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math' as math;
 
 // ---------------------------------------------------------------------------

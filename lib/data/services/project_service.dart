@@ -1,10 +1,10 @@
-// Project service — port of neom_claw project detection and management.
+// Project service — port of neomage project detection and management.
 // Detects project types, frameworks, package managers, and generates
 // project summaries for system prompt context.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ---------------------------------------------------------------------------
 // Enums

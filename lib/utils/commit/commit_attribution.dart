@@ -1,13 +1,13 @@
 /// Git commit attribution and message formatting.
 ///
-/// Ported from neom_claw/src/utils/commitAttribution.ts (961 LOC).
+/// Ported from neomage/src/utils/commitAttribution.ts (961 LOC).
 ///
-/// Tracks NeomClaw's contributions to files, calculates attribution
+/// Tracks Neomage's contributions to files, calculates attribution
 /// percentages for git commits, and provides snapshot/restore support
 /// for session persistence.
 library;
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:sint/sint.dart';
@@ -23,52 +23,8 @@ import 'package:sint/sint.dart';
 /// The anthropics and anthropic-experimental orgs contain PUBLIC repos.
 /// Undercover mode must stay ON in those to prevent codename leaks.
 /// Only add repos here that are confirmed PRIVATE.
-const List<String> _internalModelRepos = [
-  'github.com:anthropics/neom-claw-cli-internal',
-  'github.com/anthropics/neom-claw-cli-internal',
-  'github.com:anthropics/anthropic',
-  'github.com/anthropics/anthropic',
-  'github.com:anthropics/apps',
-  'github.com/anthropics/apps',
-  'github.com:anthropics/casino',
-  'github.com/anthropics/casino',
-  'github.com:anthropics/dbt',
-  'github.com/anthropics/dbt',
-  'github.com:anthropics/dotfiles',
-  'github.com/anthropics/dotfiles',
-  'github.com:anthropics/terraform-config',
-  'github.com/anthropics/terraform-config',
-  'github.com:anthropics/hex-export',
-  'github.com/anthropics/hex-export',
-  'github.com:anthropics/feedback-v2',
-  'github.com/anthropics/feedback-v2',
-  'github.com:anthropics/labs',
-  'github.com/anthropics/labs',
-  'github.com:anthropics/argo-rollouts',
-  'github.com/anthropics/argo-rollouts',
-  'github.com:anthropics/starling-configs',
-  'github.com/anthropics/starling-configs',
-  'github.com:anthropics/ts-tools',
-  'github.com/anthropics/ts-tools',
-  'github.com:anthropics/ts-capsules',
-  'github.com/anthropics/ts-capsules',
-  'github.com:anthropics/feldspar-testing',
-  'github.com/anthropics/feldspar-testing',
-  'github.com:anthropics/trellis',
-  'github.com/anthropics/trellis',
-  'github.com:anthropics/neom-claw-for-hiring',
-  'github.com/anthropics/neom-claw-for-hiring',
-  'github.com:anthropics/forge-web',
-  'github.com/anthropics/forge-web',
-  'github.com:anthropics/infra-manifests',
-  'github.com/anthropics/infra-manifests',
-  'github.com:anthropics/mycro_manifests',
-  'github.com/anthropics/mycro_manifests',
-  'github.com:anthropics/mycro_configs',
-  'github.com/anthropics/mycro_configs',
-  'github.com:anthropics/mobile-apps',
-  'github.com/anthropics/mobile-apps',
-];
+// Internal repo list removed — not applicable to Neomage
+const List<String> _internalModelRepos = [];
 
 // ---------------------------------------------------------------------------
 // Types — FileAttributionState
@@ -78,26 +34,26 @@ const List<String> _internalModelRepos = [
 class FileAttributionState {
   FileAttributionState({
     required this.contentHash,
-    required this.neomClawContribution,
+    required this.neomageContribution,
     required this.mtime,
   });
 
   final String contentHash;
-  final int neomClawContribution;
+  final int neomageContribution;
   final int mtime;
 
   factory FileAttributionState.fromJson(Map<String, dynamic> json) {
     return FileAttributionState(
       contentHash: json['contentHash'] as String? ?? '',
-      neomClawContribution:
-          (json['neomClawContribution'] as num?)?.toInt() ?? 0,
+      neomageContribution:
+          (json['neomageContribution'] as num?)?.toInt() ?? 0,
       mtime: (json['mtime'] as num?)?.toInt() ?? 0,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'contentHash': contentHash,
-    'neomClawContribution': neomClawContribution,
+    'neomageContribution': neomageContribution,
     'mtime': mtime,
   };
 }
@@ -106,7 +62,7 @@ class FileAttributionState {
 // Types — AttributionState
 // ---------------------------------------------------------------------------
 
-/// Attribution state for tracking NeomClaw's contributions to files.
+/// Attribution state for tracking Neomage's contributions to files.
 class AttributionState {
   AttributionState({
     Map<String, FileAttributionState>? fileStates,
@@ -200,23 +156,23 @@ class BaselineEntry {
 // Types — AttributionSummary
 // ---------------------------------------------------------------------------
 
-/// Summary of NeomClaw's contribution for a commit.
+/// Summary of Neomage's contribution for a commit.
 class AttributionSummary {
   const AttributionSummary({
-    required this.neomClawPercent,
-    required this.neomClawChars,
+    required this.neomagePercent,
+    required this.neomageChars,
     required this.humanChars,
     required this.surfaces,
   });
 
-  final int neomClawPercent;
-  final int neomClawChars;
+  final int neomagePercent;
+  final int neomageChars;
   final int humanChars;
   final List<String> surfaces;
 
   Map<String, dynamic> toJson() => {
-    'neomClawPercent': neomClawPercent,
-    'neomClawChars': neomClawChars,
+    'neomagePercent': neomagePercent,
+    'neomageChars': neomageChars,
     'humanChars': humanChars,
     'surfaces': surfaces,
   };
@@ -229,19 +185,19 @@ class AttributionSummary {
 /// Per-file attribution details for git notes.
 class FileAttribution {
   const FileAttribution({
-    required this.neomClawChars,
+    required this.neomageChars,
     required this.humanChars,
     required this.percent,
     required this.surface,
   });
 
-  final int neomClawChars;
+  final int neomageChars;
   final int humanChars;
   final int percent;
   final String surface;
 
   Map<String, dynamic> toJson() => {
-    'neomClawChars': neomClawChars,
+    'neomageChars': neomageChars,
     'humanChars': humanChars,
     'percent': percent,
     'surface': surface,
@@ -283,14 +239,14 @@ class AttributionData {
 /// Surface breakdown entry for attribution data.
 class SurfaceBreakdownEntry {
   const SurfaceBreakdownEntry({
-    required this.neomClawChars,
+    required this.neomageChars,
     required this.percent,
   });
-  final int neomClawChars;
+  final int neomageChars;
   final int percent;
 
   Map<String, dynamic> toJson() => {
-    'neomClawChars': neomClawChars,
+    'neomageChars': neomageChars,
     'percent': percent,
   };
 }
@@ -525,7 +481,7 @@ class CommitAttributionManager extends SintController {
     if (shortName.contains('sonnet-3-7')) return 'claude-sonnet-3-7';
     if (shortName.contains('haiku-4-5')) return 'claude-haiku-4-5';
     if (shortName.contains('haiku-3-5')) return 'claude-haiku-3-5';
-    return 'neomclaw';
+    return 'neomage';
   }
 
   // -------------------------------------------------------------------------
@@ -627,11 +583,11 @@ class CommitAttributionManager extends SintController {
     final normalizedPath = normalizeFilePath(filePath);
 
     try {
-      int neomClawContribution;
+      int neomageContribution;
 
       if (oldContent.isEmpty || newContent.isEmpty) {
         // New file or full deletion.
-        neomClawContribution = oldContent.isEmpty
+        neomageContribution = oldContent.isEmpty
             ? newContent.length
             : oldContent.length;
       } else {
@@ -651,15 +607,15 @@ class CommitAttributionManager extends SintController {
         }
         final oldChangedLen = oldContent.length - prefixEnd - suffixLen;
         final newChangedLen = newContent.length - prefixEnd - suffixLen;
-        neomClawContribution = max(oldChangedLen, newChangedLen);
+        neomageContribution = max(oldChangedLen, newChangedLen);
       }
 
       final existingState = existingFileStates[normalizedPath];
-      final existingContribution = existingState?.neomClawContribution ?? 0;
+      final existingContribution = existingState?.neomageContribution ?? 0;
 
       return FileAttributionState(
         contentHash: computeContentHash(newContent),
-        neomClawContribution: existingContribution + neomClawContribution,
+        neomageContribution: existingContribution + neomageContribution,
         mtime: mtime,
       );
     } catch (_) {
@@ -687,7 +643,7 @@ class CommitAttributionManager extends SintController {
   // Track file modification
   // -------------------------------------------------------------------------
 
-  /// Track a file modification by NeomClaw.
+  /// Track a file modification by Neomage.
   /// Called after Edit/Write tool completes.
   AttributionState trackFileModification({
     required AttributionState attrState,
@@ -717,7 +673,7 @@ class CommitAttributionManager extends SintController {
     return attrState.copyWith(fileStates: newFileStates);
   }
 
-  /// Track a file creation by NeomClaw.
+  /// Track a file creation by Neomage.
   AttributionState trackFileCreation({
     required AttributionState attrState,
     required String filePath,
@@ -733,7 +689,7 @@ class CommitAttributionManager extends SintController {
     );
   }
 
-  /// Track a file deletion by NeomClaw.
+  /// Track a file deletion by Neomage.
   AttributionState trackFileDeletion({
     required AttributionState attrState,
     required String filePath,
@@ -741,12 +697,12 @@ class CommitAttributionManager extends SintController {
   }) {
     final normalizedPath = normalizeFilePath(filePath);
     final existingState = attrState.fileStates[normalizedPath];
-    final existingContribution = existingState?.neomClawContribution ?? 0;
+    final existingContribution = existingState?.neomageContribution ?? 0;
     final deletedChars = oldContent.length;
 
     final newFileState = FileAttributionState(
       contentHash: '',
-      neomClawContribution: existingContribution + deletedChars,
+      neomageContribution: existingContribution + deletedChars,
       mtime: DateTime.now().millisecondsSinceEpoch,
     );
 
@@ -778,12 +734,12 @@ class CommitAttributionManager extends SintController {
       if (change.type == 'deleted') {
         final normalizedPath = normalizeFilePath(change.path);
         final existingState = newFileStates[normalizedPath];
-        final existingContribution = existingState?.neomClawContribution ?? 0;
+        final existingContribution = existingState?.neomageContribution ?? 0;
         final deletedChars = change.oldContent.length;
 
         newFileStates[normalizedPath] = FileAttributionState(
           contentHash: '',
-          neomClawContribution: existingContribution + deletedChars,
+          neomageContribution: existingContribution + deletedChars,
           mtime: effectiveMtime,
         );
       } else {
@@ -820,7 +776,7 @@ class CommitAttributionManager extends SintController {
     final surfaces = <String>{};
     final surfaceCounts = <String, int>{};
 
-    var totalNeomClawChars = 0;
+    var totalNeomageChars = 0;
     var totalHumanChars = 0;
 
     // Merge file states from all sessions.
@@ -839,9 +795,9 @@ class CommitAttributionManager extends SintController {
         if (existing != null) {
           mergedFileStates[entry.key] = FileAttributionState(
             contentHash: entry.value.contentHash,
-            neomClawContribution:
-                existing.neomClawContribution +
-                entry.value.neomClawContribution,
+            neomageContribution:
+                existing.neomageContribution +
+                entry.value.neomageContribution,
             mtime: entry.value.mtime,
           );
         } else {
@@ -862,14 +818,14 @@ class CommitAttributionManager extends SintController {
       final baseline = mergedBaselines[file];
       final fileSurface = states.isNotEmpty ? states.first.surface : 'cli';
 
-      var neomClawChars = 0;
+      var neomageChars = 0;
       var humanChars = 0;
 
       final deleted = await isFileDeleted(file);
 
       if (deleted) {
         if (fileState != null) {
-          neomClawChars = fileState.neomClawContribution;
+          neomageChars = fileState.neomageContribution;
         } else {
           final diffSize = await getGitDiffSize(file);
           humanChars = diffSize > 0 ? diffSize : 100;
@@ -880,7 +836,7 @@ class CommitAttributionManager extends SintController {
           if (fileStat.type == FileSystemEntityType.notFound) continue;
 
           if (fileState != null) {
-            neomClawChars = fileState.neomClawContribution;
+            neomageChars = fileState.neomageContribution;
           } else if (baseline != null) {
             final diffSize = await getGitDiffSize(file);
             humanChars = diffSize > 0 ? diffSize : fileStat.size;
@@ -892,28 +848,28 @@ class CommitAttributionManager extends SintController {
         }
       }
 
-      neomClawChars = max(0, neomClawChars);
+      neomageChars = max(0, neomageChars);
       humanChars = max(0, humanChars);
 
-      final total = neomClawChars + humanChars;
-      final percent = total > 0 ? (neomClawChars / total * 100).round() : 0;
+      final total = neomageChars + humanChars;
+      final percent = total > 0 ? (neomageChars / total * 100).round() : 0;
 
       files[file] = FileAttribution(
-        neomClawChars: neomClawChars,
+        neomageChars: neomageChars,
         humanChars: humanChars,
         percent: percent,
         surface: fileSurface,
       );
 
-      totalNeomClawChars += neomClawChars;
+      totalNeomageChars += neomageChars;
       totalHumanChars += humanChars;
       surfaceCounts[fileSurface] =
-          (surfaceCounts[fileSurface] ?? 0) + neomClawChars;
+          (surfaceCounts[fileSurface] ?? 0) + neomageChars;
     }
 
-    final totalChars = totalNeomClawChars + totalHumanChars;
-    final neomClawPercent = totalChars > 0
-        ? (totalNeomClawChars / totalChars * 100).round()
+    final totalChars = totalNeomageChars + totalHumanChars;
+    final neomagePercent = totalChars > 0
+        ? (totalNeomageChars / totalChars * 100).round()
         : 0;
 
     final surfaceBreakdown = <String, SurfaceBreakdownEntry>{};
@@ -922,15 +878,15 @@ class CommitAttributionManager extends SintController {
           ? (entry.value / totalChars * 100).round()
           : 0;
       surfaceBreakdown[entry.key] = SurfaceBreakdownEntry(
-        neomClawChars: entry.value,
+        neomageChars: entry.value,
         percent: percent,
       );
     }
 
     return AttributionData(
       summary: AttributionSummary(
-        neomClawPercent: neomClawPercent,
-        neomClawChars: totalNeomClawChars,
+        neomagePercent: neomagePercent,
+        neomageChars: totalNeomageChars,
         humanChars: totalHumanChars,
         surfaces: surfaces.toList(),
       ),

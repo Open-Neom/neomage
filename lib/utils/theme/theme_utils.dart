@@ -1,9 +1,9 @@
-// Port of neom_claw theme.ts + systemTheme.ts + logoV2Utils.ts
+// Port of neomage theme.ts + systemTheme.ts + logoV2Utils.ts
 //
 // Theme detection, color palettes, logo layout, and display utilities
-// for the neom_claw package.
+// for the neomage package.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart' show Color;
@@ -13,14 +13,14 @@ import 'package:flutter/material.dart' show Color;
 // ---------------------------------------------------------------------------
 
 /// All color keys used in the theme system.
-class ClawTheme {
-  const ClawTheme({
+class NeomageTheme {
+  const NeomageTheme({
     required this.autoAccept,
     required this.bashBorder,
-    required this.neomClaw,
-    required this.neomClawShimmer,
-    required this.neomClawBlueForSystemSpinner,
-    required this.neomClawBlueShimmerForSystemSpinner,
+    required this.neomage,
+    required this.neomageShimmer,
+    required this.neomageBlueForSystemSpinner,
+    required this.neomageBlueShimmerForSystemSpinner,
     required this.permission,
     required this.permissionShimmer,
     required this.planMode,
@@ -56,8 +56,8 @@ class ClawTheme {
     required this.cyanForSubagents,
     required this.professionalBlue,
     required this.chromeYellow,
-    required this.clawdBody,
-    required this.clawdBackground,
+    required this.neomageBody,
+    required this.neomageBackground,
     required this.userMessageBackground,
     required this.userMessageBackgroundHover,
     required this.messageActionsBackground,
@@ -69,7 +69,7 @@ class ClawTheme {
     required this.fastMode,
     required this.fastModeShimmer,
     required this.briefLabelYou,
-    required this.briefLabelNeomClaw,
+    required this.briefLabelNeomage,
     required this.rainbowRed,
     required this.rainbowOrange,
     required this.rainbowYellow,
@@ -88,10 +88,10 @@ class ClawTheme {
 
   final String autoAccept;
   final String bashBorder;
-  final String neomClaw;
-  final String neomClawShimmer;
-  final String neomClawBlueForSystemSpinner;
-  final String neomClawBlueShimmerForSystemSpinner;
+  final String neomage;
+  final String neomageShimmer;
+  final String neomageBlueForSystemSpinner;
+  final String neomageBlueShimmerForSystemSpinner;
   final String permission;
   final String permissionShimmer;
   final String planMode;
@@ -127,8 +127,8 @@ class ClawTheme {
   final String cyanForSubagents;
   final String professionalBlue;
   final String chromeYellow;
-  final String clawdBody;
-  final String clawdBackground;
+  final String neomageBody;
+  final String neomageBackground;
   final String userMessageBackground;
   final String userMessageBackgroundHover;
   final String messageActionsBackground;
@@ -140,7 +140,7 @@ class ClawTheme {
   final String fastMode;
   final String fastModeShimmer;
   final String briefLabelYou;
-  final String briefLabelNeomClaw;
+  final String briefLabelNeomage;
   final String rainbowRed;
   final String rainbowOrange;
   final String rainbowYellow;
@@ -238,13 +238,13 @@ enum ThemeSetting {
 // Theme palettes
 // ---------------------------------------------------------------------------
 
-const _lightTheme = ClawTheme(
+const _lightTheme = NeomageTheme(
   autoAccept: 'rgb(135,0,255)',
   bashBorder: 'rgb(255,0,135)',
-  neomClaw: 'rgb(215,119,87)',
-  neomClawShimmer: 'rgb(245,149,117)',
-  neomClawBlueForSystemSpinner: 'rgb(87,105,247)',
-  neomClawBlueShimmerForSystemSpinner: 'rgb(117,135,255)',
+  neomage: 'rgb(215,119,87)',
+  neomageShimmer: 'rgb(245,149,117)',
+  neomageBlueForSystemSpinner: 'rgb(87,105,247)',
+  neomageBlueShimmerForSystemSpinner: 'rgb(117,135,255)',
   permission: 'rgb(87,105,247)',
   permissionShimmer: 'rgb(137,155,255)',
   planMode: 'rgb(0,102,102)',
@@ -280,8 +280,8 @@ const _lightTheme = ClawTheme(
   cyanForSubagents: 'rgb(8,145,178)',
   professionalBlue: 'rgb(106,155,204)',
   chromeYellow: 'rgb(251,188,4)',
-  clawdBody: 'rgb(215,119,87)',
-  clawdBackground: 'rgb(0,0,0)',
+  neomageBody: 'rgb(215,119,87)',
+  neomageBackground: 'rgb(0,0,0)',
   userMessageBackground: 'rgb(240,240,240)',
   userMessageBackgroundHover: 'rgb(252,252,252)',
   messageActionsBackground: 'rgb(232,236,244)',
@@ -293,7 +293,7 @@ const _lightTheme = ClawTheme(
   fastMode: 'rgb(255,106,0)',
   fastModeShimmer: 'rgb(255,150,50)',
   briefLabelYou: 'rgb(37,99,235)',
-  briefLabelNeomClaw: 'rgb(215,119,87)',
+  briefLabelNeomage: 'rgb(215,119,87)',
   rainbowRed: 'rgb(235,95,87)',
   rainbowOrange: 'rgb(245,139,87)',
   rainbowYellow: 'rgb(250,195,95)',
@@ -310,13 +310,13 @@ const _lightTheme = ClawTheme(
   rainbowVioletShimmer: 'rgb(230,180,210)',
 );
 
-const _darkTheme = ClawTheme(
+const _darkTheme = NeomageTheme(
   autoAccept: 'rgb(175,135,255)',
   bashBorder: 'rgb(253,93,177)',
-  neomClaw: 'rgb(215,119,87)',
-  neomClawShimmer: 'rgb(235,159,127)',
-  neomClawBlueForSystemSpinner: 'rgb(147,165,255)',
-  neomClawBlueShimmerForSystemSpinner: 'rgb(177,195,255)',
+  neomage: 'rgb(215,119,87)',
+  neomageShimmer: 'rgb(235,159,127)',
+  neomageBlueForSystemSpinner: 'rgb(147,165,255)',
+  neomageBlueShimmerForSystemSpinner: 'rgb(177,195,255)',
   permission: 'rgb(177,185,249)',
   permissionShimmer: 'rgb(207,215,255)',
   planMode: 'rgb(72,150,140)',
@@ -352,8 +352,8 @@ const _darkTheme = ClawTheme(
   cyanForSubagents: 'rgb(8,145,178)',
   professionalBlue: 'rgb(106,155,204)',
   chromeYellow: 'rgb(251,188,4)',
-  clawdBody: 'rgb(215,119,87)',
-  clawdBackground: 'rgb(0,0,0)',
+  neomageBody: 'rgb(215,119,87)',
+  neomageBackground: 'rgb(0,0,0)',
   userMessageBackground: 'rgb(55,55,55)',
   userMessageBackgroundHover: 'rgb(70,70,70)',
   messageActionsBackground: 'rgb(44,50,62)',
@@ -365,7 +365,7 @@ const _darkTheme = ClawTheme(
   fastMode: 'rgb(255,120,20)',
   fastModeShimmer: 'rgb(255,165,70)',
   briefLabelYou: 'rgb(122,180,232)',
-  briefLabelNeomClaw: 'rgb(215,119,87)',
+  briefLabelNeomage: 'rgb(215,119,87)',
   rainbowRed: 'rgb(235,95,87)',
   rainbowOrange: 'rgb(245,139,87)',
   rainbowYellow: 'rgb(250,195,95)',
@@ -382,13 +382,13 @@ const _darkTheme = ClawTheme(
   rainbowVioletShimmer: 'rgb(230,180,210)',
 );
 
-const _lightDaltonizedTheme = ClawTheme(
+const _lightDaltonizedTheme = NeomageTheme(
   autoAccept: 'rgb(135,0,255)',
   bashBorder: 'rgb(0,102,204)',
-  neomClaw: 'rgb(255,153,51)',
-  neomClawShimmer: 'rgb(255,183,101)',
-  neomClawBlueForSystemSpinner: 'rgb(51,102,255)',
-  neomClawBlueShimmerForSystemSpinner: 'rgb(101,152,255)',
+  neomage: 'rgb(255,153,51)',
+  neomageShimmer: 'rgb(255,183,101)',
+  neomageBlueForSystemSpinner: 'rgb(51,102,255)',
+  neomageBlueShimmerForSystemSpinner: 'rgb(101,152,255)',
   permission: 'rgb(51,102,255)',
   permissionShimmer: 'rgb(101,152,255)',
   planMode: 'rgb(51,102,102)',
@@ -424,8 +424,8 @@ const _lightDaltonizedTheme = ClawTheme(
   cyanForSubagents: 'rgb(0,178,178)',
   professionalBlue: 'rgb(106,155,204)',
   chromeYellow: 'rgb(251,188,4)',
-  clawdBody: 'rgb(215,119,87)',
-  clawdBackground: 'rgb(0,0,0)',
+  neomageBody: 'rgb(215,119,87)',
+  neomageBackground: 'rgb(0,0,0)',
   userMessageBackground: 'rgb(220,220,220)',
   userMessageBackgroundHover: 'rgb(232,232,232)',
   messageActionsBackground: 'rgb(210,216,226)',
@@ -437,7 +437,7 @@ const _lightDaltonizedTheme = ClawTheme(
   fastMode: 'rgb(255,106,0)',
   fastModeShimmer: 'rgb(255,150,50)',
   briefLabelYou: 'rgb(37,99,235)',
-  briefLabelNeomClaw: 'rgb(255,153,51)',
+  briefLabelNeomage: 'rgb(255,153,51)',
   rainbowRed: 'rgb(235,95,87)',
   rainbowOrange: 'rgb(245,139,87)',
   rainbowYellow: 'rgb(250,195,95)',
@@ -454,13 +454,13 @@ const _lightDaltonizedTheme = ClawTheme(
   rainbowVioletShimmer: 'rgb(230,180,210)',
 );
 
-const _darkDaltonizedTheme = ClawTheme(
+const _darkDaltonizedTheme = NeomageTheme(
   autoAccept: 'rgb(175,135,255)',
   bashBorder: 'rgb(51,153,255)',
-  neomClaw: 'rgb(255,153,51)',
-  neomClawShimmer: 'rgb(255,183,101)',
-  neomClawBlueForSystemSpinner: 'rgb(153,204,255)',
-  neomClawBlueShimmerForSystemSpinner: 'rgb(183,224,255)',
+  neomage: 'rgb(255,153,51)',
+  neomageShimmer: 'rgb(255,183,101)',
+  neomageBlueForSystemSpinner: 'rgb(153,204,255)',
+  neomageBlueShimmerForSystemSpinner: 'rgb(183,224,255)',
   permission: 'rgb(153,204,255)',
   permissionShimmer: 'rgb(183,224,255)',
   planMode: 'rgb(102,153,153)',
@@ -496,8 +496,8 @@ const _darkDaltonizedTheme = ClawTheme(
   cyanForSubagents: 'rgb(102,204,204)',
   professionalBlue: 'rgb(106,155,204)',
   chromeYellow: 'rgb(251,188,4)',
-  clawdBody: 'rgb(215,119,87)',
-  clawdBackground: 'rgb(0,0,0)',
+  neomageBody: 'rgb(215,119,87)',
+  neomageBackground: 'rgb(0,0,0)',
   userMessageBackground: 'rgb(55,55,55)',
   userMessageBackgroundHover: 'rgb(70,70,70)',
   messageActionsBackground: 'rgb(44,50,62)',
@@ -509,7 +509,7 @@ const _darkDaltonizedTheme = ClawTheme(
   fastMode: 'rgb(255,120,20)',
   fastModeShimmer: 'rgb(255,165,70)',
   briefLabelYou: 'rgb(122,180,232)',
-  briefLabelNeomClaw: 'rgb(255,153,51)',
+  briefLabelNeomage: 'rgb(255,153,51)',
   rainbowRed: 'rgb(235,95,87)',
   rainbowOrange: 'rgb(245,139,87)',
   rainbowYellow: 'rgb(250,195,95)',
@@ -527,13 +527,13 @@ const _darkDaltonizedTheme = ClawTheme(
 );
 
 // ANSI themes use ANSI color names instead of RGB
-const _lightAnsiTheme = ClawTheme(
+const _lightAnsiTheme = NeomageTheme(
   autoAccept: 'ansi:magenta',
   bashBorder: 'ansi:magenta',
-  neomClaw: 'ansi:redBright',
-  neomClawShimmer: 'ansi:yellowBright',
-  neomClawBlueForSystemSpinner: 'ansi:blue',
-  neomClawBlueShimmerForSystemSpinner: 'ansi:blueBright',
+  neomage: 'ansi:redBright',
+  neomageShimmer: 'ansi:yellowBright',
+  neomageBlueForSystemSpinner: 'ansi:blue',
+  neomageBlueShimmerForSystemSpinner: 'ansi:blueBright',
   permission: 'ansi:blue',
   permissionShimmer: 'ansi:blueBright',
   planMode: 'ansi:cyan',
@@ -569,8 +569,8 @@ const _lightAnsiTheme = ClawTheme(
   cyanForSubagents: 'ansi:cyan',
   professionalBlue: 'ansi:blueBright',
   chromeYellow: 'ansi:yellow',
-  clawdBody: 'ansi:redBright',
-  clawdBackground: 'ansi:black',
+  neomageBody: 'ansi:redBright',
+  neomageBackground: 'ansi:black',
   userMessageBackground: 'ansi:white',
   userMessageBackgroundHover: 'ansi:whiteBright',
   messageActionsBackground: 'ansi:white',
@@ -582,7 +582,7 @@ const _lightAnsiTheme = ClawTheme(
   fastMode: 'ansi:red',
   fastModeShimmer: 'ansi:redBright',
   briefLabelYou: 'ansi:blue',
-  briefLabelNeomClaw: 'ansi:redBright',
+  briefLabelNeomage: 'ansi:redBright',
   rainbowRed: 'ansi:red',
   rainbowOrange: 'ansi:redBright',
   rainbowYellow: 'ansi:yellow',
@@ -599,13 +599,13 @@ const _lightAnsiTheme = ClawTheme(
   rainbowVioletShimmer: 'ansi:magentaBright',
 );
 
-const _darkAnsiTheme = ClawTheme(
+const _darkAnsiTheme = NeomageTheme(
   autoAccept: 'ansi:magentaBright',
   bashBorder: 'ansi:magentaBright',
-  neomClaw: 'ansi:redBright',
-  neomClawShimmer: 'ansi:yellowBright',
-  neomClawBlueForSystemSpinner: 'ansi:blueBright',
-  neomClawBlueShimmerForSystemSpinner: 'ansi:blueBright',
+  neomage: 'ansi:redBright',
+  neomageShimmer: 'ansi:yellowBright',
+  neomageBlueForSystemSpinner: 'ansi:blueBright',
+  neomageBlueShimmerForSystemSpinner: 'ansi:blueBright',
   permission: 'ansi:blueBright',
   permissionShimmer: 'ansi:blueBright',
   planMode: 'ansi:cyanBright',
@@ -641,8 +641,8 @@ const _darkAnsiTheme = ClawTheme(
   cyanForSubagents: 'ansi:cyanBright',
   professionalBlue: 'rgb(106,155,204)',
   chromeYellow: 'ansi:yellowBright',
-  clawdBody: 'ansi:redBright',
-  clawdBackground: 'ansi:black',
+  neomageBody: 'ansi:redBright',
+  neomageBackground: 'ansi:black',
   userMessageBackground: 'ansi:blackBright',
   userMessageBackgroundHover: 'ansi:white',
   messageActionsBackground: 'ansi:blackBright',
@@ -654,7 +654,7 @@ const _darkAnsiTheme = ClawTheme(
   fastMode: 'ansi:redBright',
   fastModeShimmer: 'ansi:redBright',
   briefLabelYou: 'ansi:blueBright',
-  briefLabelNeomClaw: 'ansi:redBright',
+  briefLabelNeomage: 'ansi:redBright',
   rainbowRed: 'ansi:red',
   rainbowOrange: 'ansi:redBright',
   rainbowYellow: 'ansi:yellow',
@@ -672,7 +672,7 @@ const _darkAnsiTheme = ClawTheme(
 );
 
 /// Get a theme palette by name.
-ClawTheme getTheme(ThemeName themeName) {
+NeomageTheme getTheme(ThemeName themeName) {
   switch (themeName) {
     case ThemeName.light:
       return _lightTheme;
@@ -896,7 +896,7 @@ int calculateOptimalLeftWidth({
     welcomeMessage.length,
     truncatedCwd.length,
     modelLine.length,
-    20, // Minimum for clawd art
+    20, // Minimum for neomage art
   ].reduce(math.max);
   return math.min(contentWidth + 4, _maxLeftWidth);
 }
@@ -904,7 +904,7 @@ int calculateOptimalLeftWidth({
 /// Format a welcome message based on username.
 String formatWelcomeMessage(String? username) {
   if (username == null || username.length > _maxUsernameLength) {
-    return 'Welcome to Open NeomClaw';
+    return 'Welcome to Open Neomage';
   }
   return 'Welcome back, $username';
 }

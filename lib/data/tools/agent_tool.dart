@@ -1,4 +1,4 @@
-// AgentTool — port of neom_claw/src/tools/AgentTool.
+// AgentTool — port of neomage/src/tools/AgentTool.
 // Spawns sub-agents to handle complex, multi-step tasks autonomously.
 
 import 'dart:async';

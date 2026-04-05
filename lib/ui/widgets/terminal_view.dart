@@ -1,10 +1,13 @@
-// TerminalView — port of neom_claw/src/components/Terminal/.
+// TerminalView — port of neomage/src/components/Terminal/.
 // Terminal output display with ANSI colors, scrollback, copy support.
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 // ─── ANSI color parsing ───
 
@@ -449,9 +452,9 @@ class _TerminalViewState extends State<TerminalView> {
     Clipboard.setData(ClipboardData(text: text));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Copied to clipboard'),
-          duration: Duration(seconds: 1),
+        SnackBar(
+          content: Text(NeomageTranslationConstants.copiedToClipboard.tr),
+          duration: const Duration(seconds: 1),
         ),
       );
     }
@@ -516,7 +519,7 @@ class _TerminalViewState extends State<TerminalView> {
                     color: isDark ? Colors.white : Colors.black87,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Search output...',
+                    hintText: NeomageTranslationConstants.searchOutput.tr,
                     hintStyle: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.white30 : Colors.black26,
@@ -584,7 +587,7 @@ class _TerminalViewState extends State<TerminalView> {
               IconButton(
                 onPressed: _copyAll,
                 icon: const Icon(Icons.copy, size: 14),
-                tooltip: 'Copy all',
+                tooltip: NeomageTranslationConstants.copyAll.tr,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               ),
@@ -593,7 +596,7 @@ class _TerminalViewState extends State<TerminalView> {
               IconButton(
                 onPressed: _scrollToBottom,
                 icon: const Icon(Icons.arrow_downward, size: 14),
-                tooltip: 'Scroll to bottom',
+                tooltip: NeomageTranslationConstants.scrollToBottom.tr,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               ),

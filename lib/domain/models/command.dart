@@ -1,4 +1,4 @@
-// Command and skill types — ported from NeomClaw src/types/command.ts.
+// Command and skill types — ported from Neomage src/types/command.ts.
 
 /// Command result display mode.
 enum CommandResultDisplay { skip, system, user }
@@ -43,7 +43,7 @@ class ResumeEntrypoint {
 }
 
 /// Command availability context.
-enum CommandAvailability { neomClawAi, console, both }
+enum CommandAvailability { neomageAi, console, both }
 
 /// Base command definition with metadata.
 class CommandBase {

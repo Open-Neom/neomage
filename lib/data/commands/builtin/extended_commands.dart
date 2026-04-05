@@ -1,7 +1,7 @@
-// Extended commands — port of remaining NeomClaw commands.
+// Extended commands — port of remaining Neomage commands.
 // All commands not already ported as individual files are collected here.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import '../../tools/tool.dart';
 import '../command.dart';
@@ -463,7 +463,7 @@ class TerminalSetupCommand extends LocalCommand {
     buffer.writeln();
     buffer.writeln('1. Shell Integration');
     buffer.writeln('   Add to your shell profile (~/.zshrc or ~/.bashrc):');
-    buffer.writeln('     export CLAW_TERM=1');
+    buffer.writeln('     export MAGE_TERM=1');
     buffer.writeln();
     buffer.writeln('2. Font');
     buffer.writeln('   Use a Nerd Font for icon support:');
@@ -475,8 +475,8 @@ class TerminalSetupCommand extends LocalCommand {
     buffer.writeln();
     buffer.writeln('4. Environment variables');
     buffer.writeln('   ANTHROPIC_API_KEY — your API key');
-    buffer.writeln('   CLAW_MODEL — default model (optional)');
-    buffer.writeln('   CLAW_MAX_TOKENS — max output tokens (optional)');
+    buffer.writeln('   MAGE_MODEL — default model (optional)');
+    buffer.writeln('   MAGE_MAX_TOKENS — max output tokens (optional)');
     buffer.writeln();
 
     // Detect current terminal
@@ -918,13 +918,13 @@ class AgentsCommand extends LocalCommand {
 // Development
 // ════════════════════════════════════════════════════════════════════════════
 
-/// /init — initialize project configuration (.neomclaw/).
+/// /init — initialize project configuration (.neomage/).
 class InitCommand extends LocalCommand {
   @override
   String get name => 'init';
 
   @override
-  String get description => 'Initialize project configuration in .neomclaw/';
+  String get description => 'Initialize project configuration in .neomage/';
 
   @override
   String? get argumentHint => '[--force]';
@@ -932,17 +932,17 @@ class InitCommand extends LocalCommand {
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final force = args.trim() == '--force';
-    final projectDir = Directory('${context.cwd}/.neomclaw');
+    final projectDir = Directory('${context.cwd}/.neomage');
 
     if (await projectDir.exists() && !force) {
       return const TextCommandResult(
-        'Project already initialized (.neomclaw/ exists).\n'
+        'Project already initialized (.neomage/ exists).\n'
         'Use /init --force to reinitialize.',
       );
     }
 
     try {
-      // Create .neomclaw directory structure
+      // Create .neomage directory structure
       await projectDir.create(recursive: true);
 
       // Create settings.json
@@ -957,10 +957,10 @@ class InitCommand extends LocalCommand {
         );
       }
 
-      // Create NEOMCLAW.md
-      final neomClawFile = File('${context.cwd}/NEOMCLAW.md');
-      if (!await neomClawFile.exists() || force) {
-        await neomClawFile.writeAsString(
+      // Create NEOMAGE.md
+      final neomageFile = File('${context.cwd}/NEOMAGE.md');
+      if (!await neomageFile.exists() || force) {
+        await neomageFile.writeAsString(
           '# Project Instructions\n\n'
           'Add project-specific instructions for the AI assistant here.\n\n'
           '## Build & Test\n\n'
@@ -974,10 +974,10 @@ class InitCommand extends LocalCommand {
 
       final buffer = StringBuffer();
       buffer.writeln('Project initialized:');
-      buffer.writeln('  Created .neomclaw/settings.json');
-      buffer.writeln('  Created NEOMCLAW.md');
+      buffer.writeln('  Created .neomage/settings.json');
+      buffer.writeln('  Created NEOMAGE.md');
       buffer.writeln();
-      buffer.writeln('Edit NEOMCLAW.md to add project-specific instructions.');
+      buffer.writeln('Edit NEOMAGE.md to add project-specific instructions.');
       return TextCommandResult(buffer.toString());
     } catch (e) {
       return TextCommandResult('Initialization failed: $e');
@@ -1023,7 +1023,7 @@ class BugCommand extends LocalCommand {
       buffer.writeln('Bug report prepared. To submit:');
       buffer.writeln('  1. Copy this output');
       buffer.writeln(
-        '  2. Open https://github.com/anthropics/neom-claw/issues/new',
+        '  2. Open https://github.com/anthropics/neomage/issues/new',
       );
       buffer.writeln('  3. Paste and submit');
     } else {
@@ -1066,16 +1066,16 @@ class DoctorCommand extends LocalCommand {
     final gitResult = await _runCommand('git', ['--version']);
     buffer.writeln(_check('Git', gitResult != null, 'Install git'));
 
-    // Check .neomclaw directory
-    final neomClawDir = Directory('${context.cwd}/.neomclaw');
-    final hasNeomClawDir = await neomClawDir.exists();
-    buffer.writeln(_check('.neomclaw/ config', hasNeomClawDir, 'Run /init'));
+    // Check .neomage directory
+    final neomageDir = Directory('${context.cwd}/.neomage');
+    final hasNeomageDir = await neomageDir.exists();
+    buffer.writeln(_check('.neomage/ config', hasNeomageDir, 'Run /init'));
 
-    // Check NEOMCLAW.md
-    final claudeMd = File('${context.cwd}/NEOMCLAW.md');
-    final hasNeomClawMd = await claudeMd.exists();
+    // Check NEOMAGE.md
+    final claudeMd = File('${context.cwd}/NEOMAGE.md');
+    final hasNeomageMd = await claudeMd.exists();
     buffer.writeln(
-      _check('NEOMCLAW.md', hasNeomClawMd, 'Run /init or create manually'),
+      _check('NEOMAGE.md', hasNeomageMd, 'Run /init or create manually'),
     );
 
     // Check ripgrep
@@ -1157,10 +1157,10 @@ class ReleaseNotesCommand extends LocalCommand {
   Future<CommandResult> execute(String args, ToolUseContext context) async {
     final version = getVersion();
     final buffer = StringBuffer();
-    buffer.writeln('Claw v$version');
+    buffer.writeln('Neomage v$version');
     buffer.writeln();
     buffer.writeln('To view the full changelog, visit:');
-    buffer.writeln('  https://github.com/anthropics/neom-claw/releases');
+    buffer.writeln('  https://github.com/anthropics/neomage/releases');
     buffer.writeln();
     buffer.writeln('To check for updates:');
     buffer.writeln('  flutter pub upgrade');

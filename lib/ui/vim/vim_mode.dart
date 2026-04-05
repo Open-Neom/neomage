@@ -1,5 +1,5 @@
-// vim_mode.dart — Vim emulation layer for flutter_claw
-// Port of neom_claw/src/vim/ (~1.5K TS LOC) to pure Dart + minimal Flutter.
+// vim_mode.dart — Vim emulation layer for neomage
+// Port of neomage/src/vim/ (~1.5K TS LOC) to pure Dart + minimal Flutter.
 
 import 'dart:math';
 

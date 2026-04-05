@@ -1,8 +1,9 @@
-// Process utilities — port of neom_claw process management.
+// Process utilities — port of neomage process management.
 // Process spawning, output capture, timeout handling.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'dart:convert';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// Result of a process execution.
 class ProcessOutput {

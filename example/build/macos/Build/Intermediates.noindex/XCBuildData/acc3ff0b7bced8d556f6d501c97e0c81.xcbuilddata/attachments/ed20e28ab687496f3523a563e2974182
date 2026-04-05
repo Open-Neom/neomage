@@ -1,0 +1,4 @@
+
+module file_picker.Swift {
+  header "file_picker-Swift.h"
+}

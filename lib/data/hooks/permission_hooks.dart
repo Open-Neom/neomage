@@ -1,4 +1,4 @@
-// Permission hooks — port of neom_claw/src/hooks/permissions.ts.
+// Permission hooks — port of neomage/src/hooks/permissions.ts.
 // Provides permission scoping, rule evaluation, caching, and specialized
 // checkers for files, tools, git, and network operations.
 

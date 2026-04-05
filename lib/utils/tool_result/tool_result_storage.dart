@@ -1,13 +1,13 @@
 /// Utility for persisting large tool results to disk instead of truncating them.
 ///
-/// Ported from neom_claw/src/utils/toolResultStorage.ts (1040 LOC).
+/// Ported from neomage/src/utils/toolResultStorage.ts (1040 LOC).
 ///
 /// Manages tool result persistence, content replacement budgets, and
 /// per-message aggregate enforcement to keep prompt sizes manageable.
 library;
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:sint/sint.dart';

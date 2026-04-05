@@ -1,5 +1,5 @@
 // /branch command — conversation branching (fork) command.
-// Faithful port of neom_claw/src/commands/branch/branch.ts (296 TS LOC).
+// Faithful port of neomage/src/commands/branch/branch.ts (296 TS LOC).
 //
 // Creates a fork of the current conversation by copying from the transcript
 // file. Preserves all original metadata (timestamps, gitBranch, etc.) while
@@ -7,7 +7,7 @@
 // naming with collision detection (appending " (Branch N)" suffixes).
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:path/path.dart' as p;
@@ -189,7 +189,7 @@ class ForkResult {
 String getProjectDir(String cwd) {
   final home =
       Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
-  return p.join(home, '.neomclaw', 'projects', _sanitizePath(cwd));
+  return p.join(home, '.neomage', 'projects', _sanitizePath(cwd));
 }
 
 /// Sanitize a file path for use as a directory name.
@@ -616,7 +616,7 @@ class BranchCommand extends LocalCommand {
       // Resume into the fork if callback is available.
       final titleInfo = result.title != null ? ' "${result.title}"' : '';
       final resumeHint =
-          '\nTo resume the original: neomclaw -r $originalSessionId';
+          '\nTo resume the original: neomage -r $originalSessionId';
       final successMessage =
           'Branched conversation$titleInfo. '
           'You are now in the branch.$resumeHint';

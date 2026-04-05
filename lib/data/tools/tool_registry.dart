@@ -1,4 +1,4 @@
-// Tool registry — expanded port of NeomClaw's tool registration system.
+// Tool registry — expanded port of Neomage's tool registration system.
 // Manages tool registration, lookup, execution with hooks, categories,
 // stats tracking, and schema access.
 

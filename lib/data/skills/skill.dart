@@ -1,7 +1,7 @@
-// Skills system — port of neom_claw/src/skills.
+// Skills system — port of neomage/src/skills.
 // User-defined prompt-based commands loaded from SKILL.md files.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import '../../domain/models/message.dart';
 import '../commands/command.dart';

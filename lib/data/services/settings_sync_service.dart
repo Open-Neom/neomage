@@ -1,5 +1,5 @@
-// Settings sync service — port of neom_claw/src/services/settingsSync/.
-// Syncs user settings and memory files across NeomClaw environments.
+// Settings sync service — port of neomage/src/services/settingsSync/.
+// Syncs user settings and memory files across Neomage environments.
 //
 // - Interactive CLI: Uploads local settings to remote (incremental, only changed entries)
 // - CCR: Downloads remote settings to local before plugin installation
@@ -8,7 +8,7 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:sint/sint.dart';
 
@@ -34,7 +34,7 @@ class UserSyncContent {
   Map<String, dynamic> toJson() => {'entries': entries};
 }
 
-/// Full response from GET /api/neomclaw/user_settings.
+/// Full response from GET /api/neomage/user_settings.
 class UserSyncData {
   final String userId;
   final int version;
@@ -109,14 +109,14 @@ class SettingsSyncUploadResult {
 
 /// Keys used for sync entries — mirrors the TS SYNC_KEYS constant.
 class SyncKeys {
-  static const userSettings = '~/.neomclaw/settings.json';
-  static const userMemory = '~/.neomclaw/NEOMCLAW.md';
+  static const userSettings = '~/.neomage/settings.json';
+  static const userMemory = '~/.neomage/NEOMAGE.md';
 
   static String projectSettings(String projectId) =>
-      'projects/$projectId/.neomclaw/settings.local.json';
+      'projects/$projectId/.neomage/settings.local.json';
 
   static String projectMemory(String projectId) =>
-      'projects/$projectId/NEOMCLAW.local.md';
+      'projects/$projectId/NEOMAGE.local.md';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -409,7 +409,7 @@ class SettingsSyncController extends SintController {
         (tokens.scopes?.contains('user:inference') ?? false);
   }
 
-  String _getEndpoint() => '${getBaseApiUrl()}/api/neomclaw/user_settings';
+  String _getEndpoint() => '${getBaseApiUrl()}/api/neomage/user_settings';
 
   Map<String, String> _getAuthHeaders() {
     final tokens = getOAuthTokens();

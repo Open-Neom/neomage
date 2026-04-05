@@ -7,9 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../data/api/api_provider.dart';
-import '../../data/auth/auth_service.dart';
-import '../../data/services/ollama_service.dart';
+import 'package:neomage/data/api/api_provider.dart';
+import 'package:neomage/data/auth/auth_service.dart';
+import 'package:neomage/data/services/ollama_service.dart';
+import '../../utils/constants/neomage_translation_constants.dart';
 import '../controllers/chat_controller.dart';
 
 // ─── Controller ──
@@ -123,7 +124,10 @@ class OllamaSetupController extends SintController {
 // ─── Screen ──
 
 class OllamaSetupScreen extends StatelessWidget {
-  const OllamaSetupScreen({super.key});
+  /// When true, renders without Scaffold/AppBar (for embedding as a tab).
+  final bool embedded;
+
+  const OllamaSetupScreen({super.key, this.embedded = false});
 
   @override
   Widget build(BuildContext context) {
@@ -131,9 +135,13 @@ class OllamaSetupScreen extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    if (embedded) {
+      return _OllamaBody(ctrl: ctrl, cs: cs, isDark: isDark);
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Local Models (Ollama)'),
+        title: Text(NeomageTranslationConstants.localModelsOllama.tr),
         actions: [
           Obx(
             () => IconButton(
@@ -145,330 +153,390 @@ class OllamaSetupScreen extends StatelessWidget {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.refresh),
-              tooltip: 'Refresh',
+              tooltip: NeomageTranslationConstants.refresh.tr,
             ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 700),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Status card ──
-                Obx(
-                  () => _StatusCard(
-                    status: ctrl.status.value,
-                    onRetry: ctrl.refresh,
+      body: _OllamaBody(ctrl: ctrl, cs: cs, isDark: isDark),
+    );
+  }
+
+  void _confirmDelete(
+    BuildContext context,
+    OllamaSetupController ctrl,
+    OllamaModel model,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(NeomageTranslationConstants.deleteModel.tr),
+        content: Text(
+          NeomageTranslationConstants.deleteModelConfirm.tr
+              .replaceAll('@model', model.displayName)
+              .replaceAll('@size', model.sizeLabel),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(NeomageTranslationConstants.cancel.tr),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ctrl.deleteModel(model.name);
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: Text(NeomageTranslationConstants.delete.tr),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Ollama body (reusable — used standalone and embedded in settings) ──
+
+class _OllamaBody extends StatelessWidget {
+  final OllamaSetupController ctrl;
+  final ColorScheme cs;
+  final bool isDark;
+
+  const _OllamaBody({
+    required this.ctrl,
+    required this.cs,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Refresh bar (for embedded mode) ──
+              Row(
+                children: [
+                  Text(
+                    NeomageTranslationConstants.localModelsOllama.tr,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
                   ),
+                  const Spacer(),
+                  Obx(
+                    () => IconButton(
+                      onPressed: ctrl.isRefreshing.value ? null : ctrl.refresh,
+                      icon: ctrl.isRefreshing.value
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.refresh, size: 20),
+                      tooltip: NeomageTranslationConstants.refresh.tr,
+                      iconSize: 20,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // ── Status card ──
+              Obx(
+                () => _StatusCard(
+                  status: ctrl.status.value,
+                  onRetry: ctrl.refresh,
                 ),
+              ),
 
-                const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-                // ── Installed models ──
-                Obx(() {
-                  if (ctrl.status.value != OllamaStatus.running) {
-                    return const SizedBox.shrink();
-                  }
+              // ── Installed models ──
+              Obx(() {
+                if (ctrl.status.value != OllamaStatus.running) {
+                  return const SizedBox.shrink();
+                }
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Installed Models',
-                        style: Theme.of(context).textTheme.titleMedium,
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      NeomageTranslationConstants.installedModels.tr,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 8),
+                    ),
+                    const SizedBox(height: 8),
 
-                      if (ctrl.models.isEmpty)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: cs.surfaceContainerHighest.withValues(
-                              alpha: 0.3,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.download_outlined,
-                                size: 40,
-                                color: cs.onSurfaceVariant,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'No models installed yet',
-                                style: TextStyle(color: cs.onSurfaceVariant),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Download a model below to get started',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: cs.onSurfaceVariant.withValues(
-                                    alpha: 0.7,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        ...ctrl.models.map(
-                          (m) => _ModelTile(
-                            model: m,
-                            isSelected: ctrl.selectedModel.value == m.name,
-                            onSelect: () => ctrl.selectedModel.value = m.name,
-                            onDelete: () => _confirmDelete(context, ctrl, m),
-                          ),
+                    if (ctrl.models.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-
-                      const SizedBox(height: 16),
-
-                      // ── Test & Activate buttons ──
-                      if (ctrl.models.isNotEmpty)
-                        Row(
+                        child: Column(
                           children: [
-                            Obx(
-                              () => OutlinedButton.icon(
-                                onPressed:
-                                    ctrl.isTesting.value ||
-                                        ctrl.selectedModel.value == null
-                                    ? null
-                                    : ctrl.testModel,
-                                icon: ctrl.isTesting.value
-                                    ? const SizedBox(
-                                        width: 14,
-                                        height: 14,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.wifi_tethering,
-                                        size: 16,
-                                      ),
-                                label: Text(
-                                  ctrl.isTesting.value
-                                      ? 'Testing...'
-                                      : 'Test Model',
-                                ),
-                              ),
+                            Icon(Icons.download_outlined, size: 40,
+                                color: cs.onSurfaceVariant),
+                            const SizedBox(height: 8),
+                            Text(
+                              NeomageTranslationConstants.noModelsInstalled.tr,
+                              style: TextStyle(color: cs.onSurfaceVariant),
                             ),
-                            const SizedBox(width: 8),
-                            Obx(
-                              () => FilledButton.icon(
-                                onPressed: ctrl.selectedModel.value == null
-                                    ? null
-                                    : () async {
-                                        await ctrl.activateModel();
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                '${ctrl.selectedModel.value} '
-                                                'activated as default model',
-                                              ),
-                                            ),
-                                          );
-                                          Navigator.of(context).pop();
-                                        }
-                                      },
-                                icon: const Icon(Icons.check_circle, size: 16),
-                                label: const Text('Use This Model'),
+                            const SizedBox(height: 4),
+                            Text(
+                              NeomageTranslationConstants.downloadModelBelow.tr,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
                         ),
-
-                      // ── Test result ──
-                      Obx(() {
-                        if (ctrl.testResult.value != null) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.green.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Icon(
-                                    Icons.smart_toy,
-                                    size: 16,
-                                    color: Colors.green,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      ctrl.testResult.value!,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        height: 1.4,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-                        if (ctrl.testError.value != null) {
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: cs.error.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                ctrl.testError.value!,
-                                style: TextStyle(fontSize: 13, color: cs.error),
-                              ),
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }),
-
-                      const SizedBox(height: 32),
-                    ],
-                  );
-                }),
-
-                // ── Download recommended models ──
-                Obx(() {
-                  if (ctrl.status.value != OllamaStatus.running) {
-                    return const SizedBox.shrink();
-                  }
-
-                  final installed = ctrl.models.map((m) => m.name).toSet();
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Download Models',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Recommended models for coding tasks',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: cs.onSurfaceVariant,
+                      )
+                    else
+                      ...ctrl.models.map(
+                        (m) => _ModelTile(
+                          model: m,
+                          isSelected: ctrl.selectedModel.value == m.name,
+                          onSelect: () => ctrl.selectedModel.value = m.name,
+                          onDelete: () => _confirmDelete(context, ctrl, m),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      ...ollamaRecommendedModels.map((rec) {
-                        final isInstalled = installed.any(
-                          (n) => n.startsWith(rec.name.split(':').first),
-                        );
 
-                        return ListTile(
-                          dense: true,
-                          leading: Icon(
-                            isInstalled
-                                ? Icons.check_circle
-                                : Icons.download_outlined,
-                            color: isInstalled ? Colors.green : cs.primary,
-                            size: 20,
-                          ),
-                          title: Text(
-                            rec.name,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontFamily: 'monospace',
-                              fontWeight: FontWeight.w500,
+                    const SizedBox(height: 16),
+
+                    // ── Test & Activate buttons ──
+                    if (ctrl.models.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          Obx(
+                            () => OutlinedButton.icon(
+                              onPressed: ctrl.isTesting.value ||
+                                      ctrl.selectedModel.value == null
+                                  ? null
+                                  : ctrl.testModel,
+                              icon: ctrl.isTesting.value
+                                  ? const SizedBox(
+                                      width: 14, height: 14,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.wifi_tethering, size: 16),
+                              label: Text(
+                                ctrl.isTesting.value
+                                    ? NeomageTranslationConstants.testing.tr
+                                    : NeomageTranslationConstants.testModel.tr,
+                              ),
                             ),
                           ),
-                          subtitle: Text(
-                            '${rec.desc} · ${rec.size}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: cs.onSurfaceVariant,
+                          Obx(
+                            () => FilledButton.icon(
+                              onPressed: ctrl.selectedModel.value == null
+                                  ? null
+                                  : () async {
+                                      await ctrl.activateModel();
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '${ctrl.selectedModel.value} ${NeomageTranslationConstants.activatedAsDefault.tr}',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
+                              icon: const Icon(Icons.check_circle, size: 16),
+                              label: Text(NeomageTranslationConstants.useThisModel.tr),
                             ),
                           ),
-                          trailing: isInstalled
-                              ? Text(
-                                  'Installed',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.green.shade400,
-                                  ),
-                                )
-                              : Obx(
-                                  () =>
-                                      ctrl.isPulling.value &&
-                                          ctrl.pullModelName.value == rec.name
-                                      ? SizedBox(
-                                          width: 80,
-                                          child: Column(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              LinearProgressIndicator(
-                                                value: ctrl
-                                                    .pullProgress
-                                                    .value
-                                                    ?.progress,
-                                              ),
-                                              const SizedBox(height: 2),
-                                              Text(
-                                                ctrl
-                                                        .pullProgress
-                                                        .value
-                                                        ?.status ??
-                                                    '',
-                                                style: TextStyle(
-                                                  fontSize: 9,
-                                                  color: cs.onSurfaceVariant,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
-                                          ),
-                                        )
-                                      : TextButton(
-                                          onPressed: ctrl.isPulling.value
-                                              ? null
-                                              : () => ctrl.pullModel(rec.name),
-                                          child: const Text(
-                                            'Download',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                        ),
-                                ),
-                        );
-                      }),
-
-                      const SizedBox(height: 12),
-
-                      // Custom model pull
-                      _CustomPullField(
-                        onPull: (name) => ctrl.pullModel(name),
-                        isPulling: ctrl.isPulling,
+                        ],
                       ),
-                    ],
-                  );
-                }),
-              ],
-            ),
+
+                    // ── Test result ──
+                    Obx(() {
+                      if (ctrl.testResult.value != null) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.green.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.smart_toy, size: 16,
+                                    color: Colors.green),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    ctrl.testResult.value!,
+                                    style: const TextStyle(
+                                        fontSize: 13, height: 1.4),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+                      if (ctrl.testError.value != null) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: cs.error.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              ctrl.testError.value!,
+                              style: TextStyle(fontSize: 13, color: cs.error),
+                            ),
+                          ),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    }),
+
+                    const SizedBox(height: 32),
+                  ],
+                );
+              }),
+
+              // ── Download recommended models ──
+              Obx(() {
+                if (ctrl.status.value != OllamaStatus.running) {
+                  return const SizedBox.shrink();
+                }
+
+                final installed = ctrl.models.map((m) => m.name).toSet();
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      NeomageTranslationConstants.downloadModels.tr,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      NeomageTranslationConstants.recommendedModels.tr,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ...ollamaRecommendedModels.map((rec) {
+                      final isInstalled = installed.any(
+                        (n) => n.startsWith(rec.name.split(':').first),
+                      );
+
+                      return ListTile(
+                        dense: true,
+                        leading: Icon(
+                          isInstalled
+                              ? Icons.check_circle
+                              : Icons.download_outlined,
+                          color: isInstalled ? Colors.green : cs.primary,
+                          size: 20,
+                        ),
+                        title: Text(
+                          rec.name,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${rec.desc} · ${rec.size}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: cs.onSurfaceVariant,
+                          ),
+                        ),
+                        trailing: isInstalled
+                            ? Text(
+                                NeomageTranslationConstants.installed.tr,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.green.shade400,
+                                ),
+                              )
+                            : Obx(
+                                () => ctrl.isPulling.value &&
+                                        ctrl.pullModelName.value == rec.name
+                                    ? SizedBox(
+                                        width: 80,
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            LinearProgressIndicator(
+                                              value: ctrl.pullProgress.value
+                                                  ?.progress,
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              ctrl.pullProgress.value?.status ??
+                                                  '',
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                color: cs.onSurfaceVariant,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    : TextButton(
+                                        onPressed: ctrl.isPulling.value
+                                            ? null
+                                            : () => ctrl.pullModel(rec.name),
+                                        child: Text(
+                                          NeomageTranslationConstants
+                                              .download.tr,
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                              ),
+                      );
+                    }),
+
+                    const SizedBox(height: 12),
+
+                    // Custom model pull
+                    _CustomPullField(
+                      onPull: (name) => ctrl.pullModel(name),
+                      isPulling: ctrl.isPulling,
+                    ),
+                  ],
+                );
+              }),
+            ],
           ),
         ),
       ),
@@ -483,15 +551,16 @@ class OllamaSetupScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Model'),
+        title: Text(NeomageTranslationConstants.deleteModel.tr),
         content: Text(
-          'Delete ${model.displayName} (${model.sizeLabel})?\n\n'
-          'You can re-download it later.',
+          NeomageTranslationConstants.deleteModelConfirm.tr
+              .replaceAll('@model', model.displayName)
+              .replaceAll('@size', model.sizeLabel),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(NeomageTranslationConstants.cancel.tr),
           ),
           FilledButton(
             onPressed: () {
@@ -501,7 +570,7 @@ class OllamaSetupScreen extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(ctx).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(NeomageTranslationConstants.delete.tr),
           ),
         ],
       ),
@@ -760,7 +829,7 @@ class _CustomPullFieldState extends State<_CustomPullField> {
             controller: _ctrl,
             decoration: InputDecoration(
               isDense: true,
-              hintText: 'Custom model name (e.g. phi3:mini)',
+              hintText: NeomageTranslationConstants.customModelHint.tr,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -778,7 +847,7 @@ class _CustomPullFieldState extends State<_CustomPullField> {
             onPressed: widget.isPulling.value || _ctrl.text.trim().isEmpty
                 ? null
                 : () => widget.onPull(_ctrl.text.trim()),
-            child: const Text('Pull'),
+            child: Text(NeomageTranslationConstants.pull.tr),
           ),
         ),
       ],

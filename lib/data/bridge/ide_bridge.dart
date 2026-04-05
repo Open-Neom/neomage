@@ -1,10 +1,10 @@
-// IDE bridge — port of neom_claw/src/bridge/.
+// IDE bridge — port of neomage/src/bridge/.
 // Protocol for VS Code, JetBrains, and other IDE integrations.
 // Communication via WebSocket or stdin/stdout with JSON-RPC-like messages.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:uuid/uuid.dart';
 
@@ -48,9 +48,9 @@ enum IdeType {
 // Bridge message types
 // ---------------------------------------------------------------------------
 
-/// Bridge message types (IDE <-> NeomClaw).
+/// Bridge message types (IDE <-> Neomage).
 enum BridgeMessageType {
-  // IDE -> NeomClaw: requests
+  // IDE -> Neomage: requests
   openFile,
   showDiff,
   applyEdit,
@@ -60,7 +60,7 @@ enum BridgeMessageType {
   getDiagnostics,
   navigate,
 
-  // NeomClaw -> IDE: notifications/responses
+  // Neomage -> IDE: notifications/responses
   fileOpened,
   editApplied,
   selectionResponse,
@@ -620,7 +620,7 @@ class IdeBridge {
       type: BridgeMessageType.handshake,
       payload: {
         'protocolVersion': '1.0',
-        'clientType': 'neom-claw',
+        'clientType': 'neomage',
         'ideType': ideType.name,
       },
     );
@@ -912,7 +912,7 @@ class IdeBridgeServer {
 // ---------------------------------------------------------------------------
 
 /// A bridge connection over stdin/stdout, used for IDE extensions that
-/// launch NeomClaw as a subprocess.
+/// launch Neomage as a subprocess.
 class StdioBridge {
   final IdeBridge bridge;
   final Stream<List<int>> _stdin;
@@ -973,13 +973,13 @@ class StdioBridge {
 // IDE manifest generation
 // ---------------------------------------------------------------------------
 
-/// Generate a VS Code extension manifest (package.json) for the NeomClaw
+/// Generate a VS Code extension manifest (package.json) for the Neomage
 /// bridge extension.
 Map<String, dynamic> generateVscodeManifest({
-  String name = 'neom-claw-bridge',
-  String displayName = 'NeomClaw Bridge',
+  String name = 'neomage-bridge',
+  String displayName = 'Neomage Bridge',
   String version = '1.0.0',
-  String description = 'Bridge extension connecting VS Code to NeomClaw',
+  String description = 'Bridge extension connecting VS Code to Neomage',
   int port = 19836,
 }) {
   return {
@@ -994,23 +994,23 @@ Map<String, dynamic> generateVscodeManifest({
     'main': './out/extension.js',
     'contributes': {
       'commands': [
-        {'command': 'neom-claw.connect', 'title': 'NeomClaw: Connect'},
-        {'command': 'neom-claw.disconnect', 'title': 'NeomClaw: Disconnect'},
-        {'command': 'neom-claw.showDiff', 'title': 'NeomClaw: Show Diff'},
+        {'command': 'neomage.connect', 'title': 'Neomage: Connect'},
+        {'command': 'neomage.disconnect', 'title': 'Neomage: Disconnect'},
+        {'command': 'neomage.showDiff', 'title': 'Neomage: Show Diff'},
         {
-          'command': 'neom-claw.sendSelection',
-          'title': 'NeomClaw: Send Selection',
+          'command': 'neomage.sendSelection',
+          'title': 'Neomage: Send Selection',
         },
       ],
       'configuration': {
-        'title': 'NeomClaw Bridge',
+        'title': 'Neomage Bridge',
         'properties': {
-          'neomClawCode.port': {
+          'neomageCode.port': {
             'type': 'number',
             'default': port,
-            'description': 'Port for the NeomClaw bridge server',
+            'description': 'Port for the Neomage bridge server',
           },
-          'neomClawCode.autoConnect': {
+          'neomageCode.autoConnect': {
             'type': 'boolean',
             'default': true,
             'description': 'Automatically connect on startup',
@@ -1020,9 +1020,9 @@ Map<String, dynamic> generateVscodeManifest({
       'menus': {
         'editor/context': [
           {
-            'command': 'neom-claw.sendSelection',
+            'command': 'neomage.sendSelection',
             'when': 'editorHasSelection',
-            'group': 'neom-claw',
+            'group': 'neomage',
           },
         ],
       },
@@ -1043,10 +1043,10 @@ Map<String, dynamic> generateVscodeManifest({
 
 /// Generate a JetBrains plugin descriptor (plugin.xml content as a map).
 Map<String, dynamic> generateJetbrainsConfig({
-  String id = 'com.anthropic.neom-claw-bridge',
-  String name = 'NeomClaw Bridge',
+  String id = 'com.neomage-bridge',
+  String name = 'Neomage Bridge',
   String version = '1.0.0',
-  String description = 'Bridge plugin connecting JetBrains IDEs to NeomClaw',
+  String description = 'Bridge plugin connecting JetBrains IDEs to Neomage',
   int port = 19836,
 }) {
   return {
@@ -1057,7 +1057,7 @@ Map<String, dynamic> generateJetbrainsConfig({
     'vendor': {
       'name': 'Anthropic',
       'url': 'https://anthropic.com',
-      'email': 'support@anthropic.com',
+      'email': 'support@neomage.com',
     },
     'ideaVersion': {'sinceBuild': '231.0', 'untilBuild': '243.*'},
     'depends': ['com.intellij.modules.platform', 'com.intellij.modules.lang'],
@@ -1065,35 +1065,35 @@ Map<String, dynamic> generateJetbrainsConfig({
       'defaultExtensionNs': 'com.intellij',
       'applicationService': {
         'serviceImplementation':
-            'com.anthropic.claudecode.bridge.BridgeService',
+            'com.neomage.bridge.BridgeService',
       },
       'postStartupActivity': {
         'implementation':
-            'com.anthropic.claudecode.bridge.BridgeStartupActivity',
+            'com.neomage.bridge.BridgeStartupActivity',
       },
-      'notificationGroup': {'id': 'NeomClaw', 'displayType': 'BALLOON'},
+      'notificationGroup': {'id': 'Neomage', 'displayType': 'BALLOON'},
     },
     'actions': {
       'group': {
-        'id': 'NeomClawCode.Menu',
-        'text': 'NeomClaw',
+        'id': 'NeomageCode.Menu',
+        'text': 'Neomage',
         'popup': true,
         'addToGroup': {'groupId': 'ToolsMenu', 'anchor': 'last'},
         'actions': [
           {
-            'id': 'NeomClawCode.Connect',
-            'text': 'Connect to NeomClaw',
-            'description': 'Establish connection to NeomClaw bridge',
+            'id': 'NeomageCode.Connect',
+            'text': 'Connect to Neomage',
+            'description': 'Establish connection to Neomage bridge',
           },
           {
-            'id': 'NeomClawCode.Disconnect',
+            'id': 'NeomageCode.Disconnect',
             'text': 'Disconnect',
-            'description': 'Disconnect from NeomClaw bridge',
+            'description': 'Disconnect from Neomage bridge',
           },
           {
-            'id': 'NeomClawCode.SendSelection',
-            'text': 'Send Selection to NeomClaw',
-            'description': 'Send the current editor selection to NeomClaw',
+            'id': 'NeomageCode.SendSelection',
+            'text': 'Send Selection to Neomage',
+            'description': 'Send the current editor selection to Neomage',
           },
         ],
       },

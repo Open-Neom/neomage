@@ -1,12 +1,12 @@
-// SDK message adapter — ported from openclaude src/remote/sdkMessageAdapter.ts.
+// SDK message adapter — ported from neomagent src/remote/sdkMessageAdapter.ts.
 //
 // Converts SDK-format messages received from the CCR WebSocket into the
 // internal [Message] types used by the Flutter UI for rendering.
 
 import 'dart:developer' as developer;
 
-import 'package:neom_claw/data/remote/sessions_websocket.dart';
-import 'package:neom_claw/domain/models/message.dart';
+import 'package:neomage/data/remote/sessions_websocket.dart';
+import 'package:neomage/domain/models/message.dart';
 
 // ---------------------------------------------------------------------------
 // Converted message result

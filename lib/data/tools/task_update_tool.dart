@@ -1,4 +1,4 @@
-// TaskUpdateTool — port of neom_claw/src/tools/TaskUpdateTool/.
+// TaskUpdateTool — port of neomage/src/tools/TaskUpdateTool/.
 // Update task status, subject, description, ownership, dependencies,
 // and metadata in the task list, with hook execution, teammate mailbox
 // notifications, and verification nudges.

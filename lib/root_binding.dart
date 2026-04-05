@@ -1,59 +1,59 @@
 import 'package:sint/sint.dart';
 
 // -- API layer --
-import 'data/api/api_provider.dart';
-import 'data/api/anthropic_client.dart';
+import 'package:neomage/data/api/api_provider.dart';
+import 'package:neomage/data/api/anthropic_client.dart';
 
 // -- Domain --
 
 // -- Tools --
-import 'data/tools/tool_registry.dart';
+import 'package:neomage/data/tools/tool_registry.dart';
 
 // -- Commands --
-import 'data/commands/command_registry.dart';
-
-// -- Engine --
-import 'data/engine/conversation_engine.dart';
+import 'package:neomage/data/commands/command_registry.dart';
 
 // -- Session --
-import 'data/session/session_history.dart';
-import 'data/services/history_service.dart';
+import 'package:neomage/data/session/session_history.dart';
+import 'package:neomage/data/services/history_service.dart';
 
 // -- Permissions / Hooks --
-import 'data/hooks/hook_executor.dart';
+import 'package:neomage/data/hooks/hook_executor.dart';
 
 // -- MCP --
-import 'data/mcp/mcp_client.dart';
+import 'package:neomage/data/mcp/mcp_client.dart';
+
+// -- Auth --
+import 'package:neomage/data/auth/auth_service.dart';
 
 // -- Services --
-import 'data/services/git_service.dart';
-import 'data/services/project_service.dart';
-import 'data/services/search_service.dart';
-import 'data/services/diff_service.dart';
-import 'data/services/clipboard_service.dart';
-import 'data/services/voice_service.dart';
-import 'utils/telemetry/telemetry_service.dart';
-import 'data/services/notification_service_full.dart';
-import 'data/services/autocomplete_service.dart';
-import 'data/services/config_service.dart';
-import 'data/services/remote_settings_service.dart';
-import 'data/services/memory_extraction_service.dart';
-import 'data/services/task_service.dart';
-import 'data/bootstrap/bootstrap_service.dart';
-import 'data/services/rate_limit_service.dart';
+import 'package:neomage/data/services/git_service.dart';
+import 'package:neomage/data/services/project_service.dart';
+import 'package:neomage/data/services/search_service.dart';
+import 'package:neomage/data/services/diff_service.dart';
+import 'package:neomage/data/services/clipboard_service.dart';
+import 'package:neomage/data/services/voice_service.dart';
+import 'package:neomage/utils/telemetry/telemetry_service.dart';
+import 'package:neomage/data/services/notification_service_full.dart';
+import 'package:neomage/data/services/autocomplete_service.dart';
+import 'package:neomage/data/services/config_service.dart';
+import 'package:neomage/data/services/remote_settings_service.dart';
+import 'package:neomage/data/services/memory_extraction_service.dart';
+import 'package:neomage/data/services/task_service.dart';
+import 'package:neomage/data/bootstrap/bootstrap_service.dart';
+import 'package:neomage/data/services/rate_limit_service.dart';
 
 // -- State --
-import 'ui/theme/claw_theme_full.dart';
-import 'state/app_state.dart';
-import 'utils/auth/feature_gates.dart';
+import 'ui/theme/neomage_theme_full.dart';
+import 'package:neomage/state/app_state.dart';
+import 'package:neomage/utils/auth/feature_gates.dart';
 
 // -- UI --
 import 'ui/controllers/chat_controller.dart';
 import 'ui/buddy/buddy_widget.dart';
 
 // -- Platform --
-import 'data/platform/native_bridge.dart';
-import 'utils/constants/system.dart';
+import 'package:neomage/data/platform/native_bridge.dart';
+import 'package:neomage/utils/constants/system.dart';
 
 /// Root binding — registers all dependencies on app start.
 /// Follows Open Neom pattern: Binding + List of Bind.
@@ -65,6 +65,11 @@ import 'utils/constants/system.dart';
 class RootBinding extends Binding {
   @override
   List<Bind> dependencies() => [
+    // ---------------------------------------------------------------
+    // Auth — must be available before API layer and UI controllers
+    // ---------------------------------------------------------------
+    Bind.put(AuthService(), permanent: true),
+
     // ---------------------------------------------------------------
     // API layer
     // ---------------------------------------------------------------
@@ -84,20 +89,6 @@ class RootBinding extends Binding {
     // Commands
     // ---------------------------------------------------------------
     Bind.lazyPut<CommandRegistry>(() => CommandRegistry(), fenix: true),
-
-    // ---------------------------------------------------------------
-    // Engine
-    // ---------------------------------------------------------------
-    Bind.lazyPut<ConversationEngine>(
-      () => ConversationEngine(
-        provider: Sint.find<ApiProvider>(),
-        toolRegistry: Sint.find<ToolRegistry>(),
-        permissionChecker: (tool, input, context) async =>
-            PermissionDecision.allow,
-        config: ConversationConfig(model: 'claude-sonnet-4-20250514'),
-      ),
-      fenix: true,
-    ),
 
     // ---------------------------------------------------------------
     // Session

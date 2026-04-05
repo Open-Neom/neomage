@@ -1,16 +1,20 @@
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'tool.dart';
 
-/// Find files by pattern — port of neom_claw/src/tools/GlobTool.
+/// Find files by pattern — port of neomage/src/tools/GlobTool.
 class GlobTool extends Tool with ReadOnlyToolMixin {
   @override
   String get name => 'Glob';
 
   @override
   String get description =>
-      'Finds files matching a glob pattern. '
-      'Returns matching file paths sorted by modification time.';
+      'Fast file pattern matching tool that works with any codebase size.\n\n'
+      '- Supports glob patterns like "**/*.js" or "src/**/*.ts".\n'
+      '- Returns matching file paths sorted by modification time.\n'
+      '- Use this tool when you need to find files by name patterns.\n'
+      '- When doing an open-ended search that may require multiple rounds of '
+      'globbing and grepping, use the Agent tool instead.';
 
   @override
   Map<String, dynamic> get inputSchema => {

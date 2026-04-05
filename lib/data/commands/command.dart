@@ -1,4 +1,4 @@
-// Command system — port of neom_claw/src/commands.ts + src/types/command.ts.
+// Command system — port of neomage/src/commands.ts + src/types/command.ts.
 // Three command types: prompt (LLM-executed), local (sync), local-ui (Flutter).
 
 import '../../domain/models/message.dart';

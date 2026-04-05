@@ -1,4 +1,4 @@
-// Diff visualization widget — port of neom_claw StructuredDiff + utils/diff.
+// Diff visualization widget — port of neomage StructuredDiff + utils/diff.
 // Renders unified diffs with line numbers, color-coded additions/removals.
 
 import 'package:flutter/material.dart';

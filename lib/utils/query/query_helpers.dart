@@ -1,9 +1,10 @@
-// Query helpers — port of neom_claw queryHelpers.ts + queryContext.ts +
+// Query helpers — port of neomage queryHelpers.ts + queryContext.ts +
 // queryProfiler.ts + readEditContext.ts.
 // Query building, context fetching, profiling, and file context extraction.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'dart:convert';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -620,7 +621,7 @@ Future<CacheSafeParams> buildSideQuestionFallbackParams({
 
 /// Whether query profiling is enabled.
 final bool _queryProfilerEnabled = _isEnvTruthy(
-  Platform.environment['NEOMCLAW_PROFILE_QUERY'],
+  Platform.environment['MAGE_PROFILE_QUERY'],
 );
 
 /// Track memory snapshots separately.
@@ -774,7 +775,7 @@ String _getPhaseSummary() {
 /// Get the full profiling report.
 String getQueryProfileReport() {
   if (!_queryProfilerEnabled) {
-    return 'Query profiling not enabled (set NEOMCLAW_PROFILE_QUERY=1)';
+    return 'Query profiling not enabled (set MAGE_PROFILE_QUERY=1)';
   }
 
   if (_checkpointTimes.isEmpty) {

@@ -1,14 +1,14 @@
-name: neom_claw
+name: neomage
 description: >-
-  Multi-provider AI coding assistant for Flutter. Supports Gemini, OpenAI, Anthropic,
-  DeepSeek, Qwen and Ollama with streaming, tool execution, and MCP client.
+  Multi-provider AI agent engine for Flutter. API clients for Gemini, OpenAI,
+  Anthropic, DeepSeek, Qwen and Ollama with tool execution, skills, and MCP.
 version: 1.0.0
-homepage: https://github.com/Open-Neom/neom_claw
-repository: https://github.com/Open-Neom/neom_claw
-issue_tracker: https://github.com/Open-Neom/neom_claw/issues
+homepage: https://github.com/Open-Neom/neomage
+repository: https://github.com/Open-Neom/neomage
+issue_tracker: https://github.com/Open-Neom/neomage/issues
 topics:
   - ai
-  - coding-assistant
+  - agents
   - ollama
   - gemini
   - flutter
@@ -19,12 +19,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
 
   # Sint framework (S.I.N.T. — State, Injection, Navigation, Translation)
   sint: ^1.3.0
-  # Circuit Breaker, Rate Limiter & Logger
   sint_sentinel: ^1.1.0
+  neom_cli: ^1.0.0
+  neom_docs: ^1.0.0
 
   # HTTP + Streaming
   http: ^1.4.0
@@ -32,45 +32,76 @@ dependencies:
 
   # Storage
   shared_preferences: ^2.5.0
-  flutter_secure_storage: ^10.0.0
   path_provider: ^2.1.0
 
   # UI
   flutter_markdown_plus: ^1.0.1
   google_fonts: ^8.0.2
+  url_launcher: ^6.3.0
+  file_picker: ^10.3.10
+  image_picker: ^1.1.0
 
+  # Persistence
+  hive_flutter: ^1.1.0
 
   # Utils
   characters: ^1.4.0
   path: ^1.9.0
   uuid: ^4.5.0
-  url_launcher: ^6.3.0
-  file_picker: ^10.3.10
-  image_picker: ^1.1.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  flutter_launcher_icons: ^0.14.3
-
-flutter_launcher_icons:
-  image_path: "assets/appIcon.png"
-  android: true
-  ios: true
-  macos:
-    generate: true
-    image_path: "assets/appIcon.png"
-  web:
-    generate: true
-    image_path: "assets/appIcon.png"
-  windows:
-    generate: true
-    image_path: "assets/appIcon.png"
 
 flutter:
   uses-material-design: true
   assets:
-    - assets/appIcon.png
-    - assets/appIcon_noBackground.png
-    - assets/logo_project.png
+    # App images
+    - assets/neomage_icon.png
+    - assets/neomage_logo.png
+    # Skills index
+    - assets/skills/skills_index.json
+    # Personality modules
+    - assets/personality/
+    # Skills by category
+    - assets/skills/chain_of_thought/
+    - assets/skills/metacognition/
+    - assets/skills/planning/
+    - assets/skills/research/
+    - assets/skills/distillation/
+    - assets/skills/agency/
+    - assets/skills/memory/
+    - assets/skills/adaptability/
+    - assets/skills/coherence/
+    - assets/skills/introspection/
+    - assets/skills/consolidation/
+    - assets/skills/personality/
+    - assets/skills/cognitive_pipeline/
+    - assets/skills/agents/
+    - assets/skills/ai_ml/
+    - assets/skills/api_design/
+    - assets/skills/architecture/
+    - assets/skills/backend/
+    - assets/skills/business/
+    - assets/skills/code_quality/
+    - assets/skills/content_writing/
+    - assets/skills/context/
+    - assets/skills/data_storage/
+    - assets/skills/debugging/
+    - assets/skills/design_ui/
+    - assets/skills/documentation/
+    - assets/skills/documents/
+    - assets/skills/evaluation/
+    - assets/skills/flutter/
+    - assets/skills/frontend/
+    - assets/skills/git_workflow/
+    - assets/skills/internationalization/
+    - assets/skills/languages/
+    - assets/skills/performance/
+    - assets/skills/product/
+    - assets/skills/prompting/
+    - assets/skills/security/
+    - assets/skills/testing/
+    - assets/skills/tools/
+    - assets/skills/workflow/

@@ -1,9 +1,9 @@
-// AutocompleteService — port of neom_claw/src/services/PromptSuggestion/.
+// AutocompleteService — port of neomage/src/services/PromptSuggestion/.
 // Provides intelligent prompt suggestions, file completions, command completions,
 // and contextual auto-complete for the chat input.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 // ─── Types ───

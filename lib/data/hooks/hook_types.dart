@@ -1,4 +1,4 @@
-// Hook type definitions — port of neom_claw/src/hooks/types.ts.
+// Hook type definitions — port of neomage/src/hooks/types.ts.
 // Defines all hook types, contexts, results, and registration structures
 // used throughout the hook system.
 

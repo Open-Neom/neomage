@@ -3,6 +3,9 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 // ---------------------------------------------------------------------------
 // Enums & data models
@@ -359,7 +362,7 @@ class _LogPanelState extends State<LogPanel> {
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Logs copied to clipboard')));
+      ).showSnackBar(SnackBar(content: Text(NeomageTranslationConstants.logsCopied.tr)));
     }
   }
 

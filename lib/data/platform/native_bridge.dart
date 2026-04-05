@@ -1,10 +1,10 @@
-// Native bridge — port of neom_claw/src/native-ts/.
+// Native bridge — port of neomage/src/native-ts/.
 // Platform-specific native bindings: file dialogs, clipboard, notifications,
 // hotkeys, and system info.  Provides a concrete DesktopNativeBridge for
 // macOS/Linux/Windows and a stub WebNativeBridge.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ── Enums ──────────────────────────────────────────────────────────────────
 

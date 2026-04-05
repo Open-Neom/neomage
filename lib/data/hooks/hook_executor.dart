@@ -1,4 +1,4 @@
-// Hook execution engine — port of neom_claw/src/hooks/executor.ts.
+// Hook execution engine — port of neomage/src/hooks/executor.ts.
 // Manages hook registration, chain execution, built-in hooks,
 // execution history, and statistics.
 

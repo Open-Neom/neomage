@@ -1,18 +1,21 @@
 // Design system — reusable widgets, tokens, and theme utilities.
-// Port of neom_claw/src/components/ design tokens and shared components.
+// Port of neomage/src/components/ design tokens and shared components.
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 // ────────────────────────────────────────────────────────────────────────────
 // COLOR PALETTE
 // ────────────────────────────────────────────────────────────────────────────
 
-/// Full color palette for the Claw design system (dark and light themes).
-class ClawColors {
-  ClawColors._();
+/// Full color palette for the Neomage design system (dark and light themes).
+class NeomageColors {
+  NeomageColors._();
 
   // ── Brand ──
   static const amber = Color(0xFFD97706);
@@ -75,7 +78,7 @@ class ClawColors {
   static const codeRed = Color(0xFFF85149);
 
   // ── Agent / model indicators ──
-  static const agentNeomClaw = Color(0xFFD97706);
+  static const agentNeomage = Color(0xFFD97706);
   static const agentSonnet = Color(0xFF58A6FF);
   static const agentHaiku = Color(0xFF7EE787);
   static const agentOpus = Color(0xFFD2A8FF);
@@ -86,8 +89,8 @@ class ClawColors {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Text style definitions.
-class ClawTypography {
-  ClawTypography._();
+class NeomageTypography {
+  NeomageTypography._();
 
   static const _monoFamily = 'JetBrains Mono';
   static const _sansFamily = 'Inter';
@@ -196,8 +199,8 @@ class ClawTypography {
 // SPACING
 // ────────────────────────────────────────────────────────────────────────────
 
-class ClawSpacing {
-  ClawSpacing._();
+class NeomageSpacing {
+  NeomageSpacing._();
 
   static const double xxs = 2;
   static const double xs = 4;
@@ -228,8 +231,8 @@ class ClawSpacing {
 // BORDER RADIUS
 // ────────────────────────────────────────────────────────────────────────────
 
-class ClawRadius {
-  ClawRadius._();
+class NeomageRadius {
+  NeomageRadius._();
 
   static const double xs = 4;
   static const double sm = 6;
@@ -250,8 +253,8 @@ class ClawRadius {
 // SHADOWS
 // ────────────────────────────────────────────────────────────────────────────
 
-class ClawShadows {
-  ClawShadows._();
+class NeomageShadows {
+  NeomageShadows._();
 
   static const sm = [
     BoxShadow(color: Color(0x1A000000), blurRadius: 3, offset: Offset(0, 1)),
@@ -277,110 +280,110 @@ class ClawShadows {
 // THEME BUILDER
 // ────────────────────────────────────────────────────────────────────────────
 
-/// Builds ThemeData for light and dark modes using Claw design tokens.
-class ClawTheme {
-  ClawTheme._();
+/// Builds ThemeData for light and dark modes using Neomage design tokens.
+class NeomageTheme {
+  NeomageTheme._();
 
   static ThemeData light() {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: ClawColors.amber,
+      seedColor: NeomageColors.amber,
       brightness: Brightness.light,
-      surface: ClawColors.lightSurface,
-      onSurface: ClawColors.lightTextPrimary,
-      error: ClawColors.error,
+      surface: NeomageColors.lightSurface,
+      onSurface: NeomageColors.lightTextPrimary,
+      error: NeomageColors.error,
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: ClawColors.lightBg,
+      scaffoldBackgroundColor: NeomageColors.lightBg,
       appBarTheme: const AppBarTheme(
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 1,
-        backgroundColor: ClawColors.lightSurface,
-        foregroundColor: ClawColors.lightTextPrimary,
+        backgroundColor: NeomageColors.lightSurface,
+        foregroundColor: NeomageColors.lightTextPrimary,
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: ClawColors.lightCard,
+        color: NeomageColors.lightCard,
         shape: RoundedRectangleBorder(
-          borderRadius: ClawRadius.borderLg,
-          side: const BorderSide(color: ClawColors.lightBorder, width: 0.5),
+          borderRadius: NeomageRadius.borderLg,
+          side: const BorderSide(color: NeomageColors.lightBorder, width: 0.5),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: ClawColors.lightElevated,
-        border: OutlineInputBorder(borderRadius: ClawRadius.borderMd),
+        fillColor: NeomageColors.lightElevated,
+        border: OutlineInputBorder(borderRadius: NeomageRadius.borderMd),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 10,
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: ClawColors.lightBorder,
+        color: NeomageColors.lightBorder,
         thickness: 0.5,
       ),
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(
-          color: ClawColors.lightTextPrimary,
-          borderRadius: ClawRadius.borderSm,
+          color: NeomageColors.lightTextPrimary,
+          borderRadius: NeomageRadius.borderSm,
         ),
-        textStyle: ClawTypography.caption.copyWith(color: ClawColors.lightBg),
+        textStyle: NeomageTypography.caption.copyWith(color: NeomageColors.lightBg),
       ),
     );
   }
 
   static ThemeData dark() {
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: ClawColors.amber,
+      seedColor: NeomageColors.amber,
       brightness: Brightness.dark,
-      surface: ClawColors.darkSurface,
-      onSurface: ClawColors.darkTextPrimary,
-      error: ClawColors.error,
+      surface: NeomageColors.darkSurface,
+      onSurface: NeomageColors.darkTextPrimary,
+      error: NeomageColors.error,
     );
 
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: ClawColors.darkBg,
+      scaffoldBackgroundColor: NeomageColors.darkBg,
       appBarTheme: const AppBarTheme(
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 1,
-        backgroundColor: ClawColors.darkSurface,
-        foregroundColor: ClawColors.darkTextPrimary,
+        backgroundColor: NeomageColors.darkSurface,
+        foregroundColor: NeomageColors.darkTextPrimary,
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: ClawColors.darkCard,
+        color: NeomageColors.darkCard,
         shape: RoundedRectangleBorder(
-          borderRadius: ClawRadius.borderLg,
-          side: const BorderSide(color: ClawColors.darkBorder, width: 0.5),
+          borderRadius: NeomageRadius.borderLg,
+          side: const BorderSide(color: NeomageColors.darkBorder, width: 0.5),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: ClawColors.darkElevated,
-        border: OutlineInputBorder(borderRadius: ClawRadius.borderMd),
+        fillColor: NeomageColors.darkElevated,
+        border: OutlineInputBorder(borderRadius: NeomageRadius.borderMd),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 12,
           vertical: 10,
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: ClawColors.darkBorder,
+        color: NeomageColors.darkBorder,
         thickness: 0.5,
       ),
       tooltipTheme: TooltipThemeData(
         decoration: BoxDecoration(
-          color: ClawColors.darkTextPrimary,
-          borderRadius: ClawRadius.borderSm,
+          color: NeomageColors.darkTextPrimary,
+          borderRadius: NeomageRadius.borderSm,
         ),
-        textStyle: ClawTypography.caption.copyWith(color: ClawColors.darkBg),
+        textStyle: NeomageTypography.caption.copyWith(color: NeomageColors.darkBg),
       ),
     );
   }
@@ -390,22 +393,22 @@ class ClawTheme {
 // BUTTON VARIANTS
 // ────────────────────────────────────────────────────────────────────────────
 
-enum ClawButtonVariant { primary, secondary, ghost, danger }
+enum NeomageButtonVariant { primary, secondary, ghost, danger }
 
 /// Styled button with variant support (primary, secondary, ghost, danger).
-class ClawButton extends StatelessWidget {
+class NeomageButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
-  final ClawButtonVariant variant;
+  final NeomageButtonVariant variant;
   final IconData? icon;
   final bool isLoading;
   final bool compact;
 
-  const ClawButton({
+  const NeomageButton({
     super.key,
     required this.label,
     this.onPressed,
-    this.variant = ClawButtonVariant.primary,
+    this.variant = NeomageButtonVariant.primary,
     this.icon,
     this.isLoading = false,
     this.compact = false,
@@ -417,25 +420,25 @@ class ClawButton extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final (bgColor, fgColor, borderColor) = switch (variant) {
-      ClawButtonVariant.primary => (
-        ClawColors.amber,
+      NeomageButtonVariant.primary => (
+        NeomageColors.amber,
         Colors.white,
-        ClawColors.amber,
+        NeomageColors.amber,
       ),
-      ClawButtonVariant.secondary => (
-        isDark ? ClawColors.darkElevated : ClawColors.lightElevated,
-        isDark ? ClawColors.darkTextPrimary : ClawColors.lightTextPrimary,
-        isDark ? ClawColors.darkBorder : ClawColors.lightBorder,
+      NeomageButtonVariant.secondary => (
+        isDark ? NeomageColors.darkElevated : NeomageColors.lightElevated,
+        isDark ? NeomageColors.darkTextPrimary : NeomageColors.lightTextPrimary,
+        isDark ? NeomageColors.darkBorder : NeomageColors.lightBorder,
       ),
-      ClawButtonVariant.ghost => (
+      NeomageButtonVariant.ghost => (
         Colors.transparent,
-        isDark ? ClawColors.darkTextSecondary : ClawColors.lightTextSecondary,
+        isDark ? NeomageColors.darkTextSecondary : NeomageColors.lightTextSecondary,
         Colors.transparent,
       ),
-      ClawButtonVariant.danger => (
-        ClawColors.error,
+      NeomageButtonVariant.danger => (
+        NeomageColors.error,
         Colors.white,
-        ClawColors.error,
+        NeomageColors.error,
       ),
     };
 
@@ -449,10 +452,10 @@ class ClawButton extends StatelessWidget {
             : const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       ),
       shape: WidgetStatePropertyAll(
-        RoundedRectangleBorder(borderRadius: ClawRadius.borderMd),
+        RoundedRectangleBorder(borderRadius: NeomageRadius.borderMd),
       ),
       textStyle: WidgetStatePropertyAll(
-        compact ? ClawTypography.caption : ClawTypography.bodyMedium,
+        compact ? NeomageTypography.caption : NeomageTypography.bodyMedium,
       ),
       elevation: const WidgetStatePropertyAll(0),
     );
@@ -487,7 +490,7 @@ class ClawButton extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Icon button with tooltip and consistent sizing.
-class ClawIconButton extends StatelessWidget {
+class NeomageIconButton extends StatelessWidget {
   final IconData icon;
   final String tooltip;
   final VoidCallback? onPressed;
@@ -495,7 +498,7 @@ class ClawIconButton extends StatelessWidget {
   final Color? color;
   final Color? backgroundColor;
 
-  const ClawIconButton({
+  const NeomageIconButton({
     super.key,
     required this.icon,
     required this.tooltip,
@@ -510,17 +513,17 @@ class ClawIconButton extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final defaultColor = isDark
-        ? ClawColors.darkTextSecondary
-        : ClawColors.lightTextSecondary;
+        ? NeomageColors.darkTextSecondary
+        : NeomageColors.lightTextSecondary;
 
     return Tooltip(
       message: tooltip,
       child: Material(
         color: backgroundColor ?? Colors.transparent,
-        borderRadius: ClawRadius.borderSm,
+        borderRadius: NeomageRadius.borderSm,
         child: InkWell(
           onTap: onPressed,
-          borderRadius: ClawRadius.borderSm,
+          borderRadius: NeomageRadius.borderSm,
           child: Padding(
             padding: const EdgeInsets.all(6),
             child: Icon(
@@ -542,7 +545,7 @@ class ClawIconButton extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Card with optional header, body, and footer sections.
-class ClawCard extends StatelessWidget {
+class NeomageCard extends StatelessWidget {
   final Widget? header;
   final Widget child;
   final Widget? footer;
@@ -550,7 +553,7 @@ class ClawCard extends StatelessWidget {
   final Color? backgroundColor;
   final bool hasBorder;
 
-  const ClawCard({
+  const NeomageCard({
     super.key,
     this.header,
     required this.child,
@@ -566,13 +569,13 @@ class ClawCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final bg =
         backgroundColor ??
-        (isDark ? ClawColors.darkCard : ClawColors.lightCard);
-    final border = isDark ? ClawColors.darkBorder : ClawColors.lightBorder;
+        (isDark ? NeomageColors.darkCard : NeomageColors.lightCard);
+    final border = isDark ? NeomageColors.darkBorder : NeomageColors.lightBorder;
 
     return Container(
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: ClawRadius.borderLg,
+        borderRadius: NeomageRadius.borderLg,
         border: hasBorder ? Border.all(color: border, width: 0.5) : null,
       ),
       child: Column(
@@ -582,20 +585,20 @@ class ClawCard extends StatelessWidget {
           if (header != null)
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: ClawSpacing.lg,
-                vertical: ClawSpacing.md,
+                horizontal: NeomageSpacing.lg,
+                vertical: NeomageSpacing.md,
               ),
               decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: border, width: 0.5)),
               ),
               child: header!,
             ),
-          Padding(padding: padding ?? ClawSpacing.cardPadding, child: child),
+          Padding(padding: padding ?? NeomageSpacing.cardPadding, child: child),
           if (footer != null)
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: ClawSpacing.lg,
-                vertical: ClawSpacing.md,
+                horizontal: NeomageSpacing.lg,
+                vertical: NeomageSpacing.md,
               ),
               decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: border, width: 0.5)),
@@ -612,18 +615,18 @@ class ClawCard extends StatelessWidget {
 // BADGE
 // ────────────────────────────────────────────────────────────────────────────
 
-enum ClawBadgeVariant { success, warning, error, info, neutral }
+enum NeomageBadgeVariant { success, warning, error, info, neutral }
 
 /// Status badge with semantic coloring.
-class ClawBadge extends StatelessWidget {
+class NeomageBadge extends StatelessWidget {
   final String label;
-  final ClawBadgeVariant variant;
+  final NeomageBadgeVariant variant;
   final IconData? icon;
 
-  const ClawBadge({
+  const NeomageBadge({
     super.key,
     required this.label,
-    this.variant = ClawBadgeVariant.neutral,
+    this.variant = NeomageBadgeVariant.neutral,
     this.icon,
   });
 
@@ -632,25 +635,25 @@ class ClawBadge extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final (fg, bg) = switch (variant) {
-      ClawBadgeVariant.success => (
-        ClawColors.success,
-        isDark ? ClawColors.successBg : ClawColors.successLightBg,
+      NeomageBadgeVariant.success => (
+        NeomageColors.success,
+        isDark ? NeomageColors.successBg : NeomageColors.successLightBg,
       ),
-      ClawBadgeVariant.warning => (
-        ClawColors.warning,
-        isDark ? ClawColors.warningBg : ClawColors.warningLightBg,
+      NeomageBadgeVariant.warning => (
+        NeomageColors.warning,
+        isDark ? NeomageColors.warningBg : NeomageColors.warningLightBg,
       ),
-      ClawBadgeVariant.error => (
-        ClawColors.error,
-        isDark ? ClawColors.errorBg : ClawColors.errorLightBg,
+      NeomageBadgeVariant.error => (
+        NeomageColors.error,
+        isDark ? NeomageColors.errorBg : NeomageColors.errorLightBg,
       ),
-      ClawBadgeVariant.info => (
-        ClawColors.info,
-        isDark ? ClawColors.infoBg : ClawColors.infoLightBg,
+      NeomageBadgeVariant.info => (
+        NeomageColors.info,
+        isDark ? NeomageColors.infoBg : NeomageColors.infoLightBg,
       ),
-      ClawBadgeVariant.neutral => (
-        isDark ? ClawColors.darkTextSecondary : ClawColors.lightTextSecondary,
-        isDark ? ClawColors.darkElevated : ClawColors.lightElevated,
+      NeomageBadgeVariant.neutral => (
+        isDark ? NeomageColors.darkTextSecondary : NeomageColors.lightTextSecondary,
+        isDark ? NeomageColors.darkElevated : NeomageColors.lightElevated,
       ),
     };
 
@@ -658,7 +661,7 @@ class ClawBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: ClawRadius.borderFull,
+        borderRadius: NeomageRadius.borderFull,
         border: Border.all(color: fg.withValues(alpha: 0.3), width: 0.5),
       ),
       child: Row(
@@ -670,7 +673,7 @@ class ClawBadge extends StatelessWidget {
           ],
           Text(
             label,
-            style: ClawTypography.caption.copyWith(
+            style: NeomageTypography.caption.copyWith(
               color: fg,
               fontWeight: FontWeight.w600,
             ),
@@ -686,14 +689,14 @@ class ClawBadge extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Tag / chip widget with optional remove callback.
-class ClawChip extends StatelessWidget {
+class NeomageChip extends StatelessWidget {
   final String label;
   final IconData? icon;
   final VoidCallback? onRemove;
   final VoidCallback? onTap;
   final Color? color;
 
-  const ClawChip({
+  const NeomageChip({
     super.key,
     required this.label,
     this.icon,
@@ -707,19 +710,19 @@ class ClawChip extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final chipColor =
         color ??
-        (isDark ? ClawColors.darkTextSecondary : ClawColors.lightTextSecondary);
-    final bg = isDark ? ClawColors.darkElevated : ClawColors.lightElevated;
+        (isDark ? NeomageColors.darkTextSecondary : NeomageColors.lightTextSecondary);
+    final bg = isDark ? NeomageColors.darkElevated : NeomageColors.lightElevated;
 
     return Material(
       color: bg,
-      borderRadius: ClawRadius.borderSm,
+      borderRadius: NeomageRadius.borderSm,
       child: InkWell(
         onTap: onTap,
-        borderRadius: ClawRadius.borderSm,
+        borderRadius: NeomageRadius.borderSm,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            borderRadius: ClawRadius.borderSm,
+            borderRadius: NeomageRadius.borderSm,
             border: Border.all(
               color: chipColor.withValues(alpha: 0.3),
               width: 0.5,
@@ -734,7 +737,7 @@ class ClawChip extends StatelessWidget {
               ],
               Text(
                 label,
-                style: ClawTypography.caption.copyWith(color: chipColor),
+                style: NeomageTypography.caption.copyWith(color: chipColor),
               ),
               if (onRemove != null) ...[
                 const SizedBox(width: 4),
@@ -760,16 +763,16 @@ class ClawChip extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Styled divider with optional label.
-class ClawDivider extends StatelessWidget {
+class NeomageDivider extends StatelessWidget {
   final String? label;
   final double height;
 
-  const ClawDivider({super.key, this.label, this.height = 24});
+  const NeomageDivider({super.key, this.label, this.height = 24});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark ? ClawColors.darkBorder : ClawColors.lightBorder;
+    final color = isDark ? NeomageColors.darkBorder : NeomageColors.lightBorder;
 
     if (label == null) {
       return Divider(height: height, thickness: 0.5, color: color);
@@ -784,10 +787,10 @@ class ClawDivider extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
               label!,
-              style: ClawTypography.overline.copyWith(
+              style: NeomageTypography.overline.copyWith(
                 color: isDark
-                    ? ClawColors.darkTextTertiary
-                    : ClawColors.lightTextTertiary,
+                    ? NeomageColors.darkTextTertiary
+                    : NeomageColors.lightTextTertiary,
               ),
             ),
           ),
@@ -803,7 +806,7 @@ class ClawDivider extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// User or model avatar with initials fallback.
-class ClawAvatar extends StatelessWidget {
+class NeomageAvatar extends StatelessWidget {
   final String? label;
   final IconData? icon;
   final String? imageUrl;
@@ -811,7 +814,7 @@ class ClawAvatar extends StatelessWidget {
   final Color? backgroundColor;
   final Color? foregroundColor;
 
-  const ClawAvatar({
+  const NeomageAvatar({
     super.key,
     this.label,
     this.icon,
@@ -826,10 +829,10 @@ class ClawAvatar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg =
         backgroundColor ??
-        (isDark ? ClawColors.darkElevated : ClawColors.lightElevated);
+        (isDark ? NeomageColors.darkElevated : NeomageColors.lightElevated);
     final fg =
         foregroundColor ??
-        (isDark ? ClawColors.darkTextPrimary : ClawColors.lightTextPrimary);
+        (isDark ? NeomageColors.darkTextPrimary : NeomageColors.lightTextPrimary);
 
     return Container(
       width: size,
@@ -838,7 +841,7 @@ class ClawAvatar extends StatelessWidget {
         color: bg,
         shape: BoxShape.circle,
         border: Border.all(
-          color: (isDark ? ClawColors.darkBorder : ClawColors.lightBorder),
+          color: (isDark ? NeomageColors.darkBorder : NeomageColors.lightBorder),
           width: 0.5,
         ),
       ),
@@ -884,28 +887,28 @@ class ClawAvatar extends StatelessWidget {
 // LOADING INDICATOR
 // ────────────────────────────────────────────────────────────────────────────
 
-enum ClawLoadingStyle { spinner, dots, shimmer }
+enum NeomageLoadingStyle { spinner, dots, shimmer }
 
 /// Spinner, dots, or shimmer loading indicator.
-class ClawLoadingIndicator extends StatefulWidget {
-  final ClawLoadingStyle style;
+class NeomageLoadingIndicator extends StatefulWidget {
+  final NeomageLoadingStyle style;
   final double size;
   final Color? color;
   final String? message;
 
-  const ClawLoadingIndicator({
+  const NeomageLoadingIndicator({
     super.key,
-    this.style = ClawLoadingStyle.spinner,
+    this.style = NeomageLoadingStyle.spinner,
     this.size = 24,
     this.color,
     this.message,
   });
 
   @override
-  State<ClawLoadingIndicator> createState() => _ClawLoadingIndicatorState();
+  State<NeomageLoadingIndicator> createState() => _NeomageLoadingIndicatorState();
 }
 
-class _ClawLoadingIndicatorState extends State<ClawLoadingIndicator>
+class _NeomageLoadingIndicatorState extends State<NeomageLoadingIndicator>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
@@ -930,13 +933,13 @@ class _ClawLoadingIndicatorState extends State<ClawLoadingIndicator>
         widget.color ?? Theme.of(context).colorScheme.primary;
 
     final indicator = switch (widget.style) {
-      ClawLoadingStyle.spinner => SizedBox(
+      NeomageLoadingStyle.spinner => SizedBox(
         width: widget.size,
         height: widget.size,
         child: CircularProgressIndicator(strokeWidth: 2, color: effectiveColor),
       ),
-      ClawLoadingStyle.dots => _buildDots(effectiveColor),
-      ClawLoadingStyle.shimmer => _buildShimmer(effectiveColor),
+      NeomageLoadingStyle.dots => _buildDots(effectiveColor),
+      NeomageLoadingStyle.shimmer => _buildShimmer(effectiveColor),
     };
 
     if (widget.message == null) return indicator;
@@ -948,7 +951,7 @@ class _ClawLoadingIndicatorState extends State<ClawLoadingIndicator>
         const SizedBox(height: 8),
         Text(
           widget.message!,
-          style: ClawTypography.caption.copyWith(
+          style: NeomageTypography.caption.copyWith(
             color: effectiveColor.withValues(alpha: 0.7),
           ),
         ),
@@ -988,7 +991,7 @@ class _ClawLoadingIndicatorState extends State<ClawLoadingIndicator>
         width: widget.size * 4,
         height: widget.size,
         decoration: BoxDecoration(
-          borderRadius: ClawRadius.borderSm,
+          borderRadius: NeomageRadius.borderSm,
           gradient: LinearGradient(
             begin: Alignment(-1.0 + _controller.value * 3, 0),
             end: Alignment(_controller.value * 3, 0),
@@ -1008,21 +1011,21 @@ class _ClawLoadingIndicatorState extends State<ClawLoadingIndicator>
 // TOAST
 // ────────────────────────────────────────────────────────────────────────────
 
-enum ClawToastVariant { success, warning, error, info }
+enum NeomageToastVariant { success, warning, error, info }
 
 /// Toast notification widget with auto-dismiss.
-class ClawToast extends StatefulWidget {
+class NeomageToast extends StatefulWidget {
   final String message;
-  final ClawToastVariant variant;
+  final NeomageToastVariant variant;
   final Duration duration;
   final VoidCallback? onDismiss;
   final String? action;
   final VoidCallback? onAction;
 
-  const ClawToast({
+  const NeomageToast({
     super.key,
     required this.message,
-    this.variant = ClawToastVariant.info,
+    this.variant = NeomageToastVariant.info,
     this.duration = const Duration(seconds: 4),
     this.onDismiss,
     this.action,
@@ -1030,10 +1033,10 @@ class ClawToast extends StatefulWidget {
   });
 
   @override
-  State<ClawToast> createState() => _ClawToastState();
+  State<NeomageToast> createState() => _NeomageToastState();
 }
 
-class _ClawToastState extends State<ClawToast>
+class _NeomageToastState extends State<NeomageToast>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
   late final Animation<Offset> _slideAnimation;
@@ -1069,10 +1072,10 @@ class _ClawToastState extends State<ClawToast>
   @override
   Widget build(BuildContext context) {
     final (iconData, color) = switch (widget.variant) {
-      ClawToastVariant.success => (Icons.check_circle, ClawColors.success),
-      ClawToastVariant.warning => (Icons.warning_amber, ClawColors.warning),
-      ClawToastVariant.error => (Icons.error_outline, ClawColors.error),
-      ClawToastVariant.info => (Icons.info_outline, ClawColors.info),
+      NeomageToastVariant.success => (Icons.check_circle, NeomageColors.success),
+      NeomageToastVariant.warning => (Icons.warning_amber, NeomageColors.warning),
+      NeomageToastVariant.error => (Icons.error_outline, NeomageColors.error),
+      NeomageToastVariant.info => (Icons.info_outline, NeomageColors.info),
     };
 
     return SlideTransition(
@@ -1081,10 +1084,10 @@ class _ClawToastState extends State<ClawToast>
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: ClawColors.darkCard,
-          borderRadius: ClawRadius.borderMd,
+          color: NeomageColors.darkCard,
+          borderRadius: NeomageRadius.borderMd,
           border: Border.all(color: color.withValues(alpha: 0.4), width: 0.5),
-          boxShadow: ClawShadows.lg,
+          boxShadow: NeomageShadows.lg,
         ),
         child: Row(
           children: [
@@ -1093,8 +1096,8 @@ class _ClawToastState extends State<ClawToast>
             Expanded(
               child: Text(
                 widget.message,
-                style: ClawTypography.bodyMedium.copyWith(
-                  color: ClawColors.darkTextPrimary,
+                style: NeomageTypography.bodyMedium.copyWith(
+                  color: NeomageColors.darkTextPrimary,
                 ),
               ),
             ),
@@ -1107,7 +1110,7 @@ class _ClawToastState extends State<ClawToast>
                 },
                 child: Text(
                   widget.action!,
-                  style: ClawTypography.label.copyWith(color: color),
+                  style: NeomageTypography.label.copyWith(color: color),
                 ),
               ),
             ],
@@ -1117,7 +1120,7 @@ class _ClawToastState extends State<ClawToast>
               child: Icon(
                 Icons.close,
                 size: 16,
-                color: ClawColors.darkTextTertiary,
+                color: NeomageColors.darkTextTertiary,
               ),
             ),
           ],
@@ -1132,14 +1135,14 @@ class _ClawToastState extends State<ClawToast>
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Base dialog with title, content, and action buttons.
-class ClawDialog extends StatelessWidget {
+class NeomageDialog extends StatelessWidget {
   final String title;
   final Widget content;
   final List<Widget> actions;
   final IconData? icon;
   final double maxWidth;
 
-  const ClawDialog({
+  const NeomageDialog({
     super.key,
     required this.title,
     required this.content,
@@ -1153,8 +1156,8 @@ class ClawDialog extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(
-      backgroundColor: isDark ? ClawColors.darkCard : ClawColors.lightCard,
-      shape: RoundedRectangleBorder(borderRadius: ClawRadius.borderLg),
+      backgroundColor: isDark ? NeomageColors.darkCard : NeomageColors.lightCard,
+      shape: RoundedRectangleBorder(borderRadius: NeomageRadius.borderLg),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: Column(
@@ -1167,29 +1170,29 @@ class ClawDialog extends StatelessWidget {
               child: Row(
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 22, color: ClawColors.amber),
+                    Icon(icon, size: 22, color: NeomageColors.amber),
                     const SizedBox(width: 10),
                   ],
                   Expanded(
                     child: Text(
                       title,
-                      style: ClawTypography.heading4.copyWith(
+                      style: NeomageTypography.heading4.copyWith(
                         color: isDark
-                            ? ClawColors.darkTextPrimary
-                            : ClawColors.lightTextPrimary,
+                            ? NeomageColors.darkTextPrimary
+                            : NeomageColors.lightTextPrimary,
                       ),
                     ),
                   ),
-                  ClawIconButton(
+                  NeomageIconButton(
                     icon: Icons.close,
-                    tooltip: 'Close',
+                    tooltip: NeomageTranslationConstants.close.tr,
                     size: 18,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
             ),
-            const ClawDivider(height: 20),
+            const NeomageDivider(height: 20),
             // Content
             Flexible(
               child: SingleChildScrollView(
@@ -1199,7 +1202,7 @@ class ClawDialog extends StatelessWidget {
             ),
             // Actions
             if (actions.isNotEmpty) ...[
-              const ClawDivider(height: 20),
+              const NeomageDivider(height: 20),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
                 child: Row(
@@ -1225,14 +1228,14 @@ class ClawDialog extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Styled dropdown with consistent theming.
-class ClawDropdown<T> extends StatelessWidget {
+class NeomageDropdown<T> extends StatelessWidget {
   final T? value;
-  final List<ClawDropdownItem<T>> items;
+  final List<NeomageDropdownItem<T>> items;
   final ValueChanged<T?>? onChanged;
   final String? hint;
   final bool dense;
 
-  const ClawDropdown({
+  const NeomageDropdown({
     super.key,
     this.value,
     required this.items,
@@ -1244,17 +1247,17 @@ class ClawDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? ClawColors.darkElevated : ClawColors.lightElevated;
-    final border = isDark ? ClawColors.darkBorder : ClawColors.lightBorder;
+    final bg = isDark ? NeomageColors.darkElevated : NeomageColors.lightElevated;
+    final border = isDark ? NeomageColors.darkBorder : NeomageColors.lightBorder;
     final textColor = isDark
-        ? ClawColors.darkTextPrimary
-        : ClawColors.lightTextPrimary;
+        ? NeomageColors.darkTextPrimary
+        : NeomageColors.lightTextPrimary;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: dense ? 2 : 4),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: ClawRadius.borderMd,
+        borderRadius: NeomageRadius.borderMd,
         border: Border.all(color: border, width: 0.5),
       ),
       child: DropdownButtonHideUnderline(
@@ -1263,14 +1266,14 @@ class ClawDropdown<T> extends StatelessWidget {
           isDense: dense,
           isExpanded: false,
           icon: Icon(Icons.expand_more, size: 18, color: textColor),
-          dropdownColor: isDark ? ClawColors.darkCard : ClawColors.lightCard,
+          dropdownColor: isDark ? NeomageColors.darkCard : NeomageColors.lightCard,
           hint: hint != null
               ? Text(
                   hint!,
-                  style: ClawTypography.bodyMedium.copyWith(
+                  style: NeomageTypography.bodyMedium.copyWith(
                     color: isDark
-                        ? ClawColors.darkTextTertiary
-                        : ClawColors.lightTextTertiary,
+                        ? NeomageColors.darkTextTertiary
+                        : NeomageColors.lightTextTertiary,
                   ),
                 )
               : null,
@@ -1287,7 +1290,7 @@ class ClawDropdown<T> extends StatelessWidget {
                       ],
                       Text(
                         item.label,
-                        style: ClawTypography.bodyMedium.copyWith(
+                        style: NeomageTypography.bodyMedium.copyWith(
                           color: textColor,
                         ),
                       ),
@@ -1303,12 +1306,12 @@ class ClawDropdown<T> extends StatelessWidget {
   }
 }
 
-class ClawDropdownItem<T> {
+class NeomageDropdownItem<T> {
   final T value;
   final String label;
   final IconData? icon;
 
-  const ClawDropdownItem({required this.value, required this.label, this.icon});
+  const NeomageDropdownItem({required this.value, required this.label, this.icon});
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -1316,7 +1319,7 @@ class ClawDropdownItem<T> {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Styled text field with label, hint, and error support.
-class ClawTextField extends StatelessWidget {
+class NeomageTextField extends StatelessWidget {
   final TextEditingController? controller;
   final FocusNode? focusNode;
   final String? label;
@@ -1332,7 +1335,7 @@ class ClawTextField extends StatelessWidget {
   final ValueChanged<String>? onSubmitted;
   final TextInputType? keyboardType;
 
-  const ClawTextField({
+  const NeomageTextField({
     super.key,
     this.controller,
     this.focusNode,
@@ -1354,18 +1357,18 @@ class ClawTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark
-        ? ClawColors.darkTextPrimary
-        : ClawColors.lightTextPrimary;
+        ? NeomageColors.darkTextPrimary
+        : NeomageColors.lightTextPrimary;
     final hintColor = isDark
-        ? ClawColors.darkTextTertiary
-        : ClawColors.lightTextTertiary;
+        ? NeomageColors.darkTextTertiary
+        : NeomageColors.lightTextTertiary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         if (label != null) ...[
-          Text(label!, style: ClawTypography.label.copyWith(color: textColor)),
+          Text(label!, style: NeomageTypography.label.copyWith(color: textColor)),
           const SizedBox(height: 6),
         ],
         TextField(
@@ -1378,38 +1381,38 @@ class ClawTextField extends StatelessWidget {
           keyboardType: keyboardType,
           onChanged: onChanged,
           onSubmitted: onSubmitted,
-          style: ClawTypography.bodyMedium.copyWith(color: textColor),
+          style: NeomageTypography.bodyMedium.copyWith(color: textColor),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: ClawTypography.bodyMedium.copyWith(color: hintColor),
+            hintStyle: NeomageTypography.bodyMedium.copyWith(color: hintColor),
             errorText: errorText,
             prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18) : null,
             suffix: suffix,
             filled: true,
             fillColor: isDark
-                ? ClawColors.darkElevated
-                : ClawColors.lightElevated,
+                ? NeomageColors.darkElevated
+                : NeomageColors.lightElevated,
             border: OutlineInputBorder(
-              borderRadius: ClawRadius.borderMd,
+              borderRadius: NeomageRadius.borderMd,
               borderSide: BorderSide(
-                color: isDark ? ClawColors.darkBorder : ClawColors.lightBorder,
+                color: isDark ? NeomageColors.darkBorder : NeomageColors.lightBorder,
                 width: 0.5,
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: ClawRadius.borderMd,
+              borderRadius: NeomageRadius.borderMd,
               borderSide: BorderSide(
-                color: isDark ? ClawColors.darkBorder : ClawColors.lightBorder,
+                color: isDark ? NeomageColors.darkBorder : NeomageColors.lightBorder,
                 width: 0.5,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: ClawRadius.borderMd,
-              borderSide: const BorderSide(color: ClawColors.amber, width: 1),
+              borderRadius: NeomageRadius.borderMd,
+              borderSide: const BorderSide(color: NeomageColors.amber, width: 1),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: ClawRadius.borderMd,
-              borderSide: const BorderSide(color: ClawColors.error, width: 1),
+              borderRadius: NeomageRadius.borderMd,
+              borderSide: const BorderSide(color: NeomageColors.error, width: 1),
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
@@ -1426,16 +1429,16 @@ class ClawTextField extends StatelessWidget {
 // STATUS INDICATOR
 // ────────────────────────────────────────────────────────────────────────────
 
-enum ClawStatus { online, offline, busy, idle, error }
+enum NeomageStatus { online, offline, busy, idle, error }
 
 /// Online / offline / busy status dot with optional label.
-class ClawStatusIndicator extends StatelessWidget {
-  final ClawStatus status;
+class NeomageStatusIndicator extends StatelessWidget {
+  final NeomageStatus status;
   final String? label;
   final double dotSize;
   final bool animated;
 
-  const ClawStatusIndicator({
+  const NeomageStatusIndicator({
     super.key,
     required this.status,
     this.label,
@@ -1446,11 +1449,11 @@ class ClawStatusIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = switch (status) {
-      ClawStatus.online => ClawColors.success,
-      ClawStatus.offline => ClawColors.darkTextDisabled,
-      ClawStatus.busy => ClawColors.warning,
-      ClawStatus.idle => ClawColors.darkTextTertiary,
-      ClawStatus.error => ClawColors.error,
+      NeomageStatus.online => NeomageColors.success,
+      NeomageStatus.offline => NeomageColors.darkTextDisabled,
+      NeomageStatus.busy => NeomageColors.warning,
+      NeomageStatus.idle => NeomageColors.darkTextTertiary,
+      NeomageStatus.error => NeomageColors.error,
     };
 
     final dot = Container(
@@ -1459,7 +1462,7 @@ class ClawStatusIndicator extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        boxShadow: (status == ClawStatus.online && animated)
+        boxShadow: (status == NeomageStatus.online && animated)
             ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 4)]
             : null,
       ),
@@ -1474,10 +1477,10 @@ class ClawStatusIndicator extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           label!,
-          style: ClawTypography.caption.copyWith(
+          style: NeomageTypography.caption.copyWith(
             color: Theme.of(context).brightness == Brightness.dark
-                ? ClawColors.darkTextSecondary
-                : ClawColors.lightTextSecondary,
+                ? NeomageColors.darkTextSecondary
+                : NeomageColors.lightTextSecondary,
           ),
         ),
       ],
@@ -1490,12 +1493,12 @@ class ClawStatusIndicator extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Tooltip with custom styling matching design system.
-class ClawTooltipWrapper extends StatelessWidget {
+class NeomageTooltipWrapper extends StatelessWidget {
   final String message;
   final Widget child;
   final bool preferBelow;
 
-  const ClawTooltipWrapper({
+  const NeomageTooltipWrapper({
     super.key,
     required this.message,
     required this.child,
@@ -1511,13 +1514,13 @@ class ClawTooltipWrapper extends StatelessWidget {
       preferBelow: preferBelow,
       decoration: BoxDecoration(
         color: isDark
-            ? ClawColors.darkTextPrimary
-            : ClawColors.lightTextPrimary,
-        borderRadius: ClawRadius.borderSm,
-        boxShadow: ClawShadows.md,
+            ? NeomageColors.darkTextPrimary
+            : NeomageColors.lightTextPrimary,
+        borderRadius: NeomageRadius.borderSm,
+        boxShadow: NeomageShadows.md,
       ),
-      textStyle: ClawTypography.caption.copyWith(
-        color: isDark ? ClawColors.darkBg : ClawColors.lightBg,
+      textStyle: NeomageTypography.caption.copyWith(
+        color: isDark ? NeomageColors.darkBg : NeomageColors.lightBg,
       ),
       waitDuration: const Duration(milliseconds: 500),
       child: child,
@@ -1530,14 +1533,14 @@ class ClawTooltipWrapper extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Empty state placeholder with icon, message, and optional action.
-class ClawEmptyState extends StatelessWidget {
+class NeomageEmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  const ClawEmptyState({
+  const NeomageEmptyState({
     super.key,
     required this.icon,
     required this.title,
@@ -1550,11 +1553,11 @@ class ClawEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final mutedColor = isDark
-        ? ClawColors.darkTextTertiary
-        : ClawColors.lightTextTertiary;
+        ? NeomageColors.darkTextTertiary
+        : NeomageColors.lightTextTertiary;
     final textColor = isDark
-        ? ClawColors.darkTextSecondary
-        : ClawColors.lightTextSecondary;
+        ? NeomageColors.darkTextSecondary
+        : NeomageColors.lightTextSecondary;
 
     return Center(
       child: Padding(
@@ -1566,23 +1569,23 @@ class ClawEmptyState extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               title,
-              style: ClawTypography.heading4.copyWith(color: textColor),
+              style: NeomageTypography.heading4.copyWith(color: textColor),
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
               const SizedBox(height: 8),
               Text(
                 subtitle!,
-                style: ClawTypography.bodyMedium.copyWith(color: mutedColor),
+                style: NeomageTypography.bodyMedium.copyWith(color: mutedColor),
                 textAlign: TextAlign.center,
               ),
             ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 20),
-              ClawButton(
+              NeomageButton(
                 label: actionLabel!,
                 onPressed: onAction,
-                variant: ClawButtonVariant.secondary,
+                variant: NeomageButtonVariant.secondary,
               ),
             ],
           ],
@@ -1597,13 +1600,13 @@ class ClawEmptyState extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 
 /// Styled code block with copy button and language label.
-class ClawCodeBlock extends StatefulWidget {
+class NeomageCodeBlock extends StatefulWidget {
   final String code;
   final String? language;
   final bool showLineNumbers;
   final int? maxLines;
 
-  const ClawCodeBlock({
+  const NeomageCodeBlock({
     super.key,
     required this.code,
     this.language,
@@ -1612,10 +1615,10 @@ class ClawCodeBlock extends StatefulWidget {
   });
 
   @override
-  State<ClawCodeBlock> createState() => _ClawCodeBlockState();
+  State<NeomageCodeBlock> createState() => _NeomageCodeBlockState();
 }
 
-class _ClawCodeBlockState extends State<ClawCodeBlock> {
+class _NeomageCodeBlockState extends State<NeomageCodeBlock> {
   bool _copied = false;
 
   void _copyToClipboard() async {
@@ -1638,9 +1641,9 @@ class _ClawCodeBlockState extends State<ClawCodeBlock> {
 
     return Container(
       decoration: BoxDecoration(
-        color: ClawColors.codeBg,
-        borderRadius: ClawRadius.borderMd,
-        border: Border.all(color: ClawColors.darkBorder, width: 0.5),
+        color: NeomageColors.codeBg,
+        borderRadius: NeomageRadius.borderMd,
+        border: Border.all(color: NeomageColors.darkBorder, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1650,10 +1653,10 @@ class _ClawCodeBlockState extends State<ClawCodeBlock> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: const BoxDecoration(
-              color: ClawColors.darkElevated,
+              color: NeomageColors.darkElevated,
               borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(ClawRadius.md),
-                topRight: Radius.circular(ClawRadius.md),
+                topLeft: Radius.circular(NeomageRadius.md),
+                topRight: Radius.circular(NeomageRadius.md),
               ),
             ),
             child: Row(
@@ -1661,8 +1664,8 @@ class _ClawCodeBlockState extends State<ClawCodeBlock> {
                 if (widget.language != null)
                   Text(
                     widget.language!,
-                    style: ClawTypography.caption.copyWith(
-                      color: ClawColors.darkTextTertiary,
+                    style: NeomageTypography.caption.copyWith(
+                      color: NeomageColors.darkTextTertiary,
                     ),
                   ),
                 const Spacer(),
@@ -1675,16 +1678,16 @@ class _ClawCodeBlockState extends State<ClawCodeBlock> {
                         _copied ? Icons.check : Icons.copy,
                         size: 14,
                         color: _copied
-                            ? ClawColors.success
-                            : ClawColors.darkTextTertiary,
+                            ? NeomageColors.success
+                            : NeomageColors.darkTextTertiary,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _copied ? 'Copied' : 'Copy',
-                        style: ClawTypography.caption.copyWith(
+                        style: NeomageTypography.caption.copyWith(
                           color: _copied
-                              ? ClawColors.success
-                              : ClawColors.darkTextTertiary,
+                              ? NeomageColors.success
+                              : NeomageColors.darkTextTertiary,
                         ),
                       ),
                     ],
@@ -1708,8 +1711,8 @@ class _ClawCodeBlockState extends State<ClawCodeBlock> {
                           width: 36,
                           child: Text(
                             '${i + 1}',
-                            style: ClawTypography.codeSmall.copyWith(
-                              color: ClawColors.darkTextDisabled,
+                            style: NeomageTypography.codeSmall.copyWith(
+                              color: NeomageColors.darkTextDisabled,
                             ),
                             textAlign: TextAlign.right,
                           ),
@@ -1717,8 +1720,8 @@ class _ClawCodeBlockState extends State<ClawCodeBlock> {
                       if (widget.showLineNumbers) const SizedBox(width: 12),
                       Text(
                         displayLines[i],
-                        style: ClawTypography.codeMedium.copyWith(
-                          color: ClawColors.codeText,
+                        style: NeomageTypography.codeMedium.copyWith(
+                          color: NeomageColors.codeText,
                         ),
                       ),
                     ],
@@ -1731,8 +1734,8 @@ class _ClawCodeBlockState extends State<ClawCodeBlock> {
                     ),
                     child: Text(
                       '... ${lines.length - widget.maxLines!} more lines',
-                      style: ClawTypography.caption.copyWith(
-                        color: ClawColors.darkTextTertiary,
+                      style: NeomageTypography.caption.copyWith(
+                        color: NeomageColors.darkTextTertiary,
                         fontStyle: FontStyle.italic,
                       ),
                     ),

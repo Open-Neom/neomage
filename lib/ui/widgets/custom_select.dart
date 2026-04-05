@@ -1,4 +1,4 @@
-// CustomSelect — faithful port of neom_claw/src/components/CustomSelect/
+// CustomSelect — faithful port of neomage/src/components/CustomSelect/
 // Ports: Select, SelectOption, SelectInputOption, OptionMap,
 // useSelectState, useSelectNavigation, useSelectInput, SelectMulti.
 //

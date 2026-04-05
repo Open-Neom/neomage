@@ -1,4 +1,4 @@
-// Command registry — expanded port of NeomClaw's command dispatch system.
+// Command registry — expanded port of Neomage's command dispatch system.
 // Manages command registration, lookup (by name or alias), execution,
 // completions, help, and built-in command scaffolding.
 

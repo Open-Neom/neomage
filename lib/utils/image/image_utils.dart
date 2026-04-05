@@ -1,14 +1,14 @@
 /// Image handling utilities: resizing, clipboard, storage, validation.
 ///
-/// Ported from neom_claw/src/utils/imageResizer.ts (880 LOC),
-/// neom_claw/src/utils/imagePaste.ts (416 LOC),
-/// neom_claw/src/utils/imageStore.ts (167 LOC),
-/// neom_claw/src/utils/imageValidation.ts (104 LOC).
+/// Ported from neomage/src/utils/imageResizer.ts (880 LOC),
+/// neomage/src/utils/imagePaste.ts (416 LOC),
+/// neomage/src/utils/imageStore.ts (167 LOC),
+/// neomage/src/utils/imageValidation.ts (104 LOC).
 library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -421,7 +421,7 @@ class ImageUtils extends SintController {
 
   /// Path to the image store directory.
   String Function() _getImageStoreDir = () =>
-      '${Platform.environment['HOME'] ?? ''}/.neomclaw/image-cache';
+      '${Platform.environment['HOME'] ?? ''}/.neomage/image-cache';
 
   /// Session ID for image store directory.
   String Function() _getSessionId = () => 'default';
@@ -879,8 +879,8 @@ class ImageUtils extends SintController {
   // ---------------------------------------------------------------------------
 
   _ClipboardCommands _getClipboardCommands() {
-    final tmpDir = Platform.environment['NEOMCLAW_TMPDIR'] ?? '/tmp';
-    final screenshotPath = '$tmpDir/neomclaw_cli_latest_screenshot.png';
+    final tmpDir = Platform.environment['MAGE_TMPDIR'] ?? '/tmp';
+    final screenshotPath = '$tmpDir/neomage_cli_latest_screenshot.png';
 
     if (Platform.isMacOS) {
       return _ClipboardCommands(
@@ -927,8 +927,8 @@ class ImageUtils extends SintController {
   /// Get image data from the clipboard.
   Future<ImageWithDimensions?> getImageFromClipboard() async {
     final commands = _getClipboardCommands();
-    final tmpDir = Platform.environment['NEOMCLAW_TMPDIR'] ?? '/tmp';
-    final screenshotPath = '$tmpDir/neomclaw_cli_latest_screenshot.png';
+    final tmpDir = Platform.environment['MAGE_TMPDIR'] ?? '/tmp';
+    final screenshotPath = '$tmpDir/neomage_cli_latest_screenshot.png';
 
     try {
       // Check for image

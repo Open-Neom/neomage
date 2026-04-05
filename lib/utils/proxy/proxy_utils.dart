@@ -1,11 +1,12 @@
-// Port of neom_claw proxy.ts + http.ts + mtls.ts + caCerts.ts +
+// Port of neomage proxy.ts + http.ts + mtls.ts + caCerts.ts +
 // caCertsConfig.ts
 //
 // Proxy configuration, HTTP utilities, mTLS certificate handling,
-// and CA certificate management for the neom_claw package.
+// and CA certificate management for the neomage package.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'dart:convert';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ---------------------------------------------------------------------------
 // caCerts.ts  --  CA certificate loading
@@ -82,7 +83,7 @@ bool _hasNodeOption(String flag) {
 /// Apply NODE_EXTRA_CA_CERTS from settings to the environment early in init.
 ///
 /// This is safe to call before the trust dialog because we only read from
-/// user-controlled files (~/.neomclaw/settings.json and ~/.neomclaw.json).
+/// user-controlled files (~/.neomage/settings.json and ~/.neomage.json).
 void applyExtraCACertsFromConfig({
   required Map<String, String>? Function() getGlobalConfigEnv,
   required Map<String, String>? Function() getUserSettingsEnv,
@@ -167,7 +168,7 @@ MTLSConfig? getMTLSConfig() {
   String? passphrase;
 
   // Client certificate
-  final certPath = Platform.environment['NEOMCLAW_CLIENT_CERT'];
+  final certPath = Platform.environment['MAGE_CLIENT_CERT'];
   if (certPath != null && certPath.isNotEmpty) {
     try {
       cert = File(certPath).readAsStringSync();
@@ -177,7 +178,7 @@ MTLSConfig? getMTLSConfig() {
   }
 
   // Client key
-  final keyPath = Platform.environment['NEOMCLAW_CLIENT_KEY'];
+  final keyPath = Platform.environment['MAGE_CLIENT_KEY'];
   if (keyPath != null && keyPath.isNotEmpty) {
     try {
       key = File(keyPath).readAsStringSync();
@@ -187,7 +188,7 @@ MTLSConfig? getMTLSConfig() {
   }
 
   // Key passphrase
-  final passphraseVal = Platform.environment['NEOMCLAW_CLIENT_KEY_PASSPHRASE'];
+  final passphraseVal = Platform.environment['MAGE_CLIENT_KEY_PASSPHRASE'];
   if (passphraseVal != null && passphraseVal.isNotEmpty) {
     passphrase = passphraseVal;
   }
@@ -468,7 +469,7 @@ class ProxyFetchOptions {
 ProxyFetchOptions getProxyFetchOptions({bool forAnthropicAPI = false}) {
   final keepAlive = !_keepAliveDisabled;
 
-  // ANTHROPIC_UNIX_SOCKET tunneling (for `neomclaw ssh`)
+  // ANTHROPIC_UNIX_SOCKET tunneling (for `neomage ssh`)
   if (forAnthropicAPI) {
     final unixSocket = Platform.environment['ANTHROPIC_UNIX_SOCKET'];
     if (unixSocket != null && unixSocket.isNotEmpty) {
@@ -533,7 +534,7 @@ String getUserAgent({
   if (workload != null) parts.add('workload/$workload');
 
   final suffix = parts.isNotEmpty ? ', ${parts.join(", ")}' : '';
-  return 'neom-claw-cli/$version (${userType ?? "external"}, ${entrypoint ?? "cli"}$suffix)';
+  return 'neomage-cli/$version (${userType ?? "external"}, ${entrypoint ?? "cli"}$suffix)';
 }
 
 /// Get the MCP user agent string.
@@ -549,12 +550,12 @@ String getMCPUserAgent({
   if (clientApp != null) parts.add('client-app/$clientApp');
 
   final suffix = parts.isNotEmpty ? ' (${parts.join(", ")})' : '';
-  return 'neom-claw/$version$suffix';
+  return 'neomage/$version$suffix';
 }
 
 /// Get the WebFetch user agent string.
-String getWebFetchUserAgent({required String clawUserAgent}) {
-  return 'NeomClaw-User ($clawUserAgent; +https://support.anthropic.com/)';
+String getWebFetchUserAgent({required String neomageUserAgent}) {
+  return 'Neomage-User ($neomageUserAgent; +https://support.anthropic.com/)';
 }
 
 /// Authentication headers result.
@@ -569,7 +570,7 @@ class AuthHeaders {
 
 /// Get authentication headers for API requests.
 ///
-/// [isSubscriber]: whether the user is a NeomClaw AI subscriber
+/// [isSubscriber]: whether the user is a Neomage AI subscriber
 /// [getOAuthAccessToken]: callback to get OAuth token
 /// [getApiKey]: callback to get the API key
 /// [oauthBetaHeader]: the beta header value for OAuth
@@ -705,7 +706,7 @@ class ProxyConfiguration {
       noProxy: e['no_proxy'] ?? e['NO_PROXY'],
       mtlsConfig: getMTLSConfig(),
       caCertificates: getCACertificates(),
-      proxyResolvesHosts: _isEnvTruthy(e['NEOMCLAW_PROXY_RESOLVES_HOSTS']),
+      proxyResolvesHosts: _isEnvTruthy(e['MAGE_PROXY_RESOLVES_HOSTS']),
     );
   }
 

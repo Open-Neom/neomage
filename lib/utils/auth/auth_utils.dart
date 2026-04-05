@@ -1,4 +1,4 @@
-/// Authentication utilities ported from neom_claw/src/utils/auth.ts.
+/// Authentication utilities ported from neomage/src/utils/auth.ts.
 ///
 /// Token management, API key validation, credential storage, OAuth handling,
 /// subscription checks, and cloud provider auth refresh flows.
@@ -6,7 +6,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -33,8 +33,8 @@ const int gcpCredentialsCheckTimeoutMs = 5000;
 /// Default debounce for otel headers helper (29 minutes).
 const int defaultOtelHeadersDebounceMs = 29 * 60 * 1000;
 
-/// NeomClaw AI profile scope constant.
-const String neomClawAiProfileScope = 'user:profile';
+/// Neomage AI profile scope constant.
+const String neomageAiProfileScope = 'user:profile';
 
 // ---------------------------------------------------------------------------
 // Type definitions
@@ -54,11 +54,11 @@ enum ApiKeySource {
 /// Source of the auth token.
 enum AuthTokenSourceKind {
   anthropicAuthToken,
-  neomClawOauthToken,
-  neomClawOauthTokenFileDescriptor,
+  neomageOauthToken,
+  neomageOauthTokenFileDescriptor,
   ccrOauthTokenFile,
   apiKeyHelper,
-  neomClawAi,
+  neomageAi,
   none,
 }
 
@@ -139,7 +139,7 @@ class OAuthTokens {
   }
 }
 
-/// Subscription type enum matching OpenNeomClaw.
+/// Subscription type enum matching OpenNeomage.
 enum SubscriptionType { pro, max, team, enterprise }
 
 /// Account information from OAuth profile.
@@ -287,22 +287,22 @@ bool _isEnvTruthy(String? value) {
 
 /// Check if running in bare mode (no OAuth, no keychain).
 bool isBareMode() {
-  return _isEnvTruthy(Platform.environment['NEOMCLAW_BARE_MODE']);
+  return _isEnvTruthy(Platform.environment['MAGE_BARE_MODE']);
 }
 
 /// Check if running on homespace.
 bool isRunningOnHomespace() {
-  return _isEnvTruthy(Platform.environment['NEOMCLAW_HOMESPACE']);
+  return _isEnvTruthy(Platform.environment['MAGE_HOMESPACE']);
 }
 
 // ---------------------------------------------------------------------------
 // Managed OAuth context
 // ---------------------------------------------------------------------------
 
-/// Whether we are in a managed OAuth context (CCR or NeomClaw Desktop).
+/// Whether we are in a managed OAuth context (CCR or Neomage Desktop).
 bool isManagedOAuthContext() {
-  return _isEnvTruthy(Platform.environment['NEOMCLAW_REMOTE']) ||
-      Platform.environment['NEOMCLAW_ENTRYPOINT'] == 'claude-desktop';
+  return _isEnvTruthy(Platform.environment['MAGE_REMOTE']) ||
+      Platform.environment['MAGE_ENTRYPOINT'] == 'claude-desktop';
 }
 
 // ---------------------------------------------------------------------------
@@ -311,11 +311,11 @@ bool isManagedOAuthContext() {
 
 /// Check if using third-party services (Bedrock, Vertex, Foundry, OpenAI, Gemini).
 bool isUsing3PServices() {
-  return _isEnvTruthy(Platform.environment['NEOMCLAW_USE_BEDROCK']) ||
-      _isEnvTruthy(Platform.environment['NEOMCLAW_USE_VERTEX']) ||
-      _isEnvTruthy(Platform.environment['NEOMCLAW_USE_FOUNDRY']) ||
-      _isEnvTruthy(Platform.environment['NEOMCLAW_USE_OPENAI']) ||
-      _isEnvTruthy(Platform.environment['NEOMCLAW_USE_GEMINI']);
+  return _isEnvTruthy(Platform.environment['MAGE_USE_BEDROCK']) ||
+      _isEnvTruthy(Platform.environment['MAGE_USE_VERTEX']) ||
+      _isEnvTruthy(Platform.environment['MAGE_USE_FOUNDRY']) ||
+      _isEnvTruthy(Platform.environment['MAGE_USE_OPENAI']) ||
+      _isEnvTruthy(Platform.environment['MAGE_USE_GEMINI']);
 }
 
 // ---------------------------------------------------------------------------
@@ -327,7 +327,7 @@ bool isAnthropicAuthEnabled() {
   if (isBareMode()) return false;
 
   if (Platform.environment['ANTHROPIC_UNIX_SOCKET'] != null) {
-    return Platform.environment['NEOMCLAW_OAUTH_TOKEN'] != null;
+    return Platform.environment['MAGE_OAUTH_TOKEN'] != null;
   }
 
   final is3P = isUsing3PServices();
@@ -335,7 +335,7 @@ bool isAnthropicAuthEnabled() {
   final hasExternalAuthToken =
       Platform.environment['ANTHROPIC_AUTH_TOKEN'] != null ||
       getConfiguredApiKeyHelper() != null ||
-      Platform.environment['NEOMCLAW_API_KEY_FILE_DESCRIPTOR'] != null;
+      Platform.environment['MAGE_API_KEY_FILE_DESCRIPTOR'] != null;
 
   final apiKeyResult = getAnthropicApiKeyWithSource(
     skipRetrievingKeyFromApiKeyHelper: true,
@@ -379,18 +379,18 @@ AuthTokenSourceResult getAuthTokenSource() {
     );
   }
 
-  if (Platform.environment['NEOMCLAW_OAUTH_TOKEN'] != null) {
+  if (Platform.environment['MAGE_OAUTH_TOKEN'] != null) {
     return const AuthTokenSourceResult(
-      source: AuthTokenSourceKind.neomClawOauthToken,
+      source: AuthTokenSourceKind.neomageOauthToken,
       hasToken: true,
     );
   }
 
   final oauthTokenFromFd = getOAuthTokenFromFileDescriptor();
   if (oauthTokenFromFd != null) {
-    if (Platform.environment['NEOMCLAW_OAUTH_TOKEN_FILE_DESCRIPTOR'] != null) {
+    if (Platform.environment['MAGE_OAUTH_TOKEN_FILE_DESCRIPTOR'] != null) {
       return const AuthTokenSourceResult(
-        source: AuthTokenSourceKind.neomClawOauthTokenFileDescriptor,
+        source: AuthTokenSourceKind.neomageOauthTokenFileDescriptor,
         hasToken: true,
       );
     }
@@ -408,12 +408,12 @@ AuthTokenSourceResult getAuthTokenSource() {
     );
   }
 
-  final oauthTokens = getNeomClawAIOAuthTokens();
+  final oauthTokens = getNeomageAIOAuthTokens();
   if (oauthTokens != null &&
-      _shouldUseNeomClawAIAuth(oauthTokens.scopes) &&
+      _shouldUseNeomageAIAuth(oauthTokens.scopes) &&
       oauthTokens.accessToken.isNotEmpty) {
     return const AuthTokenSourceResult(
-      source: AuthTokenSourceKind.neomClawAi,
+      source: AuthTokenSourceKind.neomageAi,
       hasToken: true,
     );
   }
@@ -470,7 +470,7 @@ ApiKeyWithSource getAnthropicApiKeyWithSource({
 
   // Always check direct env var for non-interactive (--print) mode.
   if (apiKeyEnv != null &&
-      _isEnvTruthy(Platform.environment['NEOMCLAW_PREFER_3P_AUTH'])) {
+      _isEnvTruthy(Platform.environment['MAGE_PREFER_3P_AUTH'])) {
     return ApiKeyWithSource(
       key: apiKeyEnv,
       source: ApiKeySource.anthropicApiKey,
@@ -545,27 +545,27 @@ ApiKeyWithSource getAnthropicApiKeyWithSource({
 /// Get the configured apiKeyHelper from settings.
 String? getConfiguredApiKeyHelper() {
   // In a full implementation this reads from settings.
-  return Platform.environment['NEOMCLAW_API_KEY_HELPER'];
+  return Platform.environment['MAGE_API_KEY_HELPER'];
 }
 
 /// Get the configured awsAuthRefresh from settings.
 String? getConfiguredAwsAuthRefresh() {
-  return Platform.environment['NEOMCLAW_AWS_AUTH_REFRESH'];
+  return Platform.environment['MAGE_AWS_AUTH_REFRESH'];
 }
 
 /// Get the configured awsCredentialExport from settings.
 String? getConfiguredAwsCredentialExport() {
-  return Platform.environment['NEOMCLAW_AWS_CREDENTIAL_EXPORT'];
+  return Platform.environment['MAGE_AWS_CREDENTIAL_EXPORT'];
 }
 
 /// Get the configured gcpAuthRefresh from settings.
 String? getConfiguredGcpAuthRefresh() {
-  return Platform.environment['NEOMCLAW_GCP_AUTH_REFRESH'];
+  return Platform.environment['MAGE_GCP_AUTH_REFRESH'];
 }
 
 /// Get the configured otelHeadersHelper from settings.
 String? getConfiguredOtelHeadersHelper() {
-  return Platform.environment['NEOMCLAW_OTEL_HEADERS_HELPER'];
+  return Platform.environment['MAGE_OTEL_HEADERS_HELPER'];
 }
 
 // ---------------------------------------------------------------------------
@@ -631,7 +631,7 @@ ApiKeyWithSource? getApiKeyFromConfigOrKeychain() {
 
 /// Calculate TTL in milliseconds for the API key helper cache.
 int calculateApiKeyHelperTtl() {
-  final envTtl = Platform.environment['NEOMCLAW_API_KEY_HELPER_TTL_MS'];
+  final envTtl = Platform.environment['MAGE_API_KEY_HELPER_TTL_MS'];
   if (envTtl != null) {
     final parsed = int.tryParse(envTtl);
     if (parsed != null && parsed >= 0) {
@@ -791,20 +791,20 @@ Future<void> removeApiKey() async {
 // OAuth tokens
 // ---------------------------------------------------------------------------
 
-bool _shouldUseNeomClawAIAuth(List<String>? scopes) {
+bool _shouldUseNeomageAIAuth(List<String>? scopes) {
   if (scopes == null) return false;
   return scopes.contains('user:inference');
 }
 
 OAuthTokens? _cachedOAuthTokens;
 
-/// Get NeomClaw AI OAuth tokens (sync, memoized).
-OAuthTokens? getNeomClawAIOAuthTokens() {
+/// Get Neomage AI OAuth tokens (sync, memoized).
+OAuthTokens? getNeomageAIOAuthTokens() {
   if (isBareMode()) return null;
 
-  if (Platform.environment['NEOMCLAW_OAUTH_TOKEN'] != null) {
+  if (Platform.environment['MAGE_OAUTH_TOKEN'] != null) {
     return OAuthTokens(
-      accessToken: Platform.environment['NEOMCLAW_OAUTH_TOKEN']!,
+      accessToken: Platform.environment['MAGE_OAUTH_TOKEN']!,
       refreshToken: null,
       expiresAt: null,
       scopes: const ['user:inference'],
@@ -836,7 +836,7 @@ void clearOAuthTokenCache() {
 
 /// Save OAuth tokens if needed.
 ({bool success, String? warning}) saveOAuthTokensIfNeeded(OAuthTokens tokens) {
-  if (!_shouldUseNeomClawAIAuth(tokens.scopes)) {
+  if (!_shouldUseNeomageAIAuth(tokens.scopes)) {
     return (success: true, warning: null);
   }
   if (tokens.refreshToken == null || tokens.expiresAt == null) {
@@ -848,11 +848,11 @@ void clearOAuthTokenCache() {
 }
 
 /// Async OAuth token reader.
-Future<OAuthTokens?> getNeomClawAIOAuthTokensAsync() async {
+Future<OAuthTokens?> getNeomageAIOAuthTokensAsync() async {
   if (isBareMode()) return null;
-  if (Platform.environment['NEOMCLAW_OAUTH_TOKEN'] != null ||
+  if (Platform.environment['MAGE_OAUTH_TOKEN'] != null ||
       getOAuthTokenFromFileDescriptor() != null) {
-    return getNeomClawAIOAuthTokens();
+    return getNeomageAIOAuthTokens();
   }
   // Placeholder: reads from secure storage async.
   return _cachedOAuthTokens;
@@ -885,7 +885,7 @@ Future<bool> _checkAndRefreshOAuthTokenIfNeededImpl(
   bool force,
 ) async {
   const maxRetries = 5;
-  final tokens = getNeomClawAIOAuthTokens();
+  final tokens = getNeomageAIOAuthTokens();
   if (!force) {
     if (tokens?.refreshToken == null ||
         !_isOAuthTokenExpired(tokens?.expiresAt)) {
@@ -893,11 +893,11 @@ Future<bool> _checkAndRefreshOAuthTokenIfNeededImpl(
     }
   }
   if (tokens?.refreshToken == null) return false;
-  if (!_shouldUseNeomClawAIAuth(tokens?.scopes)) return false;
+  if (!_shouldUseNeomageAIAuth(tokens?.scopes)) return false;
 
   // Re-read tokens to check if still expired.
   clearOAuthTokenCache();
-  final freshTokens = await getNeomClawAIOAuthTokensAsync();
+  final freshTokens = await getNeomageAIOAuthTokensAsync();
   if (freshTokens?.refreshToken == null ||
       !_isOAuthTokenExpired(freshTokens?.expiresAt)) {
     return false;
@@ -918,7 +918,7 @@ bool _isOAuthTokenExpired(int? expiresAt) {
 /// Handle a 401 OAuth error.
 Future<bool> handleOAuth401Error(String failedAccessToken) async {
   clearOAuthTokenCache();
-  final currentTokens = await getNeomClawAIOAuthTokensAsync();
+  final currentTokens = await getNeomageAIOAuthTokensAsync();
   if (currentTokens?.refreshToken == null) return false;
   if (currentTokens!.accessToken != failedAccessToken) return true;
   return checkAndRefreshOAuthTokenIfNeeded(force: true);
@@ -928,30 +928,30 @@ Future<bool> handleOAuth401Error(String failedAccessToken) async {
 // Subscription checks
 // ---------------------------------------------------------------------------
 
-/// Whether the current user is a NeomClaw AI subscriber.
-bool isNeomClawAISubscriber() {
+/// Whether the current user is a Neomage AI subscriber.
+bool isNeomageAISubscriber() {
   if (!isAnthropicAuthEnabled()) return false;
-  final tokens = getNeomClawAIOAuthTokens();
-  return _shouldUseNeomClawAIAuth(tokens?.scopes);
+  final tokens = getNeomageAIOAuthTokens();
+  return _shouldUseNeomageAIAuth(tokens?.scopes);
 }
 
 /// Check if OAuth token has the user:profile scope.
 bool hasProfileScope() {
-  return getNeomClawAIOAuthTokens()?.scopes.contains(neomClawAiProfileScope) ??
+  return getNeomageAIOAuthTokens()?.scopes.contains(neomageAiProfileScope) ??
       false;
 }
 
 /// Whether the user is a 1P API customer (not subscriber, not 3P).
 bool is1PApiCustomer() {
   if (isUsing3PServices()) return false;
-  if (isNeomClawAISubscriber()) return false;
+  if (isNeomageAISubscriber()) return false;
   return true;
 }
 
 /// Get the current subscription type.
 SubscriptionType? getSubscriptionType() {
   if (!isAnthropicAuthEnabled()) return null;
-  final oauthTokens = getNeomClawAIOAuthTokens();
+  final oauthTokens = getNeomageAIOAuthTokens();
   if (oauthTokens == null) return null;
   return _parseSubscriptionType(oauthTokens.subscriptionType);
 }
@@ -988,28 +988,28 @@ bool isProSubscriber() => getSubscriptionType() == SubscriptionType.pro;
 /// Whether the user is a Team Premium subscriber.
 bool isTeamPremiumSubscriber() {
   return getSubscriptionType() == SubscriptionType.team &&
-      getRateLimitTier() == 'default_neomclaw_max_5x';
+      getRateLimitTier() == 'default_neomage_max_5x';
 }
 
 /// Get the rate limit tier.
 String? getRateLimitTier() {
   if (!isAnthropicAuthEnabled()) return null;
-  return getNeomClawAIOAuthTokens()?.rateLimitTier;
+  return getNeomageAIOAuthTokens()?.rateLimitTier;
 }
 
 /// Get a human-readable subscription name.
 String getSubscriptionName() {
   switch (getSubscriptionType()) {
     case SubscriptionType.enterprise:
-      return 'NeomClaw Enterprise';
+      return 'Neomage Enterprise';
     case SubscriptionType.team:
-      return 'NeomClaw Team';
+      return 'Neomage Team';
     case SubscriptionType.max:
-      return 'NeomClaw Max';
+      return 'Neomage Max';
     case SubscriptionType.pro:
-      return 'NeomClaw Pro';
+      return 'Neomage Pro';
     default:
-      return 'NeomClaw API';
+      return 'Neomage API';
   }
 }
 
@@ -1026,14 +1026,14 @@ bool hasOpusAccess() {
 /// Check if the user is a consumer subscriber (pro or max).
 bool isConsumerSubscriber() {
   final subType = getSubscriptionType();
-  return isNeomClawAISubscriber() &&
+  return isNeomageAISubscriber() &&
       subType != null &&
       (subType == SubscriptionType.max || subType == SubscriptionType.pro);
 }
 
 /// Check if overage provisioning is allowed.
 bool isOverageProvisioningAllowed() {
-  if (!isNeomClawAISubscriber()) return false;
+  if (!isNeomageAISubscriber()) return false;
   // Placeholder: full implementation checks billingType from account info.
   return false;
 }
@@ -1054,7 +1054,7 @@ UserAccountInfo? getAccountInformation() {
   final authResult = getAuthTokenSource();
   final accountInfo = UserAccountInfo(tokenSource: authResult.source.name);
 
-  if (isNeomClawAISubscriber()) {
+  if (isNeomageAISubscriber()) {
     return UserAccountInfo(
       subscription: getSubscriptionName(),
       tokenSource: authResult.source.name,
@@ -1214,7 +1214,7 @@ Map<String, String> getOtelHeadersFromHelper() {
 
   final debounceMs =
       int.tryParse(
-        Platform.environment['NEOMCLAW_OTEL_HEADERS_HELPER_DEBOUNCE_MS'] ?? '',
+        Platform.environment['MAGE_OTEL_HEADERS_HELPER_DEBOUNCE_MS'] ?? '',
       ) ??
       defaultOtelHeadersDebounceMs;
 

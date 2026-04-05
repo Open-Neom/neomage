@@ -1,4 +1,4 @@
-// CoordinatorService — port of neom_claw/src/coordinator/coordinatorMode.ts.
+// CoordinatorService — port of neomage/src/coordinator/coordinatorMode.ts.
 // Manages multi-agent orchestration, task distribution, result aggregation,
 // and coordinated workflows between the main agent and sub-agents.
 

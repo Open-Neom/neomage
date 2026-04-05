@@ -1,4 +1,4 @@
-// XML tag constants — ported from NeomClaw src/constants/xml.ts.
+// XML tag constants — ported from Neomage src/constants/xml.ts.
 
 // ── Command metadata tags ──
 const String commandNameTag = 'command-name';

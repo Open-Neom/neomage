@@ -1,8 +1,8 @@
-// Keybinding resolver — comprehensive port of neom_claw/src/keybindings/.
+// Keybinding resolver — comprehensive port of neomage/src/keybindings/.
 // Stateful chord resolution, conflict detection, platform-specific bindings,
 // user config loading/validation, and shortcut display formatting.
 
-import 'package:neom_claw/core/platform/claw_io.dart' show Platform;
+import 'package:neomage/core/platform/neomage_io.dart' show Platform;
 
 import 'keybinding_types.dart';
 

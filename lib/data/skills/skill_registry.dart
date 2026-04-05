@@ -1,17 +1,19 @@
-// SkillRegistry — port of neom_claw/src/skills/.
+// SkillRegistry — port of neomage/src/skills/.
 // Manages skill definitions, loading, resolution, and execution.
 // Skills are modular prompt-based capabilities (like /commit, /review-pr, /pdf).
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+
+import 'package:flutter/services.dart' show AssetManifest, rootBundle;
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ─── Types ───
 
 /// Skill source type.
 enum SkillSource {
   builtin, // Shipped with app
-  project, // .neomclaw/skills/ in project
-  user, // ~/.neomclaw/skills/ user-global
+  project, // .neomage/skills/ in project
+  user, // ~/.neomage/skills/ user-global
   mcp, // From MCP server
   remote, // Downloaded from registry
 }
@@ -271,6 +273,10 @@ class SkillRegistry {
     return null;
   }
 
+  /// Bundled skills loaded from assets (category → list of skills).
+  /// Populated by [initialize] from assets/skills/*.md via AssetManifest.
+  final Map<String, List<SkillDefinition>> bundledByCategory = {};
+
   /// Initialize and load skills from all sources.
   Future<void> initialize({String? projectRoot, String? homeDir}) async {
     if (_initialized) return;
@@ -278,10 +284,13 @@ class SkillRegistry {
     // Register built-in skills.
     _registerBuiltins();
 
+    // Load bundled skills from assets/skills/.
+    await _loadBundledSkills();
+
     // Add search paths.
     if (projectRoot != null) {
-      _searchPaths.add('$projectRoot/.neomclaw/skills');
-      _searchPaths.add('$projectRoot/.neomclaw/commands'); // Legacy path
+      _searchPaths.add('$projectRoot/.neomage/skills');
+      _searchPaths.add('$projectRoot/.neomage/commands'); // Legacy path
     }
 
     final home =
@@ -289,11 +298,11 @@ class SkillRegistry {
         Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'];
     if (home != null) {
-      _searchPaths.add('$home/.neomclaw/skills');
-      _searchPaths.add('$home/.neomclaw/commands'); // Legacy path
+      _searchPaths.add('$home/.neomage/skills');
+      _searchPaths.add('$home/.neomage/commands'); // Legacy path
     }
 
-    // Load from file system.
+    // Load from file system (project/user overrides bundled).
     await _loadFromPaths();
 
     _initialized = true;
@@ -618,13 +627,97 @@ Include:
     );
   }
 
+  /// Load bundled skills from assets/skills/ via AssetManifest.
+  /// Skills are registered with source=builtin and grouped by category.
+  Future<void> _loadBundledSkills() async {
+    try {
+      final assetManifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      final allAssets = assetManifest.listAssets();
+      final regex = RegExp(r'assets/skills/([^/]+)/([^/]+\.md)$');
+
+      for (final assetPath in allAssets) {
+        final match = regex.firstMatch(assetPath);
+        if (match == null) continue;
+
+        final category = match.group(1)!;
+        final fileName = match.group(2)!;
+        final name = fileName.replaceAll('.md', '');
+
+        // Register as a lightweight definition (prompt loaded on-demand).
+        final skill = SkillDefinition(
+          name: name,
+          description: 'Bundled skill: ${_humanize(name)}',
+          prompt: '', // Loaded on-demand via loadSkillContent()
+          source: SkillSource.builtin,
+          tags: [category],
+          metadata: {'assetPath': assetPath, 'category': category},
+        );
+
+        register(skill);
+        bundledByCategory.putIfAbsent(category, () => []);
+        bundledByCategory[category]!.add(skill);
+      }
+
+      // Sort each category alphabetically.
+      for (final list in bundledByCategory.values) {
+        list.sort((a, b) => a.name.compareTo(b.name));
+      }
+    } catch (_) {
+      // AssetManifest may not be available in non-Flutter contexts (CLI, tests).
+    }
+  }
+
+  /// Load the full markdown content of a bundled skill on-demand.
+  /// Returns null if the skill has no asset path or loading fails.
+  Future<String?> loadSkillContent(SkillDefinition skill) async {
+    final assetPath = skill.metadata?['assetPath'] as String?;
+    if (assetPath == null) return skill.prompt.isNotEmpty ? skill.prompt : null;
+
+    try {
+      final content = await rootBundle.loadString(assetPath);
+
+      // Update the skill's prompt with full content.
+      final parsed = SkillDefinition.fromMarkdown(content, source: skill.source);
+      final updated = SkillDefinition(
+        name: skill.name,
+        fullName: parsed.fullName ?? skill.fullName,
+        description: parsed.description.isNotEmpty ? parsed.description : skill.description,
+        prompt: parsed.prompt,
+        source: skill.source,
+        parameters: parsed.parameters.isNotEmpty ? parsed.parameters : skill.parameters,
+        tools: parsed.tools.isNotEmpty ? parsed.tools : skill.tools,
+        model: parsed.model ?? skill.model,
+        tags: skill.tags,
+        metadata: skill.metadata,
+      );
+      _skills[skill.name] = updated;
+
+      return content;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// All bundled category names in order.
+  List<String> get bundledCategories => bundledByCategory.keys.toList()..sort();
+
+  /// Total number of bundled skills.
+  int get bundledSkillCount =>
+      bundledByCategory.values.fold(0, (sum, list) => sum + list.length);
+
+  static String _humanize(String snakeCase) {
+    return snakeCase
+        .replaceAll('_', ' ')
+        .replaceAllMapped(RegExp(r'(^|\s)\w'), (m) => m[0]!.toUpperCase());
+  }
+
   Future<void> _loadFromPaths() async {
     for (final searchPath in _searchPaths) {
       final dir = Directory(searchPath);
       if (!await dir.exists()) continue;
 
       final source =
-          searchPath.contains('.neomclaw/skills') &&
+          searchPath.contains('.neomage/skills') &&
               !searchPath.startsWith(Platform.environment['HOME'] ?? '')
           ? SkillSource.project
           : SkillSource.user;

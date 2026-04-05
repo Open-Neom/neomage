@@ -1,4 +1,4 @@
-// Sandbox Settings — full port of neom_claw/src/components/sandbox/.
+// Sandbox Settings — full port of neomage/src/components/sandbox/.
 // Ports: SandboxSettings.tsx, SandboxOverridesTab.tsx, SandboxConfigTab.tsx,
 //        SandboxDependenciesTab.tsx, SandboxDoctorSection.tsx.
 //
@@ -7,7 +7,7 @@
 //   - Obx(() => Widget) reactive wrappers
 //   - Sint.find<T>() / Sint.put()
 
-import 'package:neom_claw/core/platform/claw_io.dart' show Platform;
+import 'package:neomage/core/platform/neomage_io.dart' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';
@@ -79,7 +79,7 @@ enum OverrideMode {
   String get description {
     switch (this) {
       case OverrideMode.open:
-        return 'When a command fails due to sandbox restrictions, NeomClaw can retry '
+        return 'When a command fails due to sandbox restrictions, Neomage can retry '
             'with dangerouslyDisableSandbox to run outside the sandbox (falling '
             'back to default permissions).';
       case OverrideMode.closed:
@@ -370,8 +370,8 @@ class SandboxSettings extends StatelessWidget {
 
       return Container(
         decoration: BoxDecoration(
-          color: ClawColors.darkSurface,
-          border: Border.all(color: ClawColors.darkBorder),
+          color: NeomageColors.darkSurface,
+          border: Border.all(color: NeomageColors.darkBorder),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -384,7 +384,7 @@ class SandboxSettings extends StatelessWidget {
               current: controller.currentTab.value,
               onChanged: (tab) => controller.currentTab.value = tab,
             ),
-            const Divider(height: 1, color: ClawColors.darkBorder),
+            const Divider(height: 1, color: NeomageColors.darkBorder),
             // ── Status banner ──
             if (controller.statusMessage.value != null)
               _StatusBanner(message: controller.statusMessage.value!),
@@ -434,7 +434,7 @@ class _SandboxTabBar extends StatelessWidget {
           Text(
             'Sandbox:',
             style: TextStyle(
-              color: ClawColors.amber,
+              color: NeomageColors.amber,
               fontWeight: FontWeight.bold,
               fontSize: 14,
             ),
@@ -454,12 +454,12 @@ class _SandboxTabBar extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? ClawColors.amber.withValues(alpha: 0.15)
+                        ? NeomageColors.amber.withValues(alpha: 0.15)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(4),
                     border: isActive
                         ? Border.all(
-                            color: ClawColors.amber.withValues(alpha: 0.4),
+                            color: NeomageColors.amber.withValues(alpha: 0.4),
                           )
                         : null,
                   ),
@@ -467,8 +467,8 @@ class _SandboxTabBar extends StatelessWidget {
                     tab.title,
                     style: TextStyle(
                       color: isActive
-                          ? ClawColors.amber
-                          : ClawColors.darkTextSecondary,
+                          ? NeomageColors.amber
+                          : NeomageColors.darkTextSecondary,
                       fontWeight: isActive
                           ? FontWeight.w600
                           : FontWeight.normal,
@@ -497,7 +497,7 @@ class _StatusBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSuccess = message.startsWith('✓');
-    final color = isSuccess ? ClawColors.codeGreen : ClawColors.amber;
+    final color = isSuccess ? NeomageColors.codeGreen : NeomageColors.amber;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -544,10 +544,10 @@ class _SandboxModeTab extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: ClawColors.codeYellow.withValues(alpha: 0.1),
+                  color: NeomageColors.codeYellow.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                   border: Border.all(
-                    color: ClawColors.codeYellow.withValues(alpha: 0.3),
+                    color: NeomageColors.codeYellow.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -555,14 +555,14 @@ class _SandboxModeTab extends StatelessWidget {
                     Icon(
                       Icons.warning_amber_rounded,
                       size: 16,
-                      color: ClawColors.codeYellow,
+                      color: NeomageColors.codeYellow,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Cannot block unix domain sockets (see Dependencies tab)',
                         style: TextStyle(
-                          color: ClawColors.codeYellow,
+                          color: NeomageColors.codeYellow,
                           fontSize: 13,
                         ),
                       ),
@@ -576,7 +576,7 @@ class _SandboxModeTab extends StatelessWidget {
               'Configure Mode:',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: ClawColors.darkTextPrimary,
+                color: NeomageColors.darkTextPrimary,
                 fontSize: 14,
               ),
             ),
@@ -602,16 +602,16 @@ class _SandboxModeTab extends StatelessWidget {
               'fallback to regular permissions. Explicit ask/deny rules '
               'are always respected.',
               style: TextStyle(
-                color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+                color: NeomageColors.darkTextSecondary.withValues(alpha: 0.7),
                 fontSize: 12,
                 height: 1.5,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Learn more: code.neomclaw.com/docs/en/sandboxing',
+              'Learn more: code.neomage.com/docs/en/sandboxing',
               style: TextStyle(
-                color: ClawColors.darkTextSecondary.withValues(alpha: 0.5),
+                color: NeomageColors.darkTextSecondary.withValues(alpha: 0.5),
                 fontSize: 12,
               ),
             ),
@@ -647,13 +647,13 @@ class _ModeOptionTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isSelected
-                ? ClawColors.amber.withValues(alpha: 0.1)
+                ? NeomageColors.amber.withValues(alpha: 0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
               color: isSelected
-                  ? ClawColors.amber.withValues(alpha: 0.4)
-                  : ClawColors.darkBorder,
+                  ? NeomageColors.amber.withValues(alpha: 0.4)
+                  : NeomageColors.darkBorder,
             ),
           ),
           child: Row(
@@ -664,8 +664,8 @@ class _ModeOptionTile extends StatelessWidget {
                     : Icons.radio_button_unchecked,
                 size: 18,
                 color: isSelected
-                    ? ClawColors.amber
-                    : ClawColors.darkTextSecondary,
+                    ? NeomageColors.amber
+                    : NeomageColors.darkTextSecondary,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -673,8 +673,8 @@ class _ModeOptionTile extends StatelessWidget {
                   mode.label,
                   style: TextStyle(
                     color: isSelected
-                        ? ClawColors.darkTextPrimary
-                        : ClawColors.darkTextSecondary,
+                        ? NeomageColors.darkTextPrimary
+                        : NeomageColors.darkTextSecondary,
                     fontSize: 13,
                   ),
                 ),
@@ -682,7 +682,7 @@ class _ModeOptionTile extends StatelessWidget {
               if (isCurrent)
                 Text(
                   '(current)',
-                  style: TextStyle(color: ClawColors.codeGreen, fontSize: 12),
+                  style: TextStyle(color: NeomageColors.codeGreen, fontSize: 12),
                 ),
             ],
           ),
@@ -710,7 +710,7 @@ class _SandboxOverridesTab extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Text(
             'Sandbox is not enabled. Enable sandbox to configure override settings.',
-            style: TextStyle(color: ClawColors.darkTextSecondary, fontSize: 13),
+            style: TextStyle(color: NeomageColors.darkTextSecondary, fontSize: 13),
           ),
         );
       }
@@ -726,7 +726,7 @@ class _SandboxOverridesTab extends StatelessWidget {
                 'Override settings are managed by a higher-priority configuration '
                 'and cannot be changed locally.',
                 style: TextStyle(
-                  color: ClawColors.darkTextSecondary,
+                  color: NeomageColors.darkTextSecondary,
                   fontSize: 13,
                 ),
               ),
@@ -734,7 +734,7 @@ class _SandboxOverridesTab extends StatelessWidget {
               Text(
                 'Current setting: ${controller.overrideMode.value == OverrideMode.open ? "Allow unsandboxed fallback" : "Strict sandbox mode"}',
                 style: TextStyle(
-                  color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+                  color: NeomageColors.darkTextSecondary.withValues(alpha: 0.7),
                   fontSize: 12,
                 ),
               ),
@@ -770,7 +770,7 @@ class _OverridesSelectBody extends StatelessWidget {
               'Configure Overrides:',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: ClawColors.darkTextPrimary,
+                color: NeomageColors.darkTextPrimary,
                 fontSize: 14,
               ),
             ),
@@ -801,9 +801,9 @@ class _OverridesSelectBody extends StatelessWidget {
             const SizedBox(height: 12),
 
             Text(
-              'Learn more: code.neomclaw.com/docs/en/sandboxing#configure-sandboxing',
+              'Learn more: code.neomage.com/docs/en/sandboxing#configure-sandboxing',
               style: TextStyle(
-                color: ClawColors.darkTextSecondary.withValues(alpha: 0.5),
+                color: NeomageColors.darkTextSecondary.withValues(alpha: 0.5),
                 fontSize: 12,
               ),
             ),
@@ -839,13 +839,13 @@ class _OverrideOptionTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isSelected
-                ? ClawColors.amber.withValues(alpha: 0.1)
+                ? NeomageColors.amber.withValues(alpha: 0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
               color: isSelected
-                  ? ClawColors.amber.withValues(alpha: 0.4)
-                  : ClawColors.darkBorder,
+                  ? NeomageColors.amber.withValues(alpha: 0.4)
+                  : NeomageColors.darkBorder,
             ),
           ),
           child: Row(
@@ -856,8 +856,8 @@ class _OverrideOptionTile extends StatelessWidget {
                     : Icons.radio_button_unchecked,
                 size: 18,
                 color: isSelected
-                    ? ClawColors.amber
-                    : ClawColors.darkTextSecondary,
+                    ? NeomageColors.amber
+                    : NeomageColors.darkTextSecondary,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -865,8 +865,8 @@ class _OverrideOptionTile extends StatelessWidget {
                   mode.label,
                   style: TextStyle(
                     color: isSelected
-                        ? ClawColors.darkTextPrimary
-                        : ClawColors.darkTextSecondary,
+                        ? NeomageColors.darkTextPrimary
+                        : NeomageColors.darkTextSecondary,
                     fontSize: 13,
                   ),
                 ),
@@ -874,7 +874,7 @@ class _OverrideOptionTile extends StatelessWidget {
               if (isCurrent)
                 Text(
                   '(current)',
-                  style: TextStyle(color: ClawColors.codeGreen, fontSize: 12),
+                  style: TextStyle(color: NeomageColors.codeGreen, fontSize: 12),
                 ),
             ],
           ),
@@ -900,14 +900,14 @@ class _OverrideDescription extends StatelessWidget {
             text: '$title ',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+              color: NeomageColors.darkTextSecondary.withValues(alpha: 0.7),
               fontSize: 12,
             ),
           ),
           TextSpan(
             text: description,
             style: TextStyle(
-              color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+              color: NeomageColors.darkTextSecondary.withValues(alpha: 0.7),
               fontSize: 12,
               height: 1.5,
             ),
@@ -944,7 +944,7 @@ class _SandboxConfigTab extends StatelessWidget {
               Text(
                 'Sandbox is not enabled',
                 style: TextStyle(
-                  color: ClawColors.darkTextSecondary,
+                  color: NeomageColors.darkTextSecondary,
                   fontSize: 13,
                 ),
               ),
@@ -1055,7 +1055,7 @@ class _ConfigSection extends StatelessWidget {
           title,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: ClawColors.amber,
+            color: NeomageColors.amber,
             fontSize: 13,
           ),
         ),
@@ -1064,7 +1064,7 @@ class _ConfigSection extends StatelessWidget {
           Text(
             content!,
             style: TextStyle(
-              color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+              color: NeomageColors.darkTextSecondary.withValues(alpha: 0.7),
               fontSize: 12,
             ),
           ),
@@ -1075,7 +1075,7 @@ class _ConfigSection extends StatelessWidget {
               child: Text(
                 line,
                 style: TextStyle(
-                  color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+                  color: NeomageColors.darkTextSecondary.withValues(alpha: 0.7),
                   fontSize: 12,
                 ),
               ),
@@ -1105,14 +1105,14 @@ class _GlobPatternWarning extends StatelessWidget {
             Icon(
               Icons.warning_amber_rounded,
               size: 14,
-              color: ClawColors.codeYellow,
+              color: NeomageColors.codeYellow,
             ),
             const SizedBox(width: 6),
             Text(
               'Warning: Glob patterns not fully supported on Linux',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: ClawColors.codeYellow,
+                color: NeomageColors.codeYellow,
                 fontSize: 13,
               ),
             ),
@@ -1124,7 +1124,7 @@ class _GlobPatternWarning extends StatelessWidget {
           '${displayed.join(', ')}'
           '${remaining > 0 ? ' ($remaining more)' : ''}',
           style: TextStyle(
-            color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+            color: NeomageColors.darkTextSecondary.withValues(alpha: 0.7),
             fontSize: 12,
           ),
         ),
@@ -1152,7 +1152,7 @@ class _WarningsNote extends StatelessWidget {
                 child: Text(
                   w,
                   style: TextStyle(
-                    color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+                    color: NeomageColors.darkTextSecondary.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                 ),
@@ -1241,7 +1241,7 @@ class _SandboxDependenciesTab extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   err,
-                  style: TextStyle(color: ClawColors.codeRed, fontSize: 13),
+                  style: TextStyle(color: NeomageColors.codeRed, fontSize: 13),
                 ),
               ),
             ),
@@ -1268,7 +1268,7 @@ class _DependencyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = isOk ? ClawColors.codeGreen : ClawColors.codeRed;
+    final statusColor = isOk ? NeomageColors.codeGreen : NeomageColors.codeRed;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -1281,7 +1281,7 @@ class _DependencyRow extends StatelessWidget {
                 TextSpan(
                   text: '$name: ',
                   style: const TextStyle(
-                    color: ClawColors.darkTextPrimary,
+                    color: NeomageColors.darkTextPrimary,
                     fontSize: 13,
                   ),
                 ),
@@ -1298,7 +1298,7 @@ class _DependencyRow extends StatelessWidget {
               child: Text(
                 '· $hint',
                 style: TextStyle(
-                  color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+                  color: NeomageColors.darkTextSecondary.withValues(alpha: 0.7),
                   fontSize: 12,
                 ),
               ),
@@ -1318,8 +1318,8 @@ class _SeccompDependencyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor = isMissing
-        ? ClawColors.codeYellow
-        : ClawColors.codeGreen;
+        ? NeomageColors.codeYellow
+        : NeomageColors.codeGreen;
     final statusText = isMissing ? 'not installed' : 'installed';
 
     return Padding(
@@ -1333,7 +1333,7 @@ class _SeccompDependencyRow extends StatelessWidget {
                 const TextSpan(
                   text: 'seccomp filter: ',
                   style: TextStyle(
-                    color: ClawColors.darkTextPrimary,
+                    color: NeomageColors.darkTextPrimary,
                     fontSize: 13,
                   ),
                 ),
@@ -1345,7 +1345,7 @@ class _SeccompDependencyRow extends StatelessWidget {
                   TextSpan(
                     text: ' (required to block unix domain sockets)',
                     style: TextStyle(
-                      color: ClawColors.darkTextSecondary.withValues(
+                      color: NeomageColors.darkTextSecondary.withValues(
                         alpha: 0.7,
                       ),
                       fontSize: 12,
@@ -1382,7 +1382,7 @@ class _HintLine extends StatelessWidget {
       child: Text(
         text,
         style: TextStyle(
-          color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+          color: NeomageColors.darkTextSecondary.withValues(alpha: 0.7),
           fontSize: 12,
         ),
       ),
@@ -1415,8 +1415,8 @@ class SandboxDoctorSection extends StatelessWidget {
     }
 
     final statusColor = depCheck.hasErrors
-        ? ClawColors.codeRed
-        : ClawColors.codeYellow;
+        ? NeomageColors.codeRed
+        : NeomageColors.codeYellow;
     final statusText = depCheck.hasErrors
         ? 'Missing dependencies'
         : 'Available (with warnings)';
@@ -1430,7 +1430,7 @@ class SandboxDoctorSection extends StatelessWidget {
             'Sandbox',
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: ClawColors.darkTextPrimary,
+              color: NeomageColors.darkTextPrimary,
               fontSize: 13,
             ),
           ),
@@ -1439,7 +1439,7 @@ class SandboxDoctorSection extends StatelessWidget {
               const Text(
                 '└ Status: ',
                 style: TextStyle(
-                  color: ClawColors.darkTextPrimary,
+                  color: NeomageColors.darkTextPrimary,
                   fontSize: 13,
                 ),
               ),
@@ -1455,7 +1455,7 @@ class SandboxDoctorSection extends StatelessWidget {
               padding: const EdgeInsets.only(left: 8),
               child: Text(
                 '└ $e',
-                style: TextStyle(color: ClawColors.codeRed, fontSize: 13),
+                style: TextStyle(color: NeomageColors.codeRed, fontSize: 13),
               ),
             ),
           ),
@@ -1465,7 +1465,7 @@ class SandboxDoctorSection extends StatelessWidget {
               padding: const EdgeInsets.only(left: 8),
               child: Text(
                 '└ $w',
-                style: TextStyle(color: ClawColors.codeYellow, fontSize: 13),
+                style: TextStyle(color: NeomageColors.codeYellow, fontSize: 13),
               ),
             ),
           ),
@@ -1476,7 +1476,7 @@ class SandboxDoctorSection extends StatelessWidget {
               child: Text(
                 '└ Run /sandbox for install instructions',
                 style: TextStyle(
-                  color: ClawColors.darkTextSecondary.withValues(alpha: 0.7),
+                  color: NeomageColors.darkTextSecondary.withValues(alpha: 0.7),
                   fontSize: 13,
                 ),
               ),

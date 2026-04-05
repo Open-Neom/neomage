@@ -1,4 +1,4 @@
-// JetBrains bridge — port of NeomClaw's JetBrains plugin bridge.
+// JetBrains bridge — port of Neomage's JetBrains plugin bridge.
 // Provides typed APIs for interacting with JetBrains IDE features:
 // editor, project, inspections, refactoring, VCS, and events.
 
@@ -371,7 +371,7 @@ class JetbrainsBridge {
     _ideType = ideType;
 
     final handshake = BridgeHandshake(
-      clientName: 'neom_claw',
+      clientName: 'neomage',
       clientVersion: BridgeProtocolVersion.current,
       capabilities: {
         BridgeCapability.fileEdit,

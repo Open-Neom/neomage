@@ -1,7 +1,7 @@
-// Shell provider — port of neom_claw/src/utils/shell/.
+// Shell provider — port of neomage/src/utils/shell/.
 // Shell detection, environment setup, command building, read-only validation.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// Shell type.
 enum ShellType { bash, zsh, sh, fish, powershell, cmd }
@@ -83,7 +83,7 @@ Map<String, String> buildEnvironment(
     // Disable interactive features
     'TERM': 'dumb',
     'GIT_TERMINAL_PROMPT': '0',
-    'NEOMCLAWCODE': '1',
+    'NEOMAGECODE': '1',
     // Disable colors in some tools
     'NO_COLOR': '1',
     'FORCE_COLOR': '0',

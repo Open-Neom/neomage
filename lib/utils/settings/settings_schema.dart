@@ -1,15 +1,15 @@
-// Settings schema — port of neom_claw/src/utils/settings/.
+// Settings schema — port of neomage/src/utils/settings/.
 // Hierarchical settings loading, validation, merging, and change detection.
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// Settings sources in priority order.
 enum SettingsSource {
   policy, // MDM-managed (highest priority)
-  project, // .neomclaw/settings.json
-  local, // .neomclaw/settings.local.json (gitignored)
-  user, // ~/.neomclaw/settings.json
+  project, // .neomage/settings.json
+  local, // .neomage/settings.local.json (gitignored)
+  user, // ~/.neomage/settings.json
 }
 
 /// Sandbox settings.
@@ -217,9 +217,9 @@ Future<SettingsJson> loadMergedSettings({
 }) async {
   // Load each source
   final policy = policyPath != null ? await loadSettingsFile(policyPath) : null;
-  final project = await loadSettingsFile('$projectDir/.neomclaw/settings.json');
+  final project = await loadSettingsFile('$projectDir/.neomage/settings.json');
   final local = await loadSettingsFile(
-    '$projectDir/.neomclaw/settings.local.json',
+    '$projectDir/.neomage/settings.local.json',
   );
   final user = await loadSettingsFile('$userConfigDir/settings.json');
 
@@ -439,8 +439,8 @@ class SettingsPaths {
 
   const SettingsPaths({required this.projectDir, required this.configDir});
 
-  String get projectSettings => '$projectDir/.neomclaw/settings.json';
-  String get localSettings => '$projectDir/.neomclaw/settings.local.json';
+  String get projectSettings => '$projectDir/.neomage/settings.json';
+  String get localSettings => '$projectDir/.neomage/settings.local.json';
   String get userSettings => '$configDir/settings.json';
   String get mcpConfig => '$configDir/.mcp.json';
   String get projectMcpConfig => '$projectDir/.mcp.json';

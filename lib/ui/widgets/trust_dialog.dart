@@ -1,4 +1,4 @@
-// TrustDialog — port of neom_claw/src/components/TrustDialog/
+// TrustDialog — port of neomage/src/components/TrustDialog/
 // Ports: TrustDialog.tsx, utils.ts
 //
 // Displays a trust/security confirmation dialog when entering a new project
@@ -8,11 +8,13 @@
 //
 // The user must accept or exit before proceeding.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 // ─── Trust setting source model (mirrors utils.ts) ───
 
@@ -141,7 +143,7 @@ class TrustDialogController extends SintController {
           description:
               'Project configures ${mcpServerNames.length} MCP ${mcpServerNames.length == 1 ? 'server' : 'servers'}: '
               '${formatListWithAnd(mcpServerNames, limit: 3)}',
-          sources: const ['.neomclaw/settings.json'],
+          sources: const ['.neomage/settings.json'],
           severity: TrustConcernSeverity.medium,
         ),
       );
@@ -240,7 +242,7 @@ class TrustDialogController extends SintController {
   void accept() {
     hasTrustAccepted.value = true;
     // In real implementation, this would persist the trust decision
-    // to .neomclaw/settings.local.json
+    // to .neomage/settings.local.json
   }
 }
 
@@ -579,7 +581,7 @@ class _TrustDialogActions extends StatelessWidget {
                 color: theme.colorScheme.error.withValues(alpha: 0.5),
               ),
             ),
-            child: const Text('Exit'),
+            child: Text(NeomageTranslationConstants.exit.tr),
           ),
 
           const SizedBox(width: 12),
@@ -591,7 +593,7 @@ class _TrustDialogActions extends StatelessWidget {
               onDone();
             },
             icon: const Icon(Icons.check, size: 16),
-            label: const Text('Trust & Continue'),
+            label: Text(NeomageTranslationConstants.trustAndContinue.tr),
           ),
         ],
       ),

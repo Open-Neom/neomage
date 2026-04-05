@@ -1,9 +1,9 @@
-// Configuration manager — port of neom_claw/src/utils/config.ts.
+// Configuration manager — port of neomage/src/utils/config.ts.
 // Global and project config persistence, trust dialog, config caching,
 // migration, and project-scoped settings.
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -197,8 +197,8 @@ class ProjectConfig {
   bool hasTrustDialogAccepted;
   bool hasCompletedProjectOnboarding;
   int projectOnboardingSeenCount;
-  bool hasNeomClawMdExternalIncludesApproved;
-  bool hasNeomClawMdExternalIncludesWarningShown;
+  bool hasNeomageMdExternalIncludesApproved;
+  bool hasNeomageMdExternalIncludesWarningShown;
   List<String>? enabledMcpjsonServers;
   List<String>? disabledMcpjsonServers;
   bool? enableAllProjectMcpServers;
@@ -220,8 +220,8 @@ class ProjectConfig {
     this.hasTrustDialogAccepted = false,
     this.hasCompletedProjectOnboarding = false,
     this.projectOnboardingSeenCount = 0,
-    this.hasNeomClawMdExternalIncludesApproved = false,
-    this.hasNeomClawMdExternalIncludesWarningShown = false,
+    this.hasNeomageMdExternalIncludesApproved = false,
+    this.hasNeomageMdExternalIncludesWarningShown = false,
     this.enabledMcpjsonServers,
     this.disabledMcpjsonServers,
     this.enableAllProjectMcpServers,
@@ -479,7 +479,7 @@ bool isGlobalConfigKey(String key) => globalConfigKeys.contains(key);
 /// Check if a key is a project config key.
 bool isProjectConfigKey(String key) => projectConfigKeys.contains(key);
 
-/// Manages reading and writing the global config file (~/.neomclaw.json).
+/// Manages reading and writing the global config file (~/.neomage.json).
 class ConfigManager {
   /// Path to the global config file.
   final String configFilePath;

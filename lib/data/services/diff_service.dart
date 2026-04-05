@@ -1,8 +1,8 @@
-// Diff service — port of neom_claw diff functionality.
+// Diff service — port of neomage diff functionality.
 // Provides Myers diff algorithm, patch application, three-way merge,
 // and various diff formatting utilities.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math' as math;
 
 // ---------------------------------------------------------------------------

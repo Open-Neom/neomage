@@ -1,11 +1,11 @@
-// Port of neom_claw gitDiff.ts + git.ts + ghPrStatus.ts + detectRepository.ts
+// Port of neomage gitDiff.ts + git.ts + ghPrStatus.ts + detectRepository.ts
 //
 // Git operations, diff parsing, repository detection, and PR status utilities
-// for the neom_claw package.
+// for the neomage package.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:crypto/crypto.dart' show sha256;
 import 'package:path/path.dart' as p;
@@ -557,7 +557,7 @@ Future<GitFileStatus> getFileStatus({String? cwd}) async {
 Future<bool> stashToCleanState({String? cwd, String? message}) async {
   try {
     final stashMessage =
-        message ?? 'NeomClaw auto-stash - ${DateTime.now().toIso8601String()}';
+        message ?? 'Neomage auto-stash - ${DateTime.now().toIso8601String()}';
 
     final fileStatus = await getFileStatus(cwd: cwd);
     if (fileStatus.untracked.isNotEmpty) {
@@ -976,7 +976,7 @@ ToolUseDiff _parseRawDiffToToolUseDiff(
 
 Future<String> _getDiffRef(String gitRoot) async {
   final baseBranch =
-      Platform.environment['NEOMCLAW_BASE_REF'] ??
+      Platform.environment['MAGE_BASE_REF'] ??
       await getDefaultBranch(cwd: gitRoot);
   final result = await _runGit(
     ['--no-optional-locks', 'merge-base', 'HEAD', baseBranch],

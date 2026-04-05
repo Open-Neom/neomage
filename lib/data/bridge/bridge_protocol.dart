@@ -1,5 +1,5 @@
-// Bridge protocol — port of NeomClaw's protocol layer.
-// JSON-RPC 2.0 based protocol for IDE <-> NeomClaw communication.
+// Bridge protocol — port of Neomage's protocol layer.
+// JSON-RPC 2.0 based protocol for IDE <-> Neomage communication.
 // Handles handshake, request/response, notifications, and capability negotiation.
 
 import 'dart:async';
@@ -970,38 +970,38 @@ class BridgeProtocol {
     });
   }
 
-  // ---- NeomClaw-specific methods ----
+  // ---- Neomage-specific methods ----
 
-  /// Send a chat message to NeomClaw.
-  Future<BridgeResponse> neomClawChat({
+  /// Send a chat message to Neomage.
+  Future<BridgeResponse> neomageChat({
     required String message,
     String? conversationId,
     Map<String, dynamic>? options,
   }) {
-    return sendRequest('neomclaw/chat', {
+    return sendRequest('neomage/chat', {
       'message': message,
       'conversationId': ?conversationId,
       'options': ?options,
     });
   }
 
-  /// Abort a running NeomClaw request.
-  Future<BridgeResponse> neomClawAbort({String? conversationId}) {
-    return sendRequest('neomclaw/abort', {'conversationId': ?conversationId});
+  /// Abort a running Neomage request.
+  Future<BridgeResponse> neomageAbort({String? conversationId}) {
+    return sendRequest('neomage/abort', {'conversationId': ?conversationId});
   }
 
-  /// Get NeomClaw status.
-  Future<BridgeResponse> neomClawStatus() {
-    return sendRequest('neomclaw/status', null);
+  /// Get Neomage status.
+  Future<BridgeResponse> neomageStatus() {
+    return sendRequest('neomage/status', null);
   }
 
-  /// Invoke a NeomClaw tool.
-  Future<BridgeResponse> neomClawTools({
+  /// Invoke a Neomage tool.
+  Future<BridgeResponse> neomageTools({
     required String toolName,
     required Map<String, dynamic> toolInput,
     String? conversationId,
   }) {
-    return sendRequest('neomclaw/tools', {
+    return sendRequest('neomage/tools', {
       'toolName': toolName,
       'toolInput': toolInput,
       'conversationId': ?conversationId,

@@ -1,8 +1,8 @@
-// Context builder — port of neom_claw/src/utils/context/.
+// Context builder — port of neomage/src/utils/context/.
 // Builds context for LLM: file contents, git state, project info, search results.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -156,7 +156,7 @@ class ProjectInfoContext extends ContextItem {
   ContextPriority get priority => ContextPriority.low;
 }
 
-/// Memory file context (NEOMCLAW.md).
+/// Memory file context (NEOMAGE.md).
 class MemoryContext extends ContextItem {
   final String source; // 'user', 'project', 'parent'
   final String memoryContent;

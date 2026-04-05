@@ -1,4 +1,4 @@
-// SDK entrypoint types — ported from NeomClaw src/entrypoints/.
+// SDK entrypoint types — ported from Neomage src/entrypoints/.
 
 /// Hook event types that can be registered.
 enum HookEvent {

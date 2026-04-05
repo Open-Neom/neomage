@@ -1,14 +1,14 @@
-/// Configuration management service for Neom Claw, ported from NeomClaw.
+/// Configuration management service for Neomage, ported from Neomage.
 ///
 /// Supports scoped configuration (global, project, session), multiple sources
 /// (file, environment, CLI, API, defaults), reactive watching, validation,
-/// and import/export — including migration from NeomClaw's `~/.neomclaw/`
+/// and import/export — including migration from Neomage's `~/.neomage/`
 /// directory layout.
 library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -16,10 +16,10 @@ import 'package:neom_claw/core/platform/claw_io.dart';
 
 /// The scope at which a configuration value is applied.
 enum ConfigScope {
-  /// Machine-wide settings stored in `~/.claw/config.json`.
+  /// Machine-wide settings stored in `~/.neomage/config.json`.
   global,
 
-  /// Project-level settings stored in `.claw/config.json` relative to the
+  /// Project-level settings stored in `.neomage/config.json` relative to the
   /// project root.
   project,
 
@@ -207,7 +207,7 @@ class ConfigChangeEvent {
 // Predefined Config Keys
 // ---------------------------------------------------------------------------
 
-/// Well-known configuration keys used throughout Claw.
+/// Well-known configuration keys used throughout Neomage.
 abstract final class ConfigKeys {
   static const String apiKey = 'apiKey';
   static const String model = 'model';
@@ -237,17 +237,17 @@ abstract final class ConfigKeys {
 /// Map from environment variable names to their corresponding config keys.
 const Map<String, String> _envMapping = {
   'ANTHROPIC_API_KEY': ConfigKeys.apiKey,
-  'NEOMCLAW_MODEL': ConfigKeys.model,
+  'MAGE_MODEL': ConfigKeys.model,
   'ANTHROPIC_BASE_URL': ConfigKeys.baseUrl,
-  'NEOMCLAW_MAX_TOKENS': ConfigKeys.maxTokens,
-  'NEOMCLAW_TEMPERATURE': ConfigKeys.temperature,
-  'NEOMCLAW_PERMISSION_MODE': ConfigKeys.permissionMode,
-  'NEOMCLAW_THEME': ConfigKeys.theme,
-  'NEOMCLAW_VIM_MODE': ConfigKeys.vimMode,
-  'NEOMCLAW_TELEMETRY': ConfigKeys.telemetryEnabled,
-  'NEOMCLAW_LOG_LEVEL': ConfigKeys.logLevel,
-  'NEOMCLAW_TIMEOUT': ConfigKeys.timeout,
-  'NEOMCLAW_SHELL': ConfigKeys.shell,
+  'MAGE_MAX_TOKENS': ConfigKeys.maxTokens,
+  'MAGE_TEMPERATURE': ConfigKeys.temperature,
+  'MAGE_PERMISSION_MODE': ConfigKeys.permissionMode,
+  'MAGE_THEME': ConfigKeys.theme,
+  'MAGE_VIM_MODE': ConfigKeys.vimMode,
+  'MAGE_TELEMETRY': ConfigKeys.telemetryEnabled,
+  'MAGE_LOG_LEVEL': ConfigKeys.logLevel,
+  'MAGE_TIMEOUT': ConfigKeys.timeout,
+  'MAGE_SHELL': ConfigKeys.shell,
 };
 
 // ---------------------------------------------------------------------------
@@ -277,7 +277,7 @@ const Map<String, dynamic> _defaults = {
 // Config Service
 // ---------------------------------------------------------------------------
 
-/// Central configuration service for Claw.
+/// Central configuration service for Neomage.
 ///
 /// Manages layered configuration across [ConfigScope.global],
 /// [ConfigScope.project], and [ConfigScope.session] scopes. Values set in a
@@ -546,8 +546,8 @@ class ConfigService {
 
   /// Return the canonical file path for a configuration scope.
   ///
-  /// - [ConfigScope.global]: `~/.claw/config.json`
-  /// - [ConfigScope.project]: `.claw/config.json` (relative to cwd or
+  /// - [ConfigScope.global]: `~/.neomage/config.json`
+  /// - [ConfigScope.project]: `.neomage/config.json` (relative to cwd or
   ///   [projectRoot])
   /// - [ConfigScope.session]: in-memory only, returns empty string.
   String getConfigPath({
@@ -560,10 +560,10 @@ class ConfigService {
             Platform.environment['HOME'] ??
             Platform.environment['USERPROFILE'] ??
             '.';
-        return '$home/.claw/config.json';
+        return '$home/.neomage/config.json';
       case ConfigScope.project:
         final root = projectRoot ?? Directory.current.path;
-        return '$root/.claw/config.json';
+        return '$root/.neomage/config.json';
       case ConfigScope.session:
         return ''; // session config is ephemeral
     }
@@ -596,23 +596,23 @@ class ConfigService {
   // Import / Export
   // -----------------------------------------------------------------------
 
-  /// Attempt to migrate settings from an existing NeomClaw installation at
-  /// `~/.neomclaw/`.
+  /// Attempt to migrate settings from an existing Neomage installation at
+  /// `~/.neomage/`.
   ///
-  /// This reads `~/.neomclaw/settings.json` (if present) and maps known keys
-  /// into the Claw configuration format.
-  Future<bool> importFromNeomClaw() async {
+  /// This reads `~/.neomage/settings.json` (if present) and maps known keys
+  /// into the Neomage configuration format.
+  Future<bool> importFromNeomage() async {
     final home =
         Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
     if (home == null) return false;
-    final settingsFile = File('$home/.neomclaw/settings.json');
+    final settingsFile = File('$home/.neomage/settings.json');
     if (!await settingsFile.exists()) return false;
 
     try {
       final content = await settingsFile.readAsString();
       final map = json.decode(content) as Map<String, dynamic>;
 
-      // Map NeomClaw keys to Claw keys where possible.
+      // Map Neomage keys to Neomage keys where possible.
       const mapping = <String, String>{
         'model': ConfigKeys.model,
         'apiKey': ConfigKeys.apiKey,

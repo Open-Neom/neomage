@@ -1,9 +1,9 @@
-// Migration service — port of neom_claw/src/utils/migration/.
+// Migration service — port of neomage/src/utils/migration/.
 // Settings migration, session format upgrades, version checks.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -294,7 +294,7 @@ class VersionInfo {
   };
 
   @override
-  String toString() => 'Neom Claw v$version ($platform)';
+  String toString() => 'Neomage v$version ($platform)';
 }
 
 /// Parse a semantic version string.
@@ -349,10 +349,10 @@ checkForUpdate(String currentVersion) async {
   return (available: false, latestVersion: null, releaseNotes: null);
 }
 
-/// Import settings from an existing NeomClaw (Node.js) installation.
-Future<Map<String, dynamic>?> importFromNeomClaw() async {
+/// Import settings from an existing Neomage (Node.js) installation.
+Future<Map<String, dynamic>?> importFromNeomage() async {
   final home = Platform.environment['HOME'] ?? '';
-  final configPath = '$home/.neomclaw/settings.json';
+  final configPath = '$home/.neomage/settings.json';
   final file = File(configPath);
 
   if (!await file.exists()) return null;
@@ -360,7 +360,7 @@ Future<Map<String, dynamic>?> importFromNeomClaw() async {
   try {
     final content = await file.readAsString();
     final data = jsonDecode(content) as Map<String, dynamic>;
-    // Convert Node.js NeomClaw settings to Neom Claw format
+    // Convert Node.js Neomage settings to Neomage format
     return _convertNodeSettings(data);
   } catch (_) {
     return null;
@@ -378,17 +378,17 @@ Map<String, dynamic> _convertNodeSettings(Map<String, dynamic> nodeSettings) {
     if (nodeSettings.containsKey('hooks')) 'hooks': nodeSettings['hooks'],
     if (nodeSettings.containsKey('mcpServers'))
       'mcpServers': nodeSettings['mcpServers'],
-    'importedFrom': 'neom-claw-node',
+    'importedFrom': 'neomage-node',
     'importedAt': DateTime.now().toIso8601String(),
   };
 }
 
-/// Export Neom Claw settings for backup.
+/// Export Neomage settings for backup.
 Future<String> exportSettings() async {
   final home = Platform.environment['HOME'] ?? '';
   final paths = [
-    '$home/.neomclaw/settings.json',
-    '$home/.neomclaw/settings.local.json',
+    '$home/.neomage/settings.json',
+    '$home/.neomage/settings.local.json',
   ];
 
   final export = <String, dynamic>{
@@ -415,11 +415,11 @@ Future<void> importSettings(String exportJson) async {
   if (settings == null) return;
 
   final home = Platform.environment['HOME'] ?? '';
-  final configDir = Directory('/.neomclaw');
+  final configDir = Directory('/.neomage');
   await configDir.create(recursive: true);
 
   for (final entry in settings.entries) {
-    final file = File('$home/.neomclaw/${entry.key}');
+    final file = File('$home/.neomage/${entry.key}');
     await file.writeAsString(
       const JsonEncoder.withIndent('  ').convert(entry.value),
     );

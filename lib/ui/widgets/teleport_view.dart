@@ -1,5 +1,5 @@
-// Teleport view — comprehensive port of neom_claw/src/utils/teleport.tsx
-// and neom_claw/src/utils/teleport/*.ts.
+// Teleport view — comprehensive port of neomage/src/utils/teleport.tsx
+// and neomage/src/utils/teleport/*.ts.
 // Remote session / teleport UI with Flutter widgets and Sint reactive state.
 
 import 'dart:async';

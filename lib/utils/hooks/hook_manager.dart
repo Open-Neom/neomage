@@ -1,6 +1,6 @@
 /// Hook Manager
 ///
-/// Ported from neom_claw/src/utils/hooks/:
+/// Ported from neomage/src/utils/hooks/:
 ///   - sessionHooks.ts    — session-scoped hook lifecycle
 ///   - hooksConfigManager.ts — hook event metadata and grouping
 ///   - hooksSettings.ts   — hook settings, sources, equality, display
@@ -215,17 +215,17 @@ enum HookSource {
 String hookSourceDescription(HookSource source) {
   switch (source) {
     case HookSource.userSettings:
-      return 'User settings (~/.neomclaw/settings.json)';
+      return 'User settings (~/.neomage/settings.json)';
     case HookSource.projectSettings:
-      return 'Project settings (.neomclaw/settings.json)';
+      return 'Project settings (.neomage/settings.json)';
     case HookSource.localSettings:
-      return 'Local settings (.neomclaw/settings.local.json)';
+      return 'Local settings (.neomage/settings.local.json)';
     case HookSource.pluginHook:
-      return 'Plugin hooks (~/.neomclaw/plugins/*/hooks/hooks.json)';
+      return 'Plugin hooks (~/.neomage/plugins/*/hooks/hooks.json)';
     case HookSource.sessionHook:
       return 'Session hooks (in-memory, temporary)';
     case HookSource.builtinHook:
-      return 'Built-in hooks (registered internally by NeomClaw)';
+      return 'Built-in hooks (registered internally by Neomage)';
     case HookSource.policySettings:
       return 'Policy settings';
   }
@@ -736,7 +736,7 @@ Map<HookEvent, HookEventMetadata> getHookEventMetadata(List<String> toolNames) {
       ),
     ),
     'Stop': const HookEventMetadata(
-      summary: 'Right before NeomClaw concludes its response',
+      summary: 'Right before Neomage concludes its response',
       description:
           'Exit code 0 - stdout/stderr not shown\n'
           'Exit code 2 - show stderr to model and continue conversation',

@@ -1,4 +1,4 @@
-// Hook system types — ported from NeomClaw src/types/hooks.ts.
+// Hook system types — ported from Neomage src/types/hooks.ts.
 
 /// Hook event types that can trigger callbacks.
 enum HookEventType {

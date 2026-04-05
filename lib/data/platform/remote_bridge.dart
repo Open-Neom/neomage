@@ -1,10 +1,10 @@
-// RemoteBridge — port of neom_claw/src/bridge/ + src/remote/ + src/server/.
+// RemoteBridge — port of neomage/src/bridge/ + src/remote/ + src/server/.
 // Full remote session management: HTTP/WebSocket server, client reconnection,
 // session relay, and multi-device synchronization.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ─── Types ───
 
@@ -174,7 +174,7 @@ class RemoteLatencyUpdated extends RemoteEvent {
 
 // ─── Remote Client ───
 
-/// Client for connecting to a remote NeomClaw session.
+/// Client for connecting to a remote Neomage session.
 class RemoteClient {
   final String _url;
   final String? _authToken;

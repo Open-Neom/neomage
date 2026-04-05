@@ -1,4 +1,4 @@
-// Prompt suggestion service — port of neom_claw/src/services/PromptSuggestion.
+// Prompt suggestion service — port of neomage/src/services/PromptSuggestion.
 // Predicts what the user would naturally type next.
 
 import '../../domain/models/message.dart';
@@ -32,7 +32,7 @@ enum FilterReason {
   nothingFound,
   silence,
   question,
-  neomClawVoice,
+  neomageVoice,
   tooShort,
   tooLong,
   singleWord,
@@ -132,9 +132,9 @@ class PromptSuggestionService {
     if (lower.contains('nothing found')) return FilterReason.nothingFound;
     if (lower.contains('silence')) return FilterReason.silence;
 
-    // NeomClaw voice
+    // Neomage voice
     if (lower.startsWith('let me') || lower.startsWith("i'll")) {
-      return FilterReason.neomClawVoice;
+      return FilterReason.neomageVoice;
     }
 
     // Evaluative
@@ -190,6 +190,6 @@ class PromptSuggestionService {
   static const String _suggestionSystemPrompt =
       'Predict what the user would naturally type next. '
       'Return only the prediction (2-12 words). '
-      'Do not use NeomClaw voice ("Let me...", "I\'ll..."). '
+      'Do not use Neomage voice ("Let me...", "I\'ll..."). '
       'Do not ask questions. Do not evaluate.';
 }

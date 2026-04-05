@@ -1,11 +1,11 @@
 // /think-back command — year-in-review animation using thinkback plugin.
-// Faithful port of neom_claw/src/commands/thinkback/thinkback.tsx (553 TS LOC).
+// Faithful port of neomage/src/commands/thinkback/thinkback.tsx (553 TS LOC).
 //
 // Covers: plugin installation check, marketplace management, plugin enabling,
 // animation playback, skill directory resolution, menu actions (play, edit,
 // fix, regenerate), and the complete ThinkbackFlow state machine.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 import 'package:sint/sint.dart';
@@ -18,16 +18,16 @@ import '../command.dart';
 // ============================================================================
 
 /// Internal marketplace name for Anthropic employees.
-const String _internalMarketplaceName = 'neom-claw-marketplace';
+const String _internalMarketplaceName = 'neomage-marketplace';
 
 /// Internal marketplace repo for Anthropic employees.
-const String _internalMarketplaceRepo = 'anthropics/neom-claw-marketplace';
+const String _internalMarketplaceRepo = 'anthropics/neomage-marketplace';
 
 /// Official marketplace repo for external users.
-const String _officialMarketplaceRepo = 'anthropics/neom-claw-plugins-official';
+const String _officialMarketplaceRepo = 'anthropics/neomage-plugins-official';
 
 /// Official marketplace display name.
-const String _officialMarketplaceName = 'neom-claw-plugins-official';
+const String _officialMarketplaceName = 'neomage-plugins-official';
 
 /// Skill name for thinkback.
 const String _skillName = 'thinkback';
@@ -35,21 +35,21 @@ const String _skillName = 'thinkback';
 /// Prompt sent when user chooses "Edit content".
 const String _editPrompt =
     'Use the Skill tool to invoke the "thinkback" skill with mode=edit to '
-    'modify my existing NeomClaw year in review animation. Ask me what I '
+    'modify my existing Neomage year in review animation. Ask me what I '
     'want to change. When the animation is ready, tell the user to run '
     '/think-back again to play it.';
 
 /// Prompt sent when user chooses "Fix errors".
 const String _fixPrompt =
     'Use the Skill tool to invoke the "thinkback" skill with mode=fix to fix '
-    'validation or rendering errors in my existing NeomClaw year in review '
+    'validation or rendering errors in my existing Neomage year in review '
     'animation. Run the validator, identify errors, and fix them. When the '
     'animation is ready, tell the user to run /think-back again to play it.';
 
 /// Prompt sent when user chooses "Regenerate".
 const String _regeneratePrompt =
     'Use the Skill tool to invoke the "thinkback" skill with mode=regenerate '
-    'to create a completely new NeomClaw year in review animation from '
+    'to create a completely new Neomage year in review animation from '
     'scratch. Delete the existing animation and start fresh. When the '
     'animation is ready, tell the user to run /think-back again to play it.';
 
@@ -142,11 +142,11 @@ Future<String?> getThinkbackSkillDir() async {
 
   // Check common plugin installation paths.
   final candidatePaths = [
-    p.join(home, '.neomclaw', 'plugins', _skillName, 'skills', _skillName),
-    p.join(home, '.neomclaw', 'plugins', getPluginId(), 'skills', _skillName),
+    p.join(home, '.neomage', 'plugins', _skillName, 'skills', _skillName),
+    p.join(home, '.neomage', 'plugins', getPluginId(), 'skills', _skillName),
     p.join(
       home,
-      '.neomclaw',
+      '.neomage',
       'marketplace',
       getMarketplaceName(),
       _skillName,
@@ -417,7 +417,7 @@ class ThinkbackCommand extends LocalUiCommand {
 
   @override
   String get description =>
-      'Generate your 2025 NeomClaw Think Back (takes a few minutes to run)';
+      'Generate your 2025 Neomage Think Back (takes a few minutes to run)';
 
   @override
   List<String> get aliases => const ['thinkback'];
@@ -441,7 +441,7 @@ class ThinkbackCommand extends LocalUiCommand {
     if (hasAnimation) {
       // If animation exists, present menu options.
       final menuText = StringBuffer()
-        ..writeln('Think Back on 2025 with NeomClaw')
+        ..writeln('Think Back on 2025 with Neomage')
         ..writeln()
         ..writeln('Options:')
         ..writeln('  1. Play animation — Watch your year in review')

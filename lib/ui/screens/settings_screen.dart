@@ -1,4 +1,4 @@
-// Settings screen — faithful port of neom_claw/src/components/Settings/
+// Settings screen — faithful port of neomage/src/components/Settings/
 // Ports: Settings.tsx (tab container), Config.tsx (config options),
 // Status.tsx (system info + diagnostics), Usage.tsx (rate limit bars).
 //
@@ -6,24 +6,26 @@
 // - Status tab: version, session info, model, API provider, diagnostics
 // - Config tab: boolean toggles, enum pickers, search filtering
 // - Usage tab: rate limit progress bars with auto-refresh
-// - Provider / API key configuration (original claw feature)
+// - Provider / API key configuration (original neomage feature)
 
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:sint/sint.dart';
 
-import '../../data/api/api_provider.dart';
-import '../../data/auth/auth_service.dart';
+import '../../utils/constants/neomage_translation_constants.dart';
+import 'package:neomage/data/api/api_provider.dart';
+import 'package:neomage/data/auth/auth_service.dart';
 import '../controllers/chat_controller.dart';
 import 'ollama_setup_screen.dart';
 import '../widgets/design_system.dart';
 
 // ─── Settings tab enum ───────────────────────────────────────────────────
 
-enum SettingsTab { status, config, usage }
+enum SettingsTab { status, config, ollama, usage }
 
 // ─── Setting model (port of Setting type from Config.tsx) ────────────────
 
@@ -71,11 +73,11 @@ class Diagnostic {
   Color get color {
     switch (level) {
       case DiagnosticLevel.info:
-        return ClawColors.info;
+        return NeomageColors.info;
       case DiagnosticLevel.warning:
-        return ClawColors.warning;
+        return NeomageColors.warning;
       case DiagnosticLevel.error:
-        return ClawColors.error;
+        return NeomageColors.error;
     }
   }
 
@@ -412,7 +414,7 @@ class SettingsController extends SintController {
     final items = <SettingItem>[
       SettingItem(
         id: 'autoCompactEnabled',
-        label: 'Auto-compact',
+        label: NeomageTranslationConstants.autoCompact.tr,
         type: SettingType.boolean,
         value: autoCompactEnabled.value,
         onChange: (v) {
@@ -422,7 +424,7 @@ class SettingsController extends SintController {
       ),
       SettingItem(
         id: 'spinnerTipsEnabled',
-        label: 'Show tips',
+        label: NeomageTranslationConstants.showTips.tr,
         type: SettingType.boolean,
         value: showTips.value,
         onChange: (v) {
@@ -432,7 +434,7 @@ class SettingsController extends SintController {
       ),
       SettingItem(
         id: 'prefersReducedMotion',
-        label: 'Reduce motion',
+        label: NeomageTranslationConstants.reduceMotion.tr,
         type: SettingType.boolean,
         value: reduceMotion.value,
         onChange: (v) {
@@ -442,7 +444,7 @@ class SettingsController extends SintController {
       ),
       SettingItem(
         id: 'thinkingEnabled',
-        label: 'Thinking mode',
+        label: NeomageTranslationConstants.thinkingMode.tr,
         type: SettingType.boolean,
         value: thinkingEnabled.value,
         onChange: (v) {
@@ -452,7 +454,7 @@ class SettingsController extends SintController {
       ),
       SettingItem(
         id: 'verbose',
-        label: 'Verbose output',
+        label: NeomageTranslationConstants.verboseOutput.tr,
         type: SettingType.boolean,
         value: verboseMode.value,
         onChange: (v) {
@@ -462,7 +464,7 @@ class SettingsController extends SintController {
       ),
       SettingItem(
         id: 'fileCheckpointing',
-        label: 'File checkpointing',
+        label: NeomageTranslationConstants.fileCheckpointing.tr,
         type: SettingType.boolean,
         value: fileCheckpointing.value,
         onChange: (v) {
@@ -472,7 +474,7 @@ class SettingsController extends SintController {
       ),
       SettingItem(
         id: 'notifications',
-        label: 'Notifications',
+        label: NeomageTranslationConstants.notifications.tr,
         type: SettingType.boolean,
         value: notificationsEnabled.value,
         onChange: (v) {
@@ -501,9 +503,9 @@ class SettingsController extends SintController {
   /// Port of buildPrimarySection() + buildSecondarySection() from Status.tsx.
   List<StatusProperty> get statusProperties {
     return [
-      const StatusProperty(label: 'Version', value: '1.0.0'),
-      StatusProperty(label: 'Provider', value: selectedProvider.value.name),
-      StatusProperty(label: 'Model', value: modelController.text),
+      StatusProperty(label: NeomageTranslationConstants.version.tr, value: '1.0.0'),
+      StatusProperty(label: NeomageTranslationConstants.provider.tr, value: selectedProvider.value.name),
+      StatusProperty(label: NeomageTranslationConstants.model.tr, value: modelController.text),
     ];
   }
 
@@ -551,7 +553,7 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(NeomageTranslationConstants.settings.tr),
         actions: [
           TextButton.icon(
             onPressed: () async {
@@ -559,51 +561,80 @@ class SettingsScreen extends StatelessWidget {
               if (!context.mounted) return;
               ScaffoldMessenger.of(
                 context,
-              ).showSnackBar(const SnackBar(content: Text('Settings saved')));
+              ).showSnackBar(SnackBar(content: Text(NeomageTranslationConstants.settingsSaved.tr)));
             },
             icon: const Icon(Icons.save),
-            label: const Text('Save'),
+            label: Text(NeomageTranslationConstants.save.tr),
           ),
         ],
-        // Tab bar (port of Tabs component from Settings.tsx)
+        // Tab bar
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Obx(
-            () => Row(
-              children: SettingsTab.values.map((tab) {
-                final selected = controller.selectedTab.value == tab;
-                return Expanded(
-                  child: InkWell(
-                    onTap: () => controller.selectedTab.value = tab,
-                    child: Container(
-                      height: 48,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: selected
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.transparent,
-                            width: 2,
+            () {
+              const tabLabels = {
+                SettingsTab.status: ('Status', Icons.info_outline),
+                SettingsTab.config: ('Config', Icons.tune),
+                SettingsTab.ollama: ('Ollama', Icons.computer),
+                SettingsTab.usage: ('Usage', Icons.bar_chart),
+              };
+              // Hide Ollama tab on mobile devices.
+              final isMobile = !kIsWeb &&
+                  (defaultTargetPlatform == TargetPlatform.iOS ||
+                   defaultTargetPlatform == TargetPlatform.android);
+              final tabs = SettingsTab.values
+                  .where((t) => !(isMobile && t == SettingsTab.ollama))
+                  .toList();
+
+              return Row(
+                children: tabs.map((tab) {
+                  final selected = controller.selectedTab.value == tab;
+                  final (label, icon) = tabLabels[tab]!;
+                  return Expanded(
+                    child: InkWell(
+                      onTap: () => controller.selectedTab.value = tab,
+                      child: Container(
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: selected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Colors.transparent,
+                              width: 2,
+                            ),
                           ),
                         ),
-                      ),
-                      child: Text(
-                        tab.name[0].toUpperCase() + tab.name.substring(1),
-                        style: TextStyle(
-                          fontWeight: selected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: selected
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(icon, size: 16,
+                              color: selected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: selected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: selected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
+                  );
+                }).toList(),
+              );
+            },
           ),
         ),
       ),
@@ -617,6 +648,8 @@ class SettingsScreen extends StatelessWidget {
             return _StatusTab(controller: controller);
           case SettingsTab.config:
             return _ConfigTab(controller: controller);
+          case SettingsTab.ollama:
+            return const OllamaSetupScreen(embedded: true);
           case SettingsTab.usage:
             return _UsageTab(controller: controller);
         }
@@ -635,61 +668,95 @@ class _StatusTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       children: [
-        // ── Primary section ──
-        ...controller.statusProperties.map(
-          (prop) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 120,
-                  child: Text(
-                    '${prop.label}:',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                // ── Status card ──
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    children: controller.statusProperties.map(
+                      (prop) => Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 110,
+                              child: Text(
+                                '${prop.label}:',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: cs.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: SelectableText(
+                                prop.value,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ).toList(),
                   ),
                 ),
-                Expanded(child: SelectableText(prop.value)),
-              ],
-            ),
-          ),
-        ),
 
-        const SizedBox(height: 16),
-        const Divider(),
-        const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
-        // ── Provider config ──
-        Text('API Provider', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
+                // ── Provider config ──
+                Text(
+                  NeomageTranslationConstants.apiProvider.tr,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 10),
 
-        Obx(() {
-          const providers = [
-            (ApiProviderType.gemini, 'Gemini', Icons.auto_awesome),
-            (ApiProviderType.qwen, 'Qwen', Icons.translate),
-            (ApiProviderType.openai, 'OpenAI', Icons.cloud),
-            (ApiProviderType.deepseek, 'DeepSeek', Icons.psychology),
-            (ApiProviderType.anthropic, 'Anthropic', Icons.hub),
-            (ApiProviderType.ollama, 'Ollama', Icons.computer),
-          ];
-          return Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: providers.map((p) {
-              final (type, label, icon) = p;
-              final selected = controller.selectedProvider.value == type;
-              return ChoiceChip(
-                avatar: Icon(icon, size: 16),
-                label: Text(label),
-                selected: selected,
-                onSelected: (_) {
-                  controller.selectedProvider.value = type;
-                  controller.modelController.text = controller.defaultModel;
-                  controller.baseUrlController.text = controller.defaultBaseUrl;
+                Obx(() {
+                  final isMobileDevice = !kIsWeb &&
+                      (defaultTargetPlatform == TargetPlatform.iOS ||
+                       defaultTargetPlatform == TargetPlatform.android);
+
+                  final providers = [
+                    (ApiProviderType.gemini, 'Gemini', Icons.auto_awesome),
+                    (ApiProviderType.qwen, 'Qwen', Icons.translate),
+                    (ApiProviderType.openai, 'OpenAI', Icons.cloud),
+                    (ApiProviderType.deepseek, 'DeepSeek', Icons.psychology),
+                    (ApiProviderType.anthropic, 'Anthropic', Icons.hub),
+                    if (!isMobileDevice)
+                      (ApiProviderType.ollama, 'Ollama', Icons.computer),
+                  ];
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: providers.map((p) {
+                      final (type, label, icon) = p;
+                      final selected = controller.selectedProvider.value == type;
+                      return ChoiceChip(
+                        avatar: Icon(icon, size: 16),
+                        label: Text(label),
+                        selected: selected,
+                        onSelected: (_) {
+                          controller.selectedProvider.value = type;
+                          controller.modelController.text = controller.defaultModel;
+                          controller.baseUrlController.text = controller.defaultBaseUrl;
                 },
               );
             }).toList(),
@@ -794,7 +861,7 @@ class _StatusTab extends StatelessWidget {
                         Icon(
                           Icons.check_circle,
                           size: 16,
-                          color: ClawColors.success,
+                          color: NeomageColors.success,
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -802,7 +869,7 @@ class _StatusTab extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: ClawColors.success,
+                            color: NeomageColors.success,
                           ),
                         ),
                       ],
@@ -841,10 +908,10 @@ class _StatusTab extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: ClawColors.error.withValues(alpha: 0.1),
+                  color: NeomageColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: ClawColors.error.withValues(alpha: 0.3),
+                    color: NeomageColors.error.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
@@ -853,7 +920,7 @@ class _StatusTab extends StatelessWidget {
                     Icon(
                       Icons.error_outline,
                       size: 16,
-                      color: ClawColors.error,
+                      color: NeomageColors.error,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -861,7 +928,7 @@ class _StatusTab extends StatelessWidget {
                         controller.testError.value!,
                         style: TextStyle(
                           fontSize: 13,
-                          color: ClawColors.error,
+                          color: NeomageColors.error,
                           height: 1.4,
                         ),
                       ),
@@ -874,55 +941,58 @@ class _StatusTab extends StatelessWidget {
           return const SizedBox.shrink();
         }),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
-        // ── Local Models (Ollama) shortcut ──
-        OutlinedButton.icon(
-          onPressed: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute(builder: (_) => const OllamaSetupScreen())),
-          icon: const Icon(Icons.computer, size: 18),
-          label: const Text('Local Models (Ollama)'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 44),
-          ),
-        ),
-
-        const SizedBox(height: 24),
-
-        // ── Diagnostics (port of Diagnostics component from Status.tsx) ──
-        Obx(() {
-          if (controller.isLoadingDiagnostics.value) {
-            return const SizedBox.shrink();
-          }
-          if (controller.diagnostics.isEmpty) {
-            return const SizedBox.shrink();
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Diagnostics', style: theme.textTheme.titleMedium),
-              const SizedBox(height: 8),
-              ...controller.diagnostics.map(
-                (d) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
+                // ── Diagnostics ──
+                Obx(() {
+                  if (controller.isLoadingDiagnostics.value ||
+                      controller.diagnostics.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(d.icon, size: 16, color: d.color),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          d.message,
-                          style: const TextStyle(fontSize: 13),
+                      Text(
+                        NeomageTranslationConstants.diagnostics.tr,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          children: controller.diagnostics.map(
+                            (d) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                children: [
+                                  Icon(d.icon, size: 16, color: d.color),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      d.message,
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ).toList(),
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        }),
+                  );
+                }),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -948,7 +1018,7 @@ class _ConfigTab extends StatelessWidget {
             decoration: InputDecoration(
               isDense: true,
               prefixIcon: const Icon(Icons.search, size: 20),
-              hintText: 'Search settings...',
+              hintText: NeomageTranslationConstants.searchSettings.tr,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -1047,7 +1117,7 @@ class _SettingTile extends StatelessWidget {
               (opt) => ListTile(
                 title: Text(opt),
                 trailing: opt == item.value
-                    ? const Icon(Icons.check, color: ClawColors.success)
+                    ? const Icon(Icons.check, color: NeomageColors.success)
                     : null,
                 onTap: () {
                   item.onChange?.call(opt);
@@ -1087,7 +1157,7 @@ class _UsageTab extends StatelessWidget {
               const Icon(
                 Icons.error_outline,
                 size: 48,
-                color: ClawColors.error,
+                color: NeomageColors.error,
               ),
               const SizedBox(height: 12),
               Text(
@@ -1098,7 +1168,7 @@ class _UsageTab extends StatelessWidget {
               const SizedBox(height: 16),
               TextButton.icon(
                 icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Retry'),
+                label: Text(NeomageTranslationConstants.retry.tr),
                 onPressed: controller.refreshUsage,
               ),
             ],
@@ -1108,7 +1178,7 @@ class _UsageTab extends StatelessWidget {
 
       final util = controller.utilization.value;
       if (util == null) {
-        return const Center(child: Text('No usage data available'));
+        return Center(child: Text(NeomageTranslationConstants.noUsageData.tr));
       }
 
       return ListView(
@@ -1140,7 +1210,7 @@ class _UsageTab extends StatelessWidget {
           Center(
             child: TextButton.icon(
               icon: const Icon(Icons.refresh, size: 18),
-              label: const Text('Refresh usage data'),
+              label: Text(NeomageTranslationConstants.refreshUsageData.tr),
               onPressed: controller.refreshUsage,
             ),
           ),
@@ -1163,10 +1233,10 @@ class _LimitBar extends StatelessWidget {
     final ratio = limit.utilization / 100;
     final usedText = '${limit.utilization.floor()}% used';
     final barColor = ratio > 0.9
-        ? ClawColors.error
+        ? NeomageColors.error
         : ratio > 0.7
-        ? ClawColors.warning
-        : ClawColors.success;
+        ? NeomageColors.warning
+        : NeomageColors.success;
 
     String? subtext;
     if (limit.resetsAt != null) {

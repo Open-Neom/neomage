@@ -1,12 +1,12 @@
-// Full entrypoint definitions — ported from NeomClaw src/entrypoints/.
+// Full entrypoint definitions — ported from Neomage src/entrypoints/.
 // Covers all entry modes: CLI, SDK, MCP server, headless, embedded, piped, remote.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
-import 'package:neom_claw/domain/models/message.dart';
-import 'package:neom_claw/domain/models/permissions.dart';
-import 'package:neom_claw/domain/models/tool_definition.dart';
+import 'package:neomage/domain/models/message.dart';
+import 'package:neomage/domain/models/permissions.dart';
+import 'package:neomage/domain/models/tool_definition.dart';
 
 // ---------------------------------------------------------------------------
 // Entry mode enumeration
@@ -488,7 +488,7 @@ class CliEntrypoint {
   /// Generate formatted help text for all CLI flags.
   String helpText() {
     final buffer = StringBuffer();
-    buffer.writeln('Usage: claw [options] [prompt]');
+    buffer.writeln('Usage: neomage [options] [prompt]');
     buffer.writeln();
     buffer.writeln('Options:');
 
@@ -522,7 +522,7 @@ class CliEntrypoint {
 
   /// Generate version text.
   String versionText() {
-    return 'claw (flutter_claw) 0.1.0';
+    return 'neomage 0.1.0';
   }
 
   static PermissionMode _parsePermissionMode(String value) =>
@@ -809,7 +809,7 @@ class McpEntrypointConfig {
   });
 }
 
-/// MCP server entrypoint — runs Claw as an MCP-compatible server.
+/// MCP server entrypoint — runs Neomage as an MCP-compatible server.
 class McpServerEntrypoint {
   bool _running = false;
 
@@ -1177,7 +1177,7 @@ class HeadlessEntrypoint {
 // Embedded Entrypoint
 // ---------------------------------------------------------------------------
 
-/// Communication channel between host app and embedded Claw.
+/// Communication channel between host app and embedded Neomage.
 enum CommunicationChannel { methodChannel, messagePort, directCall }
 
 /// Restrictions applied in embedded mode.
@@ -1382,10 +1382,10 @@ class EntryRouter {
     }
 
     // Check environment variables.
-    if (env.containsKey('CLAW_SDK_MODE')) {
+    if (env.containsKey('MAGE_SDK_MODE')) {
       return EntryMode.sdk;
     }
-    if (env.containsKey('CLAW_EMBEDDED')) {
+    if (env.containsKey('MAGE_EMBEDDED')) {
       return EntryMode.embedded;
     }
 

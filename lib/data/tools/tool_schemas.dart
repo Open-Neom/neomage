@@ -1,5 +1,5 @@
-// Tool schemas — port of neom_claw/src/tools/schemas/.
-// Complete JSON Schema definitions for all NeomClaw tools.
+// Tool schemas — port of neomage/src/tools/schemas/.
+// Complete JSON Schema definitions for all Neomage tools.
 // Used for API tool_use definitions and input validation.
 
 /// Get the complete tool schema for any tool by name.

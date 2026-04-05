@@ -1,5 +1,5 @@
 // /terminal-setup command — configures terminal keybindings for Shift+Enter.
-// Faithful port of neom_claw/src/commands/terminalSetup/terminalSetup.tsx
+// Faithful port of neomage/src/commands/terminalSetup/terminalSetup.tsx
 // (530 TS LOC).
 //
 // Covers: terminal detection, native CSI u support check, VSCode/Cursor/
@@ -8,7 +8,7 @@
 // backup/restore for Terminal.app preferences, and remote SSH detection.
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:path/path.dart' as p;
@@ -73,7 +73,7 @@ String? getNativeCSIuTerminalDisplayName() {
 /// Detect if we're running in a VSCode Remote SSH session.
 ///
 /// In this case, keybindings need to be installed on the LOCAL machine,
-/// not the remote server where NeomClaw is running.
+/// not the remote server where Neomage is running.
 bool isVSCodeRemoteSSH() {
   final env = Platform.environment;
   final askpassMain = env['VSCODE_GIT_ASKPASS_MAIN'] ?? '';

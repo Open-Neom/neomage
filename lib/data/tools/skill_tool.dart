@@ -1,4 +1,4 @@
-// SkillTool — port of neom_claw/src/tools/SkillTool/.
+// SkillTool — port of neomage/src/tools/SkillTool/.
 // Executes skills (slash commands) in the conversation, supporting inline and
 // forked execution modes, permission rules, budget-aware description truncation,
 // and remote canonical skill loading.
@@ -455,7 +455,7 @@ class SkillInfo {
 // ─── Official Marketplace Check ──────────────────────────────────────────────
 
 /// Known official marketplace identifiers.
-const Set<String> _officialMarketplaceNames = {'anthropic', 'neomclaw'};
+const Set<String> _officialMarketplaceNames = {'anthropic', 'neomage'};
 
 /// Check if a marketplace name is official.
 bool isOfficialMarketplaceName(String? marketplace) {

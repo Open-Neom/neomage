@@ -5,7 +5,7 @@
 library;
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -341,7 +341,7 @@ class XorCipher {
 class SecureStorage {
   final String serviceName;
 
-  const SecureStorage({this.serviceName = 'neom_claw'});
+  const SecureStorage({this.serviceName = 'neomage'});
 
   /// Store a value in the system keychain.
   Future<bool> write(String key, String value) async {

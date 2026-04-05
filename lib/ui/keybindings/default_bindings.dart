@@ -1,8 +1,8 @@
-// Default keybindings — comprehensive port of neom_claw/src/keybindings/defaultBindings.ts.
+// Default keybindings — comprehensive port of neomage/src/keybindings/defaultBindings.ts.
 // All standard keyboard shortcuts for the application, organized by context.
 // Includes platform-specific bindings and feature-gated shortcuts.
 
-import 'package:neom_claw/core/platform/claw_io.dart' show Platform;
+import 'package:neomage/core/platform/neomage_io.dart' show Platform;
 
 import 'keybinding_types.dart';
 import 'keybinding_resolver.dart';

@@ -1,9 +1,9 @@
-// Clipboard service — port of neom_claw clipboard management.
+// Clipboard service — port of neomage clipboard management.
 // Provides clipboard ring, history, system clipboard integration,
 // and specialised copy operations for code, diffs, and tool output.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:flutter/services.dart';
 

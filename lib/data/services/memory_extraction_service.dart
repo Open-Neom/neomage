@@ -1,4 +1,4 @@
-// Memory extraction service — port of neom_claw/src/services/extractMemories/.
+// Memory extraction service — port of neomage/src/services/extractMemories/.
 // Extracts, classifies, deduplicates, and ranks memory candidates from
 // conversations, tool output, and code changes.
 
@@ -6,7 +6,7 @@ import 'dart:math';
 
 // Re-use the canonical MemoryCategory from the team memory service.
 // If the import path differs in your tree, adjust accordingly.
-import 'package:neom_claw/data/services/team_memory_service.dart'
+import 'package:neomage/data/services/team_memory_service.dart'
     show MemoryCategory;
 
 // ── Enums ──────────────────────────────────────────────────────────────────
@@ -71,7 +71,7 @@ class ExtractionConfig {
   /// Which categories to extract.  Empty means all.
   final Set<MemoryCategory> categories;
 
-  /// Automatically add to NEOMCLAW.md if confidence >= this threshold.
+  /// Automatically add to NEOMAGE.md if confidence >= this threshold.
   /// Set to `null` to disable auto-approval.
   final double? autoApproveThreshold;
 
@@ -404,7 +404,7 @@ class MemoryExtractionService {
 
   // ── Formatting ────────────────────────────────────────────────────────
 
-  /// Format a candidate as a markdown bullet suitable for NEOMCLAW.md.
+  /// Format a candidate as a markdown bullet suitable for NEOMAGE.md.
   String formatForStorage(MemoryCandidate candidate) {
     final prefix = candidate.relatedFile != null
         ? '(`${candidate.relatedFile}`) '
@@ -412,7 +412,7 @@ class MemoryExtractionService {
     return '- $prefix${candidate.content}';
   }
 
-  /// Suggest which NEOMCLAW.md section a candidate should go into.
+  /// Suggest which NEOMAGE.md section a candidate should go into.
   String suggestSection(MemoryCandidate candidate) {
     return switch (candidate.category) {
       MemoryCategory.codingConventions => 'Coding Conventions',
@@ -471,8 +471,8 @@ class MemoryExtractionService {
         lower.startsWith('note:') ||
         lower.startsWith('please remember') ||
         lower.contains('add to memory') ||
-        lower.contains('save to neomclaw.md') ||
-        lower.contains('add this to neomclaw.md');
+        lower.contains('save to neomage.md') ||
+        lower.contains('add this to neomage.md');
   }
 
   String _cleanExplicitMemory(String text) {

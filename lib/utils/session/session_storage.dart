@@ -1,10 +1,10 @@
-// Session storage — port of neom_claw/src/utils/sessionStorage.ts.
+// Session storage — port of neomage/src/utils/sessionStorage.ts.
 // Session persistence, transcript JSONL read/write, message chain management,
 // session listing, metadata caching, and project directory resolution.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -243,7 +243,7 @@ class LogEntry {
 /// Handles JSONL-based session file writing with batched I/O,
 /// metadata caching, and session enumeration.
 class SessionStorage {
-  /// Config home directory (e.g., ~/.neomclaw).
+  /// Config home directory (e.g., ~/.neomage).
   final String configHomeDir;
 
   /// Current working directory for project resolution.

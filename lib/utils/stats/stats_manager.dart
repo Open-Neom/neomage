@@ -1,8 +1,8 @@
-/// Statistics tracking and caching for NeomClaw sessions.
+/// Statistics tracking and caching for Neomage sessions.
 ///
 /// Ported from:
-///   - neom_claw/src/utils/stats.ts (1061 LOC)
-///   - neom_claw/src/utils/statsCache.ts (434 LOC)
+///   - neomage/src/utils/stats.ts (1061 LOC)
+///   - neomage/src/utils/statsCache.ts (434 LOC)
 ///
 /// Provides aggregation of session statistics, daily activity tracking,
 /// streak calculations, model usage tracking, and a disk-persisted cache
@@ -10,7 +10,7 @@
 library;
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:sint/sint.dart';
@@ -254,12 +254,12 @@ class ModelUsage {
 }
 
 // ---------------------------------------------------------------------------
-// Types — NeomClawStats (final aggregated output)
+// Types — NeomageStats (final aggregated output)
 // ---------------------------------------------------------------------------
 
-/// Complete aggregated stats returned by [aggregateNeomClawStats].
-class NeomClawStats {
-  NeomClawStats({
+/// Complete aggregated stats returned by [aggregateNeomageStats].
+class NeomageStats {
+  NeomageStats({
     this.totalSessions = 0,
     this.totalMessages = 0,
     this.totalDays = 0,
@@ -499,7 +499,7 @@ enum StatsDateRange { sevenDays, thirtyDays, all }
 /// Usage:
 /// ```dart
 /// final manager = Sint.put(StatsManager());
-/// final stats = await manager.aggregateNeomClawStats();
+/// final stats = await manager.aggregateNeomageStats();
 /// ```
 class StatsManager extends SintController {
   StatsManager({String? configHomeDir, String? projectsDir})
@@ -553,7 +553,7 @@ class StatsManager extends SintController {
         Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '.';
-    return '/.neomclaw';
+    return '/.neomage';
   }
 
   String getStatsCachePath() {
@@ -601,8 +601,8 @@ class StatsManager extends SintController {
     );
   }
 
-  NeomClawStats _getEmptyStats() {
-    return NeomClawStats();
+  NeomageStats _getEmptyStats() {
+    return NeomageStats();
   }
 
   // -------------------------------------------------------------------------
@@ -1130,9 +1130,9 @@ class StatsManager extends SintController {
   // Cache -> Stats conversion
   // -------------------------------------------------------------------------
 
-  /// Convert a [PersistedStatsCache] to [NeomClawStats] by computing
+  /// Convert a [PersistedStatsCache] to [NeomageStats] by computing
   /// derived fields, optionally merging today's live stats.
-  NeomClawStats cacheToStats(
+  NeomageStats cacheToStats(
     PersistedStatsCache cache,
     ProcessedStats? todayStats,
   ) {
@@ -1282,7 +1282,7 @@ class StatsManager extends SintController {
           : 0;
     }
 
-    return NeomClawStats(
+    return NeomageStats(
       totalSessions: totalSessions,
       totalMessages: totalMessages,
       totalDays: totalDays,
@@ -1306,9 +1306,9 @@ class StatsManager extends SintController {
   // Main aggregation
   // -------------------------------------------------------------------------
 
-  /// Aggregates stats from all NeomClaw sessions across all projects.
+  /// Aggregates stats from all Neomage sessions across all projects.
   /// Uses a disk cache to avoid reprocessing historical data.
-  Future<NeomClawStats> aggregateNeomClawStats() async {
+  Future<NeomageStats> aggregateNeomageStats() async {
     final allSessionFiles = await getAllSessionFiles();
 
     if (allSessionFiles.isEmpty) {
@@ -1373,11 +1373,11 @@ class StatsManager extends SintController {
   }
 
   /// Aggregates stats for a specific date range.
-  Future<NeomClawStats> aggregateNeomClawStatsForRange(
+  Future<NeomageStats> aggregateNeomageStatsForRange(
     StatsDateRange range,
   ) async {
     if (range == StatsDateRange.all) {
-      return aggregateNeomClawStats();
+      return aggregateNeomageStats();
     }
 
     final allSessionFiles = await getAllSessionFiles();
@@ -1395,12 +1395,12 @@ class StatsManager extends SintController {
       options: ProcessOptions(fromDate: fromDateStr),
     );
 
-    return _processedStatsToNeomClawStats(stats);
+    return _processedStatsToNeomageStats(stats);
   }
 
-  /// Convert [ProcessedStats] to [NeomClawStats].
+  /// Convert [ProcessedStats] to [NeomageStats].
   /// Used for filtered date ranges that bypass the cache.
-  NeomClawStats _processedStatsToNeomClawStats(ProcessedStats stats) {
+  NeomageStats _processedStatsToNeomageStats(ProcessedStats stats) {
     final dailyActivitySorted = stats.dailyActivity.toList()
       ..sort((a, b) => a.date.compareTo(b.date));
     final dailyModelTokensSorted = stats.dailyModelTokens.toList()
@@ -1460,7 +1460,7 @@ class StatsManager extends SintController {
           : 0;
     }
 
-    return NeomClawStats(
+    return NeomageStats(
       totalSessions: stats.sessionStats.length,
       totalMessages: stats.totalMessages,
       totalDays: totalDays,

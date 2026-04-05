@@ -1,7 +1,7 @@
-// CLI adapter — port of neom_claw CLI entrypoint.
+// CLI adapter — port of neomage CLI entrypoint.
 // Argument parsing, headless mode, and CLI compatibility layer.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// Parsed CLI arguments.
 class CliArgs {
@@ -179,9 +179,9 @@ String _nextArg(List<String> args, int i, String name) {
 /// Print help text.
 void printHelp() {
   stdout.writeln('''
-Neom Claw — AI coding assistant
+Neomage — Multi-provider AI agent engine
 
-Usage: claw [options] [prompt]
+Usage: neomage [options] [prompt]
 
 Options:
   -p, --prompt <text>         Initial prompt to send
@@ -204,16 +204,16 @@ Options:
 Environment Variables:
   ANTHROPIC_API_KEY            API key for Anthropic
   OPENAI_API_KEY               API key for OpenAI-compatible
-  CLAW_MODEL                   Default model name
-  CLAW_API_ENDPOINT            Default API endpoint
-  CLAW_CLI_MODE                Force CLI mode
-  CLAW_NO_COLOR                Disable colors
+  MAGE_MODEL                   Default model name
+  MAGE_API_ENDPOINT            Default API endpoint
+  MAGE_CLI_MODE                Force CLI mode
+  MAGE_NO_COLOR                Disable colors
 
 Examples:
-  claw "fix the bug in main.dart"
-  claw -m sonnet -p "refactor this function"
-  echo "explain this code" | claw
-  claw --headless -p "run tests and fix failures"
+  neomage "fix the bug in main.dart"
+  neomage -m sonnet -p "refactor this function"
+  echo "explain this code" | neomage
+  neomage --headless -p "run tests and fix failures"
 ''');
 }
 

@@ -1,4 +1,4 @@
-// VS Code bridge — port of NeomClaw's VS Code extension bridge.
+// VS Code bridge — port of Neomage's VS Code extension bridge.
 // Provides typed APIs for interacting with VS Code editor features,
 // diagnostics, UI, terminals, and theme integration.
 
@@ -10,7 +10,7 @@ import 'bridge_protocol.dart';
 // VS Code theme
 // ---------------------------------------------------------------------------
 
-/// Represents a VS Code color theme, usable for syncing the NeomClaw UI
+/// Represents a VS Code color theme, usable for syncing the Neomage UI
 /// with the editor theme.
 class VscodeTheme {
   final String name;
@@ -498,7 +498,7 @@ class VscodeBridge {
     _workspacePath = workspacePath;
 
     final handshake = BridgeHandshake(
-      clientName: 'neom_claw',
+      clientName: 'neomage',
       clientVersion: BridgeProtocolVersion.current,
       capabilities: {
         BridgeCapability.fileEdit,

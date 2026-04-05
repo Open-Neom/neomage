@@ -1,4 +1,4 @@
-// Attachment manager — port of neom_claw/src/utils/attachments.ts.
+// Attachment manager — port of neomage/src/utils/attachments.ts.
 // File attachments, IDE selections, hook attachments, queued commands,
 // memory references, MCP resources, and attachment normalization for API.
 

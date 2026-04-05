@@ -1,4 +1,4 @@
-// BashTool Security — port of neom_claw/src/tools/BashTool/bashSecurity.ts.
+// BashTool Security — port of neomage/src/tools/BashTool/bashSecurity.ts.
 // Shell command security validation: command substitution detection, redirection
 // checks, IFS injection prevention, obfuscated flag detection, dangerous
 // variable checks, quote extraction, heredoc validation, and more.

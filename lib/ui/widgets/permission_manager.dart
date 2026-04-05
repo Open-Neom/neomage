@@ -1,7 +1,10 @@
-// PermissionManager — port of neom_claw/src/components/PermissionManager/.
+// PermissionManager — port of neomage/src/components/PermissionManager/.
 // Permission rule editor, review, and management UI.
 
 import 'package:flutter/material.dart';
+import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 // ─── Types ───
 
@@ -42,10 +45,10 @@ class PermissionModeDisplay {
     required this.color,
   });
 
-  static const modes = [
+  static List<PermissionModeDisplay> get modes => [
     PermissionModeDisplay(
       mode: 'default',
-      label: 'Default',
+      label: NeomageTranslationConstants.permDefault.tr,
       description:
           'Ask permission for file writes and commands. Reads are always allowed.',
       icon: Icons.security,
@@ -53,22 +56,22 @@ class PermissionModeDisplay {
     ),
     PermissionModeDisplay(
       mode: 'accept-edits',
-      label: 'Accept Edits',
-      description: 'Auto-approve file edits. Still ask for shell commands.',
+      label: NeomageTranslationConstants.permAcceptEdits.tr,
+      description: NeomageTranslationConstants.permAcceptEditsDesc.tr,
       icon: Icons.edit_note,
       color: Colors.orange,
     ),
     PermissionModeDisplay(
       mode: 'plan',
-      label: 'Plan Mode',
-      description: 'Only plan, never execute. All modifications are blocked.',
+      label: NeomageTranslationConstants.permPlanMode.tr,
+      description: NeomageTranslationConstants.permPlanModeDesc.tr,
       icon: Icons.architecture,
       color: Colors.purple,
     ),
     PermissionModeDisplay(
       mode: 'full-auto',
-      label: 'Full Auto',
-      description: 'Auto-approve everything. Use with caution!',
+      label: NeomageTranslationConstants.permFullAuto.tr,
+      description: NeomageTranslationConstants.permFullAutoDesc.tr,
       icon: Icons.flash_on,
       color: Colors.red,
     ),
@@ -296,7 +299,7 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
               ElevatedButton.icon(
                 onPressed: _showAddRuleDialog,
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add Rule', style: TextStyle(fontSize: 12)),
+                label: Text(NeomageTranslationConstants.addRule.tr, style: const TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -317,27 +320,27 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
                 setState(() => _filterScope = v);
               }),
               const SizedBox(width: 4),
-              _filterChip('Tool', 'tool', _filterScope, (v) {
+              _filterChip(NeomageTranslationConstants.tool.tr, 'tool', _filterScope, (v) {
                 setState(() => _filterScope = v);
               }),
-              _filterChip('File', 'file', _filterScope, (v) {
+              _filterChip(NeomageTranslationConstants.file.tr, 'file', _filterScope, (v) {
                 setState(() => _filterScope = v);
               }),
-              _filterChip('Cmd', 'command', _filterScope, (v) {
+              _filterChip(NeomageTranslationConstants.cmd.tr, 'command', _filterScope, (v) {
                 setState(() => _filterScope = v);
               }),
               const SizedBox(width: 12),
-              _filterChip('Allow', 'allow', _filterBehavior, (v) {
+              _filterChip(NeomageTranslationConstants.allow.tr, 'allow', _filterBehavior, (v) {
                 setState(
                   () => _filterBehavior = v == _filterBehavior ? 'all' : v,
                 );
               }),
-              _filterChip('Deny', 'deny', _filterBehavior, (v) {
+              _filterChip(NeomageTranslationConstants.deny.tr, 'deny', _filterBehavior, (v) {
                 setState(
                   () => _filterBehavior = v == _filterBehavior ? 'all' : v,
                 );
               }),
-              _filterChip('Ask', 'ask', _filterBehavior, (v) {
+              _filterChip(NeomageTranslationConstants.ask.tr, 'ask', _filterBehavior, (v) {
                 setState(
                   () => _filterBehavior = v == _filterBehavior ? 'all' : v,
                 );
@@ -538,7 +541,7 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.existingRule != null ? 'Edit Rule' : 'Add Rule'),
+      title: Text(widget.existingRule != null ? NeomageTranslationConstants.editRule.tr : NeomageTranslationConstants.addRule.tr),
       content: SizedBox(
         width: 400,
         child: Column(
@@ -548,21 +551,21 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
             // Pattern
             TextField(
               controller: _patternController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Pattern',
-                hintText: 'e.g., Bash(npm:*), Edit(src/**/*.dart)',
+                hintText: NeomageTranslationConstants.rulePatternHint.tr,
               ),
             ),
             const SizedBox(height: 12),
 
             // Behavior
-            const Text('Behavior', style: TextStyle(fontSize: 12)),
+            Text(NeomageTranslationConstants.behavior.tr, style: const TextStyle(fontSize: 12)),
             const SizedBox(height: 4),
             SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'allow', label: Text('Allow')),
-                ButtonSegment(value: 'deny', label: Text('Deny')),
-                ButtonSegment(value: 'ask', label: Text('Ask')),
+              segments: [
+                ButtonSegment(value: 'allow', label: Text(NeomageTranslationConstants.allow.tr)),
+                ButtonSegment(value: 'deny', label: Text(NeomageTranslationConstants.deny.tr)),
+                ButtonSegment(value: 'ask', label: Text(NeomageTranslationConstants.ask.tr)),
               ],
               selected: {_behavior},
               onSelectionChanged: (s) => setState(() => _behavior = s.first),
@@ -570,14 +573,14 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
             const SizedBox(height: 12),
 
             // Scope
-            const Text('Scope', style: TextStyle(fontSize: 12)),
+            Text(NeomageTranslationConstants.scope.tr, style: const TextStyle(fontSize: 12)),
             const SizedBox(height: 4),
             SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'tool', label: Text('Tool')),
-                ButtonSegment(value: 'file', label: Text('File')),
-                ButtonSegment(value: 'command', label: Text('Cmd')),
-                ButtonSegment(value: 'mcp', label: Text('MCP')),
+              segments: [
+                ButtonSegment(value: 'tool', label: Text(NeomageTranslationConstants.tool.tr)),
+                ButtonSegment(value: 'file', label: Text(NeomageTranslationConstants.file.tr)),
+                ButtonSegment(value: 'command', label: Text(NeomageTranslationConstants.cmd.tr)),
+                ButtonSegment(value: 'mcp', label: Text(NeomageTranslationConstants.mcp.tr)),
               ],
               selected: {_scope},
               onSelectionChanged: (s) => setState(() => _scope = s.first),
@@ -587,9 +590,9 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
             // Description
             TextField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (optional)',
-                hintText: 'Why this rule exists',
+              decoration: InputDecoration(
+                labelText: '${NeomageTranslationConstants.description.tr} (optional)',
+                hintText: NeomageTranslationConstants.ruleReasonHint.tr,
               ),
             ),
           ],
@@ -598,7 +601,7 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(NeomageTranslationConstants.cancel.tr),
         ),
         ElevatedButton(
           onPressed: () {
@@ -618,7 +621,7 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
               ),
             );
           },
-          child: const Text('Save'),
+          child: Text(NeomageTranslationConstants.save.tr),
         ),
       ],
     );

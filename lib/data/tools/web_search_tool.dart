@@ -1,4 +1,4 @@
-// WebSearchTool — port of neom_claw/src/tools/WebSearchTool/.
+// WebSearchTool — port of neomage/src/tools/WebSearchTool/.
 // Performs web searches via API, returns structured results with links.
 
 import '../api/api_provider.dart';

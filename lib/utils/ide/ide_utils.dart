@@ -1,11 +1,11 @@
 /// IDE detection, integration helpers, path conversion.
 ///
-/// Ported from neom_claw/src/utils/ide.ts (1494 LOC).
+/// Ported from neomage/src/utils/ide.ts (1494 LOC).
 library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:sint/sint.dart';
 
@@ -424,9 +424,9 @@ class IdeUtils extends SintController {
   /// Current IDE search abort controller.
   Completer<void>? _currentSearchAbort;
 
-  /// Path to the neomclaw config home directory.
-  String Function() _getNeomClawConfigHomeDir = () =>
-      '${Platform.environment['HOME'] ?? ''}/.neomclaw';
+  /// Path to the neomage config home directory.
+  String Function() _getNeomageConfigHomeDir = () =>
+      '${Platform.environment['HOME'] ?? ''}/.neomage';
 
   /// Get the original CWD for workspace matching.
   String Function() _getOriginalCwd = () => Directory.current.path;
@@ -448,14 +448,14 @@ class IdeUtils extends SintController {
   // ---------------------------------------------------------------------------
 
   void configure({
-    String Function()? getNeomClawConfigHomeDir,
+    String Function()? getNeomageConfigHomeDir,
     String Function()? getOriginalCwd,
     void Function(String, {String? level})? logForDebugging,
     void Function(String, Map<String, dynamic>)? logEvent,
     void Function(Object)? logError,
   }) {
-    if (getNeomClawConfigHomeDir != null) {
-      _getNeomClawConfigHomeDir = getNeomClawConfigHomeDir;
+    if (getNeomageConfigHomeDir != null) {
+      _getNeomageConfigHomeDir = getNeomageConfigHomeDir;
     }
     if (getOriginalCwd != null) _getOriginalCwd = getOriginalCwd;
     if (logForDebugging != null) _logForDebugging = logForDebugging;
@@ -469,7 +469,7 @@ class IdeUtils extends SintController {
 
   /// Gets the potential IDE lockfiles directories path based on platform.
   Future<List<String>> getIdeLockfilesPaths() async {
-    final paths = <String>['${_getNeomClawConfigHomeDir()}/ide'];
+    final paths = <String>['${_getNeomageConfigHomeDir()}/ide'];
 
     if (Platform.isLinux) {
       // Check for WSL
@@ -490,7 +490,7 @@ class IdeUtils extends SintController {
               ].contains(name)) {
                 continue;
               }
-              paths.add('${user.path}/.neomclaw/ide');
+              paths.add('${user.path}/.neomage/ide');
             }
           }
         } catch (_) {
@@ -501,7 +501,7 @@ class IdeUtils extends SintController {
     return paths;
   }
 
-  /// Gets sorted IDE lockfiles from ~/.neomclaw/ide directory.
+  /// Gets sorted IDE lockfiles from ~/.neomage/ide directory.
   Future<List<String>> getSortedIdeLockfiles() async {
     try {
       final ideLockFilePaths = await getIdeLockfilesPaths();
@@ -842,7 +842,7 @@ class IdeUtils extends SintController {
   /// Check if the IDE extension is installed for a given IDE type.
   Future<bool> isIDEExtensionInstalled(
     IdeType ideType, {
-    String extensionId = 'anthropic.neom-claw',
+    String extensionId = 'neom.neomage',
   }) async {
     if (isVSCodeIde(ideType)) {
       final command = getVSCodeIDECommand(ideType);
@@ -880,7 +880,7 @@ class IdeUtils extends SintController {
       final lines = (result.stdout as String?)?.split('\n') ?? [];
       for (final line in lines) {
         final parts = line.split('@');
-        if (parts.length == 2 && parts[0] == 'anthropic.neom-claw') {
+        if (parts.length == 2 && parts[0] == 'neom.neomage') {
           return parts[1];
         }
       }
@@ -899,7 +899,7 @@ class IdeUtils extends SintController {
           final result = await Process.run(command, [
             '--force',
             '--install-extension',
-            'anthropic.neom-claw',
+            'neom.neomage',
           ]);
           if (result.exitCode != 0) {
             throw Exception('${result.exitCode}: ${result.stderr}');
@@ -985,7 +985,7 @@ class IdeUtils extends SintController {
       return _hostIPCache[cacheKey]!;
     }
 
-    final envOverride = Platform.environment['NEOMCLAW_IDE_HOST_OVERRIDE'];
+    final envOverride = Platform.environment['MAGE_IDE_HOST_OVERRIDE'];
     if (envOverride != null) {
       _hostIPCache[cacheKey] = envOverride;
       return envOverride;

@@ -1,0 +1,589 @@
+{
+  "version": "1.0",
+  "totalSkills": 277,
+  "lastUpdated": "2026-02-17",
+  "source": "antigravity-awesome-skills (MIT)",
+
+  "pillars": {
+    "chain_of_thought": "Chain of Thought",
+    "metacognition": "Metacognicion",
+    "planning": "Planificacion",
+    "research": "Busqueda y Research",
+    "distillation": "Destilacion de Contexto",
+    "agency": "Agencia y Herramientas",
+    "memory": "Memoria",
+    "adaptability": "Plasticidad y Adaptacion",
+    "coherence": "Coherencia y Verificacion",
+    "introspection": "Introspeccion",
+    "consolidation": "Consolidacion",
+    "personality": "Personalidad",
+    "cognitive_pipeline": "Pipeline Cognitivo"
+  },
+
+  "onboardingProfiles": {
+    "emprendedor": {
+      "description": "Emprendedores y fundadores de startups",
+      "primarySkills": ["business/*", "ai_ml/ai_product", "ai_ml/ai_wrapper_product", "planning/*"],
+      "secondarySkills": ["api_design/*", "frontend/*", "security/auth_patterns"]
+    },
+    "developer": {
+      "description": "Desarrolladores de software",
+      "primarySkills": ["code_quality/*", "testing/*", "debugging/*", "architecture/*", "git_workflow/*"],
+      "secondarySkills": ["api_design/*", "backend/*", "frontend/*", "security/*", "tools/*"]
+    },
+    "data_scientist": {
+      "description": "Cientificos de datos e ingenieros ML",
+      "primarySkills": ["ai_ml/*", "data_storage/*", "performance/*"],
+      "secondarySkills": ["code_quality/*", "testing/*", "tools/*"]
+    },
+    "designer": {
+      "description": "Disenadores UI/UX",
+      "primarySkills": ["design_ui/*", "frontend/*", "content_writing/*"],
+      "secondarySkills": ["business/marketing_*", "documents/*"]
+    },
+    "product_manager": {
+      "description": "Product managers",
+      "primarySkills": ["product/*", "business/*", "planning/*"],
+      "secondarySkills": ["research/*", "content_writing/*", "evaluation/*"]
+    },
+    "estudiante": {
+      "description": "Estudiantes y autodidactas",
+      "primarySkills": ["chain_of_thought/*", "research/*", "research/*", "prompting/*"],
+      "secondarySkills": ["code_quality/code_explain", "content_writing/*", "documents/*"]
+    },
+    "general": {
+      "description": "Uso general / explorador",
+      "primarySkills": ["chain_of_thought/*", "research/*", "prompting/*", "content_writing/*"],
+      "secondarySkills": ["business/*", "documents/*", "tools/*"]
+    }
+  },
+
+  "categories": {
+    "chain_of_thought": {
+      "pillar": 1,
+      "hemisphere": "left",
+      "skills": {
+        "brainstorming": {"tags": ["ideacion", "creatividad", "divergente"], "onboarding": ["general", "emprendedor"]},
+        "prompt_engineering": {"tags": ["prompts", "few-shot", "cot", "templates"], "onboarding": ["developer", "general"]}
+      }
+    },
+    "metacognition": {
+      "pillar": 2,
+      "hemisphere": "left",
+      "skills": {
+        "context_degradation": {"tags": ["contexto", "limites", "atencion"], "onboarding": ["developer"]},
+        "context_fundamentals": {"tags": ["contexto", "anatomia", "budget"], "onboarding": ["developer"]}
+      }
+    },
+    "planning": {
+      "pillar": 3,
+      "hemisphere": "left",
+      "skills": {
+        "autonomous_agent_patterns": {"tags": ["agentes", "autonomia", "loop"], "onboarding": ["developer"]},
+        "multi_agent_patterns": {"tags": ["multi-agente", "supervisor", "peer"], "onboarding": ["developer"]}
+      }
+    },
+    "research": {
+      "pillar": 4,
+      "hemisphere": "left",
+      "skills": {
+        "deep_research": {"tags": ["research", "busqueda", "investigacion"], "onboarding": ["estudiante", "general"]},
+        "rag_engineer": {"tags": ["rag", "retrieval", "chunking", "embeddings"], "onboarding": ["developer", "data_scientist"]}
+      }
+    },
+    "distillation": {
+      "pillar": 5,
+      "hemisphere": "left",
+      "skills": {
+        "context_compression": {"tags": ["compresion", "tokens", "optimizacion"], "onboarding": ["developer"]},
+        "context_optimization": {"tags": ["kv-cache", "compaction", "budget"], "onboarding": ["developer"]}
+      }
+    },
+    "agency": {
+      "pillar": 6,
+      "hemisphere": "left",
+      "skills": {
+        "architecture_decision_records": {"tags": ["adr", "decisiones", "documentacion"], "onboarding": ["developer"]},
+        "doc_coauthoring": {"tags": ["documentos", "escritura", "workflow"], "onboarding": ["general"]}
+      }
+    },
+    "memory": {
+      "pillar": 7,
+      "hemisphere": "right",
+      "skills": {
+        "agent_memory_systems": {"tags": ["memoria", "tipos", "retrieval"], "onboarding": ["developer"]},
+        "conversation_memory": {"tags": ["sesion", "persistencia", "decay"], "onboarding": ["developer"]},
+        "memory_systems": {"tags": ["memoria", "largo-plazo", "episodica"], "onboarding": ["developer"]}
+      }
+    },
+    "adaptability": {
+      "pillar": 8,
+      "hemisphere": "right",
+      "skills": {
+        "error_detective": {"tags": ["debug", "root-cause", "patrones"], "onboarding": ["developer"]},
+        "error_handling_patterns": {"tags": ["errores", "retry", "circuit-breaker"], "onboarding": ["developer"]}
+      }
+    },
+    "coherence": {
+      "pillar": 9,
+      "hemisphere": "right",
+      "skills": {
+        "context_window_management": {"tags": ["ventana", "4-tiers", "summarization"], "onboarding": ["developer"]},
+        "verification_before_completion": {"tags": ["verificacion", "checklist", "calidad"], "onboarding": ["developer", "general"]}
+      }
+    },
+    "introspection": {
+      "pillar": 10,
+      "hemisphere": "right",
+      "skills": {
+        "agent_evaluation": {"tags": ["evaluacion", "metricas", "testing"], "onboarding": ["developer"]},
+        "behavioral_modes": {"tags": ["modos", "brainstorm", "implement", "debug"], "onboarding": ["general"]}
+      }
+    },
+    "consolidation": {
+      "pillar": 11,
+      "hemisphere": "right",
+      "skills": {
+        "prompt_caching": {"tags": ["cache", "kv-blocks", "cag", "invalidacion"], "onboarding": ["developer"]}
+      }
+    },
+    "personality": {
+      "pillar": 12,
+      "hemisphere": "right",
+      "skills": {
+        "beautiful_prose": {"tags": ["escritura", "claridad", "concision", "voz"], "onboarding": ["general", "emprendedor"]}
+      }
+    },
+    "cognitive_pipeline": {
+      "pillar": 13,
+      "hemisphere": "right",
+      "skills": {
+        "parallel_dispatch": {"tags": ["paralelo", "dispatch", "sintesis"], "onboarding": ["developer"]},
+        "tool_design": {"tags": ["herramientas", "descripcion", "consolidacion"], "onboarding": ["developer"]}
+      }
+    },
+    "agents": {
+      "pillar": 3,
+      "hemisphere": "left",
+      "skills": {
+        "agent_framework": {"tags": ["framework", "agentes", "arquitectura"], "onboarding": ["developer"]},
+        "agent_manager": {"tags": ["manager", "tmux", "cli"], "onboarding": ["developer"]},
+        "agent_memory_mcp": {"tags": ["mcp", "memoria", "persistencia"], "onboarding": ["developer"]},
+        "agent_orchestration": {"tags": ["orquestacion", "coordinacion", "pipeline"], "onboarding": ["developer"]},
+        "agent_tool_builder": {"tags": ["herramientas", "builder", "schema"], "onboarding": ["developer"]},
+        "autonomous_agents": {"tags": ["autonomia", "loop", "sandbox"], "onboarding": ["developer"]},
+        "computer_use_agents": {"tags": ["computer-use", "browser", "automatizacion"], "onboarding": ["developer"]},
+        "crewai": {"tags": ["crewai", "multi-agente", "roles"], "onboarding": ["developer"]},
+        "mcp_builder": {"tags": ["mcp", "server", "protocolo"], "onboarding": ["developer"]},
+        "multi_agent_brainstorming": {"tags": ["ideacion", "multi-agente", "divergente"], "onboarding": ["developer"]},
+        "multi_agent_optimize": {"tags": ["optimizacion", "multi-agente", "consenso"], "onboarding": ["developer"]},
+        "subagent_driven_dev": {"tags": ["subagentes", "desarrollo", "delegacion"], "onboarding": ["developer"]}
+      }
+    },
+    "ai_ml": {
+      "pillar": 4,
+      "hemisphere": "left",
+      "skills": {
+        "ai_agents_architect": {"tags": ["arquitectura", "agentes", "diseno"], "onboarding": ["developer"]},
+        "ai_engineer": {"tags": ["ingenieria-ai", "sistemas", "produccion"], "onboarding": ["developer", "data_scientist"]},
+        "ai_product": {"tags": ["producto-ai", "estrategia", "mvp"], "onboarding": ["emprendedor", "product_manager"]},
+        "ai_wrapper_product": {"tags": ["wrapper", "api", "producto"], "onboarding": ["emprendedor"]},
+        "embedding_strategies": {"tags": ["embeddings", "vectores", "chunking"], "onboarding": ["data_scientist"]},
+        "gemini_api": {"tags": ["gemini", "google", "multimodal"], "onboarding": ["developer"]},
+        "hybrid_search": {"tags": ["busqueda", "hibrida", "bm25", "semantica"], "onboarding": ["data_scientist"]},
+        "llm_ai_assistant": {"tags": ["asistente", "llm", "patron"], "onboarding": ["developer"]},
+        "llm_app_patterns": {"tags": ["patrones", "llm", "aplicacion"], "onboarding": ["developer"]},
+        "llm_evaluation": {"tags": ["evaluacion", "llm", "metricas"], "onboarding": ["developer", "data_scientist"]},
+        "llm_langchain": {"tags": ["langchain", "chains", "orquestacion"], "onboarding": ["developer"]},
+        "llm_prompt_optimize": {"tags": ["prompts", "optimizacion", "a-b"], "onboarding": ["developer"]},
+        "ml_engineer": {"tags": ["ml", "ingenieria", "modelo"], "onboarding": ["data_scientist"]},
+        "ml_pipeline": {"tags": ["pipeline", "ml", "entrenamiento"], "onboarding": ["data_scientist"]},
+        "ml_workflow": {"tags": ["workflow", "ml", "iteracion"], "onboarding": ["data_scientist"]},
+        "mlops": {"tags": ["mlops", "despliegue", "monitoreo"], "onboarding": ["data_scientist"]},
+        "rag_implementation": {"tags": ["rag", "implementacion", "retrieval"], "onboarding": ["developer"]},
+        "similarity_search": {"tags": ["similitud", "vectores", "busqueda"], "onboarding": ["data_scientist"]},
+        "vector_database": {"tags": ["vectordb", "pinecone", "chroma"], "onboarding": ["data_scientist"]},
+        "vector_index_tuning": {"tags": ["indices", "hnsw", "tuning"], "onboarding": ["data_scientist"]}
+      }
+    },
+    "api_design": {
+      "pillar": 6,
+      "hemisphere": "left",
+      "skills": {
+        "api_doc_generator": {"tags": ["documentacion", "openapi", "generador"], "onboarding": ["developer"]},
+        "api_documenter": {"tags": ["documentacion", "api", "swagger"], "onboarding": ["developer"]},
+        "api_fuzzing": {"tags": ["fuzzing", "seguridad", "testing"], "onboarding": ["developer"]},
+        "api_patterns": {"tags": ["patrones", "rest", "graphql"], "onboarding": ["developer"]},
+        "api_principles": {"tags": ["principios", "diseno", "contratos"], "onboarding": ["developer"]},
+        "api_security": {"tags": ["seguridad", "auth", "rate-limit"], "onboarding": ["developer"]},
+        "api_testing": {"tags": ["testing", "api", "integracion"], "onboarding": ["developer"]},
+        "graphql": {"tags": ["graphql", "schema", "resolvers"], "onboarding": ["developer"]},
+        "graphql_architect": {"tags": ["graphql", "arquitectura", "federation"], "onboarding": ["developer"]},
+        "openapi_spec": {"tags": ["openapi", "spec", "contrato"], "onboarding": ["developer"]}
+      }
+    },
+    "architecture": {
+      "pillar": 6,
+      "hemisphere": "left",
+      "skills": {
+        "architect_review": {"tags": ["review", "arquitectura", "evaluacion"], "onboarding": ["developer"]},
+        "architecture": {"tags": ["arquitectura", "patrones", "principios"], "onboarding": ["developer"]},
+        "architecture_patterns": {"tags": ["patrones", "hexagonal", "clean"], "onboarding": ["developer"]},
+        "c4_architecture": {"tags": ["c4", "diagramas", "documentacion"], "onboarding": ["developer"]},
+        "c4_code": {"tags": ["c4", "codigo", "clases"], "onboarding": ["developer"]},
+        "c4_component": {"tags": ["c4", "componentes", "modulos"], "onboarding": ["developer"]},
+        "c4_container": {"tags": ["c4", "contenedores", "servicios"], "onboarding": ["developer"]},
+        "c4_context": {"tags": ["c4", "contexto", "sistema"], "onboarding": ["developer"]},
+        "cqrs": {"tags": ["cqrs", "comandos", "queries"], "onboarding": ["developer"]},
+        "event_sourcing": {"tags": ["event-sourcing", "eventos", "auditoria"], "onboarding": ["developer"]},
+        "event_store": {"tags": ["event-store", "persistencia", "streams"], "onboarding": ["developer"]},
+        "microservices": {"tags": ["microservicios", "distribuido", "comunicacion"], "onboarding": ["developer"]},
+        "projections": {"tags": ["proyecciones", "vistas", "read-model"], "onboarding": ["developer"]},
+        "saga": {"tags": ["saga", "transacciones", "compensacion"], "onboarding": ["developer"]},
+        "senior_architect": {"tags": ["senior", "decisiones", "trade-offs"], "onboarding": ["developer"]},
+        "senior_fullstack": {"tags": ["fullstack", "end-to-end", "integracion"], "onboarding": ["developer"]},
+        "software_architecture": {"tags": ["software", "arquitectura", "escalabilidad"], "onboarding": ["developer"]}
+      }
+    },
+    "backend": {
+      "pillar": 6,
+      "hemisphere": "left",
+      "skills": {
+        "backend_architect": {"tags": ["backend", "arquitectura", "api"], "onboarding": ["developer"]},
+        "backend_guidelines": {"tags": ["backend", "guias", "mejores-practicas"], "onboarding": ["developer"]},
+        "feature_development": {"tags": ["feature", "desarrollo", "ciclo"], "onboarding": ["developer"]},
+        "firebase": {"tags": ["firebase", "firestore", "auth"], "onboarding": ["developer", "emprendedor"]},
+        "fullstack_feature": {"tags": ["fullstack", "feature", "end-to-end"], "onboarding": ["developer"]}
+      }
+    },
+    "business": {
+      "pillar": 12,
+      "hemisphere": "right",
+      "skills": {
+        "business_analyst": {"tags": ["analisis", "negocio", "requisitos"], "onboarding": ["emprendedor", "product_manager"]},
+        "business_case": {"tags": ["caso-negocio", "justificacion", "roi"], "onboarding": ["emprendedor"]},
+        "competitive_landscape": {"tags": ["competencia", "mercado", "analisis"], "onboarding": ["emprendedor"]},
+        "competitor_alternatives": {"tags": ["competidores", "alternativas", "diferenciacion"], "onboarding": ["emprendedor"]},
+        "culture_index": {"tags": ["cultura", "organizacion", "valores"], "onboarding": ["emprendedor"]},
+        "employment_contracts": {"tags": ["contratos", "empleo", "legal"], "onboarding": ["emprendedor"]},
+        "financial_projections": {"tags": ["financiero", "proyecciones", "modelo"], "onboarding": ["emprendedor"]},
+        "hr_pro": {"tags": ["rh", "recursos-humanos", "reclutamiento"], "onboarding": ["emprendedor"]},
+        "kpi_dashboard": {"tags": ["kpi", "metricas", "dashboard"], "onboarding": ["emprendedor", "product_manager"]},
+        "launch_strategy": {"tags": ["lanzamiento", "go-to-market", "estrategia"], "onboarding": ["emprendedor"]},
+        "legal_advisor": {"tags": ["legal", "contratos", "regulacion"], "onboarding": ["emprendedor"]},
+        "market_sizing": {"tags": ["mercado", "tam-sam-som", "dimensionamiento"], "onboarding": ["emprendedor"]},
+        "marketing_ideas": {"tags": ["marketing", "ideas", "growth"], "onboarding": ["emprendedor"]},
+        "marketing_psychology": {"tags": ["marketing", "psicologia", "persuasion"], "onboarding": ["emprendedor"]},
+        "micro_saas": {"tags": ["saas", "micro", "indie"], "onboarding": ["emprendedor", "developer"]},
+        "pricing_strategy": {"tags": ["precios", "pricing", "monetizacion"], "onboarding": ["emprendedor"]},
+        "product_manager": {"tags": ["producto", "gestion", "roadmap"], "onboarding": ["product_manager"]},
+        "risk_manager": {"tags": ["riesgos", "mitigacion", "evaluacion"], "onboarding": ["emprendedor"]},
+        "sales_automator": {"tags": ["ventas", "automatizacion", "funnel"], "onboarding": ["emprendedor"]},
+        "startup_analyst": {"tags": ["startup", "analisis", "viabilidad"], "onboarding": ["emprendedor"]}
+      }
+    },
+    "code_quality": {
+      "pillar": 9,
+      "hemisphere": "right",
+      "skills": {
+        "ai_review": {"tags": ["review", "ai", "automatizado"], "onboarding": ["developer"]},
+        "clean_code": {"tags": ["clean-code", "principios", "legibilidad"], "onboarding": ["developer"]},
+        "cleanup_refactor": {"tags": ["refactor", "limpieza", "deuda"], "onboarding": ["developer"]},
+        "cleanup_tech_debt": {"tags": ["deuda-tecnica", "limpieza", "priorizacion"], "onboarding": ["developer"]},
+        "code_explain": {"tags": ["explicar", "codigo", "comprension"], "onboarding": ["developer", "estudiante"]},
+        "code_migrate": {"tags": ["migracion", "codigo", "framework"], "onboarding": ["developer"]},
+        "code_reviewer": {"tags": ["reviewer", "codigo", "feedback"], "onboarding": ["developer"]},
+        "dependency_audit": {"tags": ["dependencias", "auditoria", "vulnerabilidades"], "onboarding": ["developer"]},
+        "dependency_upgrade": {"tags": ["dependencias", "upgrade", "compatibilidad"], "onboarding": ["developer"]},
+        "deps_audit": {"tags": ["dependencias", "seguridad", "licencias"], "onboarding": ["developer"]},
+        "deps_upgrade": {"tags": ["upgrade", "dependencias", "breaking"], "onboarding": ["developer"]},
+        "doc_generate": {"tags": ["documentacion", "generacion", "codigo"], "onboarding": ["developer"]},
+        "find_bugs": {"tags": ["bugs", "deteccion", "estatico"], "onboarding": ["developer"]},
+        "full_review": {"tags": ["review", "completo", "checklist"], "onboarding": ["developer"]},
+        "legacy_modernize": {"tags": ["legacy", "modernizacion", "migracion"], "onboarding": ["developer"]},
+        "legacy_modernizer": {"tags": ["legacy", "refactor", "patrones"], "onboarding": ["developer"]},
+        "perf_ai_review": {"tags": ["performance", "review", "ai"], "onboarding": ["developer"]},
+        "perf_multi_review": {"tags": ["performance", "multi-agente", "review"], "onboarding": ["developer"]},
+        "pr_enhance": {"tags": ["pr", "mejora", "descripcion"], "onboarding": ["developer"]},
+        "production_audit": {"tags": ["produccion", "auditoria", "checklist"], "onboarding": ["developer"]},
+        "receiving_review": {"tags": ["review", "recibir", "feedback"], "onboarding": ["developer"]},
+        "refactor_clean": {"tags": ["refactor", "limpio", "patrones"], "onboarding": ["developer"]},
+        "refactor_context_restore": {"tags": ["refactor", "contexto", "restauracion"], "onboarding": ["developer"]},
+        "requesting_review": {"tags": ["review", "solicitar", "pr"], "onboarding": ["developer"]},
+        "review_checklist": {"tags": ["checklist", "review", "calidad"], "onboarding": ["developer"]},
+        "review_excellence": {"tags": ["excelencia", "review", "mejores-practicas"], "onboarding": ["developer"]},
+        "tech_debt": {"tags": ["deuda-tecnica", "priorizacion", "gestion"], "onboarding": ["developer"]}
+      }
+    },
+    "content_writing": {
+      "pillar": 12,
+      "hemisphere": "right",
+      "skills": {
+        "writing_skills": {"tags": ["escritura", "contenido", "copywriting"], "onboarding": ["general", "emprendedor"]}
+      }
+    },
+    "context": {
+      "pillar": 5,
+      "hemisphere": "left",
+      "skills": {
+        "context_driven_dev": {"tags": ["contexto", "desarrollo", "workflow"], "onboarding": ["developer"]},
+        "context_manager": {"tags": ["contexto", "gestion", "presupuesto"], "onboarding": ["developer"]},
+        "context_restore": {"tags": ["contexto", "restauracion", "sesion"], "onboarding": ["developer"]},
+        "context_save": {"tags": ["contexto", "guardado", "persistencia"], "onboarding": ["developer"]}
+      }
+    },
+    "data_storage": {
+      "pillar": 6,
+      "hemisphere": "left",
+      "skills": {
+        "cost_optimization": {"tags": ["costos", "cloud", "optimizacion"], "onboarding": ["developer"]},
+        "data_driven_feature": {"tags": ["datos", "feature", "metricas"], "onboarding": ["developer", "data_scientist"]},
+        "data_engineer": {"tags": ["ingenieria-datos", "etl", "pipeline"], "onboarding": ["data_scientist"]},
+        "data_pipeline": {"tags": ["pipeline", "datos", "streaming"], "onboarding": ["data_scientist"]},
+        "data_quality": {"tags": ["calidad", "datos", "validacion"], "onboarding": ["data_scientist"]},
+        "data_scientist": {"tags": ["ciencia-datos", "analisis", "modelo"], "onboarding": ["data_scientist"]},
+        "data_storytelling": {"tags": ["storytelling", "datos", "visualizacion"], "onboarding": ["data_scientist", "emprendedor"]},
+        "database_admin": {"tags": ["dba", "administracion", "performance"], "onboarding": ["developer"]},
+        "database_architect": {"tags": ["arquitectura", "db", "modelado"], "onboarding": ["developer"]},
+        "database_cost": {"tags": ["costos", "db", "optimizacion"], "onboarding": ["developer"]},
+        "database_design": {"tags": ["diseno", "db", "normalizacion"], "onboarding": ["developer"]},
+        "database_migration": {"tags": ["migracion", "db", "versionado"], "onboarding": ["developer"]},
+        "migration_observability": {"tags": ["migracion", "observabilidad", "monitoreo"], "onboarding": ["developer"]},
+        "sql_migrations": {"tags": ["sql", "migraciones", "schema"], "onboarding": ["developer"]}
+      }
+    },
+    "debugging": {
+      "pillar": 8,
+      "hemisphere": "right",
+      "skills": {
+        "debugger": {"tags": ["debugger", "herramientas", "breakpoints"], "onboarding": ["developer"]},
+        "debugging_strategies": {"tags": ["estrategias", "debug", "sistematico"], "onboarding": ["developer"]},
+        "diagnostics_analysis": {"tags": ["diagnostico", "analisis", "logs"], "onboarding": ["developer"]},
+        "diagnostics_smart": {"tags": ["diagnostico", "inteligente", "patrones"], "onboarding": ["developer"]},
+        "diagnostics_trace": {"tags": ["trace", "diagnostico", "flujo"], "onboarding": ["developer"]},
+        "error_analysis": {"tags": ["errores", "analisis", "root-cause"], "onboarding": ["developer"]},
+        "error_trace": {"tags": ["errores", "trace", "stack"], "onboarding": ["developer"]},
+        "incident_responder": {"tags": ["incidentes", "respuesta", "produccion"], "onboarding": ["developer"]},
+        "incident_response": {"tags": ["incidentes", "protocolo", "escalacion"], "onboarding": ["developer"]},
+        "incident_smart_fix": {"tags": ["incidentes", "fix", "automatizado"], "onboarding": ["developer"]},
+        "multi_agent_debug": {"tags": ["debug", "multi-agente", "colaborativo"], "onboarding": ["developer"]},
+        "postmortem": {"tags": ["postmortem", "analisis", "prevencion"], "onboarding": ["developer"]},
+        "smart_debug": {"tags": ["debug", "inteligente", "heuristicas"], "onboarding": ["developer"]},
+        "systematic_debugging": {"tags": ["debug", "sistematico", "metodologia"], "onboarding": ["developer"]}
+      }
+    },
+    "design_ui": {
+      "pillar": 12,
+      "hemisphere": "right",
+      "skills": {
+        "principios_diseno_ui_ux": {"tags": ["ui", "ux", "principios", "atomic-design"], "onboarding": ["designer", "developer"]},
+        "diseno_movil": {"tags": ["movil", "touch", "responsive"], "onboarding": ["designer", "developer"]},
+        "sistemas_de_diseno": {"tags": ["design-system", "tokens", "componentes"], "onboarding": ["designer", "developer"]},
+        "accesibilidad_interfaces": {"tags": ["accesibilidad", "wcag", "a11y"], "onboarding": ["designer", "developer"]},
+        "dashboards_kpi": {"tags": ["dashboards", "kpi", "visualizacion"], "onboarding": ["designer", "emprendedor", "product_manager"]}
+      }
+    },
+    "documentation": {
+      "pillar": 6,
+      "hemisphere": "left",
+      "skills": {
+        "arquitectura_documentacion": {"tags": ["documentacion", "arquitectura", "diataxis"], "onboarding": ["developer"]},
+        "plantillas_documentacion": {"tags": ["plantillas", "templates", "adr", "rfc"], "onboarding": ["developer"]},
+        "documentacion_api": {"tags": ["api", "openapi", "swagger"], "onboarding": ["developer"]},
+        "explicacion_codigo": {"tags": ["codigo", "docstrings", "explicacion"], "onboarding": ["developer", "estudiante"]},
+        "readme_efectivo": {"tags": ["readme", "proyecto", "onboarding"], "onboarding": ["developer"]}
+      }
+    },
+    "documents": {
+      "pillar": 6,
+      "hemisphere": "left",
+      "skills": {
+        "pdf_generation": {"tags": ["pdf", "generacion", "reportes"], "onboarding": ["general", "emprendedor"]},
+        "pptx_generation": {"tags": ["pptx", "presentaciones", "slides"], "onboarding": ["general", "emprendedor"]},
+        "xlsx_generation": {"tags": ["excel", "hojas-calculo", "datos"], "onboarding": ["general", "emprendedor"]}
+      }
+    },
+    "evaluation": {
+      "pillar": 10,
+      "hemisphere": "right",
+      "skills": {
+        "clarity_gate": {"tags": ["claridad", "evaluacion", "gate"], "onboarding": ["developer"]},
+        "evaluation": {"tags": ["evaluacion", "metricas", "benchmark"], "onboarding": ["developer"]}
+      }
+    },
+    "flutter": {
+      "pillar": 6,
+      "hemisphere": "left",
+      "skills": {
+        "flutter_expert": {"tags": ["flutter", "dart", "widgets"], "onboarding": ["developer"]}
+      }
+    },
+    "frontend": {
+      "pillar": 6,
+      "hemisphere": "left",
+      "skills": {
+        "component_scaffold": {"tags": ["componentes", "scaffold", "estructura"], "onboarding": ["developer"]},
+        "frontend_developer": {"tags": ["frontend", "desarrollo", "spa"], "onboarding": ["developer"]},
+        "frontend_guidelines": {"tags": ["frontend", "guias", "mejores-practicas"], "onboarding": ["developer"]},
+        "javascript_mastery": {"tags": ["javascript", "avanzado", "patrones"], "onboarding": ["developer"]},
+        "javascript_testing": {"tags": ["javascript", "testing", "jest"], "onboarding": ["developer"]},
+        "mobile_developer": {"tags": ["mobile", "desarrollo", "nativo"], "onboarding": ["developer"]},
+        "modern_javascript": {"tags": ["javascript", "moderno", "es6+"], "onboarding": ["developer"]},
+        "typescript_advanced": {"tags": ["typescript", "avanzado", "tipos"], "onboarding": ["developer"]},
+        "typescript_expert": {"tags": ["typescript", "experto", "patrones"], "onboarding": ["developer"]},
+        "typescript_scaffold": {"tags": ["typescript", "scaffold", "proyecto"], "onboarding": ["developer"]}
+      }
+    },
+    "git_workflow": {
+      "pillar": 9,
+      "hemisphere": "right",
+      "skills": {
+        "address_comments": {"tags": ["comentarios", "pr", "respuesta"], "onboarding": ["developer"]},
+        "changelog": {"tags": ["changelog", "versionado", "historial"], "onboarding": ["developer"]},
+        "commit": {"tags": ["commit", "mensaje", "convenciones"], "onboarding": ["developer"]},
+        "create_pr": {"tags": ["pr", "creacion", "descripcion"], "onboarding": ["developer"]},
+        "finishing_branch": {"tags": ["branch", "merge", "limpieza"], "onboarding": ["developer"]},
+        "fix_review": {"tags": ["review", "fix", "iteracion"], "onboarding": ["developer"]},
+        "git_onboard": {"tags": ["git", "onboarding", "basicos"], "onboarding": ["developer", "estudiante"]},
+        "git_workflow": {"tags": ["git", "workflow", "branching"], "onboarding": ["developer"]},
+        "iterate_pr": {"tags": ["pr", "iteracion", "feedback"], "onboarding": ["developer"]},
+        "lint_validate": {"tags": ["lint", "validacion", "pre-commit"], "onboarding": ["developer"]},
+        "pr_enhance": {"tags": ["pr", "mejora", "calidad"], "onboarding": ["developer"]}
+      }
+    },
+    "internationalization": {
+      "pillar": 12,
+      "hemisphere": "right",
+      "skills": {
+        "internacionalizacion_fundamentos": {"tags": ["i18n", "localizacion", "pluralizacion"], "onboarding": ["developer"]},
+        "patrones_localizacion": {"tags": ["l10n", "locales", "moneda", "timezone"], "onboarding": ["developer"]}
+      }
+    },
+    "languages": {
+      "pillar": 6,
+      "hemisphere": "left",
+      "skills": {
+        "async_python": {"tags": ["python", "async", "concurrencia"], "onboarding": ["developer"]},
+        "bash_defensive": {"tags": ["bash", "defensivo", "scripts"], "onboarding": ["developer"]},
+        "python_patterns": {"tags": ["python", "patrones", "idiomatico"], "onboarding": ["developer"]},
+        "python_performance": {"tags": ["python", "performance", "optimizacion"], "onboarding": ["developer"]},
+        "python_scaffold": {"tags": ["python", "scaffold", "proyecto"], "onboarding": ["developer"]},
+        "python_testing": {"tags": ["python", "testing", "pytest"], "onboarding": ["developer"]}
+      }
+    },
+    "performance": {
+      "pillar": 8,
+      "hemisphere": "right",
+      "skills": {
+        "ingenieria_rendimiento": {"tags": ["rendimiento", "presupuesto", "metodologia"], "onboarding": ["developer"]},
+        "optimizacion_web": {"tags": ["web", "core-vitals", "lcp", "cls"], "onboarding": ["developer"]},
+        "perfilado_rendimiento": {"tags": ["profiling", "flame-chart", "heap"], "onboarding": ["developer"]},
+        "optimizacion_sql": {"tags": ["sql", "indices", "explain", "queries"], "onboarding": ["developer", "data_scientist"]},
+        "optimizacion_aplicaciones": {"tags": ["aplicaciones", "cache", "memory-leaks"], "onboarding": ["developer"]}
+      }
+    },
+    "planning": {
+      "pillar": 3,
+      "hemisphere": "left",
+      "skills": {
+        "concise_planning": {"tags": ["planificacion", "concisa", "eficiente"], "onboarding": ["developer", "general"]},
+        "executing_plans": {"tags": ["ejecucion", "planes", "seguimiento"], "onboarding": ["developer", "general"]}
+      }
+    },
+    "product": {
+      "pillar": 12,
+      "hemisphere": "right",
+      "skills": {
+        "gestion_producto": {"tags": ["producto", "roadmap", "priorizacion", "okr"], "onboarding": ["product_manager", "emprendedor"]},
+        "producto_ia": {"tags": ["ia", "producto", "mvp", "evaluacion"], "onboarding": ["emprendedor", "product_manager"]},
+        "producto_wrapper_ia": {"tags": ["wrapper", "api", "defensibilidad", "modelo-negocio"], "onboarding": ["emprendedor"]}
+      }
+    },
+    "prompting": {
+      "pillar": 1,
+      "hemisphere": "left",
+      "skills": {
+        "prompt_engineer": {"tags": ["prompts", "ingenieria", "diseno"], "onboarding": ["developer", "general"]},
+        "prompt_library": {"tags": ["prompts", "biblioteca", "plantillas"], "onboarding": ["general"]},
+        "prompt_patterns": {"tags": ["prompts", "patrones", "tecnicas"], "onboarding": ["developer"]}
+      }
+    },
+    "research": {
+      "pillar": 4,
+      "hemisphere": "left",
+      "skills": {
+        "investigacion_profunda": {"tags": ["research", "fuentes", "triangulacion"], "onboarding": ["estudiante", "general"]},
+        "ingenieria_investigacion": {"tags": ["metodologia", "reproducibilidad", "sistematica"], "onboarding": ["data_scientist", "developer"]},
+        "dimensionamiento_mercado": {"tags": ["tam", "sam", "som", "mercado"], "onboarding": ["emprendedor"]}
+      }
+    },
+    "security": {
+      "pillar": 8,
+      "hemisphere": "right",
+      "skills": {
+        "auth_patterns": {"tags": ["auth", "jwt", "oauth", "patrones"], "onboarding": ["developer"]},
+        "backend_security": {"tags": ["backend", "seguridad", "hardening"], "onboarding": ["developer"]},
+        "clerk_auth": {"tags": ["clerk", "auth", "saas"], "onboarding": ["developer"]},
+        "compliance_check": {"tags": ["compliance", "regulacion", "auditoria"], "onboarding": ["developer", "emprendedor"]},
+        "frontend_security": {"tags": ["frontend", "xss", "csp"], "onboarding": ["developer"]},
+        "gdpr": {"tags": ["gdpr", "privacidad", "datos"], "onboarding": ["developer", "emprendedor"]},
+        "memory_safety": {"tags": ["memoria", "seguridad", "overflow"], "onboarding": ["developer"]},
+        "mobile_security": {"tags": ["mobile", "seguridad", "almacenamiento"], "onboarding": ["developer"]},
+        "security_auditor": {"tags": ["auditoria", "seguridad", "vulnerabilidades"], "onboarding": ["developer"]},
+        "security_bluebook": {"tags": ["bluebook", "seguridad", "referencia"], "onboarding": ["developer"]},
+        "security_dependencies": {"tags": ["dependencias", "seguridad", "cve"], "onboarding": ["developer"]},
+        "security_hardening": {"tags": ["hardening", "seguridad", "configuracion"], "onboarding": ["developer"]},
+        "security_requirements": {"tags": ["requisitos", "seguridad", "especificacion"], "onboarding": ["developer"]},
+        "security_sast": {"tags": ["sast", "estatico", "analisis"], "onboarding": ["developer"]},
+        "stride_analysis": {"tags": ["stride", "amenazas", "modelado"], "onboarding": ["developer"]},
+        "threat_mitigation": {"tags": ["amenazas", "mitigacion", "respuesta"], "onboarding": ["developer"]},
+        "threat_modeling": {"tags": ["amenazas", "modelado", "riesgos"], "onboarding": ["developer"]},
+        "xss_scan": {"tags": ["xss", "scan", "deteccion"], "onboarding": ["developer"]}
+      }
+    },
+    "testing": {
+      "pillar": 9,
+      "hemisphere": "right",
+      "skills": {
+        "e2e_testing": {"tags": ["e2e", "end-to-end", "integracion"], "onboarding": ["developer"]},
+        "tdd": {"tags": ["tdd", "test-driven", "metodologia"], "onboarding": ["developer"]},
+        "tdd_cycle": {"tags": ["tdd", "ciclo", "red-green-refactor"], "onboarding": ["developer"]},
+        "tdd_green": {"tags": ["tdd", "green", "implementacion"], "onboarding": ["developer"]},
+        "tdd_orchestrator": {"tags": ["tdd", "orquestacion", "flujo"], "onboarding": ["developer"]},
+        "tdd_red": {"tags": ["tdd", "red", "test-primero"], "onboarding": ["developer"]},
+        "tdd_refactor": {"tags": ["tdd", "refactor", "mejora"], "onboarding": ["developer"]},
+        "tdd_workflow": {"tags": ["tdd", "workflow", "proceso"], "onboarding": ["developer"]},
+        "test_automator": {"tags": ["automatizacion", "testing", "ci"], "onboarding": ["developer"]},
+        "test_fixing": {"tags": ["fixing", "tests", "debug"], "onboarding": ["developer"]},
+        "testing_patterns": {"tags": ["patrones", "testing", "estrategias"], "onboarding": ["developer"]},
+        "unit_testing": {"tags": ["unitarios", "testing", "aislamiento"], "onboarding": ["developer"]}
+      }
+    },
+    "tools": {
+      "pillar": 6,
+      "hemisphere": "left",
+      "skills": {
+        "analytics_tracking": {"tags": ["analytics", "tracking", "metricas"], "onboarding": ["developer", "emprendedor"]},
+        "app_builder": {"tags": ["builder", "app", "scaffold"], "onboarding": ["developer"]},
+        "audio_transcriber": {"tags": ["audio", "transcripcion", "speech"], "onboarding": ["developer"]},
+        "browser_automation": {"tags": ["browser", "automatizacion", "scraping"], "onboarding": ["developer"]},
+        "file_organizer": {"tags": ["archivos", "organizacion", "automatizacion"], "onboarding": ["general"]},
+        "file_uploads": {"tags": ["archivos", "uploads", "procesamiento"], "onboarding": ["developer"]},
+        "oss_hunter": {"tags": ["open-source", "busqueda", "alternativas"], "onboarding": ["developer"]},
+        "personal_tool_builder": {"tags": ["herramientas", "personales", "automatizacion"], "onboarding": ["general"]},
+        "skill_creator": {"tags": ["skills", "creacion", "plantillas"], "onboarding": ["developer"]},
+        "twilio": {"tags": ["twilio", "sms", "comunicacion"], "onboarding": ["developer"]}
+      }
+    },
+    "workflow": {
+      "pillar": 3,
+      "hemisphere": "left",
+      "skills": {
+        "track_management": {"tags": ["tracks", "gestion", "paralelo"], "onboarding": ["developer"]},
+        "workflow_automation": {"tags": ["automatizacion", "workflow", "ci-cd"], "onboarding": ["developer"]},
+        "workflow_orchestration": {"tags": ["orquestacion", "workflow", "estado"], "onboarding": ["developer"]},
+        "workflow_patterns": {"tags": ["patrones", "workflow", "diseno"], "onboarding": ["developer"]}
+      }
+    }
+  }
+}

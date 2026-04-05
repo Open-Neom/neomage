@@ -1,0 +1,29 @@
+{
+  "" : {
+    "diagnostics" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/url_launcher_macos-primary.dia",
+    "emit-module-dependencies" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/url_launcher_macos-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/url_launcher_macos-primary-emit-module.dia",
+    "pch" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/url_launcher_macos-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/url_launcher_macos-primary.swiftdeps"
+  },
+  "/Users/serzen/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.5/macos/url_launcher_macos/Sources/url_launcher_macos/UrlLauncherPlugin.swift" : {
+    "const-values" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/UrlLauncherPlugin.swiftconstvalues",
+    "dependencies" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/UrlLauncherPlugin.d",
+    "diagnostics" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/UrlLauncherPlugin.dia",
+    "index-unit-output-path" : "/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/UrlLauncherPlugin.o",
+    "llvm-bc" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/UrlLauncherPlugin.bc",
+    "object" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/UrlLauncherPlugin.o",
+    "swift-dependencies" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/UrlLauncherPlugin.swiftdeps",
+    "swiftmodule" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/UrlLauncherPlugin~partial.swiftmodule"
+  },
+  "/Users/serzen/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.5/macos/url_launcher_macos/Sources/url_launcher_macos/messages.g.swift" : {
+    "const-values" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/messages.g.swiftconstvalues",
+    "dependencies" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/messages.g.d",
+    "diagnostics" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/messages.g.dia",
+    "index-unit-output-path" : "/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/messages.g.o",
+    "llvm-bc" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/messages.g.bc",
+    "object" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/messages.g.o",
+    "swift-dependencies" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/messages.g.swiftdeps",
+    "swiftmodule" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/url_launcher_macos.build/Objects-normal/arm64/messages.g~partial.swiftmodule"
+  }
+}

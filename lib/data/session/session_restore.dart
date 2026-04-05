@@ -1,4 +1,4 @@
-// Session restore — port of neom_claw/src/utils/sessionRestore.ts.
+// Session restore — port of neomage/src/utils/sessionRestore.ts.
 // Restores session state from a saved transcript including todos,
 // file history, and agent definitions.
 

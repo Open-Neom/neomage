@@ -1,7 +1,7 @@
 // Status notices and slow operation tracking — comprehensive port of
-// neom_claw/src/utils/statusNoticeDefinitions.tsx,
-// neom_claw/src/utils/status.tsx, and
-// neom_claw/src/utils/slowOperations.ts.
+// neomage/src/utils/statusNoticeDefinitions.tsx,
+// neomage/src/utils/status.tsx, and
+// neomage/src/utils/slowOperations.ts.
 // Provides status property building, notice definitions, and slow operation
 // instrumentation for performance monitoring.
 
@@ -9,6 +9,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 // ════════════════════════════════════════════════════════════════════════════
 // Slow operation tracking infrastructure
@@ -205,7 +207,7 @@ class StatusNoticeContext {
   });
 }
 
-/// Information about a memory file (NEOMCLAW.md etc.).
+/// Information about a memory file (NEOMAGE.md etc.).
 class MemoryFileInfo {
   final String path;
   final String content;
@@ -308,7 +310,7 @@ final StatusNoticeDefinition largeMemoryFilesNotice = StatusNoticeDefinition(
 /// Auth conflict: subscriber using external token.
 final StatusNoticeDefinition
 subscriberExternalTokenNotice = StatusNoticeDefinition(
-  id: 'neomclaw-ai-external-token',
+  id: 'neomage-ai-external-token',
   type: StatusNoticeType.warning,
   isActive: (ctx) =>
       ctx.isSubscriber &&
@@ -324,9 +326,9 @@ subscriberExternalTokenNotice = StatusNoticeDefinition(
           const SizedBox(width: 6),
           Expanded(
             child: Text(
-              'Auth conflict: Using ${ctx.authTokenSource} instead of NeomClaw account '
+              'Auth conflict: Using ${ctx.authTokenSource} instead of Neomage account '
               'subscription token. Either unset ${ctx.authTokenSource}, or run '
-              '`neomclaw /logout`.',
+              '`neomage /logout`.',
               style: TextStyle(fontSize: 12, color: theme.colorScheme.error),
             ),
           ),
@@ -356,7 +358,7 @@ final StatusNoticeDefinition apiKeyConflictNotice = StatusNoticeDefinition(
           Expanded(
             child: Text(
               'Auth conflict: Using ${ctx.apiKeySource} instead of Anthropic Console key. '
-              'Either unset ${ctx.apiKeySource}, or run `neomclaw /logout`.',
+              'Either unset ${ctx.apiKeySource}, or run `neomage /logout`.',
               style: TextStyle(fontSize: 12, color: theme.colorScheme.error),
             ),
           ),
@@ -412,8 +414,8 @@ final StatusNoticeDefinition bothAuthMethodsNotice = StatusNoticeDefinition(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '\u00B7 Trying to use ${ctx.authTokenSource == "neomclaw.ai" ? "neomclaw.ai" : ctx.authTokenSource}? '
-                  '${ctx.apiKeySource == "ANTHROPIC_API_KEY" ? "Unset the ANTHROPIC_API_KEY environment variable." : "neomclaw /logout"}',
+                  '\u00B7 Trying to use ${ctx.authTokenSource == "neomage.ai" ? "neomage.ai" : ctx.authTokenSource}? '
+                  '${ctx.apiKeySource == "ANTHROPIC_API_KEY" ? "Unset the ANTHROPIC_API_KEY environment variable." : "neomage /logout"}',
                   style: TextStyle(
                     fontSize: 12,
                     color: theme.colorScheme.error,
@@ -421,7 +423,7 @@ final StatusNoticeDefinition bothAuthMethodsNotice = StatusNoticeDefinition(
                 ),
                 Text(
                   '\u00B7 Trying to use ${ctx.apiKeySource}? '
-                  '${ctx.authTokenSource == "neomclaw.ai" ? "neomclaw /logout to sign out of neomclaw.ai." : "Unset the ${ctx.authTokenSource} environment variable."}',
+                  '${ctx.authTokenSource == "neomage.ai" ? "neomage /logout to sign out of neomage.ai." : "Unset the ${ctx.authTokenSource} environment variable."}',
                   style: TextStyle(
                     fontSize: 12,
                     color: theme.colorScheme.error,
@@ -508,20 +510,20 @@ List<StatusProperty> buildAccountProperties({
   final properties = <StatusProperty>[];
   if (subscription != null) {
     properties.add(
-      StatusProperty(label: 'Login method', value: '$subscription Account'),
+      StatusProperty(label: NeomageTranslationConstants.loginMethod.tr, value: '$subscription Account'),
     );
   }
   if (tokenSource != null) {
-    properties.add(StatusProperty(label: 'Auth token', value: tokenSource));
+    properties.add(StatusProperty(label: NeomageTranslationConstants.authToken.tr, value: tokenSource));
   }
   if (apiKeySource != null) {
-    properties.add(StatusProperty(label: 'API key', value: apiKeySource));
+    properties.add(StatusProperty(label: NeomageTranslationConstants.apiKey.tr, value: apiKeySource));
   }
   if (organization != null && !isDemoMode) {
-    properties.add(StatusProperty(label: 'Organization', value: organization));
+    properties.add(StatusProperty(label: NeomageTranslationConstants.organization.tr, value: organization));
   }
   if (email != null && !isDemoMode) {
-    properties.add(StatusProperty(label: 'Email', value: email));
+    properties.add(StatusProperty(label: NeomageTranslationConstants.email.tr, value: email));
   }
   return properties;
 }
@@ -542,7 +544,7 @@ List<StatusProperty> buildApiProviderProperties({
       'foundry' => 'Microsoft Foundry',
       _ => apiProvider,
     };
-    properties.add(StatusProperty(label: 'API provider', value: label));
+    properties.add(StatusProperty(label: NeomageTranslationConstants.apiProviderLabel.tr, value: label));
   }
   if (baseUrl != null) {
     final urlLabel = switch (apiProvider) {
@@ -559,7 +561,7 @@ List<StatusProperty> buildApiProviderProperties({
     properties.add(StatusProperty(label: regionLabel, value: region));
   }
   if (gcpProject != null) {
-    properties.add(StatusProperty(label: 'GCP project', value: gcpProject));
+    properties.add(StatusProperty(label: NeomageTranslationConstants.gcpProject.tr, value: gcpProject));
   }
   if (skipAuth) {
     properties.add(
@@ -575,11 +577,11 @@ List<StatusProperty> buildModelProperties({
   String? defaultModelDescription,
 }) {
   final properties = <StatusProperty>[
-    StatusProperty(label: 'Model', value: modelDisplay),
+    StatusProperty(label: NeomageTranslationConstants.model.tr, value: modelDisplay),
   ];
   if (defaultModelDescription != null) {
     properties.add(
-      StatusProperty(label: 'Default model', value: defaultModelDescription),
+      StatusProperty(label: NeomageTranslationConstants.defaultModel.tr, value: defaultModelDescription),
     );
   }
   return properties;
@@ -600,7 +602,7 @@ List<StatusProperty> buildMcpProperties({
   if (failed > 0) parts.add('$failed failed');
   return [
     StatusProperty(
-      label: 'MCP servers',
+      label: NeomageTranslationConstants.mcpServers.tr,
       value: '${parts.join(", ")} \u00B7 /mcp',
     ),
   ];
@@ -609,15 +611,15 @@ List<StatusProperty> buildMcpProperties({
 /// Build setting sources properties.
 List<StatusProperty> buildSettingSourcesProperties(List<String> sourceNames) {
   if (sourceNames.isEmpty) return [];
-  return [StatusProperty(label: 'Setting sources', value: sourceNames)];
+  return [StatusProperty(label: NeomageTranslationConstants.settingSources.tr, value: sourceNames)];
 }
 
 /// Build sandbox properties.
 List<StatusProperty> buildSandboxProperties({required bool isEnabled}) {
   return [
     StatusProperty(
-      label: 'Bash Sandbox',
-      value: isEnabled ? 'Enabled' : 'Disabled',
+      label: NeomageTranslationConstants.bashSandbox.tr,
+      value: isEnabled ? NeomageTranslationConstants.enabled.tr : NeomageTranslationConstants.disabled.tr,
     ),
   ];
 }

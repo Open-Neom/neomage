@@ -1,5 +1,5 @@
 // /mcp add command — adds MCP servers to the configuration.
-// Faithful port of neom_claw/src/commands/mcp/addCommand.ts (280 TS LOC).
+// Faithful port of neomage/src/commands/mcp/addCommand.ts (280 TS LOC).
 //
 // Supports three transport types (stdio, sse, http), environment variables,
 // custom headers, OAuth configuration (client-id, client-secret, callback-port),
@@ -8,7 +8,7 @@
 // warnings, and writes the server configuration to the appropriate config file.
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -21,10 +21,10 @@ import '../command.dart';
 
 /// Where MCP configuration is stored.
 enum McpConfigScope {
-  /// Local to the current directory (.neomclaw/mcp.json).
+  /// Local to the current directory (.neomage/mcp.json).
   local,
 
-  /// User-level (~/.neomclaw/mcp.json).
+  /// User-level (~/.neomage/mcp.json).
   user,
 
   /// Project-level (.mcp.json in project root).
@@ -48,9 +48,9 @@ McpConfigScope ensureConfigScope(String? scope) {
 String describeMcpConfigFilePath(McpConfigScope scope) {
   switch (scope) {
     case McpConfigScope.local:
-      return '.neomclaw/mcp.json (local)';
+      return '.neomage/mcp.json (local)';
     case McpConfigScope.user:
-      return '~/.neomclaw/mcp.json (user)';
+      return '~/.neomage/mcp.json (user)';
     case McpConfigScope.project:
       return '.mcp.json (project)';
   }
@@ -215,13 +215,13 @@ Map<String, dynamic>? buildOAuthConfig({
 String _resolveConfigPath(McpConfigScope scope, String cwd) {
   switch (scope) {
     case McpConfigScope.local:
-      return p.join(cwd, '.neomclaw', 'mcp.json');
+      return p.join(cwd, '.neomage', 'mcp.json');
     case McpConfigScope.user:
       final home =
           Platform.environment['HOME'] ??
           Platform.environment['USERPROFILE'] ??
           '';
-      return p.join(home, '.neomclaw', 'mcp.json');
+      return p.join(home, '.neomage', 'mcp.json');
     case McpConfigScope.project:
       return p.join(cwd, '.mcp.json');
   }
@@ -277,7 +277,7 @@ Future<void> addMcpConfig(
 
 /// Check whether XAA is enabled via environment variable.
 bool isXaaEnabled() {
-  final env = Platform.environment['NEOMCLAW_ENABLE_XAA'];
+  final env = Platform.environment['MAGE_ENABLE_XAA'];
   return env == '1' || env?.toLowerCase() == 'true';
 }
 
@@ -440,7 +440,7 @@ class McpAddOptions {
 // McpAddCommand
 // ============================================================================
 
-/// The /mcp add command — registers MCP servers in NeomClaw configuration.
+/// The /mcp add command — registers MCP servers in Neomage configuration.
 ///
 /// Supports three transport types:
 ///   - stdio: subprocess-based MCP servers (default)
@@ -466,7 +466,7 @@ class McpAddCommand extends LocalCommand {
   String get name => 'mcp-add';
 
   @override
-  String get description => 'Add an MCP server to NeomClaw';
+  String get description => 'Add an MCP server to Neomage';
 
   @override
   String? get argumentHint =>
@@ -495,7 +495,7 @@ class McpAddCommand extends LocalCommand {
       // XAA fail-fast: validate at add-time, not auth-time.
       if (options.xaa && !isXaaEnabled()) {
         return const TextCommandResult(
-          'Error: --xaa requires NEOMCLAW_ENABLE_XAA=1 in your environment',
+          'Error: --xaa requires MAGE_ENABLE_XAA=1 in your environment',
         );
       }
 
@@ -505,7 +505,7 @@ class McpAddCommand extends LocalCommand {
         if (!options.clientSecret) missing.add('--client-secret');
         if (!hasXaaIdpSettings()) {
           missing.add(
-            "'neomclaw mcp xaa setup' (settings.xaaIdp not configured)",
+            "'neomage mcp xaa setup' (settings.xaaIdp not configured)",
           );
         }
         if (missing.isNotEmpty) {

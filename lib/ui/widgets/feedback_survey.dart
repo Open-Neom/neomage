@@ -1,4 +1,4 @@
-// FeedbackSurvey — port of neom_claw/src/components/FeedbackSurvey/
+// FeedbackSurvey — port of neomage/src/components/FeedbackSurvey/
 // Ports: FeedbackSurvey.tsx, FeedbackSurveyView.tsx, useFeedbackSurvey.tsx,
 // useSurveyState.tsx, TranscriptSharePrompt.tsx, submitTranscriptShare.ts,
 // useDebouncedDigitInput.ts, useMemorySurvey.tsx, usePostCompactSurvey.tsx
@@ -14,6 +14,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 // ─── Feedback response types ───
 
@@ -345,7 +347,7 @@ class FeedbackSurveyView extends StatelessWidget {
   final String? message;
 
   static const _defaultMessage =
-      'How is NeomClaw doing this session? (optional)';
+      'How is Neomage doing this session? (optional)';
 
   const FeedbackSurveyView({super.key, required this.onSelect, this.message});
 
@@ -389,25 +391,25 @@ class FeedbackSurveyView extends StatelessWidget {
               children: [
                 _SurveyOption(
                   digit: '1',
-                  label: 'Bad',
+                  label: NeomageTranslationConstants.bad.tr,
                   onTap: () => onSelect(FeedbackSurveyResponse.bad),
                 ),
                 const SizedBox(width: 16),
                 _SurveyOption(
                   digit: '2',
-                  label: 'Fine',
+                  label: NeomageTranslationConstants.fine.tr,
                   onTap: () => onSelect(FeedbackSurveyResponse.fine),
                 ),
                 const SizedBox(width: 16),
                 _SurveyOption(
                   digit: '3',
-                  label: 'Good',
+                  label: NeomageTranslationConstants.good.tr,
                   onTap: () => onSelect(FeedbackSurveyResponse.good),
                 ),
                 const SizedBox(width: 16),
                 _SurveyOption(
                   digit: '0',
-                  label: 'Dismiss',
+                  label: NeomageTranslationConstants.dismiss.tr,
                   onTap: () => onSelect(FeedbackSurveyResponse.dismissed),
                 ),
               ],
@@ -568,7 +570,7 @@ class TranscriptSharePrompt extends StatelessWidget {
               ),
               Flexible(
                 child: Text(
-                  'Would you like to share this transcript to help improve NeomClaw?',
+                  'Would you like to share this transcript to help improve Neomage?',
                   style: TextStyle(
                     color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
@@ -584,7 +586,7 @@ class TranscriptSharePrompt extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(left: 16),
             child: Text(
-              'Your transcript will be used to improve NeomClaw. '
+              'Your transcript will be used to improve Neomage. '
               'It may be reviewed by Anthropic employees.',
               style: TextStyle(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
@@ -602,19 +604,19 @@ class TranscriptSharePrompt extends StatelessWidget {
               children: [
                 _SurveyOption(
                   digit: '1',
-                  label: 'Share',
+                  label: NeomageTranslationConstants.share.tr,
                   onTap: () => onSelect(TranscriptShareResponse.share),
                 ),
                 const SizedBox(width: 16),
                 _SurveyOption(
                   digit: '2',
-                  label: 'Skip',
+                  label: NeomageTranslationConstants.skip.tr,
                   onTap: () => onSelect(TranscriptShareResponse.skip),
                 ),
                 const SizedBox(width: 16),
                 _SurveyOption(
                   digit: '3',
-                  label: "Don't ask again",
+                  label: NeomageTranslationConstants.dontAskAgain.tr,
                   onTap: () => onSelect(TranscriptShareResponse.dontAskAgain),
                 ),
               ],

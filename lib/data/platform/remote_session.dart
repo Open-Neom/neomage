@@ -1,4 +1,4 @@
-// Remote session service — port of neom_claw headless/remote mode.
+// Remote session service — port of neomage headless/remote mode.
 // Enables API-driven sessions without UI (CI/CD, teammate, automation).
 
 import 'dart:async';

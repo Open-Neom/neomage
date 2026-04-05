@@ -1,4 +1,4 @@
-// Model catalog — port of neom_claw/src/utils/model/.
+// Model catalog — port of neomage/src/utils/model/.
 // Model configs, pricing, capabilities, provider mappings, aliases.
 
 /// API providers.
@@ -351,7 +351,7 @@ String getDefaultModel({
   // 1. Environment variable
   final envModel =
       environment?['ANTHROPIC_MODEL'] ??
-      environment?['CLAW_MODEL'] ??
+      environment?['MAGE_MODEL'] ??
       environment?['GEMINI_MODEL'] ??
       environment?['OPENAI_MODEL'];
   if (envModel != null) return envModel;

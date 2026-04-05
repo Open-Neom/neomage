@@ -1,4 +1,4 @@
-// Message utilities — port of neom_claw/src/utils/messages.ts.
+// Message utilities — port of neomage/src/utils/messages.ts.
 // Message creation, normalization, reordering, merging, lookup building,
 // tag extraction, and API preparation.
 
@@ -700,7 +700,7 @@ String autoRejectMessage(String toolName) {
 
 /// Build a don't-ask reject message for a denied tool.
 String dontAskRejectMessage(String toolName) {
-  return 'Permission to use $toolName has been denied because NeomClaw is '
+  return 'Permission to use $toolName has been denied because Neomage is '
       'running in don\'t ask mode. $denialWorkaroundGuidance';
 }
 

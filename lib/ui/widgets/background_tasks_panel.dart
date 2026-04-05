@@ -1,4 +1,4 @@
-// BackgroundTasksPanel — port of neom_claw/src/components/tasks/
+// BackgroundTasksPanel — port of neomage/src/components/tasks/
 // Ports: BackgroundTasksDialog, BackgroundTask, BackgroundTaskStatus,
 // ShellProgress, taskStatusUtils, renderToolActivity.
 //
@@ -14,6 +14,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 // ─── Task status enum (mirrors TaskStatus in Task.ts) ───
 
@@ -266,17 +268,17 @@ class ShellProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return switch (shell.status) {
-      TaskStatus.completed => const TaskStatusText(
+      TaskStatus.completed => TaskStatusText(
         status: TaskStatus.completed,
-        label: 'done',
+        label: NeomageTranslationConstants.done.tr,
       ),
-      TaskStatus.failed => const TaskStatusText(
+      TaskStatus.failed => TaskStatusText(
         status: TaskStatus.failed,
-        label: 'error',
+        label: NeomageTranslationConstants.error.tr,
       ),
-      TaskStatus.killed => const TaskStatusText(
+      TaskStatus.killed => TaskStatusText(
         status: TaskStatus.killed,
-        label: 'stopped',
+        label: NeomageTranslationConstants.stopped.tr,
       ),
       TaskStatus.running ||
       TaskStatus.pending => const TaskStatusText(status: TaskStatus.running),
@@ -355,7 +357,7 @@ class BackgroundTaskItem extends StatelessWidget {
         );
 
       case BackgroundTaskType.localAgent:
-        final doneLabel = task.status == TaskStatus.completed ? 'done' : null;
+        final doneLabel = task.status == TaskStatus.completed ? NeomageTranslationConstants.done.tr : null;
         final suffix = task.status == TaskStatus.completed && !task.notified
             ? ', unread'
             : null;
@@ -467,9 +469,9 @@ class _RemoteSessionProgress extends StatelessWidget {
     );
 
     final statusLabel = switch (session.status) {
-      TaskStatus.completed => 'done',
-      TaskStatus.failed => 'error',
-      TaskStatus.killed => 'stopped',
+      TaskStatus.completed => NeomageTranslationConstants.done.tr,
+      TaskStatus.failed => NeomageTranslationConstants.error.tr,
+      TaskStatus.killed => NeomageTranslationConstants.stopped.tr,
       TaskStatus.running => 'running',
       TaskStatus.pending => 'pending',
     };
@@ -1009,7 +1011,7 @@ class BackgroundTasksDialog extends StatelessWidget {
     final task = controller.tasks[taskId];
 
     if (task == null) {
-      return const Center(child: Text('Task not found'));
+      return Center(child: Text(NeomageTranslationConstants.taskNotFound.tr));
     }
 
     return _TaskDetailView(
@@ -1290,7 +1292,7 @@ class _TaskDetailView extends StatelessWidget {
                 if (onKill != null)
                   TextButton.icon(
                     icon: const Icon(Icons.stop, size: 16),
-                    label: const Text('Stop'),
+                    label: Text(NeomageTranslationConstants.stop.tr),
                     onPressed: onKill,
                     style: TextButton.styleFrom(
                       foregroundColor: theme.colorScheme.error,
@@ -1312,7 +1314,7 @@ class _TaskDetailView extends StatelessWidget {
                 children: [
                   // Status row
                   _DetailRow(
-                    label: 'Status',
+                    label: NeomageTranslationConstants.status.tr,
                     value: task.status.name,
                     valueColor: statusColor,
                   ),
@@ -1320,25 +1322,25 @@ class _TaskDetailView extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   // Description
-                  _DetailRow(label: 'Description', value: task.description),
+                  _DetailRow(label: NeomageTranslationConstants.description.tr, value: task.description),
 
                   // Command (for shell tasks)
                   if (task.command != null) ...[
                     const SizedBox(height: 8),
-                    _DetailRow(label: 'Command', value: task.command!),
+                    _DetailRow(label: NeomageTranslationConstants.command.tr, value: task.command!),
                   ],
 
                   // Title (for remote agents)
                   if (task.title != null) ...[
                     const SizedBox(height: 8),
-                    _DetailRow(label: 'Title', value: task.title!),
+                    _DetailRow(label: NeomageTranslationConstants.title.tr, value: task.title!),
                   ],
 
                   // Agent name (for teammates)
                   if (task.identity != null) ...[
                     const SizedBox(height: 8),
                     _DetailRow(
-                      label: 'Agent',
+                      label: NeomageTranslationConstants.agent.tr,
                       value: '@${task.identity!.agentName}',
                       valueColor: task.identity!.color,
                     ),
@@ -1348,7 +1350,7 @@ class _TaskDetailView extends StatelessWidget {
                   if (task.type == BackgroundTaskType.inProcessTeammate) ...[
                     const SizedBox(height: 8),
                     _DetailRow(
-                      label: 'Activity',
+                      label: NeomageTranslationConstants.activity.tr,
                       value: describeTeammateActivity(task),
                     ),
                   ],
@@ -1356,14 +1358,14 @@ class _TaskDetailView extends StatelessWidget {
                   // Start time
                   const SizedBox(height: 8),
                   _DetailRow(
-                    label: 'Started',
+                    label: NeomageTranslationConstants.started.tr,
                     value: _formatTime(task.startTime),
                   ),
 
                   // Duration
                   const SizedBox(height: 8),
                   _DetailRow(
-                    label: 'Duration',
+                    label: NeomageTranslationConstants.duration.tr,
                     value: _formatDuration(
                       DateTime.now().difference(task.startTime),
                     ),
@@ -1380,20 +1382,20 @@ class _TaskDetailView extends StatelessWidget {
                       runSpacing: 4,
                       children: [
                         if (task.isIdle)
-                          _StateChip(label: 'Idle', color: Colors.grey),
+                          _StateChip(label: NeomageTranslationConstants.idle.tr, color: Colors.grey),
                         if (task.awaitingApproval)
                           _StateChip(
-                            label: 'Awaiting Approval',
+                            label: NeomageTranslationConstants.awaitingApproval.tr,
                             color: Colors.orange,
                           ),
                         if (task.shutdownRequested)
                           _StateChip(
-                            label: 'Shutdown Requested',
+                            label: NeomageTranslationConstants.shutdownRequested.tr,
                             color: Colors.orange,
                           ),
                         if (task.hasError)
                           _StateChip(
-                            label: 'Error',
+                            label: NeomageTranslationConstants.error.tr,
                             color: theme.colorScheme.error,
                           ),
                       ],

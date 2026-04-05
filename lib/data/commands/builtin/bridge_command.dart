@@ -1,5 +1,5 @@
 // /remote-control command — manages the bidirectional bridge connection.
-// Faithful port of neom_claw/src/commands/bridge/bridge.tsx (508 TS LOC).
+// Faithful port of neomage/src/commands/bridge/bridge.tsx (508 TS LOC).
 //
 // Covers: bridge prerequisites checking, QR code display, session URL
 // management, connect/disconnect flow, env-less bridge support, policy
@@ -385,7 +385,7 @@ class BridgeController extends SintController {
 /// When enabled, triggers bridge connection initialization. The bridge
 /// registers an environment, creates a session with the current conversation,
 /// polls for work, and connects an ingress WebSocket for bidirectional
-/// messaging between the CLI and neomclaw.ai.
+/// messaging between the CLI and neomage.ai.
 ///
 /// Running /remote-control when already connected shows a dialog with the
 /// session URL and options to disconnect or continue.
@@ -395,7 +395,7 @@ class BridgeCommand extends LocalCommand {
 
   @override
   String get description =>
-      'Control this CLI session from neomclaw.ai (Remote Control)';
+      'Control this CLI session from neomage.ai (Remote Control)';
 
   @override
   List<String> get aliases => const ['bridge', 'rc'];
@@ -432,7 +432,7 @@ class BridgeCommand extends LocalCommand {
       'Remote Control connecting...\n'
       '${name != null ? 'Session name: $name\n' : ''}'
       'The bridge will register this environment and create a session.\n'
-      'You can then control this CLI session from neomclaw.ai.',
+      'You can then control this CLI session from neomage.ai.',
     );
   }
 }

@@ -1,14 +1,14 @@
-// Error handling — port of neom_claw/src/utils/errors/.
+// Error handling — port of neomage/src/utils/errors/.
 // Structured errors, diagnostics, recovery, reporting.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ─── Error types ───
 
-/// Base error for all Neom Claw errors.
-abstract class ClawError implements Exception {
+/// Base error for all Neomage errors.
+abstract class NeomageError implements Exception {
   String get message;
   String get errorId;
   String? get suggestion;
@@ -19,7 +19,7 @@ abstract class ClawError implements Exception {
 }
 
 /// API-related errors.
-class ApiError extends ClawError {
+class ApiError extends NeomageError {
   @override
   final String message;
   @override
@@ -85,7 +85,7 @@ class ApiError extends ClawError {
 }
 
 /// Tool execution errors.
-class ToolError extends ClawError {
+class ToolError extends NeomageError {
   @override
   final String message;
   @override
@@ -108,7 +108,7 @@ class ToolError extends ClawError {
 }
 
 /// Permission errors.
-class PermissionError extends ClawError {
+class PermissionError extends NeomageError {
   @override
   final String message;
   @override
@@ -129,7 +129,7 @@ class PermissionError extends ClawError {
 }
 
 /// File system errors.
-class FileSystemError extends ClawError {
+class FileSystemError extends NeomageError {
   @override
   final String message;
   @override
@@ -176,7 +176,7 @@ class FileSystemError extends ClawError {
 }
 
 /// Configuration errors.
-class ConfigError extends ClawError {
+class ConfigError extends NeomageError {
   @override
   final String message;
   @override
@@ -199,7 +199,7 @@ class ConfigError extends ClawError {
 }
 
 /// Network errors.
-class NetworkError extends ClawError {
+class NetworkError extends NeomageError {
   @override
   final String message;
   @override
@@ -220,7 +220,7 @@ class NetworkError extends ClawError {
 }
 
 /// Session errors.
-class SessionError extends ClawError {
+class SessionError extends NeomageError {
   @override
   final String message;
   @override
@@ -243,7 +243,7 @@ class SessionError extends ClawError {
 }
 
 /// Sandbox violation.
-class SandboxError extends ClawError {
+class SandboxError extends NeomageError {
   @override
   final String message;
   @override
@@ -375,7 +375,7 @@ class ErrorHandler {
 
   /// Format error for display.
   String formatError(Object error) {
-    if (error is ClawError) {
+    if (error is NeomageError) {
       final buffer = StringBuffer();
       buffer.writeln(error.message);
       if (error.suggestion != null) {
@@ -428,8 +428,8 @@ class ErrorReport {
     'timestamp': timestamp.toIso8601String(),
     'severity': severity.name,
     'recovery': recovery.label,
-    if (error is ClawError) 'errorId': (error as ClawError).errorId,
-    if (error is ClawError) 'context': (error as ClawError).context,
+    if (error is NeomageError) 'errorId': (error as NeomageError).errorId,
+    if (error is NeomageError) 'context': (error as NeomageError).context,
     if (stackTrace != null) 'stackTrace': stackTrace.toString(),
   };
 }
@@ -633,9 +633,9 @@ Future<DiagnosticCheck> _checkDiskSpace() async {
 
 Future<DiagnosticCheck> _checkConfig() async {
   final home = Platform.environment['HOME'] ?? '';
-  final configDir = Directory('/.neomclaw');
+  final configDir = Directory('/.neomage');
   if (await configDir.exists()) {
-    final settings = File('$home/.neomclaw/settings.json');
+    final settings = File('$home/.neomage/settings.json');
     if (await settings.exists()) {
       return DiagnosticCheck(
         name: 'Configuration',
@@ -652,7 +652,7 @@ Future<DiagnosticCheck> _checkConfig() async {
   return DiagnosticCheck(
     name: 'Configuration',
     status: DiagnosticStatus.warn,
-    detail: 'No ~/.neomclaw directory. Run /init to create one.',
+    detail: 'No ~/.neomage directory. Run /init to create one.',
   );
 }
 

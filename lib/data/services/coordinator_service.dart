@@ -1,4 +1,4 @@
-// Coordinator service — port of neom_claw/src/coordinator.
+// Coordinator service — port of neomage/src/coordinator.
 // Multi-agent coordination mode for complex tasks.
 
 import '../tools/agent_tool.dart';

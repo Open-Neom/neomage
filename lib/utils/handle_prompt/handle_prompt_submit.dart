@@ -4,14 +4,14 @@
 /// classification for analytics.
 ///
 /// Port of:
-///   neom_claw/src/utils/handlePromptSubmit.ts (610 LOC)
-///   neom_claw/src/utils/promptEditor.ts (188 LOC)
-///   neom_claw/src/utils/promptShellExecution.ts (183 LOC)
-///   neom_claw/src/utils/promptCategory.ts (49 LOC)
+///   neomage/src/utils/handlePromptSubmit.ts (610 LOC)
+///   neomage/src/utils/promptEditor.ts (188 LOC)
+///   neomage/src/utils/promptShellExecution.ts (183 LOC)
+///   neomage/src/utils/promptCategory.ts (49 LOC)
 library;
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 import 'package:sint/sint.dart';
@@ -940,7 +940,7 @@ EditorResult editPromptInEditor({
   final tempFile = File(
     p.join(
       tempDir.path,
-      'neomclaw_prompt_${DateTime.now().millisecondsSinceEpoch}.txt',
+      'neomage_prompt_${DateTime.now().millisecondsSinceEpoch}.txt',
     ),
   );
 

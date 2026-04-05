@@ -1,5 +1,5 @@
-// /ultraplan command — advanced multi-agent planning via NeomClaw on the web.
-// Faithful port of neom_claw/src/commands/ultraplan.tsx (470 TS LOC).
+// /ultraplan command — advanced multi-agent planning via Neomage on the web.
+// Faithful port of neomage/src/commands/ultraplan.tsx (470 TS LOC).
 //
 // Covers: eligibility checking, remote session creation (teleport), detached
 // polling for plan approval, exit-plan-mode scanning, session lifecycle
@@ -20,9 +20,9 @@ import '../command.dart';
 /// Multi-agent exploration timeout (30 minutes).
 const Duration ultraplanTimeout = Duration(minutes: 30);
 
-/// URL for NeomClaw on the web terms.
+/// URL for Neomage on the web terms.
 const String ccrTermsUrl =
-    'https://code.neomclaw.com/docs/en/neom-claw-on-the-web';
+    'https://code.neomage.com/docs/en/neomage-on-the-web';
 
 /// Diamond figure for display messages.
 const String diamondOpen = '\u25C7';
@@ -42,7 +42,7 @@ Guidelines:
    - What changes to make
    - Any dependencies or ordering constraints
 4. Consider edge cases and potential issues
-5. The plan should be executable by another NeomClaw session
+5. The plan should be executable by another Neomage session
 
 When the plan is ready, present it to the user for approval using the exit_plan_mode tool.''';
 
@@ -64,7 +64,7 @@ enum UltraplanPhase {
 
 /// Target for plan execution after approval.
 enum ExecutionTarget {
-  /// Execute in the remote NeomClaw on the web session.
+  /// Execute in the remote Neomage on the web session.
   remote,
 
   /// Teleport plan back to the local CLI for execution.
@@ -214,12 +214,12 @@ String buildUltraplanPrompt(String blurb, {String? seedPlan}) {
 /// Build the launch message shown immediately while teleport runs.
 String buildLaunchMessage({bool disconnectedBridge = false}) {
   final prefix = disconnectedBridge ? '$remoteControlDisconnectedMsg ' : '';
-  return '$diamondOpen ultraplan\n${prefix}Starting NeomClaw on the web...';
+  return '$diamondOpen ultraplan\n${prefix}Starting Neomage on the web...';
 }
 
 /// Build the message shown when session is ready.
 String buildSessionReadyMessage(String url) {
-  return '$diamondOpen ultraplan . Monitor progress in NeomClaw on the '
+  return '$diamondOpen ultraplan . Monitor progress in Neomage on the '
       'web $url\n'
       'You can continue working -- when the $diamondOpen fills, '
       'press down to view results';
@@ -249,7 +249,7 @@ const String remoteControlDisconnectedMsg = 'Remote Control disconnected.';
 /// Check remote agent eligibility.
 ///
 /// Verifies authentication, plan tier, feature flags, and other prerequisites
-/// for launching a remote NeomClaw session.
+/// for launching a remote Neomage session.
 Future<EligibilityResult> checkRemoteAgentEligibility() async {
   // In the Dart port, this checks:
   // 1. User is logged in
@@ -263,7 +263,7 @@ Future<EligibilityResult> checkRemoteAgentEligibility() async {
 
 /// Get the remote session URL.
 String getRemoteSessionUrl(String sessionId, {String? ingressUrl}) {
-  final base = ingressUrl ?? 'https://neomclaw.ai';
+  final base = ingressUrl ?? 'https://neomage.ai';
   return '$base/code/session/$sessionId';
 }
 
@@ -313,7 +313,7 @@ class UltraplanController extends SintController {
         'in your prompt',
         '',
         'Advanced multi-agent plan mode with our most powerful model',
-        '(Opus). Runs in NeomClaw on the web. When the plan is ready,',
+        '(Opus). Runs in Neomage on the web. When the plan is ready,',
         'you can execute it in the web session or send it back here.',
         'Terminal stays free while the remote plans.',
         'Requires /login.',
@@ -478,7 +478,7 @@ class UltraplanController extends SintController {
 
 /// The /ultraplan command — advanced multi-agent planning.
 ///
-/// Launches a NeomClaw on the web session that drafts an advanced plan
+/// Launches a Neomage on the web session that drafts an advanced plan
 /// using Opus. The user can edit and approve the plan in the browser, then
 /// execute it in the web session or send it back to the local CLI.
 ///
@@ -490,7 +490,7 @@ class UltraplanCommand extends LocalUiCommand {
 
   @override
   String get description =>
-      '~10-30 min . NeomClaw on the web drafts an advanced plan '
+      '~10-30 min . Neomage on the web drafts an advanced plan '
       'you can edit and approve. See $ccrTermsUrl';
 
   @override
@@ -508,7 +508,7 @@ class UltraplanCommand extends LocalUiCommand {
           'in your prompt',
           '',
           'Advanced multi-agent plan mode with our most powerful model',
-          '(Opus). Runs in NeomClaw on the web. When the plan is ready,',
+          '(Opus). Runs in Neomage on the web. When the plan is ready,',
           'you can execute it in the web session or send it back here.',
           'Terminal stays free while the remote plans.',
           'Requires /login.',
@@ -542,7 +542,7 @@ class UltraplanCommand extends LocalUiCommand {
 
     return TextCommandResult(
       '$diamondOpen ultraplan\n'
-      'Starting NeomClaw on the web...\n\n'
+      'Starting Neomage on the web...\n\n'
       'Prompt: $blurb\n\n'
       'The remote session will draft an advanced plan using Opus.\n'
       'When ready, you can approve and execute it from the web interface\n'

@@ -1,4 +1,4 @@
-// GrepTool — faithful port of neom_claw/src/tools/GrepTool/GrepTool.ts
+// GrepTool — faithful port of neomage/src/tools/GrepTool/GrepTool.ts
 // Search file contents with regex using ripgrep.
 //
 // Supports three output modes:
@@ -9,7 +9,7 @@
 // Supports head_limit / offset pagination, glob filtering, type filtering,
 // multiline mode, case-insensitive search, and VCS directory exclusion.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -271,7 +271,7 @@ String plural(int count, String singular) {
 
 // ── Main GrepTool class ───────────────────────────────────────────────
 
-/// Search file contents with regex -- port of neom_claw GrepTool.
+/// Search file contents with regex -- port of neomage GrepTool.
 ///
 /// Supports three output modes:
 ///   - files_with_matches: list file paths sorted by modification time
@@ -286,9 +286,15 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
 
   @override
   String get description =>
-      'A powerful search tool built on ripgrep. Searches for a pattern in '
-      'file contents using regular expressions. Supports full regex syntax, '
-      'file filtering with glob/type, context lines, and pagination.';
+      'A powerful search tool built on ripgrep.\n\n'
+      'Usage:\n'
+      '- ALWAYS use Grep for search tasks. NEVER invoke `grep` or `rg` as a Bash command.\n'
+      '- Supports full regex syntax (e.g., "log.*Error", "function\\s+\\w+").\n'
+      '- Filter files with glob parameter (e.g., "*.js", "**/*.tsx") or type parameter (e.g., "js", "py").\n'
+      '- Output modes: "content" shows matching lines, "files_with_matches" shows only file paths (default), '
+      '"count" shows match counts.\n'
+      '- Use the Agent tool for open-ended searches requiring multiple rounds.\n'
+      '- For cross-line patterns, use multiline: true.';
 
   @override
   String get prompt => description;

@@ -1,6 +1,6 @@
 /// Voice mode service for the Flutter client.
 ///
-/// Migrated from the OpenClaude TypeScript `voice/` module. Provides:
+/// Migrated from the Neomage TypeScript `voice/` module. Provides:
 /// - [VoiceState] enum (idle / recording / processing)
 /// - [VoiceMode] toggle state
 /// - Language normalization for speech-to-text

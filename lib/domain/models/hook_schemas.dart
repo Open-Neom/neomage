@@ -1,4 +1,4 @@
-// Hook configuration schemas — ported from NeomClaw src/schemas/hooks.ts.
+// Hook configuration schemas — ported from Neomage src/schemas/hooks.ts.
 // Defines the 4 hook implementation types: command, prompt, http, agent.
 
 /// Base properties shared by all hook types.

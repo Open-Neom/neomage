@@ -1,7 +1,6 @@
-
 import 'dart:convert';
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -72,7 +71,7 @@ const _protectedPaths = <String>[
   '/Library/System',
 ];
 
-/// Write file contents — full port of neom_claw/src/tools/FileWriteTool.
+/// Write file contents — full port of neomage/src/tools/FileWriteTool.
 ///
 /// Features:
 /// - Create parent directories if they don't exist
@@ -93,8 +92,15 @@ class FileWriteTool extends Tool with FileWriteToolMixin {
 
   @override
   String get description =>
-      'Writes content to a file. Creates the file if it does not exist, '
-      'or overwrites it if it does.';
+      'Writes a file to the local filesystem.\n\n'
+      'Usage:\n'
+      '- This tool will overwrite the existing file if there is one at the provided path.\n'
+      '- If this is an existing file, you MUST use the Read tool first to read the file\'s contents. '
+      'This tool will fail if you did not read the file first.\n'
+      '- Prefer the Edit tool for modifying existing files — it only sends the diff. '
+      'Only use this tool to create new files or for complete rewrites.\n'
+      '- NEVER create documentation files (*.md) or README files unless explicitly requested.\n'
+      '- file_path must be an absolute path.';
 
   @override
   String get prompt =>

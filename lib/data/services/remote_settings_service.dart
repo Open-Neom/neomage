@@ -1,10 +1,10 @@
 // Remote managed settings service — port of
-// neom_claw/src/services/remoteManagedSettings/.
+// neomage/src/services/remoteManagedSettings/.
 // Fetches, caches, and merges remote configuration with local overrides.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ── Enums ──────────────────────────────────────────────────────────────────
 

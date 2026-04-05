@@ -1,8 +1,8 @@
-// MCP config — port of neom_claw/src/services/mcp/config.ts.
+// MCP config — port of neomage/src/services/mcp/config.ts.
 // Configuration loading and validation for MCP servers.
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'mcp_types.dart';
 
@@ -29,12 +29,12 @@ Future<List<McpServerConfig>> loadAllMcpConfigs({String? projectRoot}) async {
     configs.addAll(await loadMcpConfigFile('$projectRoot/.mcp.json'));
   }
 
-  // 2. User: ~/.neomclaw/settings.json (mcpServers key)
+  // 2. User: ~/.neomage/settings.json (mcpServers key)
   final homeDir =
       Platform.environment['HOME'] ??
       Platform.environment['USERPROFILE'] ??
       '/tmp';
-  final userSettings = File('$homeDir/.neomclaw/settings.json');
+  final userSettings = File('$homeDir/.neomage/settings.json');
   if (await userSettings.exists()) {
     try {
       final json = jsonDecode(await userSettings.readAsString());
@@ -45,8 +45,8 @@ Future<List<McpServerConfig>> loadAllMcpConfigs({String? projectRoot}) async {
     } catch (_) {}
   }
 
-  // 3. Managed: ~/.neomclaw/managed/managed-mcp.json
-  final managedFile = File('$homeDir/.neomclaw/managed/managed-mcp.json');
+  // 3. Managed: ~/.neomage/managed/managed-mcp.json
+  final managedFile = File('$homeDir/.neomage/managed/managed-mcp.json');
   if (await managedFile.exists()) {
     configs.addAll(await loadMcpConfigFile(managedFile.path));
   }

@@ -1,10 +1,10 @@
-// Git service — port of neom_claw git integration.
+// Git service — port of neomage git integration.
 // Full git operations: status, log, diff, blame, branches, stash, remotes, etc.
 // Wraps the git CLI with typed Dart models.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ---------------------------------------------------------------------------
 // Enums

@@ -1,10 +1,10 @@
-// Cron manager — port of neom_claw/src/utils/cron.ts, cronScheduler.ts,
+// Cron manager — port of neomage/src/utils/cron.ts, cronScheduler.ts,
 // cronTasks.ts, cronTasksLock.ts, cronJitterConfig.ts.
 // Cron expression parsing, scheduling, task management, locking, jitter config.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:path/path.dart' as p;
@@ -419,7 +419,7 @@ class CronTask {
   );
 }
 
-const String _cronFileRel = '.neomclaw/scheduled_tasks.json';
+const String _cronFileRel = '.neomage/scheduled_tasks.json';
 
 /// Path to the cron file. [dir] defaults to the project root.
 String getCronFilePath({String? dir}) {
@@ -427,7 +427,7 @@ String getCronFilePath({String? dir}) {
   return p.join(base, _cronFileRel);
 }
 
-/// Read and parse .neomclaw/scheduled_tasks.json. Returns an empty task list if
+/// Read and parse .neomage/scheduled_tasks.json. Returns an empty task list if
 /// the file is missing, empty, or malformed. Tasks with invalid cron strings
 /// are silently dropped.
 Future<List<CronTask>> readCronTasks({String? dir}) async {
@@ -491,13 +491,13 @@ bool hasCronTasksSync({String? dir}) {
   return tasks is List && tasks.isNotEmpty;
 }
 
-/// Overwrite .neomclaw/scheduled_tasks.json with the given tasks. Creates
-/// .neomclaw/ if missing.
+/// Overwrite .neomage/scheduled_tasks.json with the given tasks. Creates
+/// .neomage/ if missing.
 Future<void> writeCronTasks(List<CronTask> tasks, {String? dir}) async {
   final root = dir ?? Directory.current.path;
-  final neomClawDir = Directory(p.join(root, '.neomclaw'));
-  if (!neomClawDir.existsSync()) {
-    await neomClawDir.create(recursive: true);
+  final neomageDir = Directory(p.join(root, '.neomage'));
+  if (!neomageDir.existsSync()) {
+    await neomageDir.create(recursive: true);
   }
   final body = {'tasks': tasks.map((t) => t.toJson()).toList()};
   await File(
@@ -508,7 +508,7 @@ Future<void> writeCronTasks(List<CronTask> tasks, {String? dir}) async {
 /// Append a task. Returns the generated id.
 ///
 /// When [durable] is false the task is held in process memory only -- it fires
-/// on schedule this session but is never written to .neomclaw/scheduled_tasks.json.
+/// on schedule this session but is never written to .neomage/scheduled_tasks.json.
 Future<String> addCronTask({
   required String cron,
   required String prompt,
@@ -725,7 +725,7 @@ int? oneShotJitteredNextCronRunMs(
 // Part 4: Scheduler lock (from cronTasksLock.ts)
 // ============================================================================
 
-const String _lockFileRel = '.neomclaw/scheduled_tasks.lock';
+const String _lockFileRel = '.neomage/scheduled_tasks.lock';
 
 /// Scheduler lock data.
 class SchedulerLock {
@@ -799,7 +799,7 @@ Future<bool> _tryCreateExclusive(SchedulerLock lock, {String? dir}) async {
   } on FileSystemException catch (e) {
     if (e.osError?.errorCode == 17) return false; // EEXIST
     if (e.osError?.errorCode == 2) {
-      // ENOENT: .neomclaw/ doesn't exist yet.
+      // ENOENT: .neomage/ doesn't exist yet.
       await Directory(p.dirname(path)).create(recursive: true);
       try {
         if (file.existsSync()) return false;
@@ -942,7 +942,7 @@ class CronSchedulerOptions {
   /// When provided, receives the missed one-shot tasks on initial load.
   final void Function(List<CronTask> tasks)? onMissed;
 
-  /// Directory containing .neomclaw/scheduled_tasks.json.
+  /// Directory containing .neomage/scheduled_tasks.json.
   final String? dir;
 
   /// Owner key written into the lock file.
@@ -1301,9 +1301,9 @@ String buildMissedTaskNotification(List<CronTask> missed) {
   final plural = missed.length > 1;
   final header =
       'The following one-shot scheduled task${plural ? 's were' : ' was'} '
-      'missed while NeomClaw was not running. '
+      'missed while Neomage was not running. '
       '${plural ? 'They have' : 'It has'} already been removed from '
-      '.neomclaw/scheduled_tasks.json.\n\n'
+      '.neomage/scheduled_tasks.json.\n\n'
       'Do NOT execute ${plural ? 'these prompts' : 'this prompt'} yet. '
       'First use the AskUserQuestion tool to ask whether to run '
       '${plural ? 'each one' : 'it'} now. '

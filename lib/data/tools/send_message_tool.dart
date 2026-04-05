@@ -1,4 +1,4 @@
-// SendMessageTool — faithful port of neom_claw/src/tools/SendMessageTool.
+// SendMessageTool — faithful port of neomage/src/tools/SendMessageTool.
 // Routes messages between agents in a multi-agent swarm system.
 //
 // Supports:
@@ -611,7 +611,7 @@ class SendMessageTool extends Tool {
     if (teamName == null || teamName.isEmpty) {
       return ToolResult.error(
         'Not in a team context. Create a team first, or set '
-        'NEOMCLAW_TEAM_NAME.',
+        'MAGE_TEAM_NAME.',
       );
     }
 

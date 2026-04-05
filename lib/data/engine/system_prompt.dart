@@ -1,4 +1,4 @@
-// System prompt builder — port of neom_claw system prompt construction.
+// System prompt builder — port of neomage system prompt construction.
 // Assembles the system prompt from multiple sources.
 
 import '../platform/platform_bridge.dart';
@@ -45,8 +45,8 @@ class SystemPromptBuilder {
         name: 'identity',
         content:
             '''
-You are ${customName ?? 'Claw'}, an AI coding assistant powered by $_model.
-You are pair programming with the user on their codebase.
+You are ${customName ?? 'Neomage'}, a multi-provider AI agent engine powered by $_model.
+You are the user's ally to create, explore, and execute on their projects.
 Today's date is ${_formatDate(_now)}.''',
         priority: 0,
       ),
@@ -89,7 +89,7 @@ Today's date is ${_formatDate(_now)}.''',
     );
   }
 
-  /// Add user instructions (.neomclaw/INSTRUCTIONS.md content).
+  /// Add user instructions (.neomage/INSTRUCTIONS.md content).
   void addUserInstructions(String instructions) {
     if (instructions.trim().isEmpty) return;
 

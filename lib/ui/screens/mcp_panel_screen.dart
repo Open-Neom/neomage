@@ -1,37 +1,40 @@
-// MCP Panel Screen — port of neom_claw/src/components/McpPanel/.
+// MCP Panel Screen — port of neomage/src/components/McpPanel/.
 // Shows MCP server status, tools, resources, prompts.
+// Wired to the real McpClient service via Sint DI.
+
+import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:sint/sint.dart';
+
+import 'package:neomage/data/mcp/mcp_client.dart';
+import 'package:neomage/data/mcp/mcp_types.dart';
 
 // ─── Types ───
 
 /// MCP server status for display.
-enum McpServerStatus { disconnected, connecting, connected, error, restarting }
+enum McpServerStatus { disconnected, connecting, connected, error }
 
 /// MCP server display info.
 class McpServerDisplayInfo {
   final String name;
   final McpServerStatus status;
-  final String? version;
-  final String? transport; // stdio, sse, http, websocket
+  final String? transport;
   final List<McpToolDisplay> tools;
   final List<McpResourceDisplay> resources;
-  final List<McpPromptDisplay> prompts;
   final String? errorMessage;
   final DateTime? connectedSince;
-  final int restartCount;
+  final McpServerConfig? config;
 
   const McpServerDisplayInfo({
     required this.name,
     required this.status,
-    this.version,
     this.transport,
     this.tools = const [],
     this.resources = const [],
-    this.prompts = const [],
     this.errorMessage,
     this.connectedSince,
-    this.restartCount = 0,
+    this.config,
   });
 }
 
@@ -40,14 +43,8 @@ class McpToolDisplay {
   final String name;
   final String? description;
   final Map<String, dynamic>? schema;
-  final int usageCount;
 
-  const McpToolDisplay({
-    required this.name,
-    this.description,
-    this.schema,
-    this.usageCount = 0,
-  });
+  const McpToolDisplay({required this.name, this.description, this.schema});
 }
 
 /// MCP resource display info.
@@ -65,42 +62,14 @@ class McpResourceDisplay {
   });
 }
 
-/// MCP prompt display info.
-class McpPromptDisplay {
-  final String name;
-  final String? description;
-  final List<String> argumentNames;
-
-  const McpPromptDisplay({
-    required this.name,
-    this.description,
-    this.argumentNames = const [],
-  });
-}
-
 // ─── McpPanelScreen widget ───
 
-/// Full MCP management screen.
+/// Full MCP management screen, wired to the real [McpClient] service.
 class McpPanelScreen extends StatefulWidget {
+  /// Optional pre-supplied server list (ignored when McpClient is available).
   final List<McpServerDisplayInfo> servers;
-  final ValueChanged<String>? onConnect;
-  final ValueChanged<String>? onDisconnect;
-  final ValueChanged<String>? onRestart;
-  final VoidCallback? onAddServer;
-  final ValueChanged<String>? onRemoveServer;
-  final void Function(String server, String tool, Map<String, dynamic> input)?
-  onTestTool;
 
-  const McpPanelScreen({
-    super.key,
-    required this.servers,
-    this.onConnect,
-    this.onDisconnect,
-    this.onRestart,
-    this.onAddServer,
-    this.onRemoveServer,
-    this.onTestTool,
-  });
+  const McpPanelScreen({super.key, this.servers = const []});
 
   @override
   State<McpPanelScreen> createState() => _McpPanelScreenState();
@@ -108,7 +77,198 @@ class McpPanelScreen extends StatefulWidget {
 
 class _McpPanelScreenState extends State<McpPanelScreen> {
   String? _expandedServer;
-  int _selectedTab = 0; // 0=tools, 1=resources, 2=prompts
+  int _selectedTab = 0; // 0=tools, 1=resources
+  late McpClient _mcpClient;
+  List<McpServerDisplayInfo> _servers = [];
+  Timer? _refreshTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _mcpClient = Sint.find<McpClient>();
+    _refreshServers();
+    // Poll for connection-state changes every 2 seconds.
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 2),
+      (_) => _refreshServers(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
+  // ── Mapping from McpClient state to display models ──
+
+  void _refreshServers() {
+    final connections = _mcpClient.connections;
+    final list = <McpServerDisplayInfo>[];
+
+    for (final entry in connections.entries) {
+      final conn = entry.value;
+      list.add(_connectionToDisplay(conn));
+    }
+
+    if (!mounted) return;
+    setState(() => _servers = list);
+  }
+
+  McpServerDisplayInfo _connectionToDisplay(McpServerConnection conn) {
+    final transport = conn.config.transport.name;
+
+    switch (conn) {
+      case ConnectedMcpServer():
+        return McpServerDisplayInfo(
+          name: conn.serverName,
+          status: McpServerStatus.connected,
+          transport: transport,
+          connectedSince: conn.connectedAt,
+          config: conn.config,
+          tools: conn.tools
+              .map(
+                (t) => McpToolDisplay(
+                  name: t.name,
+                  description:
+                      t.description.isNotEmpty ? t.description : null,
+                  schema: t.inputSchema,
+                ),
+              )
+              .toList(),
+          resources: conn.resources
+              .map(
+                (r) => McpResourceDisplay(
+                  uri: r.uri,
+                  name: r.name,
+                  description: r.description,
+                  mimeType: r.mimeType,
+                ),
+              )
+              .toList(),
+        );
+      case PendingMcpServer():
+        return McpServerDisplayInfo(
+          name: conn.serverName,
+          status: McpServerStatus.connecting,
+          transport: transport,
+          config: conn.config,
+        );
+      case FailedMcpServer():
+        return McpServerDisplayInfo(
+          name: conn.serverName,
+          status: McpServerStatus.error,
+          transport: transport,
+          errorMessage: conn.error,
+          config: conn.config,
+        );
+      case DisabledMcpServer():
+        return McpServerDisplayInfo(
+          name: conn.serverName,
+          status: McpServerStatus.disconnected,
+          transport: transport,
+          config: conn.config,
+        );
+    }
+  }
+
+  // ── Actions ──
+
+  Future<void> _connectServer(McpServerConfig config) async {
+    await _mcpClient.connect(config);
+    _refreshServers();
+  }
+
+  Future<void> _disconnectServer(String name) async {
+    await _mcpClient.disconnect(name);
+    _refreshServers();
+  }
+
+  Future<void> _restartServer(McpServerDisplayInfo server) async {
+    final config = server.config;
+    if (config == null) return;
+    await _mcpClient.disconnect(server.name);
+    await _mcpClient.connect(config);
+    _refreshServers();
+  }
+
+  Future<void> _removeServer(String name) async {
+    await _mcpClient.disconnect(name);
+    _refreshServers();
+  }
+
+  void _showAddServerDialog() {
+    final nameCtrl = TextEditingController();
+    final commandCtrl = TextEditingController();
+    final argsCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Add MCP Server'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Server name',
+                    hintText: 'e.g. my-server',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: commandCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Command',
+                    hintText: 'e.g. npx or python',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: argsCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Arguments (space-separated)',
+                    hintText: 'e.g. -m my_mcp_server',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final name = nameCtrl.text.trim();
+                final command = commandCtrl.text.trim();
+                if (name.isEmpty || command.isEmpty) return;
+                final args = argsCtrl.text
+                    .trim()
+                    .split(RegExp(r'\s+'))
+                    .where((s) => s.isNotEmpty)
+                    .toList();
+                final config = McpStdioConfig(
+                  name: name,
+                  command: command,
+                  args: args,
+                );
+                Navigator.of(ctx).pop();
+                _connectServer(config);
+              },
+              child: const Text('Connect'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ── UI helpers ──
 
   Color _statusColor(McpServerStatus status) {
     switch (status) {
@@ -120,8 +280,6 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
         return Colors.green;
       case McpServerStatus.error:
         return Colors.red;
-      case McpServerStatus.restarting:
-        return Colors.orange;
     }
   }
 
@@ -135,8 +293,6 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
         return 'Connected';
       case McpServerStatus.error:
         return 'Error';
-      case McpServerStatus.restarting:
-        return 'Restarting...';
     }
   }
 
@@ -148,15 +304,14 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
       appBar: AppBar(
         title: const Text('MCP Servers'),
         actions: [
-          if (widget.onAddServer != null)
-            IconButton(
-              onPressed: widget.onAddServer,
-              icon: const Icon(Icons.add),
-              tooltip: 'Add MCP Server',
-            ),
+          IconButton(
+            onPressed: _showAddServerDialog,
+            icon: const Icon(Icons.add),
+            tooltip: 'Add MCP Server',
+          ),
         ],
       ),
-      body: widget.servers.isEmpty
+      body: _servers.isEmpty
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -177,20 +332,19 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                     style: TextStyle(fontSize: 13, color: Colors.grey.shade400),
                   ),
                   const SizedBox(height: 24),
-                  if (widget.onAddServer != null)
-                    ElevatedButton.icon(
-                      onPressed: widget.onAddServer,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Server'),
-                    ),
+                  ElevatedButton.icon(
+                    onPressed: _showAddServerDialog,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Server'),
+                  ),
                 ],
               ),
             )
           : ListView.builder(
               padding: const EdgeInsets.all(12),
-              itemCount: widget.servers.length,
+              itemCount: _servers.length,
               itemBuilder: (context, index) {
-                final server = widget.servers[index];
+                final server = _servers[index];
                 final isExpanded = _expandedServer == server.name;
 
                 return Card(
@@ -256,18 +410,7 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                                         ),
                                         if (server.transport != null) ...[
                                           Text(
-                                            ' · ${server.transport}',
-                                            style: TextStyle(
-                                              fontSize: 11,
-                                              color: isDark
-                                                  ? Colors.white30
-                                                  : Colors.black26,
-                                            ),
-                                          ),
-                                        ],
-                                        if (server.version != null) ...[
-                                          Text(
-                                            ' · v${server.version}',
+                                            ' \u00b7 ${server.transport}',
                                             style: TextStyle(
                                               fontSize: 11,
                                               color: isDark
@@ -311,17 +454,15 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                                 onSelected: (action) {
                                   switch (action) {
                                     case 'restart':
-                                      widget.onRestart?.call(server.name);
-                                      break;
+                                      _restartServer(server);
                                     case 'disconnect':
-                                      widget.onDisconnect?.call(server.name);
-                                      break;
+                                      _disconnectServer(server.name);
                                     case 'connect':
-                                      widget.onConnect?.call(server.name);
-                                      break;
+                                      if (server.config != null) {
+                                        _connectServer(server.config!);
+                                      }
                                     case 'remove':
-                                      widget.onRemoveServer?.call(server.name);
-                                      break;
+                                      _removeServer(server.name);
                                   }
                                 },
                                 itemBuilder: (_) => [
@@ -350,7 +491,8 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                                       ),
                                     ),
                                   if (server.status ==
-                                      McpServerStatus.disconnected)
+                                          McpServerStatus.disconnected ||
+                                      server.status == McpServerStatus.error)
                                     const PopupMenuItem(
                                       value: 'connect',
                                       child: Row(
@@ -405,15 +547,17 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                         ),
                       ],
 
-                      // Expanded content: tabs for tools/resources/prompts
+                      // Expanded content: tabs for tools/resources
                       if (isExpanded) ...[
                         const Divider(height: 1),
                         // Tab bar
                         Row(
                           children: [
                             _tab('Tools (${server.tools.length})', 0),
-                            _tab('Resources (${server.resources.length})', 1),
-                            _tab('Prompts (${server.prompts.length})', 2),
+                            _tab(
+                              'Resources (${server.resources.length})',
+                              1,
+                            ),
                           ],
                         ),
                         const Divider(height: 1),
@@ -422,9 +566,7 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                           constraints: const BoxConstraints(maxHeight: 300),
                           child: _selectedTab == 0
                               ? _buildToolsList(server)
-                              : _selectedTab == 1
-                              ? _buildResourcesList(server)
-                              : _buildPromptsList(server),
+                              : _buildResourcesList(server),
                         ),
                       ],
                     ],
@@ -512,15 +654,6 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                   overflow: TextOverflow.ellipsis,
                 )
               : null,
-          trailing: tool.usageCount > 0
-              ? Text(
-                  '${tool.usageCount}x',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isDark ? Colors.white30 : Colors.black26,
-                  ),
-                )
-              : null,
         );
       },
     );
@@ -576,66 +709,6 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                   ),
                 )
               : null,
-        );
-      },
-    );
-  }
-
-  Widget _buildPromptsList(McpServerDisplayInfo server) {
-    if (server.prompts.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16),
-        child: Text(
-          'No prompts exposed by this server.',
-          style: TextStyle(color: Colors.grey),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      shrinkWrap: true,
-      padding: const EdgeInsets.all(8),
-      itemCount: server.prompts.length,
-      itemBuilder: (context, index) {
-        final prompt = server.prompts[index];
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-
-        return ListTile(
-          dense: true,
-          leading: Icon(
-            Icons.chat_outlined,
-            size: 16,
-            color: isDark ? Colors.white54 : Colors.black45,
-          ),
-          title: Text(
-            prompt.name,
-            style: TextStyle(
-              fontSize: 13,
-              color: isDark ? Colors.white : Colors.black87,
-            ),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (prompt.description != null)
-                Text(
-                  prompt.description!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? Colors.white38 : Colors.black38,
-                  ),
-                ),
-              if (prompt.argumentNames.isNotEmpty)
-                Text(
-                  'args: ${prompt.argumentNames.join(", ")}',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontFamily: 'monospace',
-                    color: isDark ? Colors.white30 : Colors.black26,
-                  ),
-                ),
-            ],
-          ),
         );
       },
     );

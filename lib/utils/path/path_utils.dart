@@ -1,11 +1,11 @@
-/// Path manipulation utilities ported from NeomClaw TypeScript.
+/// Path manipulation utilities ported from Neomage TypeScript.
 ///
 /// Provides path normalization, glob matching, gitignore parsing,
 /// prefix-based trie lookup, and file system watching primitives.
 library;
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ---------------------------------------------------------------------------
 // Core path helpers

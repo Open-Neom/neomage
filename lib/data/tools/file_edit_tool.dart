@@ -1,4 +1,4 @@
-// FileEditTool — faithful port of neom_claw/src/tools/FileEditTool.
+// FileEditTool — faithful port of neomage/src/tools/FileEditTool.
 // Performs exact string replacements in files.
 //
 // Includes full ports of:
@@ -6,11 +6,10 @@
 //   - utils.ts: quote normalization, desanitization, patch generation,
 //     snippet extraction, edit equivalence checking
 
-
 import 'dart:convert';
-
-import 'package:neom_claw/core/platform/claw_io.dart';
 import 'dart:math';
+
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
@@ -164,8 +163,8 @@ String _applyCurlySingleQuotes(String str) {
 
 // ── Desanitization ─────────────────────────────────────────────────────
 
-/// Desanitization map for NeomClaw API tag normalization.
-/// NeomClaw cannot see the full XML tags (they are sanitized), so it outputs
+/// Desanitization map for Neomage API tag normalization.
+/// Neomage cannot see the full XML tags (they are sanitized), so it outputs
 /// shortened versions. This map restores them.
 Map<String, String> buildDesanitizations() {
   return {
@@ -699,13 +698,13 @@ String formatFileSize(int bytes) {
 // ── Main FileEditTool ──────────────────────────────────────────────────
 
 /// Edit file with exact string replacement -- full port of
-/// neom_claw FileEditTool.
+/// neomage FileEditTool.
 ///
 /// Features:
 /// - Exact string replacement (oldString -> newString)
 /// - Uniqueness validation (must appear exactly once unless replaceAll)
 /// - Quote normalization (curly quotes to straight)
-/// - Desanitization of NeomClaw API-sanitized strings
+/// - Desanitization of Neomage API-sanitized strings
 /// - Encoding preservation (UTF-8, UTF-16LE)
 /// - Line ending preservation (LF, CRLF, CR)
 /// - Backup creation before editing
@@ -718,8 +717,16 @@ class FileEditTool extends Tool with FileWriteToolMixin {
 
   @override
   String get description =>
-      'Performs exact string replacements in files. The edit will fail if '
-      'old_string is not unique in the file unless replace_all is true.';
+      'Performs exact string replacements in files.\n\n'
+      'Usage:\n'
+      '- You must use the Read tool at least once before editing a file. '
+      'This tool will error if you attempt an edit without reading the file first.\n'
+      '- When editing text from Read tool output, preserve the exact indentation (tabs/spaces). '
+      'Never include line number prefixes in old_string or new_string.\n'
+      '- ALWAYS prefer editing existing files. NEVER write new files unless explicitly required.\n'
+      '- The edit will FAIL if old_string is not unique in the file. Provide more surrounding '
+      'context to make it unique, or use replace_all to change every instance.\n'
+      '- Use replace_all for renaming variables or strings across the file.';
 
   @override
   String get prompt =>

@@ -1,5 +1,5 @@
 // /mcp xaa command — manage XAA (SEP-990) IdP connection.
-// Faithful port of neom_claw/src/commands/mcp/xaaIdpCommand.ts (266 TS LOC).
+// Faithful port of neomage/src/commands/mcp/xaaIdpCommand.ts (266 TS LOC).
 //
 // The IdP connection is user-level: configure once, all XAA-enabled MCP
 // servers reuse it. Lives in settings.xaaIdp (non-secret) + a keychain slot
@@ -12,7 +12,7 @@
 //   clear  — Clear the IdP connection config and cached id_token
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -28,7 +28,7 @@ class XaaIdpSettings {
   /// OIDC issuer URL.
   final String issuer;
 
-  /// NeomClaw's client_id at the IdP.
+  /// Neomage's client_id at the IdP.
   final String clientId;
 
   /// Fixed loopback callback port (only if IdP does not honor RFC 8252
@@ -64,7 +64,7 @@ class XaaIdpSettings {
 String _getUserSettingsPath() {
   final home =
       Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
-  return p.join(home, '.neomclaw', 'settings.json');
+  return p.join(home, '.neomage', 'settings.json');
 }
 
 /// Read user settings JSON, returning an empty map if missing or malformed.
@@ -154,7 +154,7 @@ String issuerKey(String issuer) {
         Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '';
-    final secretDir = Directory(p.join(home, '.neomclaw', 'secrets'));
+    final secretDir = Directory(p.join(home, '.neomage', 'secrets'));
     secretDir.createSync(recursive: true);
     final secretFile = File(
       p.join(secretDir.path, '${issuerKey(issuer)}.secret'),
@@ -174,7 +174,7 @@ String? getIdpClientSecret(String issuer) {
         Platform.environment['USERPROFILE'] ??
         '';
     final secretFile = File(
-      p.join(home, '.neomclaw', 'secrets', '${issuerKey(issuer)}.secret'),
+      p.join(home, '.neomage', 'secrets', '${issuerKey(issuer)}.secret'),
     );
     if (secretFile.existsSync()) return secretFile.readAsStringSync().trim();
   } catch (_) {}
@@ -189,7 +189,7 @@ void clearIdpClientSecret(String issuer) {
         Platform.environment['USERPROFILE'] ??
         '';
     final secretFile = File(
-      p.join(home, '.neomclaw', 'secrets', '${issuerKey(issuer)}.secret'),
+      p.join(home, '.neomage', 'secrets', '${issuerKey(issuer)}.secret'),
     );
     if (secretFile.existsSync()) secretFile.deleteSync();
   } catch (_) {}
@@ -203,7 +203,7 @@ String? getCachedIdpIdToken(String issuer) {
         Platform.environment['USERPROFILE'] ??
         '';
     final tokenFile = File(
-      p.join(home, '.neomclaw', 'secrets', '${issuerKey(issuer)}.idtoken'),
+      p.join(home, '.neomage', 'secrets', '${issuerKey(issuer)}.idtoken'),
     );
     if (tokenFile.existsSync()) {
       final content = tokenFile.readAsStringSync().trim();
@@ -221,7 +221,7 @@ void clearIdpIdToken(String issuer) {
         Platform.environment['USERPROFILE'] ??
         '';
     final tokenFile = File(
-      p.join(home, '.neomclaw', 'secrets', '${issuerKey(issuer)}.idtoken'),
+      p.join(home, '.neomage', 'secrets', '${issuerKey(issuer)}.idtoken'),
     );
     if (tokenFile.existsSync()) tokenFile.deleteSync();
   } catch (_) {}
@@ -231,7 +231,7 @@ void clearIdpIdToken(String issuer) {
 int saveIdpIdTokenFromJwt(String issuer, String jwt) {
   final home =
       Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'] ?? '';
-  final secretDir = Directory(p.join(home, '.neomclaw', 'secrets'));
+  final secretDir = Directory(p.join(home, '.neomage', 'secrets'));
   secretDir.createSync(recursive: true);
   final tokenFile = File(
     p.join(secretDir.path, '${issuerKey(issuer)}.idtoken'),

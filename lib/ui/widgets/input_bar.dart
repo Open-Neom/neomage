@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 /// Attachment data ready to send with a message.
 class InputAttachment {
@@ -163,8 +166,8 @@ class _InputBarState extends State<InputBar> {
             const SizedBox(height: 16),
             _AttachOption(
               icon: Icons.insert_drive_file_outlined,
-              label: 'File',
-              subtitle: 'Pick any file',
+              label: NeomageTranslationConstants.attachFile.tr,
+              subtitle: NeomageTranslationConstants.pickAnyFile.tr,
               onTap: () {
                 Navigator.pop(ctx);
                 _pickFiles();
@@ -172,8 +175,8 @@ class _InputBarState extends State<InputBar> {
             ),
             _AttachOption(
               icon: Icons.image_outlined,
-              label: 'Image',
-              subtitle: 'From gallery',
+              label: NeomageTranslationConstants.image.tr,
+              subtitle: NeomageTranslationConstants.fromGallery.tr,
               onTap: () {
                 Navigator.pop(ctx);
                 _pickImage();
@@ -182,8 +185,8 @@ class _InputBarState extends State<InputBar> {
             if (!kIsWeb)
               _AttachOption(
                 icon: Icons.camera_alt_outlined,
-                label: 'Camera',
-                subtitle: 'Take a photo',
+                label: NeomageTranslationConstants.camera.tr,
+                subtitle: NeomageTranslationConstants.takePhoto.tr,
                 onTap: () {
                   Navigator.pop(ctx);
                   _pickImage(source: ImageSource.camera);
@@ -191,8 +194,8 @@ class _InputBarState extends State<InputBar> {
               ),
             _AttachOption(
               icon: Icons.picture_as_pdf_outlined,
-              label: 'PDF',
-              subtitle: 'Pick a PDF document',
+              label: NeomageTranslationConstants.pdf.tr,
+              subtitle: NeomageTranslationConstants.pickPdf.tr,
               onTap: () async {
                 Navigator.pop(ctx);
                 try {
@@ -312,7 +315,7 @@ class _InputBarState extends State<InputBar> {
                   IconButton(
                     onPressed: widget.isLoading ? null : _showAttachMenu,
                     icon: const Icon(Icons.add_circle_outline),
-                    tooltip: 'Attach file, image, or PDF',
+                    tooltip: NeomageTranslationConstants.attachTooltip.tr,
                     color: cs.onSurfaceVariant,
                     iconSize: 24,
                   ),

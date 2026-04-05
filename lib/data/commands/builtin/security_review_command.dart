@@ -1,5 +1,5 @@
 // /security-review command — security-focused code review of pending changes.
-// Faithful port of neom_claw/src/commands/security-review.ts (243 TS LOC).
+// Faithful port of neomage/src/commands/security-review.ts (243 TS LOC).
 //
 // This is a prompt command that performs a comprehensive security review of the
 // changes on the current branch. It executes git commands to gather diff

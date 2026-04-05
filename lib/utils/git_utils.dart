@@ -1,7 +1,7 @@
-// Git utilities — port of neom_claw git helpers.
+// Git utilities — port of neomage git helpers.
 // Git operations, branch info, diff generation, worktree management.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// Git operation result.
 class GitResult {

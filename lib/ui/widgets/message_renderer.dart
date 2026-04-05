@@ -1,10 +1,10 @@
-// Message renderer — port of neom_claw Message + Markdown + AssistantTextMessage.
+// Message renderer — port of neomage Message + Markdown + AssistantTextMessage.
 // Renders conversation messages with markdown, code blocks, and tool outputs.
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart'; // Clipboard
 
-import '../../domain/models/message.dart';
+import 'package:neomage/domain/models/message.dart';
 import 'diff_view.dart';
 import 'syntax_highlight.dart';
 import 'tool_output_widget.dart';
@@ -689,42 +689,243 @@ class _ToolResultView extends StatelessWidget {
   }
 }
 
-/// Renders a full conversation message (user or assistant).
-class ConversationMessage extends StatelessWidget {
+/// Renders a full conversation message with bubble-style layout.
+///
+/// User messages appear as compact bubbles aligned to the right.
+/// Assistant messages appear on the left with action buttons (copy, like/dislike).
+class ConversationMessage extends StatefulWidget {
   final Message message;
+  final VoidCallback? onRegenerate;
 
-  const ConversationMessage({super.key, required this.message});
+  const ConversationMessage({
+    super.key,
+    required this.message,
+    this.onRegenerate,
+  });
+
+  @override
+  State<ConversationMessage> createState() => _ConversationMessageState();
+}
+
+class _ConversationMessageState extends State<ConversationMessage> {
+  bool _copied = false;
+  bool _liked = false;
+  bool _disliked = false;
+
+  String _timeAgo(DateTime timestamp) {
+    final diff = DateTime.now().difference(timestamp);
+    if (diff.inSeconds < 60) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+
+  void _copyFullText() {
+    final text = widget.message.textContent;
+    if (text.isNotEmpty) {
+      Clipboard.setData(ClipboardData(text: text));
+      setState(() => _copied = true);
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) setState(() => _copied = false);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isUser = message.role == MessageRole.user;
+    final isUser = widget.message.role == MessageRole.user;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final maxBubbleWidth = screenWidth < 600
+        ? screenWidth * 0.82
+        : screenWidth * 0.65;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: isUser
-          ? (isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF0F4FF))
-          : null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Role label
-          Text(
-            isUser ? 'You' : 'Assistant',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white38 : Colors.black38,
+    if (isUser) {
+      return _buildUserBubble(isDark, maxBubbleWidth);
+    } else {
+      return _buildAssistantMessage(isDark, maxBubbleWidth);
+    }
+  }
+
+  Widget _buildUserBubble(bool isDark, double maxWidth) {
+    final accentColor = isDark
+        ? const Color(0xFF2A3A4A) // dark teal-blue
+        : const Color(0xFFE8F0FE); // light blue
+
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        margin: const EdgeInsets.only(top: 8, bottom: 4, left: 48, right: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // Bubble
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: accentColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(18),
+                  topRight: Radius.circular(18),
+                  bottomLeft: Radius.circular(18),
+                  bottomRight: Radius.circular(4),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final block in widget.message.content)
+                    MessageRenderer(block: block, isUser: true),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          // Content blocks
-          for (final block in message.content)
+            // Timestamp
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: MessageRenderer(block: block, isUser: isUser),
+              padding: const EdgeInsets.only(top: 4, right: 8),
+              child: Text(
+                _timeAgo(widget.message.timestamp),
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isDark ? Colors.white24 : Colors.black26,
+                ),
+              ),
             ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAssistantMessage(bool isDark, double maxWidth) {
+    final actionColor = isDark ? Colors.white30 : Colors.black26;
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: maxWidth),
+        margin: const EdgeInsets.only(top: 8, bottom: 4, right: 48, left: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Content — no bubble background, clean left-aligned like Itzli
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final block in widget.message.content)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: MessageRenderer(block: block, isUser: false),
+                    ),
+                ],
+              ),
+            ),
+            // Action bar + timestamp
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Copy
+                  _ActionIconButton(
+                    icon: _copied ? Icons.check : Icons.copy_outlined,
+                    tooltip: _copied ? 'Copied' : 'Copy',
+                    color: _copied
+                        ? (isDark ? Colors.greenAccent : Colors.green)
+                        : actionColor,
+                    onPressed: _copyFullText,
+                  ),
+                  // View source / code
+                  _ActionIconButton(
+                    icon: Icons.code,
+                    tooltip: 'View source',
+                    color: actionColor,
+                    onPressed: () {
+                      // Could show raw markdown in a dialog
+                    },
+                  ),
+                  // Regenerate
+                  if (widget.onRegenerate != null)
+                    _ActionIconButton(
+                      icon: Icons.refresh,
+                      tooltip: 'Regenerate',
+                      color: actionColor,
+                      onPressed: widget.onRegenerate!,
+                    ),
+                  // Like
+                  _ActionIconButton(
+                    icon: _liked
+                        ? Icons.thumb_up
+                        : Icons.thumb_up_outlined,
+                    tooltip: 'Good response',
+                    color: _liked
+                        ? (isDark ? Colors.greenAccent : Colors.green)
+                        : actionColor,
+                    onPressed: () => setState(() {
+                      _liked = !_liked;
+                      if (_liked) _disliked = false;
+                    }),
+                  ),
+                  // Dislike
+                  _ActionIconButton(
+                    icon: _disliked
+                        ? Icons.thumb_down
+                        : Icons.thumb_down_outlined,
+                    tooltip: 'Bad response',
+                    color: _disliked
+                        ? (isDark ? Colors.redAccent : Colors.red)
+                        : actionColor,
+                    onPressed: () => setState(() {
+                      _disliked = !_disliked;
+                      if (_disliked) _liked = false;
+                    }),
+                  ),
+                  const SizedBox(width: 8),
+                  // Timestamp
+                  Text(
+                    _timeAgo(widget.message.timestamp),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isDark ? Colors.white24 : Colors.black26,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Small icon button for message actions (copy, like, dislike, etc.)
+class _ActionIconButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final Color color;
+  final VoidCallback onPressed;
+
+  const _ActionIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.color,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(icon, size: 16, color: color),
+        ),
       ),
     );
   }

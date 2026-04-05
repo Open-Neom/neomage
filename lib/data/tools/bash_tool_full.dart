@@ -1,8 +1,9 @@
-// BashTool full — port of neom_claw/src/tools/BashTool/.
+// BashTool full — port of neomage/src/tools/BashTool/.
 // Complete shell command execution with security, sandboxing, output handling.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'dart:convert';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// Bash tool input.
 class BashToolInput {
@@ -384,7 +385,7 @@ const _dangerousFiles = {
   '.profile',
   '.ripgreprc',
   '.mcp.json',
-  '.neomclaw.json',
+  '.neomage.json',
   '.npmrc',
   '.yarnrc',
   '.env',
@@ -672,7 +673,7 @@ Future<BashToolOutput> executeCommand(
   // 4. Build environment
   final env = <String, String>{
     ...?options.environment,
-    'NEOMCLAWCODE': '1', // Side-channel hint
+    'NEOMAGECODE': '1', // Side-channel hint
     'TERM': 'dumb', // Disable terminal features
   };
 

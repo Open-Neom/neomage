@@ -1,4 +1,4 @@
-// StatusBar — port of neom_claw/src/components/StatusBar/.
+// StatusBar — port of neomage/src/components/StatusBar/.
 // Bottom status bar with model, tokens, cost, git branch, connection status.
 
 import 'dart:async';
@@ -369,7 +369,7 @@ enum ToastPosition { top, bottom, topRight, bottomRight }
 enum ToastSeverity { info, success, warning, error }
 
 /// Show a toast notification.
-void showClawToast(
+void showNeomageToast(
   BuildContext context, {
   required String message,
   String? detail,

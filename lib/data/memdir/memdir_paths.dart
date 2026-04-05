@@ -1,22 +1,22 @@
-// Memdir path resolution — port of neom_claw/src/memdir/paths.ts.
+// Memdir path resolution — port of neomage/src/memdir/paths.ts.
 // Resolves memory directory locations with security validation.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
-/// Default memory base directory (~/.neomclaw).
+/// Default memory base directory (~/.neomage).
 String getMemoryBaseDir() {
-  final envOverride = Platform.environment['NEOMCLAW_REMOTE_MEMORY_DIR'];
+  final envOverride = Platform.environment['MAGE_REMOTE_MEMORY_DIR'];
   if (envOverride != null && envOverride.isNotEmpty) return envOverride;
-  return p.join(_homeDir, '.neomclaw');
+  return p.join(_homeDir, '.neomage');
 }
 
 /// Get the auto-memory directory for the current project.
-/// Pattern: `~/.neomclaw/projects/{sanitized-path}/memory/`
+/// Pattern: `~/.neomage/projects/{sanitized-path}/memory/`
 String getAutoMemPath({String? projectRoot}) {
   final envOverride =
-      Platform.environment['NEOMCLAW_COWORK_MEMORY_PATH_OVERRIDE'];
+      Platform.environment['MAGE_COWORK_MEMORY_PATH_OVERRIDE'];
   if (envOverride != null && envOverride.isNotEmpty) return envOverride;
 
   final root = projectRoot ?? Directory.current.path;

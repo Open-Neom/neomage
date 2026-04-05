@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
-import '../../domain/models/message.dart';
+import 'package:neomage/domain/models/message.dart';
 
 class MessageBubble extends StatelessWidget {
   final Message message;

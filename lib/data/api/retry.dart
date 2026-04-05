@@ -1,4 +1,4 @@
-// Retry logic with exponential backoff — ported from NeomClaw src/services/api/withRetry.ts.
+// Retry logic with exponential backoff — ported from Neomage src/services/api/withRetry.ts.
 
 import 'dart:math';
 

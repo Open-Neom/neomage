@@ -1,7 +1,10 @@
-// AgentPanel — port of neom_claw/src/components/AgentPanel/.
+// AgentPanel — port of neomage/src/components/AgentPanel/.
 // Shows spawned agents, their status, tasks, logs, and swarm overview.
 
 import 'package:flutter/material.dart';
+import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 // ─── Agent display data ───
 
@@ -298,7 +301,7 @@ class _AgentPanelState extends State<AgentPanel>
     final allTasks = widget.agents.expand((a) => a.tasks).toList();
     if (allTasks.isEmpty) {
       return Center(
-        child: Text('No tasks', style: TextStyle(color: Colors.grey.shade500)),
+        child: Text(NeomageTranslationConstants.noTasks.tr, style: TextStyle(color: Colors.grey.shade500)),
       );
     }
 

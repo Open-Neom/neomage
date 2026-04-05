@@ -1,4 +1,4 @@
-// Remote permission bridge — ported from openclaude
+// Remote permission bridge — ported from neomagent
 // src/remote/remotePermissionBridge.ts.
 //
 // Creates synthetic assistant messages and tool stubs for remote permission
@@ -8,8 +8,8 @@
 
 import 'dart:convert';
 
-import 'package:neom_claw/data/tools/tool.dart';
-import 'package:neom_claw/domain/models/message.dart';
+import 'package:neomage/data/tools/tool.dart';
+import 'package:neomage/domain/models/message.dart';
 import 'package:uuid/uuid.dart';
 
 const _uuid = Uuid();

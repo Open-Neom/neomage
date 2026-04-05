@@ -1,4 +1,4 @@
-// MCP types — port of neom_claw/src/services/mcp/types.ts.
+// MCP types — port of neomage/src/services/mcp/types.ts.
 // Model Context Protocol type definitions.
 
 /// MCP transport types.

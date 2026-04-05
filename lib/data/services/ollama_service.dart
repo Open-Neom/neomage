@@ -1,5 +1,5 @@
 // Ollama local model service — auto-discovery, model management, health checks.
-// Enables NeomClaw to detect and use local Ollama instances without configuration.
+// Enables Neomage to detect and use local Ollama instances without configuration.
 
 import 'dart:async';
 import 'dart:convert';
@@ -193,7 +193,7 @@ class OllamaService {
     return body['message']?['content'] as String? ?? 'No response';
   }
 
-  /// The OpenAI-compatible base URL for use with NeomClaw's API provider.
+  /// The OpenAI-compatible base URL for use with Neomage's API provider.
   String get openAiBaseUrl => '$host/v1';
 }
 

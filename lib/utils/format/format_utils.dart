@@ -1,12 +1,12 @@
-// Port of neom_claw format.ts + truncate.ts + treeify.ts + json.ts +
+// Port of neomage format.ts + truncate.ts + treeify.ts + json.ts +
 // frontmatterParser.ts
 //
 // Formatting, truncation, tree rendering, JSON/JSONL parsing, and
-// frontmatter parsing utilities for the neom_claw package.
+// frontmatter parsing utilities for the neomage package.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:characters/characters.dart';
 

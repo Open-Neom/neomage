@@ -8,7 +8,7 @@
 ///   - transcriptSearch.ts (202 LOC) -- searchable text extraction
 library;
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:sint/sint.dart';
@@ -47,11 +47,11 @@ class _Percentiles {
 }
 
 // ---------------------------------------------------------------------------
-// Heatmap Color (ANSI escape for NeomClaw orange #da7756)
+// Heatmap Color (ANSI escape for Neomage orange #da7756)
 // ---------------------------------------------------------------------------
 
-/// Apply NeomClaw orange color to text using ANSI escape codes.
-String _neomClawOrange(String text) {
+/// Apply Neomage orange color to text using ANSI escape codes.
+String _neomageOrange(String text) {
   // 24-bit ANSI color: RGB(218, 119, 86) = #da7756
   return '\x1B[38;2;218;119;86m$text\x1B[0m';
 }
@@ -96,13 +96,13 @@ String _getHeatmapChar(int intensity) {
     case 0:
       return _gray('\u00B7');
     case 1:
-      return _neomClawOrange('\u2591');
+      return _neomageOrange('\u2591');
     case 2:
-      return _neomClawOrange('\u2592');
+      return _neomageOrange('\u2592');
     case 3:
-      return _neomClawOrange('\u2593');
+      return _neomageOrange('\u2593');
     case 4:
-      return _neomClawOrange('\u2588');
+      return _neomageOrange('\u2588');
     default:
       return _gray('\u00B7');
   }
@@ -228,10 +228,10 @@ String generateHeatmap(
   lines.add('');
   lines.add(
     '    Less '
-    '${_neomClawOrange('\u2591')} '
-    '${_neomClawOrange('\u2592')} '
-    '${_neomClawOrange('\u2593')} '
-    '${_neomClawOrange('\u2588')} '
+    '${_neomageOrange('\u2591')} '
+    '${_neomageOrange('\u2592')} '
+    '${_neomageOrange('\u2593')} '
+    '${_neomageOrange('\u2588')} '
     'More',
   );
 
@@ -566,7 +566,7 @@ enum CodeIndexingTool {
   qodo,
   amazonQ,
   gemini,
-  neomClawContext,
+  neomageContext,
   codeIndexMcp,
   localCodeSearch,
   autodevCodebase,
@@ -681,7 +681,7 @@ final List<_McpPattern> _mcpServerPatterns = [
   ),
   _McpPattern(
     RegExp(r'^claude[-_]?context$', caseSensitive: false),
-    CodeIndexingTool.neomClawContext,
+    CodeIndexingTool.neomageContext,
   ),
   _McpPattern(
     RegExp(r'^code[-_]?index[-_]?mcp$', caseSensitive: false),
@@ -705,7 +705,7 @@ final List<_McpPattern> _mcpServerPatterns = [
   ),
   _McpPattern(
     RegExp(r'^code[-_]?context$', caseSensitive: false),
-    CodeIndexingTool.neomClawContext,
+    CodeIndexingTool.neomageContext,
   ),
 ];
 

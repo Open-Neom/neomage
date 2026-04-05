@@ -1,4 +1,4 @@
-// Message constants — ported from NeomClaw src/constants/messages.ts.
+// Message constants — ported from Neomage src/constants/messages.ts.
 // All user-facing strings centralised here for consistency and future i18n.
 
 const String noContentMessage = '(no content)';
@@ -162,7 +162,7 @@ class InfoMessages {
   InfoMessages._();
 
   static const String welcome =
-      'Welcome to Neom Claw — your AI-powered coding assistant.';
+      'Welcome to Neomage — your AI-powered coding assistant.';
   static const String sessionStarted = 'New session started.';
   static const String sessionResumed = 'Session resumed.';
   static const String sessionEnded = 'Session ended.';
@@ -212,9 +212,9 @@ class HelpMessages {
   static const String quickStart = '''
 Quick Start
 -----------
-1. Enter a prompt to start chatting with NeomClaw.
+1. Enter a prompt to start chatting with Neomage.
 2. Use / commands for special actions (type /help for a list).
-3. NeomClaw can read and edit files, run commands, and search your codebase.
+3. Neomage can read and edit files, run commands, and search your codebase.
 4. Use Shift+Enter for multi-line input.
 5. Press Escape to cancel a running operation.
 ''';
@@ -226,7 +226,7 @@ Quick Start
     '/model': 'Switch the active model.',
     '/cost': 'Display token usage and estimated cost for this session.',
     '/context': 'Show current context window usage.',
-    '/memory': 'View or edit the NEOMCLAW.md memory file.',
+    '/memory': 'View or edit the NEOMAGE.md memory file.',
     '/commit': 'Generate a commit message and create a Git commit.',
     '/review': 'Review recent code changes with AI feedback.',
     '/diff': 'Show a diff of recent file changes.',

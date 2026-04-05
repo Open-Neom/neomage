@@ -1,4 +1,4 @@
-// Keybinding types — port of neom_claw/src/keybindings/.
+// Keybinding types — port of neomage/src/keybindings/.
 // Keystroke parsing, chord state machine, and binding resolution.
 
 /// A parsed keystroke.

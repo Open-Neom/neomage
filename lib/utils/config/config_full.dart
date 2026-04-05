@@ -1,7 +1,7 @@
 /// Full configuration management: reading, writing, merging from multiple
 /// sources (project, user/global, system).
 ///
-/// Port of neom_claw/src/utils/config.ts (1825 LOC).
+/// Port of neomage/src/utils/config.ts (1825 LOC).
 /// Contains all types, defaults, reading, writing, caching, backup/restore,
 /// locked writes, freshness watching, trust dialog traversal, auto-updater
 /// config, memory paths, migration, and the complete field sets.
@@ -9,7 +9,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:path/path.dart' as p;
@@ -399,16 +399,16 @@ class SkillUsageEntry {
 }
 
 // ---------------------------------------------------------------------------
-// NeomClawHints
+// NeomageHints
 // ---------------------------------------------------------------------------
 
-class NeomClawHints {
+class NeomageHints {
   final List<String>? plugin;
   final bool? disabled;
 
-  const NeomClawHints({this.plugin, this.disabled});
+  const NeomageHints({this.plugin, this.disabled});
 
-  factory NeomClawHints.fromJson(Map<String, dynamic> json) => NeomClawHints(
+  factory NeomageHints.fromJson(Map<String, dynamic> json) => NeomageHints(
     plugin: (json['plugin'] as List?)?.cast<String>(),
     disabled: json['disabled'] as bool?,
   );
@@ -471,8 +471,8 @@ class ProjectConfig {
   bool hasTrustDialogAccepted;
   bool hasCompletedProjectOnboarding;
   int projectOnboardingSeenCount;
-  bool hasNeomClawMdExternalIncludesApproved;
-  bool hasNeomClawMdExternalIncludesWarningShown;
+  bool hasNeomageMdExternalIncludesApproved;
+  bool hasNeomageMdExternalIncludesWarningShown;
   List<String>? enabledMcpjsonServers;
   List<String>? disabledMcpjsonServers;
   bool? enableAllProjectMcpServers;
@@ -507,8 +507,8 @@ class ProjectConfig {
     this.hasTrustDialogAccepted = false,
     this.hasCompletedProjectOnboarding = false,
     this.projectOnboardingSeenCount = 0,
-    this.hasNeomClawMdExternalIncludesApproved = false,
-    this.hasNeomClawMdExternalIncludesWarningShown = false,
+    this.hasNeomageMdExternalIncludesApproved = false,
+    this.hasNeomageMdExternalIncludesWarningShown = false,
     this.enabledMcpjsonServers,
     this.disabledMcpjsonServers,
     this.enableAllProjectMcpServers,
@@ -563,10 +563,10 @@ class ProjectConfig {
           json['hasCompletedProjectOnboarding'] as bool? ?? false,
       projectOnboardingSeenCount:
           json['projectOnboardingSeenCount'] as int? ?? 0,
-      hasNeomClawMdExternalIncludesApproved:
-          json['hasNeomClawMdExternalIncludesApproved'] as bool? ?? false,
-      hasNeomClawMdExternalIncludesWarningShown:
-          json['hasNeomClawMdExternalIncludesWarningShown'] as bool? ?? false,
+      hasNeomageMdExternalIncludesApproved:
+          json['hasNeomageMdExternalIncludesApproved'] as bool? ?? false,
+      hasNeomageMdExternalIncludesWarningShown:
+          json['hasNeomageMdExternalIncludesWarningShown'] as bool? ?? false,
       enabledMcpjsonServers: (json['enabledMcpjsonServers'] as List?)
           ?.cast<String>(),
       disabledMcpjsonServers: (json['disabledMcpjsonServers'] as List?)
@@ -625,7 +625,7 @@ class GlobalConfig {
   String? lastReleaseNotesSeen;
   int? changelogLastFetched;
   Map<String, dynamic>? mcpServers;
-  List<String>? neomClawAiMcpEverConnected;
+  List<String>? neomageAiMcpEverConnected;
   NotificationChannel preferredNotifChannel;
   String? customNotifyCommand;
   bool verbose;
@@ -680,14 +680,14 @@ class GlobalConfig {
   FeedbackSurveyState? feedbackSurveyState;
   bool? transcriptShareDismissed;
   ChromeExtensionPairing? chromeExtension;
-  NeomClawHints? neomClawHints;
+  NeomageHints? neomageHints;
   bool? permissionExplainerEnabled;
   String? teammateMode;
   String? teammateDefaultModel;
   bool? prStatusFooterEnabled;
   bool? remoteDialogSeen;
   int? lastPlanModeUse;
-  String? neomClawFirstTokenDate;
+  String? neomageFirstTokenDate;
 
   GlobalConfig({
     this.apiKeyHelper,
@@ -704,7 +704,7 @@ class GlobalConfig {
     this.lastReleaseNotesSeen,
     this.changelogLastFetched,
     this.mcpServers,
-    this.neomClawAiMcpEverConnected,
+    this.neomageAiMcpEverConnected,
     this.preferredNotifChannel = NotificationChannel.auto,
     this.customNotifyCommand,
     this.verbose = false,
@@ -759,14 +759,14 @@ class GlobalConfig {
     this.feedbackSurveyState,
     this.transcriptShareDismissed,
     this.chromeExtension,
-    this.neomClawHints,
+    this.neomageHints,
     this.permissionExplainerEnabled,
     this.teammateMode,
     this.teammateDefaultModel,
     this.prStatusFooterEnabled,
     this.remoteDialogSeen,
     this.lastPlanModeUse,
-    this.neomClawFirstTokenDate,
+    this.neomageFirstTokenDate,
   });
 
   /// Factory for a fresh default.
@@ -851,9 +851,9 @@ class GlobalConfig {
               json['chromeExtension'] as Map<String, dynamic>,
             )
           : null,
-      neomClawHints: json['neomClawHints'] != null
-          ? NeomClawHints.fromJson(
-              json['neomClawHints'] as Map<String, dynamic>,
+      neomageHints: json['neomageHints'] != null
+          ? NeomageHints.fromJson(
+              json['neomageHints'] as Map<String, dynamic>,
             )
           : null,
       feedbackSurveyState: json['feedbackSurveyState'] != null
@@ -981,8 +981,8 @@ const List<String> globalConfigKeys = [
   'inputNeededNotifEnabled',
   'agentPushNotifEnabled',
   'respectGitignore',
-  'neomClawInChromeDefaultEnabled',
-  'hasCompletedNeomClawInChromeOnboarding',
+  'neomageInChromeDefaultEnabled',
+  'hasCompletedNeomageInChromeOnboarding',
   'lspRecommendationDisabled',
   'copyFullResponse',
   'copyOnSelect',
@@ -1061,12 +1061,12 @@ class ConfigController extends SintController {
       _configHomeDir ??
       (() {
         final xdg = Platform.environment['XDG_CONFIG_HOME'];
-        if (xdg != null && xdg.isNotEmpty) return p.join(xdg, 'neomclaw');
+        if (xdg != null && xdg.isNotEmpty) return p.join(xdg, 'neomage');
         final home =
             Platform.environment['HOME'] ??
             Platform.environment['USERPROFILE'] ??
             '';
-        return p.join(home, '.neomclaw');
+        return p.join(home, '.neomage');
       })();
 
   String get _configBackupDir => p.join(configHomeDir, 'backups');
@@ -1335,23 +1335,23 @@ class ConfigController extends SintController {
 
   String getMemoryPath(MemoryType memoryType, {String? managedFilePath}) {
     return switch (memoryType) {
-      MemoryType.user => p.join(configHomeDir, 'NEOMCLAW.md'),
-      MemoryType.local => p.join(cwd, 'NEOMCLAW.local.md'),
-      MemoryType.project => p.join(cwd, 'NEOMCLAW.md'),
+      MemoryType.user => p.join(configHomeDir, 'NEOMAGE.md'),
+      MemoryType.local => p.join(cwd, 'NEOMAGE.local.md'),
+      MemoryType.project => p.join(cwd, 'NEOMAGE.md'),
       MemoryType.managed => p.join(
         managedFilePath ?? p.join(configHomeDir, 'managed'),
-        'NEOMCLAW.md',
+        'NEOMAGE.md',
       ),
-      MemoryType.autoMem => p.join(configHomeDir, 'auto', 'NEOMCLAW.md'),
+      MemoryType.autoMem => p.join(configHomeDir, 'auto', 'NEOMAGE.md'),
     };
   }
 
-  String getManagedNeomClawRulesDir({String? managedFilePath}) {
+  String getManagedNeomageRulesDir({String? managedFilePath}) {
     final base = managedFilePath ?? p.join(configHomeDir, 'managed');
-    return p.join(base, '.neomclaw', 'rules');
+    return p.join(base, '.neomage', 'rules');
   }
 
-  String getUserNeomClawRulesDir() => p.join(configHomeDir, 'rules');
+  String getUserNeomageRulesDir() => p.join(configHomeDir, 'rules');
 
   // ---------------------------------------------------------------------------
   // Remote control at startup
@@ -1683,11 +1683,11 @@ class ConfigController extends SintController {
   }
 
   static String? _getEssentialTrafficOnlyReason(Map<String, String> env) {
-    if (_isEnvTruthy(env['NEOMCLAW_ESSENTIAL_TRAFFIC_ONLY'])) {
-      return 'NEOMCLAW_ESSENTIAL_TRAFFIC_ONLY';
+    if (_isEnvTruthy(env['MAGE_ESSENTIAL_TRAFFIC_ONLY'])) {
+      return 'MAGE_ESSENTIAL_TRAFFIC_ONLY';
     }
-    if (_isEnvTruthy(env['NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC'])) {
-      return 'NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC';
+    if (_isEnvTruthy(env['MAGE_DISABLE_NONESSENTIAL_TRAFFIC'])) {
+      return 'MAGE_DISABLE_NONESSENTIAL_TRAFFIC';
     }
     return null;
   }

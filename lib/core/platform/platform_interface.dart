@@ -9,7 +9,7 @@ import 'dart:typed_data';
 ///
 /// Usage:
 /// ```dart
-/// import 'package:neom_claw/core/platform/platform_init.dart';
+/// import 'package:neomage/core/platform/platform_init.dart';
 ///
 /// void main() {
 ///   initializePlatform();

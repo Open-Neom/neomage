@@ -1,4 +1,4 @@
-// OAuth service — faithful port of neom_claw/src/services/oauth/.
+// OAuth service — faithful port of neomage/src/services/oauth/.
 // Covers: client.ts, index.ts (OAuthService class), auth-code-listener.ts,
 //         getOauthProfile.ts, crypto.ts, types.ts.
 //
@@ -6,7 +6,7 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
@@ -278,40 +278,40 @@ class AccountInfo {
 class OAuthConfig {
   final String clientId;
   final String consoleAuthorizeUrl;
-  final String neomClawAiAuthorizeUrl;
+  final String neomageAiAuthorizeUrl;
   final String tokenUrl;
   final String rolesUrl;
   final String apiKeyUrl;
   final String manualRedirectUrl;
   final String consoleSuccessUrl;
-  final String neomClawAiSuccessUrl;
+  final String neomageAiSuccessUrl;
   final String profileUrl;
 
   const OAuthConfig({
     required this.clientId,
     required this.consoleAuthorizeUrl,
-    required this.neomClawAiAuthorizeUrl,
+    required this.neomageAiAuthorizeUrl,
     required this.tokenUrl,
     required this.rolesUrl,
     required this.apiKeyUrl,
     required this.manualRedirectUrl,
     required this.consoleSuccessUrl,
-    required this.neomClawAiSuccessUrl,
+    required this.neomageAiSuccessUrl,
     required this.profileUrl,
   });
 }
 
 /// Default OAuth config (can be overridden).
 OAuthConfig _oauthConfig = const OAuthConfig(
-  clientId: 'neom-claw',
+  clientId: 'neomage',
   consoleAuthorizeUrl: 'https://console.anthropic.com/oauth/authorize',
-  neomClawAiAuthorizeUrl: 'https://neomclaw.ai/oauth/authorize',
+  neomageAiAuthorizeUrl: 'https://neomage.ai/oauth/authorize',
   tokenUrl: 'https://console.anthropic.com/v1/oauth/token',
   rolesUrl: 'https://api.anthropic.com/v1/oauth/roles',
   apiKeyUrl: 'https://api.anthropic.com/v1/oauth/api-key',
   manualRedirectUrl: 'https://console.anthropic.com/oauth/code',
   consoleSuccessUrl: 'https://console.anthropic.com/oauth/success',
-  neomClawAiSuccessUrl: 'https://neomclaw.ai/oauth/success',
+  neomageAiSuccessUrl: 'https://neomage.ai/oauth/success',
   profileUrl: 'https://api.anthropic.com/v1/oauth/profile',
 );
 
@@ -321,22 +321,22 @@ void setOauthConfig(OAuthConfig config) {
   _oauthConfig = config;
 }
 
-/// NeomClaw AI inference scope.
-const neomClawAiInferenceScope = 'claude:inference';
+/// Neomage AI inference scope.
+const neomageAiInferenceScope = 'claude:inference';
 
 /// All OAuth scopes.
 const allOAuthScopes = [
   'user:profile',
   'user:inference',
   'org:create_api_key',
-  neomClawAiInferenceScope,
+  neomageAiInferenceScope,
 ];
 
-/// NeomClaw AI OAuth scopes.
-const neomClawAiOAuthScopes = [
+/// Neomage AI OAuth scopes.
+const neomageAiOAuthScopes = [
   'user:profile',
   'user:inference',
-  neomClawAiInferenceScope,
+  neomageAiInferenceScope,
 ];
 
 // ---------------------------------------------------------------------------
@@ -367,9 +367,9 @@ String generateState() {
 // OAuth client functions (client.ts)
 // ---------------------------------------------------------------------------
 
-/// Check if the user has NeomClaw.ai authentication scope.
-bool shouldUseNeomClawAIAuth(List<String>? scopes) {
-  return scopes?.contains(neomClawAiInferenceScope) ?? false;
+/// Check if the user has Neomage.ai authentication scope.
+bool shouldUseNeomageAIAuth(List<String>? scopes) {
+  return scopes?.contains(neomageAiInferenceScope) ?? false;
 }
 
 /// Parse a space-separated scope string into a list.
@@ -383,15 +383,15 @@ String buildAuthUrl({
   required String state,
   required int port,
   required bool isManual,
-  bool loginWithNeomClawAi = false,
+  bool loginWithNeomageAi = false,
   bool inferenceOnly = false,
   String? orgUUID,
   String? loginHint,
   String? loginMethod,
 }) {
   final config = getOauthConfig();
-  final authUrlBase = loginWithNeomClawAi
-      ? config.neomClawAiAuthorizeUrl
+  final authUrlBase = loginWithNeomageAi
+      ? config.neomageAiAuthorizeUrl
       : config.consoleAuthorizeUrl;
 
   final uri = Uri.parse(authUrlBase);
@@ -402,7 +402,7 @@ String buildAuthUrl({
     'redirect_uri': isManual
         ? config.manualRedirectUrl
         : 'http://localhost:$port/callback',
-    'scope': (inferenceOnly ? [neomClawAiInferenceScope] : allOAuthScopes).join(
+    'scope': (inferenceOnly ? [neomageAiInferenceScope] : allOAuthScopes).join(
       ' ',
     ),
     'code_challenge': codeChallenge,
@@ -480,7 +480,7 @@ Future<OAuthTokens> refreshOAuthToken({
     'scope':
         (requestedScopes?.isNotEmpty == true
                 ? requestedScopes!
-                : neomClawAiOAuthScopes)
+                : neomageAiOAuthScopes)
             .join(' '),
   };
 
@@ -551,13 +551,13 @@ Future<OAuthProfileResponse?> fetchOAuthProfile({
 /// Determine subscription type from organization type string.
 SubscriptionType? subscriptionTypeFromOrgType(String? orgType) {
   switch (orgType) {
-    case 'neomclaw_max':
+    case 'neomage_max':
       return SubscriptionType.max;
-    case 'neomclaw_pro':
+    case 'neomage_pro':
       return SubscriptionType.pro;
-    case 'neomclaw_enterprise':
+    case 'neomage_enterprise':
       return SubscriptionType.enterprise;
-    case 'neomclaw_team':
+    case 'neomage_team':
       return SubscriptionType.team;
     default:
       return null;
@@ -737,8 +737,8 @@ class AuthCodeListener {
     if (_pendingResponse == null) return;
 
     final config = getOauthConfig();
-    final successUrl = shouldUseNeomClawAIAuth(scopes)
-        ? config.neomClawAiSuccessUrl
+    final successUrl = shouldUseNeomageAIAuth(scopes)
+        ? config.neomageAiSuccessUrl
         : config.consoleSuccessUrl;
 
     _pendingResponse!.statusCode = HttpStatus.movedTemporarily;
@@ -753,7 +753,7 @@ class AuthCodeListener {
 
     final config = getOauthConfig();
     _pendingResponse!.statusCode = HttpStatus.movedTemporarily;
-    _pendingResponse!.headers.set('Location', config.neomClawAiSuccessUrl);
+    _pendingResponse!.headers.set('Location', config.neomageAiSuccessUrl);
     _pendingResponse!.close();
     _pendingResponse = null;
   }
@@ -790,7 +790,7 @@ class OAuthService {
     required Future<void> Function(String manualUrl, [String? automaticUrl])
     authURLHandler,
     Future<void> Function(String url)? openBrowser,
-    bool loginWithNeomClawAi = false,
+    bool loginWithNeomageAi = false,
     bool inferenceOnly = false,
     int? expiresIn,
     String? orgUUID,
@@ -808,7 +808,7 @@ class OAuthService {
       codeChallenge: codeChallenge,
       state: state,
       port: _port!,
-      loginWithNeomClawAi: loginWithNeomClawAi,
+      loginWithNeomageAi: loginWithNeomageAi,
       inferenceOnly: inferenceOnly,
       orgUUID: orgUUID,
       loginHint: loginHint,
@@ -820,7 +820,7 @@ class OAuthService {
       state: commonOpts.state,
       port: commonOpts.port,
       isManual: true,
-      loginWithNeomClawAi: commonOpts.loginWithNeomClawAi,
+      loginWithNeomageAi: commonOpts.loginWithNeomageAi,
       inferenceOnly: commonOpts.inferenceOnly,
       orgUUID: commonOpts.orgUUID,
       loginHint: commonOpts.loginHint,
@@ -832,7 +832,7 @@ class OAuthService {
       state: commonOpts.state,
       port: commonOpts.port,
       isManual: false,
-      loginWithNeomClawAi: commonOpts.loginWithNeomClawAi,
+      loginWithNeomageAi: commonOpts.loginWithNeomageAi,
       inferenceOnly: commonOpts.inferenceOnly,
       orgUUID: commonOpts.orgUUID,
       loginHint: commonOpts.loginHint,

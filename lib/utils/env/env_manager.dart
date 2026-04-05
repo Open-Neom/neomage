@@ -1,11 +1,11 @@
-// Port of neom_claw env.ts + envDynamic.ts + envUtils.ts + envValidation.ts
+// Port of neomage env.ts + envDynamic.ts + envUtils.ts + envValidation.ts
 // + managedEnv.ts + managedEnvConstants.ts
 //
 // Environment variable management, detection, and validation utilities for
-// the neom_claw package.
+// the neomage package.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -14,16 +14,16 @@ import 'package:path/path.dart' as p;
 // ---------------------------------------------------------------------------
 
 /// Supported platform identifiers.
-enum ClawPlatform {
+enum NeomagePlatform {
   win32,
   darwin,
   linux;
 
   /// Detect the current platform, mapping non-Darwin/Windows to linux.
-  static ClawPlatform detect() {
-    if (Platform.isMacOS) return ClawPlatform.darwin;
-    if (Platform.isWindows) return ClawPlatform.win32;
-    return ClawPlatform.linux;
+  static NeomagePlatform detect() {
+    if (Platform.isMacOS) return NeomagePlatform.darwin;
+    if (Platform.isWindows) return NeomagePlatform.win32;
+    return NeomagePlatform.linux;
   }
 }
 
@@ -31,24 +31,24 @@ enum ClawPlatform {
 // envUtils.ts  --  low-level env helpers
 // ---------------------------------------------------------------------------
 
-/// Returns the NeomClaw config home directory (NEOMCLAW_CONFIG_DIR or ~/.claude).
+/// Returns the Neomage config home directory (MAGE_CONFIG_DIR or ~/.neomage).
 /// Memoized after first call.
-String? _neomClawConfigHomeDirCache;
+String? _neomageConfigHomeDirCache;
 
-String getNeomClawConfigHomeDir() {
-  if (_neomClawConfigHomeDirCache != null) return _neomClawConfigHomeDirCache!;
-  final configDir = Platform.environment['NEOMCLAW_CONFIG_DIR'];
+String getNeomageConfigHomeDir() {
+  if (_neomageConfigHomeDirCache != null) return _neomageConfigHomeDirCache!;
+  final configDir = Platform.environment['MAGE_CONFIG_DIR'];
   if (configDir != null && configDir.isNotEmpty) {
-    _neomClawConfigHomeDirCache = configDir;
+    _neomageConfigHomeDirCache = configDir;
   } else {
-    _neomClawConfigHomeDirCache = p.join(_homedir(), '.neomclaw');
+    _neomageConfigHomeDirCache = p.join(_homedir(), '.neomage');
   }
-  return _neomClawConfigHomeDirCache!;
+  return _neomageConfigHomeDirCache!;
 }
 
 /// Returns the teams directory under the config home.
 String getTeamsDir() {
-  return p.join(getNeomClawConfigHomeDir(), 'teams');
+  return p.join(getNeomageConfigHomeDir(), 'teams');
 }
 
 /// Check if NODE_OPTIONS contains a specific flag.
@@ -81,10 +81,10 @@ bool isEnvDefinedFalsy(dynamic envVar) {
   return const ['0', 'false', 'no', 'off'].contains(normalized);
 }
 
-/// --bare / NEOMCLAW_SIMPLE: skip hooks, LSP, plugin sync, skill walk,
+/// --bare / MAGE_SIMPLE: skip hooks, LSP, plugin sync, skill walk,
 /// attribution, background prefetches, and ALL keychain/credential reads.
 bool isBareMode() {
-  return isEnvTruthy(Platform.environment['NEOMCLAW_SIMPLE']);
+  return isEnvTruthy(Platform.environment['MAGE_SIMPLE']);
 }
 
 /// Parse an array of `KEY=VALUE` strings into a map.
@@ -122,7 +122,7 @@ String getDefaultVertexRegion() {
 /// Check if bash commands should maintain project working directory.
 bool shouldMaintainProjectWorkingDir() {
   return isEnvTruthy(
-    Platform.environment['NEOMCLAW_BASH_MAINTAIN_PROJECT_WORKING_DIR'],
+    Platform.environment['MAGE_BASH_MAINTAIN_PROJECT_WORKING_DIR'],
   );
 }
 
@@ -132,7 +132,7 @@ bool isRunningOnHomespace() {
       isEnvTruthy(Platform.environment['COO_RUNNING_ON_HOMESPACE']);
 }
 
-/// Conservative check for whether NeomClaw is running inside a protected
+/// Conservative check for whether Neomage is running inside a protected
 /// (privileged or ASL3+) COO namespace or cluster.
 bool isInProtectedNamespace() {
   if (Platform.environment['USER_TYPE'] == 'ant') {
@@ -404,26 +404,26 @@ String _detectDeploymentEnvironmentImpl() {
   } catch (_) {}
 
   // Platform-specific fallback
-  final platform = ClawPlatform.detect();
-  if (platform == ClawPlatform.darwin) return 'unknown-darwin';
-  if (platform == ClawPlatform.linux) return 'unknown-linux';
-  if (platform == ClawPlatform.win32) return 'unknown-win32';
+  final platform = NeomagePlatform.detect();
+  if (platform == NeomagePlatform.darwin) return 'unknown-darwin';
+  if (platform == NeomagePlatform.linux) return 'unknown-linux';
+  if (platform == NeomagePlatform.win32) return 'unknown-win32';
 
   return 'unknown';
 }
 
 /// Returns the host platform for analytics reporting.
-ClawPlatform getHostPlatformForAnalytics() {
-  final override = Platform.environment['NEOMCLAW_HOST_PLATFORM'];
+NeomagePlatform getHostPlatformForAnalytics() {
+  final override = Platform.environment['MAGE_HOST_PLATFORM'];
   switch (override) {
     case 'win32':
-      return ClawPlatform.win32;
+      return NeomagePlatform.win32;
     case 'darwin':
-      return ClawPlatform.darwin;
+      return NeomagePlatform.darwin;
     case 'linux':
-      return ClawPlatform.linux;
+      return NeomagePlatform.linux;
     default:
-      return ClawPlatform.detect();
+      return NeomagePlatform.detect();
   }
 }
 
@@ -440,7 +440,7 @@ Future<bool> getIsDocker() async {
 /// Check if running inside a Bubblewrap sandbox.
 bool getIsBubblewrapSandbox() {
   return Platform.isLinux &&
-      isEnvTruthy(Platform.environment['NEOMCLAW_BUBBLEWRAP']);
+      isEnvTruthy(Platform.environment['MAGE_BUBBLEWRAP']);
 }
 
 /// Checks if running in WSL.
@@ -586,10 +586,10 @@ Future<bool> _isCommandAvailable(String command) async {
 
 /// Environment variables that control inference routing.
 const _providerManagedEnvVars = <String>{
-  'NEOMCLAW_PROVIDER_MANAGED_BY_HOST',
-  'NEOMCLAW_USE_BEDROCK',
-  'NEOMCLAW_USE_VERTEX',
-  'NEOMCLAW_USE_FOUNDRY',
+  'MAGE_PROVIDER_MANAGED_BY_HOST',
+  'MAGE_USE_BEDROCK',
+  'MAGE_USE_VERTEX',
+  'MAGE_USE_FOUNDRY',
   'ANTHROPIC_BASE_URL',
   'ANTHROPIC_BEDROCK_BASE_URL',
   'ANTHROPIC_VERTEX_BASE_URL',
@@ -599,12 +599,12 @@ const _providerManagedEnvVars = <String>{
   'CLOUD_ML_REGION',
   'ANTHROPIC_API_KEY',
   'ANTHROPIC_AUTH_TOKEN',
-  'NEOMCLAW_OAUTH_TOKEN',
+  'MAGE_OAUTH_TOKEN',
   'AWS_BEARER_TOKEN_BEDROCK',
   'ANTHROPIC_FOUNDRY_API_KEY',
-  'NEOMCLAW_SKIP_BEDROCK_AUTH',
-  'NEOMCLAW_SKIP_VERTEX_AUTH',
-  'NEOMCLAW_SKIP_FOUNDRY_AUTH',
+  'MAGE_SKIP_BEDROCK_AUTH',
+  'MAGE_SKIP_VERTEX_AUTH',
+  'MAGE_SKIP_FOUNDRY_AUTH',
   'ANTHROPIC_MODEL',
   'ANTHROPIC_DEFAULT_HAIKU_MODEL',
   'ANTHROPIC_DEFAULT_HAIKU_MODEL_DESCRIPTION',
@@ -620,7 +620,7 @@ const _providerManagedEnvVars = <String>{
   'ANTHROPIC_DEFAULT_SONNET_MODEL_SUPPORTED_CAPABILITIES',
   'ANTHROPIC_SMALL_FAST_MODEL',
   'ANTHROPIC_SMALL_FAST_MODEL_AWS_REGION',
-  'NEOMCLAW_SUBAGENT_MODEL',
+  'MAGE_SUBAGENT_MODEL',
 };
 
 const _providerManagedEnvPrefixes = <String>['VERTEX_REGION_CLAUDE_'];
@@ -673,22 +673,22 @@ const safeEnvVars = <String>{
   'BASH_DEFAULT_TIMEOUT_MS',
   'BASH_MAX_OUTPUT_LENGTH',
   'BASH_MAX_TIMEOUT_MS',
-  'NEOMCLAW_BASH_MAINTAIN_PROJECT_WORKING_DIR',
-  'NEOMCLAW_API_KEY_HELPER_TTL_MS',
-  'NEOMCLAW_DISABLE_EXPERIMENTAL_BETAS',
-  'NEOMCLAW_DISABLE_NONESSENTIAL_TRAFFIC',
-  'NEOMCLAW_DISABLE_TERMINAL_TITLE',
-  'NEOMCLAW_ENABLE_TELEMETRY',
-  'NEOMCLAW_EXPERIMENTAL_AGENT_TEAMS',
-  'NEOMCLAW_IDE_SKIP_AUTO_INSTALL',
-  'NEOMCLAW_MAX_OUTPUT_TOKENS',
-  'NEOMCLAW_SKIP_BEDROCK_AUTH',
-  'NEOMCLAW_SKIP_FOUNDRY_AUTH',
-  'NEOMCLAW_SKIP_VERTEX_AUTH',
-  'NEOMCLAW_SUBAGENT_MODEL',
-  'NEOMCLAW_USE_BEDROCK',
-  'NEOMCLAW_USE_FOUNDRY',
-  'NEOMCLAW_USE_VERTEX',
+  'MAGE_BASH_MAINTAIN_PROJECT_WORKING_DIR',
+  'MAGE_API_KEY_HELPER_TTL_MS',
+  'MAGE_DISABLE_EXPERIMENTAL_BETAS',
+  'MAGE_DISABLE_NONESSENTIAL_TRAFFIC',
+  'MAGE_DISABLE_TERMINAL_TITLE',
+  'MAGE_ENABLE_TELEMETRY',
+  'MAGE_EXPERIMENTAL_AGENT_TEAMS',
+  'MAGE_IDE_SKIP_AUTO_INSTALL',
+  'MAGE_MAX_OUTPUT_TOKENS',
+  'MAGE_SKIP_BEDROCK_AUTH',
+  'MAGE_SKIP_FOUNDRY_AUTH',
+  'MAGE_SKIP_VERTEX_AUTH',
+  'MAGE_SUBAGENT_MODEL',
+  'MAGE_USE_BEDROCK',
+  'MAGE_USE_FOUNDRY',
+  'MAGE_USE_VERTEX',
   'DISABLE_AUTOUPDATER',
   'DISABLE_BUG_COMMAND',
   'DISABLE_COST_WARNINGS',
@@ -746,17 +746,17 @@ Map<String, String> _withoutSSHTunnelVars(Map<String, String>? env) {
     'ANTHROPIC_BASE_URL',
     'ANTHROPIC_API_KEY',
     'ANTHROPIC_AUTH_TOKEN',
-    'NEOMCLAW_OAUTH_TOKEN',
+    'MAGE_OAUTH_TOKEN',
   ]) {
     copy.remove(key);
   }
   return copy;
 }
 
-/// Strip provider-managed vars when NEOMCLAW_PROVIDER_MANAGED_BY_HOST is set.
+/// Strip provider-managed vars when MAGE_PROVIDER_MANAGED_BY_HOST is set.
 Map<String, String> _withoutHostManagedProviderVars(Map<String, String>? env) {
   if (env == null) return {};
-  if (!isEnvTruthy(Platform.environment['NEOMCLAW_PROVIDER_MANAGED_BY_HOST'])) {
+  if (!isEnvTruthy(Platform.environment['MAGE_PROVIDER_MANAGED_BY_HOST'])) {
     return env;
   }
   final out = <String, String>{};
@@ -810,7 +810,7 @@ void applySafeConfigEnvironmentVariables({
   // Capture CCD spawn-env keys before any settings.env is applied (once).
   if (!_ccdSpawnEnvKeysInitialised) {
     _ccdSpawnEnvKeysInitialised = true;
-    if (Platform.environment['NEOMCLAW_ENTRYPOINT'] == 'claude-desktop') {
+    if (Platform.environment['MAGE_ENTRYPOINT'] == 'claude-desktop') {
       _ccdSpawnEnvKeys = Platform.environment.keys.toSet();
     }
   }
@@ -877,28 +877,28 @@ void applyConfigEnvironmentVariables({
 }
 
 // ---------------------------------------------------------------------------
-// Global config file path  (env.ts getGlobalNeomClawFile)
+// Global config file path  (env.ts getGlobalNeomageFile)
 // ---------------------------------------------------------------------------
 
-String? _globalNeomClawFileCache;
+String? _globalNeomageFileCache;
 
-/// Returns the path to the global neomclaw config JSON file.
-String getGlobalNeomClawFile({String fileSuffix = ''}) {
-  if (_globalNeomClawFileCache != null) return _globalNeomClawFileCache!;
+/// Returns the path to the global neomage config JSON file.
+String getGlobalNeomageFile({String fileSuffix = ''}) {
+  if (_globalNeomageFileCache != null) return _globalNeomageFileCache!;
 
   // Legacy fallback
-  final legacyPath = p.join(getNeomClawConfigHomeDir(), '.config.json');
+  final legacyPath = p.join(getNeomageConfigHomeDir(), '.config.json');
   if (File(legacyPath).existsSync()) {
-    _globalNeomClawFileCache = legacyPath;
+    _globalNeomageFileCache = legacyPath;
     return legacyPath;
   }
 
-  final filename = '.neomclaw$fileSuffix.json';
-  _globalNeomClawFileCache = p.join(
-    Platform.environment['NEOMCLAW_CONFIG_DIR'] ?? _homedir(),
+  final filename = '.neomage$fileSuffix.json';
+  _globalNeomageFileCache = p.join(
+    Platform.environment['MAGE_CONFIG_DIR'] ?? _homedir(),
     filename,
   );
-  return _globalNeomClawFileCache!;
+  return _globalNeomageFileCache!;
 }
 
 // ---------------------------------------------------------------------------
@@ -912,7 +912,7 @@ class EnvInfo {
   static final EnvInfo instance = EnvInfo._();
 
   final bool isCI = isEnvTruthy(Platform.environment['CI']);
-  final ClawPlatform platform = ClawPlatform.detect();
+  final NeomagePlatform platform = NeomagePlatform.detect();
   final String? terminal = detectTerminal();
 
   bool get isSSH => _isSSHSession();

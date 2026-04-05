@@ -1,9 +1,11 @@
 // Permission dialog — Flutter UI for tool permission prompts.
-// Port of neom_claw's permission system UI components.
+// Port of neomage's permission system UI components.
 
 import 'package:flutter/material.dart';
+import 'package:sint/sint.dart';
 
-import '../../domain/models/permissions.dart';
+import 'package:neomage/domain/models/permissions.dart';
+import '../../utils/constants/neomage_translation_constants.dart';
 
 /// Result of a permission dialog.
 class PermissionDialogResult {
@@ -93,7 +95,7 @@ class _PermissionDialogWidgetState extends State<_PermissionDialogWidget> {
               const Divider(height: 24),
             ],
             // Tool input preview
-            Text('Tool Input:', style: theme.textTheme.labelLarge),
+            Text(NeomageTranslationConstants.toolInput.tr, style: theme.textTheme.labelLarge),
             const SizedBox(height: 4),
             Container(
               width: double.infinity,
@@ -116,14 +118,14 @@ class _PermissionDialogWidgetState extends State<_PermissionDialogWidget> {
             CheckboxListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              title: const Text('Remember for this session'),
+              title: Text(NeomageTranslationConstants.rememberSession.tr),
               value: _rememberSession,
               onChanged: (v) => setState(() => _rememberSession = v ?? false),
             ),
             CheckboxListTile(
               dense: true,
               contentPadding: EdgeInsets.zero,
-              title: const Text('Remember for this project'),
+              title: Text(NeomageTranslationConstants.rememberProject.tr),
               value: _rememberProject,
               onChanged: (v) => setState(() {
                 _rememberProject = v ?? false;
@@ -142,7 +144,7 @@ class _PermissionDialogWidgetState extends State<_PermissionDialogWidget> {
               rememberForProject: _rememberProject,
             ),
           ),
-          child: const Text('Deny'),
+          child: Text(NeomageTranslationConstants.deny.tr),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(
@@ -152,7 +154,7 @@ class _PermissionDialogWidgetState extends State<_PermissionDialogWidget> {
               rememberForProject: _rememberProject,
             ),
           ),
-          child: const Text('Allow'),
+          child: Text(NeomageTranslationConstants.allow.tr),
         ),
       ],
     );
@@ -274,9 +276,9 @@ class PermissionBanner extends StatelessWidget {
                 ],
               ),
             ),
-            TextButton(onPressed: onDeny, child: const Text('Deny')),
+            TextButton(onPressed: onDeny, child: Text(NeomageTranslationConstants.deny.tr)),
             const SizedBox(width: 4),
-            FilledButton.tonal(onPressed: onAllow, child: const Text('Allow')),
+            FilledButton.tonal(onPressed: onAllow, child: Text(NeomageTranslationConstants.allow.tr)),
           ],
         ),
       ),

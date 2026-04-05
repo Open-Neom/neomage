@@ -325,7 +325,7 @@ class ToolSearchController extends SintController {
 
   /// Determines the tool search mode from configuration.
   ToolSearchMode getToolSearchMode() {
-    if (_isEnvTruthy(_envConfig['NEOMCLAW_DISABLE_EXPERIMENTAL_BETAS'])) {
+    if (_isEnvTruthy(_envConfig['MAGE_DISABLE_EXPERIMENTAL_BETAS'])) {
       return ToolSearchMode.standard;
     }
 

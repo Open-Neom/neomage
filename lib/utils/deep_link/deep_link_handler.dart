@@ -1,11 +1,11 @@
 /// Deep Link Handler
 ///
-/// Faithful port of neom_claw/src/utils/deepLink/*.ts
+/// Faithful port of neomage/src/utils/deepLink/*.ts
 /// Covers: parseDeepLink.ts, terminalLauncher.ts, registerProtocol.ts,
 ///         protocolHandler.ts, banner.ts, terminalPreference.ts
 ///
 /// Provides:
-/// - neom-claw-cli:// URI parsing with security validation
+/// - neomage-cli:// URI parsing with security validation
 /// - Terminal emulator detection and launch (macOS/Linux/Windows)
 /// - OS protocol handler registration (.app bundle, .desktop, Windows registry)
 /// - Deep link origin banner for security awareness
@@ -13,7 +13,7 @@
 library;
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 import 'package:sint/sint.dart';
@@ -23,19 +23,19 @@ import 'package:sint/sint.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// The custom URI protocol scheme.
-const String deepLinkProtocol = 'neom-claw-cli';
+const String deepLinkProtocol = 'neomage-cli';
 
 /// macOS bundle ID for the URL handler app.
-const String macosBundleId = 'com.anthropic.neom-claw-url-handler';
+const String macosBundleId = 'com.neomage-url-handler';
 
 /// Display name for the URL handler app.
-const String appName = 'NeomClaw URL Handler';
+const String appName = 'Neomage URL Handler';
 
 /// Desktop file name for Linux registration.
-const String desktopFileName = 'neom-claw-url-handler.desktop';
+const String desktopFileName = 'neomage-url-handler.desktop';
 
 /// macOS app bundle name.
-const String macosAppName = 'NeomClaw URL Handler.app';
+const String macosAppName = 'Neomage URL Handler.app';
 
 /// Maximum length for pre-filled prompts.
 /// 5000 chars — practical ceiling considering Windows cmd.exe limits.
@@ -93,7 +93,7 @@ String _partiallySanitizeUnicode(String input) {
   );
 }
 
-/// Parse a neom-claw-cli:// URI into a structured action.
+/// Parse a neomage-cli:// URI into a structured action.
 /// Throws [FormatException] if the URI is malformed or contains dangerous characters.
 DeepLinkAction parseDeepLink(String uri) {
   // Normalize: accept with or without trailing colon in protocol
@@ -170,7 +170,7 @@ DeepLinkAction parseDeepLink(String uri) {
   return DeepLinkAction(query: query, cwd: cwd, repo: repo);
 }
 
-/// Build a neom-claw-cli:// deep link URL.
+/// Build a neomage-cli:// deep link URL.
 String buildDeepLink(DeepLinkAction action) {
   final params = <String, String>{};
   if (action.query != null) params['q'] = action.query!;
@@ -370,9 +370,9 @@ Future<TerminalInfo?> detectTerminal({String? storedPreference}) async {
   return null;
 }
 
-/// Launch NeomClaw in the detected terminal emulator.
+/// Launch Neomage in the detected terminal emulator.
 Future<bool> launchInTerminal(
-  String neomClawPath,
+  String neomagePath,
   DeepLinkAction action, {
   String? storedPreference,
 }) async {
@@ -383,33 +383,33 @@ Future<bool> launchInTerminal(
   }
 
   _logDebug('Launching in terminal: ${terminal.name} (${terminal.command})');
-  final neomClawArgs = ['--deep-link-origin'];
+  final neomageArgs = ['--deep-link-origin'];
   if (action.repo != null) {
-    neomClawArgs.addAll(['--deep-link-repo', action.repo!]);
+    neomageArgs.addAll(['--deep-link-repo', action.repo!]);
   }
   if (action.query != null) {
-    neomClawArgs.addAll(['--prefill', action.query!]);
+    neomageArgs.addAll(['--prefill', action.query!]);
   }
 
   if (Platform.isMacOS) {
     return _launchMacosTerminal(
       terminal,
-      neomClawPath,
-      neomClawArgs,
+      neomagePath,
+      neomageArgs,
       action.cwd,
     );
   } else if (Platform.isLinux) {
     return _launchLinuxTerminal(
       terminal,
-      neomClawPath,
-      neomClawArgs,
+      neomagePath,
+      neomageArgs,
       action.cwd,
     );
   } else if (Platform.isWindows) {
     return _launchWindowsTerminal(
       terminal,
-      neomClawPath,
-      neomClawArgs,
+      neomagePath,
+      neomageArgs,
       action.cwd,
     );
   }
@@ -419,14 +419,14 @@ Future<bool> launchInTerminal(
 /// Launch in a macOS terminal.
 Future<bool> _launchMacosTerminal(
   TerminalInfo terminal,
-  String neomClawPath,
-  List<String> neomClawArgs,
+  String neomagePath,
+  List<String> neomageArgs,
   String? cwd,
 ) async {
   switch (terminal.command) {
     // SHELL-STRING PATHS (AppleScript)
     case 'iTerm':
-      final shCmd = _buildShellCommand(neomClawPath, neomClawArgs, cwd);
+      final shCmd = _buildShellCommand(neomagePath, neomageArgs, cwd);
       final script =
           '''tell application "iTerm"
   if running then
@@ -443,7 +443,7 @@ end tell''';
       break;
 
     case 'Terminal':
-      final shCmd = _buildShellCommand(neomClawPath, neomClawArgs, cwd);
+      final shCmd = _buildShellCommand(neomagePath, neomageArgs, cwd);
       final script =
           '''tell application "Terminal"
   do script ${_appleScriptQuote(shCmd)}
@@ -461,7 +461,7 @@ end tell''';
         '--window-save-state=never',
       ];
       if (cwd != null) args.add('--working-directory=$cwd');
-      args.addAll(['-e', neomClawPath, ...neomClawArgs]);
+      args.addAll(['-e', neomagePath, ...neomageArgs]);
       final result = await Process.run('open', args);
       if (result.exitCode == 0) return true;
       break;
@@ -469,7 +469,7 @@ end tell''';
     case 'Alacritty':
       final args = ['-na', terminal.command, '--args'];
       if (cwd != null) args.addAll(['--working-directory', cwd]);
-      args.addAll(['-e', neomClawPath, ...neomClawArgs]);
+      args.addAll(['-e', neomagePath, ...neomageArgs]);
       final result = await Process.run('open', args);
       if (result.exitCode == 0) return true;
       break;
@@ -477,7 +477,7 @@ end tell''';
     case 'kitty':
       final args = ['-na', terminal.command, '--args'];
       if (cwd != null) args.addAll(['--directory', cwd]);
-      args.addAll([neomClawPath, ...neomClawArgs]);
+      args.addAll([neomagePath, ...neomageArgs]);
       final result = await Process.run('open', args);
       if (result.exitCode == 0) return true;
       break;
@@ -485,7 +485,7 @@ end tell''';
     case 'WezTerm':
       final args = ['-na', terminal.command, '--args', 'start'];
       if (cwd != null) args.addAll(['--cwd', cwd]);
-      args.addAll(['--', neomClawPath, ...neomClawArgs]);
+      args.addAll(['--', neomagePath, ...neomageArgs]);
       final result = await Process.run('open', args);
       if (result.exitCode == 0) return true;
       break;
@@ -498,8 +498,8 @@ end tell''';
     );
     return _launchMacosTerminal(
       const TerminalInfo(name: 'Terminal.app', command: 'Terminal'),
-      neomClawPath,
-      neomClawArgs,
+      neomagePath,
+      neomageArgs,
       cwd,
     );
   }
@@ -509,8 +509,8 @@ end tell''';
 /// Launch in a Linux terminal (all pure argv).
 Future<bool> _launchLinuxTerminal(
   TerminalInfo terminal,
-  String neomClawPath,
-  List<String> neomClawArgs,
+  String neomagePath,
+  List<String> neomageArgs,
   String? cwd,
 ) async {
   List<String> args;
@@ -519,39 +519,39 @@ Future<bool> _launchLinuxTerminal(
   switch (terminal.name) {
     case 'gnome-terminal':
       args = cwd != null ? ['--working-directory=$cwd', '--'] : ['--'];
-      args.addAll([neomClawPath, ...neomClawArgs]);
+      args.addAll([neomagePath, ...neomageArgs]);
       break;
     case 'konsole':
       args = cwd != null ? ['--workdir', cwd, '-e'] : ['-e'];
-      args.addAll([neomClawPath, ...neomClawArgs]);
+      args.addAll([neomagePath, ...neomageArgs]);
       break;
     case 'kitty':
       args = cwd != null ? ['--directory', cwd] : [];
-      args.addAll([neomClawPath, ...neomClawArgs]);
+      args.addAll([neomagePath, ...neomageArgs]);
       break;
     case 'wezterm':
       args = cwd != null ? ['start', '--cwd', cwd, '--'] : ['start', '--'];
-      args.addAll([neomClawPath, ...neomClawArgs]);
+      args.addAll([neomagePath, ...neomageArgs]);
       break;
     case 'alacritty':
       args = cwd != null ? ['--working-directory', cwd, '-e'] : ['-e'];
-      args.addAll([neomClawPath, ...neomClawArgs]);
+      args.addAll([neomagePath, ...neomageArgs]);
       break;
     case 'ghostty':
       args = cwd != null ? ['--working-directory=$cwd', '-e'] : ['-e'];
-      args.addAll([neomClawPath, ...neomClawArgs]);
+      args.addAll([neomagePath, ...neomageArgs]);
       break;
     case 'xfce4-terminal':
     case 'mate-terminal':
       args = cwd != null ? ['--working-directory=$cwd', '-x'] : ['-x'];
-      args.addAll([neomClawPath, ...neomClawArgs]);
+      args.addAll([neomagePath, ...neomageArgs]);
       break;
     case 'tilix':
       args = cwd != null ? ['--working-directory=$cwd', '-e'] : ['-e'];
-      args.addAll([neomClawPath, ...neomClawArgs]);
+      args.addAll([neomagePath, ...neomageArgs]);
       break;
     default:
-      args = ['-e', neomClawPath, ...neomClawArgs];
+      args = ['-e', neomagePath, ...neomageArgs];
       spawnCwd = cwd;
       break;
   }
@@ -562,8 +562,8 @@ Future<bool> _launchLinuxTerminal(
 /// Launch in a Windows terminal.
 Future<bool> _launchWindowsTerminal(
   TerminalInfo terminal,
-  String neomClawPath,
-  List<String> neomClawArgs,
+  String neomagePath,
+  List<String> neomageArgs,
   String? cwd,
 ) async {
   final args = <String>[];
@@ -571,21 +571,21 @@ Future<bool> _launchWindowsTerminal(
   switch (terminal.name) {
     case 'Windows Terminal':
       if (cwd != null) args.addAll(['-d', cwd]);
-      args.addAll(['--', neomClawPath, ...neomClawArgs]);
+      args.addAll(['--', neomagePath, ...neomageArgs]);
       break;
     case 'PowerShell':
       final cdCmd = cwd != null ? 'Set-Location ${_psQuote(cwd)}; ' : '';
       args.addAll([
         '-NoExit',
         '-Command',
-        '$cdCmd& ${_psQuote(neomClawPath)} ${neomClawArgs.map(_psQuote).join(' ')}',
+        '$cdCmd& ${_psQuote(neomagePath)} ${neomageArgs.map(_psQuote).join(' ')}',
       ]);
       break;
     default:
       final cdCmd = cwd != null ? 'cd /d ${_cmdQuote(cwd)} && ' : '';
       args.addAll([
         '/k',
-        '$cdCmd${_cmdQuote(neomClawPath)} ${neomClawArgs.map(_cmdQuote).join(' ')}',
+        '$cdCmd${_cmdQuote(neomagePath)} ${neomageArgs.map(_cmdQuote).join(' ')}',
       ]);
       break;
   }
@@ -621,12 +621,12 @@ Future<bool> _spawnDetached(
 /// Build a single-quoted POSIX shell command string.
 /// Only used by AppleScript paths (iTerm, Terminal.app).
 String _buildShellCommand(
-  String neomClawPath,
-  List<String> neomClawArgs,
+  String neomagePath,
+  List<String> neomageArgs,
   String? cwd,
 ) {
   final cdPrefix = cwd != null ? 'cd ${_shellQuote(cwd)} && ' : '';
-  return '$cdPrefix${[neomClawPath, ...neomClawArgs].map(_shellQuote).join(' ')}';
+  return '$cdPrefix${[neomagePath, ...neomageArgs].map(_shellQuote).join(' ')}';
 }
 
 /// POSIX single-quote escaping.
@@ -664,7 +664,7 @@ String get _macosAppDir => p.join(_homeDir(), 'Applications', macosAppName);
 
 /// macOS symlink path inside the .app bundle.
 String get _macosSymlinkPath =>
-    p.join(_macosAppDir, 'Contents', 'MacOS', 'neomclaw');
+    p.join(_macosAppDir, 'Contents', 'MacOS', 'neomage');
 
 /// Linux .desktop file path.
 String _linuxDesktopPath() {
@@ -680,16 +680,16 @@ const String _windowsRegKey =
 const String _windowsCommandKey = '$_windowsRegKey\\shell\\open\\command';
 
 /// Linux .desktop Exec line.
-String _linuxExecLine(String neomClawPath) =>
-    'Exec="$neomClawPath" --handle-uri %u';
+String _linuxExecLine(String neomagePath) =>
+    'Exec="$neomagePath" --handle-uri %u';
 
 /// Windows command value.
-String _windowsCommandValue(String neomClawPath) =>
-    '"$neomClawPath" --handle-uri "%1"';
+String _windowsCommandValue(String neomagePath) =>
+    '"$neomagePath" --handle-uri "%1"';
 
 /// Register the protocol handler on macOS.
-/// Creates a .app bundle with a symlink to the neomclaw binary.
-Future<void> _registerMacos(String neomClawPath) async {
+/// Creates a .app bundle with a symlink to the neomage binary.
+Future<void> _registerMacos(String neomagePath) async {
   final contentsDir = p.join(_macosAppDir, 'Contents');
 
   // Remove existing
@@ -712,7 +712,7 @@ Future<void> _registerMacos(String neomClawPath) async {
   <key>CFBundleName</key>
   <string>$appName</string>
   <key>CFBundleExecutable</key>
-  <string>neomclaw</string>
+  <string>neomage</string>
   <key>CFBundleVersion</key>
   <string>1.0</string>
   <key>CFBundlePackageType</key>
@@ -723,7 +723,7 @@ Future<void> _registerMacos(String neomClawPath) async {
   <array>
     <dict>
       <key>CFBundleURLName</key>
-      <string>NeomClaw Deep Link</string>
+      <string>Neomage Deep Link</string>
       <key>CFBundleURLSchemes</key>
       <array>
         <string>$deepLinkProtocol</string>
@@ -735,8 +735,8 @@ Future<void> _registerMacos(String neomClawPath) async {
 
   await File(p.join(contentsDir, 'Info.plist')).writeAsString(infoPlist);
 
-  // Symlink to the signed neomclaw binary
-  await Link(_macosSymlinkPath).create(neomClawPath);
+  // Symlink to the signed neomage binary
+  await Link(_macosSymlinkPath).create(neomagePath);
 
   // Re-register with LaunchServices
   const lsregister =
@@ -749,15 +749,15 @@ Future<void> _registerMacos(String neomClawPath) async {
 }
 
 /// Register the protocol handler on Linux.
-Future<void> _registerLinux(String neomClawPath) async {
+Future<void> _registerLinux(String neomagePath) async {
   final desktopPath = _linuxDesktopPath();
   await Directory(p.dirname(desktopPath)).create(recursive: true);
 
   final desktopEntry =
       '''[Desktop Entry]
 Name=$appName
-Comment=Handle $deepLinkProtocol:// deep links for NeomClaw
-${_linuxExecLine(neomClawPath)}
+Comment=Handle $deepLinkProtocol:// deep links for Neomage
+${_linuxExecLine(neomagePath)}
 Type=Application
 NoDisplay=true
 MimeType=x-scheme-handler/$deepLinkProtocol;
@@ -782,7 +782,7 @@ MimeType=x-scheme-handler/$deepLinkProtocol;
 }
 
 /// Register the protocol handler on Windows via the registry.
-Future<void> _registerWindows(String neomClawPath) async {
+Future<void> _registerWindows(String neomagePath) async {
   final regCommands = [
     ['add', _windowsRegKey, '/ve', '/d', 'URL:$appName', '/f'],
     ['add', _windowsRegKey, '/v', 'URL Protocol', '/d', '', '/f'],
@@ -791,7 +791,7 @@ Future<void> _registerWindows(String neomClawPath) async {
       _windowsCommandKey,
       '/ve',
       '/d',
-      _windowsCommandValue(neomClawPath),
+      _windowsCommandValue(neomagePath),
       '/f',
     ],
   ];
@@ -808,9 +808,9 @@ Future<void> _registerWindows(String neomClawPath) async {
   );
 }
 
-/// Register the neom-claw-cli:// protocol handler with the operating system.
-Future<void> registerProtocolHandler([String? neomClawPath]) async {
-  final resolved = neomClawPath ?? await _resolveNeomClawPath();
+/// Register the neomage-cli:// protocol handler with the operating system.
+Future<void> registerProtocolHandler([String? neomagePath]) async {
+  final resolved = neomagePath ?? await _resolveNeomagePath();
 
   if (Platform.isMacOS) {
     await _registerMacos(resolved);
@@ -823,14 +823,14 @@ Future<void> registerProtocolHandler([String? neomClawPath]) async {
   }
 }
 
-/// Resolve the neomclaw binary path for protocol registration.
-Future<String> _resolveNeomClawPath() async {
-  final binaryName = Platform.isWindows ? 'neomclaw.exe' : 'neomclaw';
+/// Resolve the neomage binary path for protocol registration.
+Future<String> _resolveNeomagePath() async {
+  final binaryName = Platform.isWindows ? 'neomage.exe' : 'neomage';
   final userBinDir = Platform.isWindows
       ? p.join(
           Platform.environment['LOCALAPPDATA'] ?? '',
           'Programs',
-          'neomclaw',
+          'neomage',
         )
       : p.join(_homeDir(), '.local', 'bin');
   final stablePath = p.join(userBinDir, binaryName);
@@ -843,14 +843,14 @@ Future<String> _resolveNeomClawPath() async {
 }
 
 /// Check whether the OS-level protocol handler is current.
-Future<bool> isProtocolHandlerCurrent(String neomClawPath) async {
+Future<bool> isProtocolHandlerCurrent(String neomagePath) async {
   try {
     if (Platform.isMacOS) {
       final target = await Link(_macosSymlinkPath).target();
-      return target == neomClawPath;
+      return target == neomagePath;
     } else if (Platform.isLinux) {
       final content = await File(_linuxDesktopPath()).readAsString();
-      return content.contains(_linuxExecLine(neomClawPath));
+      return content.contains(_linuxExecLine(neomagePath));
     } else if (Platform.isWindows) {
       final result = await Process.run('reg', [
         'query',
@@ -859,7 +859,7 @@ Future<bool> isProtocolHandlerCurrent(String neomClawPath) async {
       ]);
       return result.exitCode == 0 &&
           (result.stdout as String).contains(
-            _windowsCommandValue(neomClawPath),
+            _windowsCommandValue(neomagePath),
           );
     }
   } catch (_) {}
@@ -868,13 +868,13 @@ Future<bool> isProtocolHandlerCurrent(String neomClawPath) async {
 
 /// Auto-register the protocol handler when missing or stale.
 Future<void> ensureDeepLinkProtocolRegistered() async {
-  final neomClawPath = await _resolveNeomClawPath();
-  if (await isProtocolHandlerCurrent(neomClawPath)) return;
+  final neomagePath = await _resolveNeomagePath();
+  if (await isProtocolHandlerCurrent(neomagePath)) return;
 
   // Check failure backoff
   final configHome =
-      Platform.environment['NEOMCLAW_CONFIG_HOME'] ??
-      p.join(_homeDir(), '.neomclaw');
+      Platform.environment['MAGE_CONFIG_HOME'] ??
+      p.join(_homeDir(), '.neomage');
   final failureMarkerPath = p.join(configHome, '.deep-link-register-failed');
   try {
     final stat = await File(failureMarkerPath).stat();
@@ -888,7 +888,7 @@ Future<void> ensureDeepLinkProtocolRegistered() async {
   }
 
   try {
-    await registerProtocolHandler(neomClawPath);
+    await registerProtocolHandler(neomagePath);
     _logDebug(
       'Auto-registered $deepLinkProtocol:// deep link protocol handler',
     );
@@ -981,7 +981,7 @@ String buildDeepLinkBanner(DeepLinkBannerInfo info) {
                 info.lastFetch!.millisecondsSinceEpoch >
             staleFetchWarnMs;
     lines.add(
-      'Resolved ${info.repo} from local clones - last fetched $age${stale ? ' -- NEOMCLAW.md may be stale' : ''}',
+      'Resolved ${info.repo} from local clones - last fetched $age${stale ? ' -- NEOMAGE.md may be stale' : ''}',
     );
   }
 
@@ -1129,16 +1129,16 @@ class DeepLinkController extends SintController {
   }
 
   /// Register the protocol handler.
-  Future<void> registerProtocol([String? neomClawPath]) async {
-    await registerProtocolHandler(neomClawPath);
+  Future<void> registerProtocol([String? neomagePath]) async {
+    await registerProtocolHandler(neomagePath);
     isProtocolRegistered.value = true;
   }
 
   /// Check and auto-register if needed.
   Future<void> ensureRegistered() async {
     await ensureDeepLinkProtocolRegistered();
-    final neomClawPath = await _resolveNeomClawPath();
-    isProtocolRegistered.value = await isProtocolHandlerCurrent(neomClawPath);
+    final neomagePath = await _resolveNeomagePath();
+    isProtocolRegistered.value = await isProtocolHandlerCurrent(neomagePath);
   }
 
   /// Build a deep link URL.

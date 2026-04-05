@@ -1,4 +1,4 @@
-// TeamsDialog — faithful port of neom_claw/src/components/teams/
+// TeamsDialog — faithful port of neomage/src/components/teams/
 // Ports: TeamsDialog.tsx (teammate list + detail view), TeamStatus.tsx
 // (footer status indicator).
 //
@@ -61,15 +61,15 @@ extension PermissionModeExt on PermissionMode {
   Color get color {
     switch (this) {
       case PermissionMode.defaultMode:
-        return ClawColors.darkTextSecondary;
+        return NeomageColors.darkTextSecondary;
       case PermissionMode.plan:
-        return ClawColors.info;
+        return NeomageColors.info;
       case PermissionMode.autoEdit:
-        return ClawColors.warning;
+        return NeomageColors.warning;
       case PermissionMode.fullAutoMode:
-        return ClawColors.success;
+        return NeomageColors.success;
       case PermissionMode.bypassPermissions:
-        return ClawColors.error;
+        return NeomageColors.error;
     }
   }
 
@@ -657,20 +657,20 @@ class _TeammateListItem extends StatelessWidget {
   }
 
   Color _parseTeammateColor(String? color) {
-    if (color == null) return ClawColors.info;
+    if (color == null) return NeomageColors.info;
     switch (color) {
       case 'blue':
-        return ClawColors.info;
+        return NeomageColors.info;
       case 'green':
-        return ClawColors.success;
+        return NeomageColors.success;
       case 'yellow':
-        return ClawColors.warning;
+        return NeomageColors.warning;
       case 'red':
-        return ClawColors.error;
+        return NeomageColors.error;
       case 'purple':
-        return ClawColors.agentOpus;
+        return NeomageColors.agentOpus;
       default:
-        return ClawColors.info;
+        return NeomageColors.info;
     }
   }
 }
@@ -812,7 +812,7 @@ class _TeammateDetailView extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: ClawColors.codeBg,
+                  color: NeomageColors.codeBg,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -822,7 +822,7 @@ class _TeammateDetailView extends StatelessWidget {
                   style: const TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 12,
-                    color: ClawColors.codeText,
+                    color: NeomageColors.codeText,
                   ),
                 ),
               ),
@@ -853,9 +853,9 @@ class _TeammateDetailView extends StatelessWidget {
                                 : Icons.circle_outlined,
                             size: 14,
                             color: task.status == 'completed'
-                                ? ClawColors.success
+                                ? NeomageColors.success
                                 : task.status == 'running'
-                                ? ClawColors.info
+                                ? NeomageColors.info
                                 : theme.colorScheme.onSurfaceVariant,
                           ),
                           const SizedBox(width: 6),
@@ -897,13 +897,13 @@ class _TeammateDetailView extends StatelessWidget {
   Color _statusColor(String status) {
     switch (status) {
       case 'running':
-        return ClawColors.success;
+        return NeomageColors.success;
       case 'idle':
-        return ClawColors.darkTextSecondary;
+        return NeomageColors.darkTextSecondary;
       case 'exited':
-        return ClawColors.error;
+        return NeomageColors.error;
       default:
-        return ClawColors.darkTextSecondary;
+        return NeomageColors.darkTextSecondary;
     }
   }
 }

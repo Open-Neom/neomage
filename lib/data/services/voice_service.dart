@@ -1,9 +1,9 @@
-// VoiceService — port of neom_claw/src/services/voice/.
+// VoiceService — port of neomage/src/services/voice/.
 // Speech-to-text and text-to-speech for multi-platform voice input.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -547,7 +547,7 @@ class SystemSttEngine implements SttEngine {
     if (Platform.isMacOS) {
       // Save audio to temp file and use macOS Dictation API via osascript.
       final tempFile = File(
-        '${Directory.systemTemp.path}/claw_audio_${DateTime.now().millisecondsSinceEpoch}.wav',
+        '${Directory.systemTemp.path}/neomage_audio_${DateTime.now().millisecondsSinceEpoch}.wav',
       );
       await tempFile.writeAsBytes(audio);
 
@@ -619,7 +619,7 @@ class SystemTtsEngine implements TtsEngine {
   Future<Uint8List> synthesize(String text, VoiceConfig config) async {
     if (Platform.isMacOS) {
       final tempFile = File(
-        '${Directory.systemTemp.path}/claw_tts_${DateTime.now().millisecondsSinceEpoch}.aiff',
+        '${Directory.systemTemp.path}/neomage_tts_${DateTime.now().millisecondsSinceEpoch}.aiff',
       );
 
       await Process.run('say', [
@@ -718,7 +718,7 @@ class OpenAiTtsEngine implements TtsEngine {
 
     // Save to temp file and play.
     final tempFile = File(
-      '${Directory.systemTemp.path}/claw_speech_${DateTime.now().millisecondsSinceEpoch}.mp3',
+      '${Directory.systemTemp.path}/neomage_speech_${DateTime.now().millisecondsSinceEpoch}.mp3',
     );
     await tempFile.writeAsBytes(audio);
 

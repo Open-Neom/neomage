@@ -1,8 +1,8 @@
-// NotebookEditTool — full port of NeomClaw's NotebookEdit tool.
+// NotebookEditTool — full port of Neomage's NotebookEdit tool.
 // Parse, validate, and modify Jupyter notebook (.ipynb) cells.
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 

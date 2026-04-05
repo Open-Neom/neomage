@@ -1,12 +1,12 @@
-// Permission rule system — port of neom_claw/src/utils/permissions/.
+// Permission rule system — port of neomage/src/utils/permissions/.
 // Rule types, matching, evaluation, and filesystem safety checks.
 
 /// Where a permission rule was loaded from.
 enum PermissionRuleSource {
   policySettings, // MDM/enterprise (highest priority)
-  projectSettings, // .neomclaw/settings.json (shared)
-  localSettings, // .neomclaw/settings.local.json (gitignored)
-  userSettings, // ~/.neomclaw/settings.json (global)
+  projectSettings, // .neomage/settings.json (shared)
+  localSettings, // .neomage/settings.local.json (gitignored)
+  userSettings, // ~/.neomage/settings.json (global)
   cliArg, // --allow/--deny flags
   command, // /config command
   session, // Current session only
@@ -445,7 +445,7 @@ const dangerousFiles = {
   '.profile',
   '.ripgreprc',
   '.mcp.json',
-  '.neomclaw.json',
+  '.neomage.json',
   '.npmrc',
   '.yarnrc',
   '.env',
@@ -457,7 +457,7 @@ const dangerousFiles = {
 };
 
 /// Directories that require extra permission.
-const dangerousDirectories = {'.git', '.vscode', '.idea', '.neomclaw'};
+const dangerousDirectories = {'.git', '.vscode', '.idea', '.neomage'};
 
 /// Check if a file path is dangerous.
 bool isDangerousPath(String path) {

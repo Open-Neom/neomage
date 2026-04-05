@@ -1,8 +1,8 @@
-// Plugin loader — port of neom_claw/src/plugins.
+// Plugin loader — port of neomage/src/plugins.
 // Discovers, loads, and manages plugins.
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import '../../domain/models/plugin.dart';
 import '../mcp/mcp_types.dart';
@@ -37,12 +37,12 @@ Future<List<LoadedPlugin>> loadAllPlugins({String? projectRoot}) async {
       Platform.environment['USERPROFILE'] ??
       '/tmp';
 
-  // 1. User plugins: ~/.neomclaw/plugins/
-  plugins.addAll(await loadPluginsFromDir('$homeDir/.neomclaw/plugins'));
+  // 1. User plugins: ~/.neomage/plugins/
+  plugins.addAll(await loadPluginsFromDir('$homeDir/.neomage/plugins'));
 
-  // 2. Project plugins: .neomclaw/plugins/
+  // 2. Project plugins: .neomage/plugins/
   if (projectRoot != null) {
-    plugins.addAll(await loadPluginsFromDir('$projectRoot/.neomclaw/plugins'));
+    plugins.addAll(await loadPluginsFromDir('$projectRoot/.neomage/plugins'));
   }
 
   return plugins;

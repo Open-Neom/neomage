@@ -1,9 +1,9 @@
-// bootstrap_service.dart — Application initialization for flutter_claw
-// Port of neom_claw/src/bootstrap/ (~1.8K TS LOC) to pure Dart + dart:io.
+// bootstrap_service.dart — Application initialization for neomage
+// Port of neomage/src/bootstrap/ (~1.8K TS LOC) to pure Dart + dart:io.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ---------------------------------------------------------------------------
 // Enums & constants
@@ -193,7 +193,7 @@ class ProjectInfo {
 }
 
 // ---------------------------------------------------------------------------
-// MemoryFile — loaded NEOMCLAW.md content
+// MemoryFile — loaded NEOMAGE.md content
 // ---------------------------------------------------------------------------
 
 class MemoryFile {
@@ -384,7 +384,7 @@ Future<EnvironmentCheck> _checkDiskSpace() async {
 Future<EnvironmentCheck> _checkWritePermissions() async {
   try {
     final home = Platform.environment['HOME'] ?? '/tmp';
-    final configDir = Directory('/.neomclaw');
+    final configDir = Directory('/.neomage');
     if (!configDir.existsSync()) {
       configDir.createSync(recursive: true);
     }
@@ -557,15 +557,15 @@ Future<ProjectInfo> detectProjectInfo(String projectDir) async {
 }
 
 // ---------------------------------------------------------------------------
-// Memory file loading — find and load all NEOMCLAW.md files
+// Memory file loading — find and load all NEOMAGE.md files
 // ---------------------------------------------------------------------------
 
 Future<List<MemoryFile>> loadMemoryFiles(String projectDir) async {
   final files = <MemoryFile>[];
   final home = Platform.environment['HOME'] ?? '';
 
-  // 1. Project root NEOMCLAW.md
-  final projectMemory = File('$projectDir/NEOMCLAW.md');
+  // 1. Project root NEOMAGE.md
+  final projectMemory = File('$projectDir/NEOMAGE.md');
   if (projectMemory.existsSync()) {
     try {
       files.add(
@@ -578,14 +578,14 @@ Future<List<MemoryFile>> loadMemoryFiles(String projectDir) async {
     } catch (_) {}
   }
 
-  // 2. .neomclaw/NEOMCLAW.md in project
-  final projectNeomClawDir = File('$projectDir/.neomclaw/NEOMCLAW.md');
-  if (projectNeomClawDir.existsSync()) {
+  // 2. .neomage/NEOMAGE.md in project
+  final projectNeomageDir = File('$projectDir/.neomage/NEOMAGE.md');
+  if (projectNeomageDir.existsSync()) {
     try {
       files.add(
         MemoryFile(
-          path: projectNeomClawDir.path,
-          content: projectNeomClawDir.readAsStringSync(),
+          path: projectNeomageDir.path,
+          content: projectNeomageDir.readAsStringSync(),
           source: MemoryFileSource.projectRoot,
         ),
       );
@@ -596,7 +596,7 @@ Future<List<MemoryFile>> loadMemoryFiles(String projectDir) async {
   var current = Directory(projectDir).parent;
   int depth = 0;
   while (depth < 5 && current.path != '/' && current.path != home) {
-    final parentMemory = File('${current.path}/NEOMCLAW.md');
+    final parentMemory = File('${current.path}/NEOMAGE.md');
     if (parentMemory.existsSync()) {
       try {
         files.add(
@@ -612,9 +612,9 @@ Future<List<MemoryFile>> loadMemoryFiles(String projectDir) async {
     depth++;
   }
 
-  // 4. User home NEOMCLAW.md
+  // 4. User home NEOMAGE.md
   if (home.isNotEmpty) {
-    final homeMemory = File('$home/NEOMCLAW.md');
+    final homeMemory = File('$home/NEOMAGE.md');
     if (homeMemory.existsSync()) {
       try {
         files.add(
@@ -628,7 +628,7 @@ Future<List<MemoryFile>> loadMemoryFiles(String projectDir) async {
     }
 
     // 5. Config dir
-    final configMemory = File('$home/.neomclaw/NEOMCLAW.md');
+    final configMemory = File('$home/.neomage/NEOMAGE.md');
     if (configMemory.existsSync() &&
         !files.any((f) => f.path == configMemory.path)) {
       try {
@@ -685,15 +685,15 @@ Future<Map<String, dynamic>> loadAllSettings({
   String? configDir,
 }) async {
   final home = Platform.environment['HOME'] ?? '';
-  final cfgDir = configDir ?? '/.neomclaw';
+  final cfgDir = configDir ?? '/.neomage';
 
   // Layer settings: user -> project -> local -> policy
   final userSettings = await _loadSettingsFile('$cfgDir/settings.json');
   final projectSettings = await _loadSettingsFile(
-    '$projectDir/.neomclaw/settings.json',
+    '$projectDir/.neomage/settings.json',
   );
   final localSettings = await _loadSettingsFile(
-    '$projectDir/.neomclaw/settings.local.json',
+    '$projectDir/.neomage/settings.local.json',
   );
 
   // Policy settings (from org)
@@ -904,7 +904,7 @@ class BootstrapService {
     // Check for API key in environment
     final apiKey =
         Platform.environment['ANTHROPIC_API_KEY'] ??
-        Platform.environment['NEOMCLAW_API_KEY'];
+        Platform.environment['MAGE_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
       return 'WARN:No API key found in environment';
     }
@@ -959,12 +959,12 @@ class BootstrapService {
   Future<Object?> _startMcpServers(String projectDir) async {
     // Load MCP server configurations
     final configPaths = [
-      '$projectDir/.neomclaw/mcp.json',
+      '$projectDir/.neomage/mcp.json',
       '$projectDir/.mcp.json',
     ];
     final home = Platform.environment['HOME'] ?? '';
     if (home.isNotEmpty) {
-      configPaths.add('$home/.neomclaw/mcp.json');
+      configPaths.add('$home/.neomage/mcp.json');
     }
 
     int serverCount = 0;
@@ -989,7 +989,7 @@ class BootstrapService {
   }
 
   Future<Object?> _loadPlugins(String projectDir) async {
-    final pluginDir = Directory('$projectDir/.neomclaw/plugins');
+    final pluginDir = Directory('$projectDir/.neomage/plugins');
     if (!pluginDir.existsSync()) return null;
 
     final plugins = pluginDir
@@ -1004,7 +1004,7 @@ class BootstrapService {
 
   Future<Object?> _loadKeybindings() async {
     final home = Platform.environment['HOME'] ?? '';
-    final keybindingsFile = File('$home/.neomclaw/keybindings.json');
+    final keybindingsFile = File('$home/.neomage/keybindings.json');
     if (!keybindingsFile.existsSync()) {
       _log('No custom keybindings file found, using defaults');
       return null;
@@ -1023,7 +1023,7 @@ class BootstrapService {
 
   Future<Object?> _initializeTelemetry() async {
     final home = Platform.environment['HOME'] ?? '';
-    final telemetryFile = File('$home/.neomclaw/telemetry.json');
+    final telemetryFile = File('$home/.neomage/telemetry.json');
     if (telemetryFile.existsSync()) {
       try {
         final config =
@@ -1043,7 +1043,7 @@ class BootstrapService {
       final result = await Process.run('dart', ['pub', 'global', 'list']);
       if (result.exitCode == 0) {
         final output = result.stdout.toString();
-        if (output.contains('flutter_claw')) {
+        if (output.contains('neomage')) {
           _log('Current installation found');
         }
       }
@@ -1072,8 +1072,8 @@ class BootstrapService {
     final gitignore = File('$projectDir/.gitignore');
     if (gitignore.existsSync()) {
       final content = gitignore.readAsStringSync();
-      if (!content.contains('.neomclaw')) {
-        issues.add('.neomclaw directory not in .gitignore');
+      if (!content.contains('.neomage')) {
+        issues.add('.neomage directory not in .gitignore');
       }
     }
 

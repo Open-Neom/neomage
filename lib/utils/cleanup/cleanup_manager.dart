@@ -1,10 +1,10 @@
-// Cleanup manager — port of neom_claw cleanup.ts + gracefulShutdown.ts +
+// Cleanup manager — port of neomage cleanup.ts + gracefulShutdown.ts +
 // backgroundHousekeeping.ts.
 // Session/file cleanup, graceful shutdown coordination, and background
 // housekeeping operations.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -85,20 +85,20 @@ DateTime convertFileNameToDate(String filename) {
   return DateTime.parse(isoStr);
 }
 
-/// Get the NeomClaw config home directory.
-String _getNeomClawConfigHomeDir() {
-  return Platform.environment['NEOMCLAW_CONFIG_HOME'] ??
-      p.join(Platform.environment['HOME'] ?? '.', '.neomclaw');
+/// Get the Neomage config home directory.
+String _getNeomageConfigHomeDir() {
+  return Platform.environment['MAGE_CONFIG_HOME'] ??
+      p.join(Platform.environment['HOME'] ?? '.', '.neomage');
 }
 
 /// Get the projects directory for session storage.
 String _getProjectsDir() {
-  return p.join(_getNeomClawConfigHomeDir(), 'projects');
+  return p.join(_getNeomageConfigHomeDir(), 'projects');
 }
 
 /// Get the base logs / cache directory.
 String _getBaseLogsDir() {
-  return p.join(_getNeomClawConfigHomeDir(), 'logs');
+  return p.join(_getNeomageConfigHomeDir(), 'logs');
 }
 
 /// Get the errors directory.
@@ -354,9 +354,9 @@ Future<CleanupResult> _cleanupSingleDirectory(
   return result;
 }
 
-/// Clean up old plan files from ~/.neomclaw/plans/.
+/// Clean up old plan files from ~/.neomage/plans/.
 Future<CleanupResult> cleanupOldPlanFiles() {
-  final plansDir = p.join(_getNeomClawConfigHomeDir(), 'plans');
+  final plansDir = p.join(_getNeomageConfigHomeDir(), 'plans');
   return _cleanupSingleDirectory(plansDir, '.md');
 }
 
@@ -366,7 +366,7 @@ Future<CleanupResult> cleanupOldFileHistoryBackups() async {
   var result = const CleanupResult();
 
   try {
-    final configDir = _getNeomClawConfigHomeDir();
+    final configDir = _getNeomageConfigHomeDir();
     final fileHistoryDir = p.join(configDir, 'file-history');
 
     List<FileSystemEntity> dirents;
@@ -410,7 +410,7 @@ Future<CleanupResult> cleanupOldSessionEnvDirs() async {
   var result = const CleanupResult();
 
   try {
-    final configDir = _getNeomClawConfigHomeDir();
+    final configDir = _getNeomageConfigHomeDir();
     final sessionEnvBaseDir = p.join(configDir, 'session-env');
 
     List<FileSystemEntity> dirents;
@@ -446,12 +446,12 @@ Future<CleanupResult> cleanupOldSessionEnvDirs() async {
   return result;
 }
 
-/// Clean up old debug log files from ~/.neomclaw/debug/.
+/// Clean up old debug log files from ~/.neomage/debug/.
 /// Preserves the 'latest' symlink.
 Future<CleanupResult> cleanupOldDebugLogs() async {
   final cutoffDate = getCutoffDate();
   var result = const CleanupResult();
-  final debugDir = p.join(_getNeomClawConfigHomeDir(), 'debug');
+  final debugDir = p.join(_getNeomageConfigHomeDir(), 'debug');
 
   List<FileSystemEntity> dirents;
   try {
@@ -798,7 +798,7 @@ void startBackgroundHousekeeping() {
 /// Throttled wrapper around version cleanup.
 /// Uses a marker file and lock to ensure it runs at most once per 24 hours.
 Future<void> cleanupOldVersionsThrottled() async {
-  final markerPath = p.join(_getNeomClawConfigHomeDir(), '.version-cleanup');
+  final markerPath = p.join(_getNeomageConfigHomeDir(), '.version-cleanup');
 
   try {
     final stat = await FileStat.stat(markerPath);
@@ -818,7 +818,7 @@ Future<void> cleanupOldVersionsThrottled() async {
 /// Clean up old npm cache entries for Anthropic packages.
 /// Only runs once per day for Ant users.
 Future<void> cleanupNpmCacheForAnthropicPackages() async {
-  final markerPath = p.join(_getNeomClawConfigHomeDir(), '.npm-cache-cleanup');
+  final markerPath = p.join(_getNeomageConfigHomeDir(), '.npm-cache-cleanup');
 
   try {
     final stat = await FileStat.stat(markerPath);
@@ -854,7 +854,7 @@ Future<void> cleanupNpmCacheForAnthropicPackages() async {
 
 /// Lightweight diagnostic logger (no PII).
 void _logDiag(String level, String event, [Map<String, dynamic>? data]) {
-  final logFile = Platform.environment['NEOMCLAW_DIAGNOSTICS_FILE'];
+  final logFile = Platform.environment['MAGE_DIAGNOSTICS_FILE'];
   if (logFile == null) return;
 
   final entry = <String, dynamic>{

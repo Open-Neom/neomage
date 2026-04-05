@@ -1,4 +1,4 @@
-// Plugin service — port of neom_claw/src/services/plugins/.
+// Plugin service — port of neomage/src/services/plugins/.
 // Handles plugin installation, uninstallation, enabling, disabling, updating,
 // background marketplace reconciliation, CLI command wrappers, and
 // installation status tracking.
@@ -588,7 +588,7 @@ class PluginOperationsService {
             success: false,
             message:
                 'Plugin "$plugin" is enabled at project scope. '
-                'To disable just for you: neomclaw plugin disable $plugin --scope local',
+                'To disable just for you: neomage plugin disable $plugin --scope local',
           );
         }
         return PluginOperationResult(

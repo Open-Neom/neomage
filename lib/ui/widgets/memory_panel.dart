@@ -1,9 +1,9 @@
-// MemoryPanel — port of neom_claw/src/components/memory/
+// MemoryPanel — port of neomage/src/components/memory/
 // Ports: MemoryFileSelector.tsx, MemoryUpdateNotification.tsx
 //
 // Provides:
 // - MemoryFileSelector: a list/select widget for browsing and selecting
-//   memory files (NEOMCLAW.md files at user, project, and nested scopes).
+//   memory files (NEOMAGE.md files at user, project, and nested scopes).
 //   Supports auto-memory and auto-dream toggles, agent memory folders,
 //   and opening folders in the OS file manager.
 // - MemoryUpdateNotification: inline notification shown when a memory
@@ -12,13 +12,20 @@
 //   and dream status.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/data/memdir/memdir_service.dart';
+import 'package:neomage/data/memdir/memdir_paths.dart';
+import 'package:neomage/data/memdir/memory_scan.dart';
+import 'package:neomage/data/memdir/memory_types.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sint/sint.dart';
 
-// ─── Memory file info model (mirrors MemoryFileInfo in utils/neomclawmd.ts) ───
+import '../controllers/chat_controller.dart';
+import '../../utils/constants/neomage_translation_constants.dart';
+
+// ─── Memory file info model (mirrors MemoryFileInfo in utils/neomagemd.ts) ───
 
 class MemoryFileInfo {
   final String path;
@@ -145,20 +152,37 @@ class MemoryPanelController extends SintController {
       Rxn<int>(); // null = no toggle focused, 0 = auto-memory, 1 = auto-dream
   final agentDefinitions = <AgentDefinitionInfo>[].obs;
 
+  // Real memory data from MemdirService
+  final memoryHeaders = <MemoryHeader>[].obs;
+  final entrypointContent = Rxn<String>();
+  final memoryDirPath = Rxn<String>();
+  final isMemdirAvailable = false.obs;
+  final isLoadingMemories = false.obs;
+  final loadError = Rxn<String>();
+
   // Last selected path (persisted across opens)
   static String? _lastSelectedPath;
 
   // Folder prefix sentinel
   static const _openFolderPrefix = '__open_folder__';
 
+  /// Get the MemdirService from ChatController.
+  MemdirService? get _memdirService {
+    try {
+      return Sint.find<ChatController>().memdirService;
+    } catch (_) {
+      return null;
+    }
+  }
+
   // Computed paths
   String get userMemoryPath {
     final homeDir = Platform.environment['HOME'] ?? '';
-    return '$homeDir/.neomclaw/NEOMCLAW.md';
+    return '$homeDir/.neomage/NEOMAGE.md';
   }
 
   String get projectMemoryPath {
-    return '${Directory.current.path}/NEOMCLAW.md';
+    return '${Directory.current.path}/NEOMAGE.md';
   }
 
   bool get hasUserMemory => memoryFiles.any((f) => f.path == userMemoryPath);
@@ -169,6 +193,21 @@ class MemoryPanelController extends SintController {
   bool get toggleFocused => focusedToggle.value != null;
 
   int get lastToggleIndex => showDreamRow.value ? 1 : 0;
+
+  /// Memory headers grouped by MemoryType.
+  Map<MemoryType, List<MemoryHeader>> get memoriesByType {
+    final grouped = <MemoryType, List<MemoryHeader>>{};
+    for (final type in MemoryType.values) {
+      grouped[type] = [];
+    }
+    for (final header in memoryHeaders) {
+      final type = header.type ?? MemoryType.reference;
+      grouped[type]!.add(header);
+    }
+    // Remove empty groups
+    grouped.removeWhere((_, v) => v.isEmpty);
+    return grouped;
+  }
 
   /// Build the full list of memory options for the select widget.
   List<MemorySelectOption> get memoryOptions {
@@ -214,11 +253,11 @@ class MemoryPanelController extends SintController {
 
       String description;
       if (file.type == 'User' && !file.isNested) {
-        description = 'Saved in ~/.neomclaw/NEOMCLAW.md';
+        description = 'Saved in ~/.neomage/NEOMAGE.md';
       } else if (file.type == 'Project' &&
           !file.isNested &&
           file.path == projectMemoryPath) {
-        description = 'Saved in ./NEOMCLAW.md';
+        description = 'Saved in ./NEOMAGE.md';
       } else if (file.parent != null) {
         description = '@-imported';
       } else if (file.isNested) {
@@ -241,7 +280,7 @@ class MemoryPanelController extends SintController {
       final autoMemPath = _getAutoMemPath();
       options.add(
         MemorySelectOption(
-          label: 'Open auto-memory folder',
+          label: NeomageTranslationConstants.openAutoMemory.tr,
           value: '$_openFolderPrefix$autoMemPath',
           isFolder: true,
         ),
@@ -288,8 +327,60 @@ class MemoryPanelController extends SintController {
   @override
   void onInit() {
     super.onInit();
-    // In real implementation, would load memory files from disk
-    // and check auto-memory / auto-dream settings
+    _loadRealMemories();
+  }
+
+  /// Load real memory data from the MemdirService.
+  Future<void> _loadRealMemories() async {
+    final service = _memdirService;
+    if (service == null) {
+      isMemdirAvailable.value = false;
+      return;
+    }
+
+    isMemdirAvailable.value = true;
+    isLoadingMemories.value = true;
+    loadError.value = null;
+
+    try {
+      memoryDirPath.value = getAutoMemPath(projectRoot: service.projectRoot);
+
+      final results = await Future.wait([
+        service.scanMemories(),
+        service.readEntrypoint(),
+      ]);
+
+      memoryHeaders.assignAll(results[0] as List<MemoryHeader>);
+      entrypointContent.value = results[1] as String?;
+    } catch (e) {
+      loadError.value = e.toString();
+    } finally {
+      isLoadingMemories.value = false;
+    }
+  }
+
+  /// Refresh memory data from disk.
+  Future<void> refreshMemories() async {
+    await _loadRealMemories();
+  }
+
+  /// Read a specific memory file's content.
+  Future<String?> readMemoryFileContent(String filePath) async {
+    final service = _memdirService;
+    if (service == null) return null;
+    return service.readMemoryFile(filePath);
+  }
+
+  /// Delete a memory file by filename.
+  Future<bool> deleteMemoryFileByName(String filename) async {
+    final service = _memdirService;
+    if (service == null) return false;
+
+    final deleted = await service.deleteMemoryFile(filename);
+    if (deleted) {
+      await refreshMemories();
+    }
+    return deleted;
   }
 
   /// Handle selecting a memory file or folder.
@@ -305,15 +396,11 @@ class MemoryPanelController extends SintController {
   /// Toggle auto-memory on/off.
   void toggleAutoMemory() {
     autoMemoryOn.value = !autoMemoryOn.value;
-    // In real implementation, would persist to settings
-    // logEvent('tengu_auto_memory_toggled', { enabled: autoMemoryOn.value })
   }
 
   /// Toggle auto-dream on/off.
   void toggleAutoDream() {
     autoDreamOn.value = !autoDreamOn.value;
-    // In real implementation, would persist to settings
-    // logEvent('tengu_auto_dream_toggled', { enabled: autoDreamOn.value })
   }
 
   /// Handle toggle focus (for keyboard navigation between toggles).
@@ -350,19 +437,17 @@ class MemoryPanelController extends SintController {
 
   String _getAutoMemPath() {
     final homeDir = Platform.environment['HOME'] ?? '';
-    return '$homeDir/.neomclaw/auto-memory';
+    return '$homeDir/.neomage/auto-memory';
   }
 
   String _getAgentMemoryDir(String agentType, String scope) {
     final homeDir = Platform.environment['HOME'] ?? '';
-    return '$homeDir/.neomclaw/agent-memory/$agentType/$scope';
+    return '$homeDir/.neomage/agent-memory/$agentType/$scope';
   }
 
   Future<void> _openFolder(String path) async {
     try {
       await Directory(path).create(recursive: true);
-      // In real implementation, would use openPath() to open in file manager
-      // For now, just ensure directory exists
     } catch (_) {
       // Ignore errors
     }
@@ -465,7 +550,7 @@ class MemoryFileSelector extends StatelessWidget {
               children: [
                 // Auto-memory toggle
                 _ToggleRow(
-                  label: 'Auto-memory',
+                  label: NeomageTranslationConstants.autoMemory.tr,
                   value: controller.autoMemoryOn.value,
                   isFocused: controller.focusedToggle.value == 0,
                   onToggle: controller.toggleAutoMemory,
@@ -474,7 +559,7 @@ class MemoryFileSelector extends StatelessWidget {
                 // Auto-dream toggle (conditional)
                 if (controller.showDreamRow.value)
                   _ToggleRow(
-                    label: 'Auto-dream',
+                    label: NeomageTranslationConstants.autoDream.tr,
                     value: controller.autoDreamOn.value,
                     isFocused: controller.focusedToggle.value == 1,
                     onToggle: controller.toggleAutoDream,
@@ -509,12 +594,18 @@ class MemoryFileSelector extends StatelessWidget {
 
           const Divider(height: 1),
 
-          // Memory file list
+          // Real memory files section
           Flexible(
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Memdir status / real memory content
+                  _MemdirSection(controller: controller),
+
+                  const Divider(height: 1),
+
+                  // Legacy memory file list
                   ...options.asMap().entries.map((entry) {
                     final idx = entry.key;
                     final option = entry.value;
@@ -537,6 +628,474 @@ class MemoryFileSelector extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Memdir section showing real persistent memory files ───
+
+class _MemdirSection extends StatelessWidget {
+  final MemoryPanelController controller;
+
+  const _MemdirSection({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Obx(() {
+      if (!controller.isMemdirAvailable.value) {
+        return Padding(
+          padding: const EdgeInsets.all(12),
+          child: Text(
+            'Persistent memory is not available on this platform.',
+            style: TextStyle(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              fontSize: 12,
+            ),
+          ),
+        );
+      }
+
+      if (controller.isLoadingMemories.value) {
+        return const Padding(
+          padding: EdgeInsets.all(12),
+          child: Center(
+            child: SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        );
+      }
+
+      if (controller.loadError.value != null) {
+        return Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Failed to load memories',
+                style: TextStyle(
+                  color: theme.colorScheme.error,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                controller.loadError.value!,
+                style: TextStyle(
+                  color: theme.colorScheme.error.withValues(alpha: 0.7),
+                  fontSize: 11,
+                ),
+              ),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: controller.refreshMemories,
+                child: Text(
+                  'Retry',
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontSize: 12,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+
+      final dirPath = controller.memoryDirPath.value;
+      final entrypoint = controller.entrypointContent.value;
+      final grouped = controller.memoriesByType;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Memory directory path
+          if (dirPath != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.folder_outlined,
+                    size: 14,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      getDisplayPath(dirPath),
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
+                        fontSize: 11,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: controller.refreshMemories,
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: Icon(
+                        Icons.refresh,
+                        size: 14,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // MEMORY.md entrypoint content
+          if (entrypoint != null && entrypoint.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(
+                    alpha: 0.5,
+                  ),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'MEMORY.md',
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      entrypoint,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.7,
+                        ),
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                      ),
+                      maxLines: 10,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Grouped memory files
+          if (grouped.isEmpty && entrypoint == null)
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Text(
+                'No memory files yet.',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  fontSize: 12,
+                ),
+              ),
+            )
+          else
+            ...grouped.entries.map(
+              (entry) => _MemoryTypeGroup(
+                type: entry.key,
+                headers: entry.value,
+                controller: controller,
+              ),
+            ),
+        ],
+      );
+    });
+  }
+}
+
+// ─── Memory type group (displays headers grouped by type) ───
+
+class _MemoryTypeGroup extends StatelessWidget {
+  final MemoryType type;
+  final List<MemoryHeader> headers;
+  final MemoryPanelController controller;
+
+  const _MemoryTypeGroup({
+    required this.type,
+    required this.headers,
+    required this.controller,
+  });
+
+  String get _typeLabel => switch (type) {
+    MemoryType.user => 'User',
+    MemoryType.feedback => 'Feedback',
+    MemoryType.project => 'Project',
+    MemoryType.reference => 'Reference',
+  };
+
+  IconData get _typeIcon => switch (type) {
+    MemoryType.user => Icons.person_outline,
+    MemoryType.feedback => Icons.rate_review_outlined,
+    MemoryType.project => Icons.work_outline,
+    MemoryType.reference => Icons.link,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Type header
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child: Row(
+            children: [
+              Icon(
+                _typeIcon,
+                size: 14,
+                color: theme.colorScheme.primary.withValues(alpha: 0.7),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$_typeLabel (${headers.length})',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Memory file entries
+        ...headers.map(
+          (header) => _MemoryHeaderTile(
+            header: header,
+            controller: controller,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Memory header tile (single memory file entry) ───
+
+class _MemoryHeaderTile extends StatelessWidget {
+  final MemoryHeader header;
+  final MemoryPanelController controller;
+
+  const _MemoryHeaderTile({
+    required this.header,
+    required this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final age = _formatAge(header.modified);
+
+    return InkWell(
+      onTap: () => _showContentDialog(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Row(
+          children: [
+            Icon(
+              Icons.description_outlined,
+              size: 14,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    header.filename,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface,
+                      fontSize: 12,
+                    ),
+                  ),
+                  if (header.description != null)
+                    Text(
+                      header.description!,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.5,
+                        ),
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              age,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatAge(DateTime modified) {
+    final days = DateTime.now().difference(modified).inDays;
+    if (days == 0) return 'today';
+    if (days == 1) return 'yesterday';
+    if (days < 7) return '${days}d ago';
+    return '${(days / 7).floor()}w ago';
+  }
+
+  Future<void> _showContentDialog(BuildContext context) async {
+    final theme = Theme.of(context);
+    final content = await controller.readMemoryFileContent(header.filePath);
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                header.filename,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            if (header.type != null)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  header.type!.name,
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (header.description != null) ...[
+                  Text(
+                    header.description!,
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                ],
+                Text(
+                  content ?? '(unable to read file)',
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface,
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  getDisplayPath(header.filePath),
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              final confirmed = await showDialog<bool>(
+                context: dialogContext,
+                builder: (confirmContext) => AlertDialog(
+                  title: const Text('Delete memory file?'),
+                  content: Text(
+                    'This will permanently delete "${header.filename}".',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () =>
+                          Navigator.of(confirmContext).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          Navigator.of(confirmContext).pop(true),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
+                      ),
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed == true) {
+                await controller.deleteMemoryFileByName(header.filename);
+                if (dialogContext.mounted) {
+                  Navigator.of(dialogContext).pop();
+                }
+              }
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: theme.colorScheme.error,
+            ),
+            child: const Text('Delete'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Close'),
           ),
         ],
       ),

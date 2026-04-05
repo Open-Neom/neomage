@@ -1,6 +1,6 @@
 /// Computer Use Manager
 ///
-/// Faithful port of neom_claw/src/utils/computerUse/*.ts
+/// Faithful port of neomage/src/utils/computerUse/*.ts
 /// Covers: executor.ts, computerUseLock.ts, appNames.ts
 ///
 /// Provides:
@@ -12,7 +12,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:path/path.dart' as p;
@@ -32,7 +32,7 @@ const int moveSettleMs = 50;
 const String lockFilename = 'computer-use.lock';
 
 /// Sentinel bundle ID when terminal detection fails.
-const String cliHostBundleId = 'com.anthropic.neom-claw-cli';
+const String cliHostBundleId = 'com.neomage-cli';
 
 /// Maximum length for app display names (prompt injection hardening).
 const int appNameMaxLen = 40;

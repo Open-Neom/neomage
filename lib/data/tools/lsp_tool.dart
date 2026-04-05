@@ -1,10 +1,10 @@
-// LSPTool — port of neom_claw/src/tools/LSPTool/.
+// LSPTool — port of neomage/src/tools/LSPTool/.
 // Language Server Protocol integration: go-to-definition, find-references,
 // hover, document/workspace symbols, call hierarchy, with formatters and
 // schema validation.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'tool.dart';
 

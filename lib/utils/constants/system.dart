@@ -1,24 +1,24 @@
-// System prompt constants — ported from NeomClaw src/constants/system.ts.
+// System prompt constants — ported from Neomage src/constants/system.ts.
 // Centralises app metadata, file-system paths, numeric limits,
 // timeouts, network config, platform support, and file-pattern lists.
 
-import 'package:neom_claw/core/platform/claw_io.dart' show Platform;
+import 'package:neomage/core/platform/neomage_io.dart' show Platform;
 
 // ---------------------------------------------------------------------------
 // System prompt prefixes (preserved from original stub)
 // ---------------------------------------------------------------------------
 
 const String defaultSystemPrefix =
-    "You are NeomClaw, Anthropic's official CLI for Claude.";
+    "You are Neomage, Anthropic's official CLI for Claude.";
 
-const String agentSdkNeomClawPresetPrefix =
-    "You are NeomClaw, Anthropic's official CLI for Claude.";
+const String agentSdkNeomagePresetPrefix =
+    "You are Neomage, Anthropic's official CLI for Claude.";
 
 const String agentSdkPrefix =
-    "You are a NeomClaw agent, built on Anthropic's NeomClaw Agent SDK.";
+    "You are a Neomage agent, built on Anthropic's Neomage Agent SDK.";
 
-const String productUrl = 'https://neomclaw.com/neom-claw';
-const String neomClawAiBaseUrl = 'https://neomclaw.ai';
+const String productUrl = 'https://neomage.com/neomage';
+const String neomageAiBaseUrl = 'https://neomage.ai';
 
 // ---------------------------------------------------------------------------
 // SystemConstants
@@ -28,26 +28,26 @@ class SystemConstants {
   SystemConstants._();
 
   // ---- App info -----------------------------------------------------------
-  static const String appName = 'Neom Claw';
-  static const String appId = 'neom_claw';
+  static const String appName = 'Neomage';
+  static const String appId = 'neomage';
   static const String appVersion = '0.1.0';
   static const String appBuildNumber = '1';
   static const String appDescription =
-      'AI-powered coding assistant — Flutter port of NeomClaw';
-  static const String productUrl = 'https://neomclaw.com/neom-claw';
+      'AI-powered coding assistant — Flutter port of Neomage';
+  static const String productUrl = 'https://neomage.com/neomage';
   static const String apiBaseUrl = 'https://api.anthropic.com';
   static const String docsUrl = 'https://docs.anthropic.com';
   static const String feedbackUrl =
-      'https://github.com/anthropics/neom-claw/issues';
+      'https://github.com/anthropics/neomage/issues';
   static const String privacyUrl = 'https://www.anthropic.com/privacy';
   static const String termsUrl = 'https://www.anthropic.com/terms';
 
   // ---- File paths (relative to user home) ---------------------------------
-  static const String configDirName = '.neomclaw';
+  static const String configDirName = '.neomage';
   static String get configDir =>
       '${Platform.environment['HOME'] ?? '/tmp'}/$configDirName';
-  static String get memoryFile => '$configDir/NEOMCLAW.md';
-  static String get projectMemoryFile => '.neomclaw/NEOMCLAW.md';
+  static String get memoryFile => '$configDir/NEOMAGE.md';
+  static String get projectMemoryFile => '.neomage/NEOMAGE.md';
   static String get sessionDir => '$configDir/sessions';
   static String get logDir => '$configDir/logs';
   static String get cacheDir => '$configDir/cache';
@@ -250,10 +250,10 @@ class SystemConstants {
 
   // ---- Config file names --------------------------------------------------
   static const List<String> configFileNames = [
-    'NEOMCLAW.md',
-    '.neomclaw/settings.json',
-    '.neomclaw/mcp.json',
-    '.neomclawignore',
+    'NEOMAGE.md',
+    '.neomage/settings.json',
+    '.neomage/mcp.json',
+    '.neomageignore',
     'package.json',
     'pubspec.yaml',
     'pyproject.toml',

@@ -1,4 +1,4 @@
-// Permission system types — ported from NeomClaw src/types/permissions.ts.
+// Permission system types — ported from Neomage src/types/permissions.ts.
 // Contains only type definitions to break import cycles.
 
 /// User-addressable permission modes.
@@ -62,8 +62,8 @@ enum PermissionRuleSource {
   /// Rule set interactively by the user.
   user,
 
-  /// Rule defined in a .neomclaw.md configuration file.
-  neomClawMd,
+  /// Rule defined in a .neomage.md configuration file.
+  neomageMd,
 
   /// Rule auto-allowed by the system.
   autoAllow,

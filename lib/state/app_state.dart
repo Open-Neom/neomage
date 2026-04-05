@@ -1,5 +1,5 @@
-// app_state.dart — Global application state for flutter_claw
-// Port of neom_claw/src/state/ (~1.2K TS LOC) adapted to Sint patterns.
+// app_state.dart — Global application state for neomage
+// Port of neomage/src/state/ (~1.2K TS LOC) adapted to Sint patterns.
 
 import 'dart:async';
 

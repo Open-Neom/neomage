@@ -7,7 +7,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// Available feature gates that can be toggled per plan or organization.
 enum FeatureGate {
@@ -141,9 +141,9 @@ const Map<Plan, Set<FeatureGate>> _planDefaults = {
 
 /// Upgrade URLs per plan tier.
 const Map<Plan, String> _upgradeUrls = {
-  Plan.free: 'https://neomclaw.ai/upgrade?plan=pro',
-  Plan.pro: 'https://neomclaw.ai/upgrade?plan=team',
-  Plan.team: 'https://neomclaw.ai/upgrade?plan=enterprise',
+  Plan.free: 'https://neomage.ai/upgrade?plan=pro',
+  Plan.pro: 'https://neomage.ai/upgrade?plan=team',
+  Plan.team: 'https://neomage.ai/upgrade?plan=enterprise',
   Plan.enterprise: '',
 };
 

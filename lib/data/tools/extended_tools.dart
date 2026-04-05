@@ -1,4 +1,4 @@
-// Extended tools — port of remaining neom_claw/src/tools/.
+// Extended tools — port of remaining neomage/src/tools/.
 // All tools not already ported individually.
 //
 // Already ported: Bash, FileRead, FileWrite, FileEdit, Grep, Glob,
@@ -6,7 +6,7 @@
 //   WebSearch.
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import '../../domain/models/tool_definition.dart';
 import 'tool.dart';
@@ -905,7 +905,7 @@ class ConfigTool extends Tool {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MemoryTool — read/write to NEOMCLAW.md memory files
+// MemoryTool — read/write to NEOMAGE.md memory files
 // ═══════════════════════════════════════════════════════════════════════════
 
 class MemoryToolInput {
@@ -950,7 +950,7 @@ class MemoryTool extends Tool with FileWriteToolMixin {
 
   @override
   String get description =>
-      'Read, write, or append to NEOMCLAW.md memory files. '
+      'Read, write, or append to NEOMAGE.md memory files. '
       'Memory files persist context across sessions.';
 
   @override
@@ -1021,11 +1021,11 @@ class MemoryTool extends Tool with FileWriteToolMixin {
         return ToolResult.success('Appended to ${parsed.path}');
 
       case 'list':
-        // List NEOMCLAW.md files in common locations.
+        // List NEOMAGE.md files in common locations.
         final candidates = [
-          'NEOMCLAW.md',
-          '.neomclaw/NEOMCLAW.md',
-          '.neomclaw/memory/',
+          'NEOMAGE.md',
+          '.neomage/NEOMAGE.md',
+          '.neomage/memory/',
         ];
         final found = <String>[];
         for (final c in candidates) {

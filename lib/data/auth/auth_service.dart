@@ -1,11 +1,11 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sint_sentinel/sint_sentinel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../api/api_provider.dart';
 
 /// Auth service — manages API keys and provider configuration.
-/// Port of neom_claw/src/utils/auth.ts core functionality.
+/// Uses Hive for key storage (cross-platform, no entitlements needed).
 class AuthService {
   static const _anthropicKeyKey = 'anthropic_api_key';
   static const _openaiKeyKey = 'openai_api_key';
@@ -15,53 +15,49 @@ class AuthService {
   static const _providerTypeKey = 'provider_type';
   static const _modelKey = 'model';
   static const _baseUrlKey = 'custom_base_url';
+  static const _onboardingCompleteKey = 'onboarding_complete';
 
-  final FlutterSecureStorage _secureStorage;
+  static const _boxName = 'neomage_auth';
 
-  /// Creates an auth service with optional custom [secureStorage].
-  AuthService({FlutterSecureStorage? secureStorage})
-    : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+  AuthService();
+
+  Future<Box> _openBox() async {
+    if (Hive.isBoxOpen(_boxName)) return Hive.box(_boxName);
+    return Hive.openBox(_boxName);
+  }
 
   // ── API Key Management ──
 
-  /// Retrieve the stored Anthropic API key.
-  Future<String?> getAnthropicApiKey() =>
-      _secureStorage.read(key: _anthropicKeyKey);
+  Future<String?> _readKey(String key) async {
+    final box = await _openBox();
+    return box.get(key) as String?;
+  }
 
-  /// Store the Anthropic API key securely.
-  Future<void> setAnthropicApiKey(String key) =>
-      _secureStorage.write(key: _anthropicKeyKey, value: key);
+  Future<void> _writeKey(String key, String value) async {
+    final box = await _openBox();
+    await box.put(key, value);
+  }
 
-  /// Retrieve the stored OpenAI API key.
-  Future<String?> getOpenAiApiKey() => _secureStorage.read(key: _openaiKeyKey);
+  Future<void> _deleteKey(String key) async {
+    final box = await _openBox();
+    await box.delete(key);
+  }
 
-  /// Store the OpenAI API key securely.
-  Future<void> setOpenAiApiKey(String key) =>
-      _secureStorage.write(key: _openaiKeyKey, value: key);
+  Future<String?> getAnthropicApiKey() => _readKey(_anthropicKeyKey);
+  Future<void> setAnthropicApiKey(String key) => _writeKey(_anthropicKeyKey, key);
 
-  /// Retrieve the stored Gemini API key.
-  Future<String?> getGeminiApiKey() => _secureStorage.read(key: _geminiKeyKey);
+  Future<String?> getOpenAiApiKey() => _readKey(_openaiKeyKey);
+  Future<void> setOpenAiApiKey(String key) => _writeKey(_openaiKeyKey, key);
 
-  /// Store the Gemini API key securely.
-  Future<void> setGeminiApiKey(String key) =>
-      _secureStorage.write(key: _geminiKeyKey, value: key);
+  Future<String?> getGeminiApiKey() => _readKey(_geminiKeyKey);
+  Future<void> setGeminiApiKey(String key) => _writeKey(_geminiKeyKey, key);
 
-  /// Retrieve the stored Qwen API key.
-  Future<String?> getQwenApiKey() => _secureStorage.read(key: _qwenKeyKey);
+  Future<String?> getQwenApiKey() => _readKey(_qwenKeyKey);
+  Future<void> setQwenApiKey(String key) => _writeKey(_qwenKeyKey, key);
 
-  /// Store the Qwen API key securely.
-  Future<void> setQwenApiKey(String key) =>
-      _secureStorage.write(key: _qwenKeyKey, value: key);
+  Future<String?> getDeepSeekApiKey() => _readKey(_deepseekKeyKey);
+  Future<void> setDeepSeekApiKey(String key) => _writeKey(_deepseekKeyKey, key);
 
-  /// Retrieve the stored DeepSeek API key.
-  Future<String?> getDeepSeekApiKey() =>
-      _secureStorage.read(key: _deepseekKeyKey);
-
-  /// Store the DeepSeek API key securely.
-  Future<void> setDeepSeekApiKey(String key) =>
-      _secureStorage.write(key: _deepseekKeyKey, value: key);
-
-  /// Get API key for any provider type.
   Future<String?> getApiKeyForProvider(ApiProviderType type) => switch (type) {
     ApiProviderType.anthropic => getAnthropicApiKey(),
     ApiProviderType.openai => getOpenAiApiKey(),
@@ -71,7 +67,6 @@ class AuthService {
     _ => Future.value(null),
   };
 
-  /// Set API key for any provider type.
   Future<void> setApiKeyForProvider(ApiProviderType type, String key) =>
       switch (type) {
         ApiProviderType.anthropic => setAnthropicApiKey(key),
@@ -82,18 +77,16 @@ class AuthService {
         _ => Future.value(),
       };
 
-  /// Delete all stored API keys from secure storage.
   Future<void> clearAllKeys() async {
-    await _secureStorage.delete(key: _anthropicKeyKey);
-    await _secureStorage.delete(key: _openaiKeyKey);
-    await _secureStorage.delete(key: _geminiKeyKey);
-    await _secureStorage.delete(key: _qwenKeyKey);
-    await _secureStorage.delete(key: _deepseekKeyKey);
+    await _deleteKey(_anthropicKeyKey);
+    await _deleteKey(_openaiKeyKey);
+    await _deleteKey(_geminiKeyKey);
+    await _deleteKey(_qwenKeyKey);
+    await _deleteKey(_deepseekKeyKey);
   }
 
   // ── Provider Configuration ──
 
-  /// Persist the selected provider type, model, and optional base URL.
   Future<void> saveProviderConfig({
     required ApiProviderType type,
     required String model,
@@ -108,7 +101,6 @@ class AuthService {
     SintSentinel.logger.i('Saved provider config: ${type.name}, model: $model');
   }
 
-  /// Load the full [ApiConfig] from stored preferences and secure keys.
   Future<ApiConfig?> loadApiConfig() async {
     final prefs = await SharedPreferences.getInstance();
     final typeStr = prefs.getString(_providerTypeKey);
@@ -116,7 +108,6 @@ class AuthService {
     SintSentinel.logger.d('Loading API config for provider: $typeStr');
 
     if (typeStr == null) {
-      // Try Gemini by default (NeomClaw default provider)
       final apiKey = await getGeminiApiKey();
       if (apiKey == null) {
         SintSentinel.logger.w('No API key found for gemini (default)');
@@ -136,26 +127,17 @@ class AuthService {
     switch (type) {
       case ApiProviderType.gemini:
         final apiKey = await getGeminiApiKey();
-        if (apiKey == null) {
-          SintSentinel.logger.w('No API key found for $type');
-          return null;
-        }
+        if (apiKey == null) return null;
         return ApiConfig.gemini(apiKey: apiKey, model: model);
 
       case ApiProviderType.qwen:
         final apiKey = await getQwenApiKey();
-        if (apiKey == null) {
-          SintSentinel.logger.w('No API key found for $type');
-          return null;
-        }
+        if (apiKey == null) return null;
         return ApiConfig.qwen(apiKey: apiKey, model: model);
 
       case ApiProviderType.anthropic:
         final apiKey = await getAnthropicApiKey();
-        if (apiKey == null) {
-          SintSentinel.logger.w('No API key found for $type');
-          return null;
-        }
+        if (apiKey == null) return null;
         return ApiConfig.anthropic(apiKey: apiKey, model: model);
 
       case ApiProviderType.openai:
@@ -168,10 +150,7 @@ class AuthService {
 
       case ApiProviderType.deepseek:
         final apiKey = await getDeepSeekApiKey();
-        if (apiKey == null) {
-          SintSentinel.logger.w('No API key found for $type');
-          return null;
-        }
+        if (apiKey == null) return null;
         return ApiConfig.deepseek(apiKey: apiKey, model: model);
 
       case ApiProviderType.ollama:
@@ -193,13 +172,11 @@ class AuthService {
     }
   }
 
-  /// Returns true if a valid API configuration can be loaded.
   Future<bool> hasValidConfig() async {
     final config = await loadApiConfig();
     return config != null;
   }
 
-  /// Default model for each provider.
   static String defaultModel(ApiProviderType type) => switch (type) {
     ApiProviderType.gemini => 'gemini-2.5-flash',
     ApiProviderType.qwen => 'qwen-plus',
@@ -210,7 +187,6 @@ class AuthService {
     _ => 'gpt-4o',
   };
 
-  /// Default base URL for each provider.
   static String defaultBaseUrl(ApiProviderType type) => switch (type) {
     ApiProviderType.gemini =>
       'https://generativelanguage.googleapis.com/v1beta',
@@ -222,13 +198,24 @@ class AuthService {
     _ => 'https://api.openai.com/v1',
   };
 
-  /// Whether a provider requires an API key.
+  // ── Onboarding flag ──
+
+  Future<bool> isOnboardingComplete() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_onboardingCompleteKey) ?? false;
+  }
+
+  Future<void> setOnboardingComplete([bool complete = true]) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_onboardingCompleteKey, complete);
+    SintSentinel.logger.i('Onboarding marked as ${complete ? "complete" : "incomplete"}');
+  }
+
   static bool requiresApiKey(ApiProviderType type) => switch (type) {
     ApiProviderType.ollama => false,
     _ => true,
   };
 
-  /// Provider display name.
   static String providerDisplayName(ApiProviderType type) => switch (type) {
     ApiProviderType.gemini => 'Gemini',
     ApiProviderType.qwen => 'Qwen',

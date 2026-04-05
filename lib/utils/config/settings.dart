@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// App-wide settings — port of neom_claw's configuration system.
+/// App-wide settings — port of neomage's configuration system.
 class AppSettings {
   static const _themeKey = 'theme_mode';
   static const _maxTokensKey = 'max_tokens';
@@ -41,11 +41,10 @@ class AppSettings {
     }
   }
 
-  /// Default system prompt — matches neom_claw's system.ts.
+  /// Default system prompt — matches neomage's system.ts.
   static const defaultSystemPrompt =
-      'You are NeomClaw, an AI coding assistant powered by Flutter. '
-      'You help users with software engineering tasks including writing code, '
-      'debugging, refactoring, and explaining code. '
+      'You are Neomage, a multi-provider AI agent engine powered by Flutter. '
+      'You are the user\'s ally to create, explore, and execute. '
       'You have access to tools for reading files, writing files, '
       'editing files, searching code, and executing shell commands.';
 }

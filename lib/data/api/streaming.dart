@@ -1,4 +1,4 @@
-// API streaming — port of neom_claw/src/services/api/ streaming infrastructure.
+// API streaming — port of neomage/src/services/api/ streaming infrastructure.
 // SSE parsing, streaming message assembly, multimodal content handling.
 
 import 'dart:async';
@@ -780,7 +780,7 @@ class CacheConfig {
   final List<int> breakpoints;
 
   /// Minimum number of tokens a cacheable prefix should have (API requires
-  /// at least 1024 tokens for caching to be effective with NeomClaw models).
+  /// at least 1024 tokens for caching to be effective with Neomage models).
   final int minTokensForCache;
 
   const CacheConfig({

@@ -2,7 +2,7 @@
 // Uses pwsh (PowerShell Core) on macOS/Linux, powershell.exe on Windows.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'tool.dart';
 

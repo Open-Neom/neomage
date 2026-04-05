@@ -1,4 +1,4 @@
-// Effort manager — port of neom_claw/src/utils/effort.ts, thinking.ts,
+// Effort manager — port of neomage/src/utils/effort.ts, thinking.ts,
 // tokenBudget.ts, words.ts.
 // Effort level management, thinking configuration, token budget parsing,
 // and random word slug generation.
@@ -168,13 +168,13 @@ class EffortManager {
   /// Check if a model supports the effort parameter.
   bool modelSupportsEffort(String model) {
     final m = model.toLowerCase();
-    if (_config.isEnvTruthy('NEOMCLAW_ALWAYS_ENABLE_EFFORT')) {
+    if (_config.isEnvTruthy('MAGE_ALWAYS_ENABLE_EFFORT')) {
       return true;
     }
     final supported3P = _config.get3PModelCapabilityOverride(model, 'effort');
     if (supported3P != null) return supported3P;
 
-    // Supported by a subset of NeomClaw 4 models.
+    // Supported by a subset of Neomage 4 models.
     if (m.contains('opus-4-6') || m.contains('sonnet-4-6')) return true;
 
     // Exclude any other known legacy models.
@@ -270,7 +270,7 @@ class EffortManager {
   /// Returns a special sentinel for "env not set".
   EffortValue? getEffortEnvOverride() {
     final envOverride = const String.fromEnvironment(
-      'NEOMCLAW_EFFORT_LEVEL',
+      'MAGE_EFFORT_LEVEL',
       defaultValue: '',
     );
     if (envOverride.isEmpty) return null;
@@ -284,7 +284,7 @@ class EffortManager {
   /// Check if the env override is explicitly set to 'unset' or 'auto'.
   bool get isEffortEnvUnset {
     final envOverride = const String.fromEnvironment(
-      'NEOMCLAW_EFFORT_LEVEL',
+      'MAGE_EFFORT_LEVEL',
       defaultValue: '',
     );
     if (envOverride.isEmpty) return false;
@@ -294,7 +294,7 @@ class EffortManager {
 
   /// Resolve the effort value that will actually be sent to the API.
   /// Follows the full precedence chain:
-  ///   env NEOMCLAW_EFFORT_LEVEL -> appState.effortValue -> model default
+  ///   env MAGE_EFFORT_LEVEL -> appState.effortValue -> model default
   EffortValue? resolveAppliedEffort(
     String model,
     EffortValue? appStateEffortValue,
@@ -375,7 +375,7 @@ class EffortManager {
           'We recommend medium effort for Opus',
       dialogDescription:
           config?['dialogDescription'] as String? ??
-          'Effort determines how long NeomClaw thinks for when completing '
+          'Effort determines how long Neomage thinks for when completing '
               'your task. We recommend medium effort for most tasks to '
               'balance speed and intelligence and maximize rate limits. '
               'Use ultrathink to trigger high effort when needed.',
@@ -549,7 +549,7 @@ class ThinkingManager {
     final canonical = _config.getCanonicalName(model);
     final provider = _config.getApiProvider();
 
-    // 1P and Foundry: all NeomClaw 4+ models.
+    // 1P and Foundry: all Neomage 4+ models.
     if (provider == 'foundry' || provider == 'firstParty') {
       return !canonical.contains('claude-3-');
     }

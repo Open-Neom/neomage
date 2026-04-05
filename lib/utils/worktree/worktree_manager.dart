@@ -1,10 +1,10 @@
 /// Git worktree management: creating, listing, cleaning up worktrees.
 ///
-/// Ported from neom_claw/src/utils/worktree.ts (1519 LOC).
+/// Ported from neomage/src/utils/worktree.ts (1519 LOC).
 library;
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:sint/sint.dart';
@@ -282,7 +282,7 @@ class WorktreeManager extends SintController {
 
   /// Validates a worktree slug to prevent path traversal and directory escape.
   ///
-  /// The slug is joined into `.neomclaw/worktrees/<slug>` via path.join, which
+  /// The slug is joined into `.neomage/worktrees/<slug>` via path.join, which
   /// normalizes `..` segments. Forward slashes are allowed for nesting (e.g.
   /// `asm/feature-foo`); each segment is validated independently.
   ///
@@ -323,7 +323,7 @@ class WorktreeManager extends SintController {
 
   /// Returns the directory path for worktrees within a repo root.
   static String _worktreesDir(String repoRoot) {
-    return '$repoRoot/.neomclaw/worktrees';
+    return '$repoRoot/.neomage/worktrees';
   }
 
   /// Returns the full path for a specific worktree.
@@ -509,8 +509,8 @@ class WorktreeManager extends SintController {
     String repoRoot,
     String worktreePath,
   ) async {
-    // Copy settings.local.json to the worktree's .neomclaw directory
-    final localSettingsRelPath = '.neomclaw/settings.local.json';
+    // Copy settings.local.json to the worktree's .neomage directory
+    final localSettingsRelPath = '.neomage/settings.local.json';
     final sourceSettings = '$repoRoot/$localSettingsRelPath';
     try {
       final destSettings = '$worktreePath/$localSettingsRelPath';
@@ -1215,7 +1215,7 @@ class WorktreeManager extends SintController {
   }
 
   /// Fast-path handler for --worktree --tmux.
-  /// Creates the worktree and execs into tmux running NeomClaw inside.
+  /// Creates the worktree and execs into tmux running Neomage inside.
   Future<({bool handled, String? error})> execIntoTmuxWorktree(
     List<String> args,
   ) async {

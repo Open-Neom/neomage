@@ -1,4 +1,4 @@
-// Lifecycle hooks — port of neom_claw/src/hooks/lifecycle.ts.
+// Lifecycle hooks — port of neomage/src/hooks/lifecycle.ts.
 // Defines lifecycle callbacks for sessions, conversations, tools, and agents,
 // along with a sealed event hierarchy and a manager that wires everything
 // into the HookExecutor.

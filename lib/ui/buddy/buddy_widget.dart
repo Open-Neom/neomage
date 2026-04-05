@@ -1,4 +1,4 @@
-// Buddy system — port of neom_claw/src/buddy/.
+// Buddy system — port of neomage/src/buddy/.
 // Provides contextual help, tips, and guided assistance via an animated
 // avatar with a suggestion popup queue.
 

@@ -1,4 +1,4 @@
-/// Test infrastructure stubs for Neom Claw.
+/// Test infrastructure stubs for Neomage.
 ///
 /// Provides mocks, fixtures, custom matchers, and utility helpers that make
 /// it easy to write isolated unit and widget tests without depending on real
@@ -491,7 +491,7 @@ class TestFixtures {
     return Message(
       id: id ?? _nextId('msg'),
       role: 'user',
-      content: content ?? 'Hello, NeomClaw.',
+      content: content ?? 'Hello, Neomage.',
       timestamp: DateTime(2026, 1, 15, 10, 30),
     );
   }
@@ -730,7 +730,7 @@ class TestFixtures {
 // Custom Test Matchers
 // ---------------------------------------------------------------------------
 
-/// Custom matchers for Claw domain objects.
+/// Custom matchers for Neomage domain objects.
 class TestMatchers {
   TestMatchers._();
 
@@ -835,19 +835,19 @@ class _MatchesPermissionRule extends Matcher {
 }
 
 // ---------------------------------------------------------------------------
-// pumpClawApp
+// pumpNeomageApp
 // ---------------------------------------------------------------------------
 
-/// Helper that builds and pumps a minimal Claw application widget tree,
+/// Helper that builds and pumps a minimal Neomage application widget tree,
 /// injecting service overrides for testing.
 ///
 /// ```dart
-/// await pumpClawApp(tester, overrides: {
+/// await pumpNeomageApp(tester, overrides: {
 ///   'api': MockApiProvider(),
 ///   'session': MockSessionService(),
 /// });
 /// ```
-Future<void> pumpClawApp(
+Future<void> pumpNeomageApp(
   WidgetTester tester, {
   Map<String, Object>? overrides,
   Widget? child,
@@ -860,14 +860,14 @@ Future<void> pumpClawApp(
     MaterialApp(
       home: _TestServiceScope(
         services: effectiveOverrides,
-        child: child ?? const Scaffold(body: Center(child: Text('Claw Test'))),
+        child: child ?? const Scaffold(body: Center(child: Text('Neomage Test'))),
       ),
     ),
   );
   await tester.pumpAndSettle();
 }
 
-/// Inherited widget used by [pumpClawApp] to expose overrides down the tree.
+/// Inherited widget used by [pumpNeomageApp] to expose overrides down the tree.
 class _TestServiceScope extends InheritedWidget {
   const _TestServiceScope({required this.services, required super.child});
 

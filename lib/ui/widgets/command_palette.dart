@@ -1,4 +1,4 @@
-// CommandPalette — port of neom_claw/src/components/CommandPalette/.
+// CommandPalette — port of neomage/src/components/CommandPalette/.
 // Quick command search, file finder, symbol navigation overlay.
 
 import 'dart:async';

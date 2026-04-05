@@ -7,7 +7,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// Server lifecycle status.
 enum ServerStatus { stopped, starting, running, stopping, error }

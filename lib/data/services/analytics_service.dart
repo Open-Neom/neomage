@@ -1,4 +1,4 @@
-// Analytics service — port of neom_claw/src/services/analytics/.
+// Analytics service — port of neomage/src/services/analytics/.
 // Public API for event logging, sink routing, sampling, metadata enrichment,
 // Datadog batching, first-party event logging, feature gating (GrowthBook),
 // and sink killswitch.
@@ -755,8 +755,8 @@ class DatadogService {
         ddsource: 'dart',
         ddtags: tags.join(','),
         message: eventName,
-        service: 'neom-claw',
-        hostname: 'neom-claw',
+        service: 'neomage',
+        hostname: 'neomage',
         extra: {
           for (final e in allData.entries)
             if (e.value != null) _camelToSnakeCase(e.key): e.value,
@@ -928,7 +928,7 @@ class FirstPartyEventLogger {
       final headers = <String, String>{
         'Content-Type': 'application/json',
         'User-Agent': getUserAgent(),
-        'x-service-name': 'neom-claw',
+        'x-service-name': 'neomage',
       };
 
       if (!skipAuth) {
@@ -1102,7 +1102,7 @@ class GrowthBookService extends SintController {
     _diskCache.addAll(cache);
   }
 
-  /// Set env var overrides (typically from NEOMCLAW_INTERNAL_FC_OVERRIDES).
+  /// Set env var overrides (typically from MAGE_INTERNAL_FC_OVERRIDES).
   void setEnvOverrides(Map<String, Object?> overrides) {
     _envOverrides.clear();
     _envOverrides.addAll(overrides);

@@ -1,4 +1,4 @@
-// PlanModeTool — port of NeomClaw's plan mode tools.
+// PlanModeTool — port of Neomage's plan mode tools.
 // EnterPlanModeTool switches to plan mode (read-only tools only).
 // ExitPlanModeTool switches back to normal mode with an optional plan.
 

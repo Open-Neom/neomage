@@ -1,4 +1,4 @@
-// McpToolViews — port of neom_claw/src/components/mcp/
+// McpToolViews — port of neomage/src/components/mcp/
 // Ports: MCPToolListView.tsx, MCPToolDetailView.tsx, ElicitationDialog.tsx,
 // CapabilitiesSection.tsx, McpParsingWarnings.tsx, MCPReconnect.tsx,
 // MCPAgentServerMenu.tsx, MCPStdioServerMenu.tsx, MCPRemoteServerMenu.tsx
@@ -16,6 +16,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 // ─── MCP tool models ───
 
@@ -362,7 +364,7 @@ class McpToolListView extends StatelessWidget {
                     server.status == McpServerStatus.error)
                   TextButton.icon(
                     icon: const Icon(Icons.refresh, size: 16),
-                    label: const Text('Reconnect'),
+                    label: Text(NeomageTranslationConstants.reconnect.tr),
                     onPressed: () => controller.reconnectServer(serverId),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -390,7 +392,7 @@ class McpToolListView extends StatelessWidget {
             child: TextField(
               onChanged: (v) => controller.searchQuery.value = v,
               decoration: InputDecoration(
-                hintText: 'Search tools...',
+                hintText: NeomageTranslationConstants.searchTools.tr,
                 prefixIcon: const Icon(Icons.search, size: 18),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
@@ -545,7 +547,7 @@ class McpToolDetailView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Server
-                  _InfoRow(label: 'Server', value: tool.serverName),
+                  _InfoRow(label: NeomageTranslationConstants.server.tr, value: tool.serverName),
 
                   const SizedBox(height: 12),
 
@@ -1050,7 +1052,7 @@ class McpReconnect extends StatelessWidget {
               label: Text(
                 server.status == McpServerStatus.connecting
                     ? 'Reconnecting...'
-                    : 'Reconnect',
+                    : NeomageTranslationConstants.reconnect.tr,
               ),
               onPressed: server.status == McpServerStatus.connecting
                   ? null
@@ -1192,7 +1194,7 @@ class _ElicitationDialogState extends State<ElicitationDialog> {
                   children: [
                     OutlinedButton(
                       onPressed: widget.onDecline,
-                      child: const Text('Decline'),
+                      child: Text(NeomageTranslationConstants.decline.tr),
                     ),
                     const SizedBox(width: 12),
                     FilledButton(
@@ -1201,7 +1203,7 @@ class _ElicitationDialogState extends State<ElicitationDialog> {
                           widget.onSubmit(_values);
                         }
                       },
-                      child: const Text('Submit'),
+                      child: Text(NeomageTranslationConstants.submit.tr),
                     ),
                   ],
                 ),

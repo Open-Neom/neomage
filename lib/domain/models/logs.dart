@@ -1,4 +1,4 @@
-// Log and transcript types — ported from NeomClaw src/types/logs.ts.
+// Log and transcript types — ported from Neomage src/types/logs.ts.
 
 import 'ids.dart';
 import 'message.dart';
@@ -138,22 +138,22 @@ class PersistedWorktreeSession {
   });
 }
 
-/// Per-file NeomClaw contribution tracking.
+/// Per-file Neomage contribution tracking.
 class FileAttributionState {
   final String filePath;
   final int totalCharacters;
-  final int neomClawCharacters;
+  final int neomageCharacters;
   final DateTime lastModified;
 
   const FileAttributionState({
     required this.filePath,
     required this.totalCharacters,
-    required this.neomClawCharacters,
+    required this.neomageCharacters,
     required this.lastModified,
   });
 
   double get attributionPercentage =>
-      totalCharacters > 0 ? neomClawCharacters / totalCharacters : 0.0;
+      totalCharacters > 0 ? neomageCharacters / totalCharacters : 0.0;
 }
 
 /// Context collapse commit entry.

@@ -2,10 +2,10 @@
 /// background bash, and teammate shutdown operations.
 ///
 /// Ported from:
-///   - neom_claw/src/utils/collapseReadSearch.ts (1109 LOC)
-///   - neom_claw/src/utils/collapseBackgroundBashNotifications.ts (84 LOC)
-///   - neom_claw/src/utils/collapseHookSummaries.ts (59 LOC)
-///   - neom_claw/src/utils/collapseTeammateShutdowns.ts (55 LOC)
+///   - neomage/src/utils/collapseReadSearch.ts (1109 LOC)
+///   - neomage/src/utils/collapseBackgroundBashNotifications.ts (84 LOC)
+///   - neomage/src/utils/collapseHookSummaries.ts (59 LOC)
+///   - neomage/src/utils/collapseTeammateShutdowns.ts (55 LOC)
 ///
 /// Provides functions to collapse consecutive search/read/bash tool uses
 /// into summary groups, collapse hook summaries, background bash notifications,

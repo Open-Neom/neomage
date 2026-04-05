@@ -1,9 +1,9 @@
-// Hook manager — port of neom_claw/src/hooks.
+// Hook manager — port of neomage/src/hooks.
 // Manages hook registration, matching, and execution lifecycle.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// Hook event types.
 enum HookEvent {

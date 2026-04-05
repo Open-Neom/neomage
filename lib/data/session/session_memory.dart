@@ -1,8 +1,8 @@
-// Session memory service — port of neom_claw/src/services/SessionMemory.
+// Session memory service — port of neomage/src/services/SessionMemory.
 // Periodic background extraction of conversation notes into structured
 // markdown, enabling context-aware compaction and session resume.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import '../../domain/models/message.dart';
 

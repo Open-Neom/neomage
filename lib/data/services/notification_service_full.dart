@@ -1,10 +1,10 @@
-// Full notification service — port of neom_claw notification system.
+// Full notification service — port of neomage notification system.
 // Extends the basic NotificationService (platform/notification_service.dart)
 // with channels, preferences, scheduling, grouping, and export.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ---------------------------------------------------------------------------
 // Enums

@@ -1,5 +1,5 @@
 // /init-verifiers command — creates verifier skills for automated verification.
-// Faithful port of neom_claw/src/commands/init-verifiers.ts (262 TS LOC).
+// Faithful port of neomage/src/commands/init-verifiers.ts (262 TS LOC).
 //
 // This is a prompt command that guides the LLM through a multi-phase process:
 //   Phase 1: Auto-detection of project type, stack, and existing tools
@@ -13,7 +13,7 @@
 //   - CLI (terminal/Tmux testing)
 //   - API (HTTP endpoint testing)
 //
-// Verifier skills are written to .neomclaw/skills/<verifier-name>/SKILL.md and
+// Verifier skills are written to .neomage/skills/<verifier-name>/SKILL.md and
 // are automatically discovered by the Verify agent via "verifier" in the
 // folder name.
 
@@ -217,7 +217,7 @@ String _titleCase(String input) {
 const List<String> knownBrowserAutomationServers = [
   'playwright',
   'chrome-devtools',
-  'neom-claw-chrome',
+  'neomage-chrome',
   'browser-use',
   'puppeteer',
 ];
@@ -292,7 +292,7 @@ const Map<String, String> apiFrameworkIndicators = {
 ///   - CLI: terminal-based testing with Tmux sessions
 ///   - API: HTTP endpoint testing with curl/httpie
 ///
-/// Skills are created at `.neomclaw/skills/<verifier-name>/SKILL.md` and are
+/// Skills are created at `.neomage/skills/<verifier-name>/SKILL.md` and are
 /// automatically discovered by the Verify agent when the folder name contains
 /// "verifier" (case-insensitive).
 class InitVerifiersCommand extends PromptCommand {
@@ -380,7 +380,7 @@ class InitVerifiersCommand extends PromptCommand {
         '   - Check MCP configuration (.mcp.json) for browser automation tools:\n'
         '     - Playwright MCP server\n'
         '     - Chrome DevTools MCP server\n'
-        '     - NeomClaw Chrome Extension MCP (browser-use via Claude\'s Chrome extension)\n'
+        '     - Neomage Chrome Extension MCP (browser-use via Claude\'s Chrome extension)\n'
         '   - For Python projects, check for playwright, pytest-playwright\n'
         '\n'
         '## Phase 2: Verification Tool Setup\n'
@@ -404,7 +404,7 @@ class InitVerifiersCommand extends PromptCommand {
         '     - **Playwright** (Recommended) - Full browser automation library, works '
         'headless, great for CI\n'
         '     - **Chrome DevTools MCP** - Uses Chrome DevTools Protocol via MCP\n'
-        '     - **NeomClaw Chrome Extension** - Uses the Claude Chrome extension for '
+        '     - **Neomage Chrome Extension** - Uses the Claude Chrome extension for '
         'browser interaction (requires the extension installed in Chrome)\n'
         '     - **None** - Skip browser automation (will use basic HTTP checks only)\n'
         '\n'
@@ -415,10 +415,10 @@ class InitVerifiersCommand extends PromptCommand {
         '   - For pnpm: `pnpm add -D @playwright/test && pnpm exec playwright install`\n'
         '   - For bun: `bun add -D @playwright/test && bun playwright install`\n'
         '\n'
-        '4. **If user chooses Chrome DevTools MCP or NeomClaw Chrome Extension**:\n'
+        '4. **If user chooses Chrome DevTools MCP or Neomage Chrome Extension**:\n'
         '   - These require MCP server configuration rather than package installation\n'
         '   - Ask if they want you to add the MCP server configuration to .mcp.json\n'
-        '   - For NeomClaw Chrome Extension, inform them they need the extension installed '
+        '   - For Neomage Chrome Extension, inform them they need the extension installed '
         'from the Chrome Web Store\n'
         '\n'
         '5. **MCP Server Setup** (if applicable):\n'
@@ -493,11 +493,11 @@ class InitVerifiersCommand extends PromptCommand {
         '\n'
         '## Phase 4: Generate Verifier Skill\n'
         '\n'
-        '**All verifier skills are created in the project root\'s `.neomclaw/skills/` '
-        'directory.** This ensures they are automatically loaded when NeomClaw runs in '
+        '**All verifier skills are created in the project root\'s `.neomage/skills/` '
+        'directory.** This ensures they are automatically loaded when Neomage runs in '
         'the project.\n'
         '\n'
-        'Write the skill file to `.neomclaw/skills/<verifier-name>/SKILL.md`.\n'
+        'Write the skill file to `.neomage/skills/<verifier-name>/SKILL.md`.\n'
         '\n'
         '### Skill Template Structure\n'
         '\n'
@@ -584,7 +584,7 @@ class InitVerifiersCommand extends PromptCommand {
         '## Phase 5: Confirm Creation\n'
         '\n'
         'After writing the skill file(s), inform the user:\n'
-        '1. Where each skill was created (always in `.neomclaw/skills/`)\n'
+        '1. Where each skill was created (always in `.neomage/skills/`)\n'
         '2. How the Verify agent will discover them -- the folder name must contain '
         '"verifier" (case-insensitive) for automatic discovery\n'
         '3. That they can edit the skills to customize them\n'

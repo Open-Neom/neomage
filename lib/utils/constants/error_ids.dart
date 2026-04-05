@@ -1,4 +1,4 @@
-// Error IDs for tracking error sources — ported from NeomClaw src/constants/errorIds.ts.
+// Error IDs for tracking error sources — ported from Neomage src/constants/errorIds.ts.
 // These IDs help trace which logError() call generated an error.
 // Each category reserves a numeric range for future expansion.
 

@@ -1,10 +1,10 @@
-// Platform bridge — port of neom_claw platform-specific abstractions.
+// Platform bridge — port of neomage platform-specific abstractions.
 // Provides unified API across desktop, mobile, web, and CLI.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// Supported platforms.
-enum ClawPlatform { macOS, linux, windows, android, iOS, web, cli }
+enum NeomagePlatform { macOS, linux, windows, android, iOS, web, cli }
 
 /// Platform capabilities — what the current platform supports.
 class PlatformCapabilities {
@@ -81,7 +81,7 @@ class PlatformCapabilities {
 
 /// Platform bridge — detects current platform and provides capabilities.
 class PlatformBridge {
-  late final ClawPlatform platform;
+  late final NeomagePlatform platform;
   late final PlatformCapabilities capabilities;
   final Map<String, String> _environment;
   final String _homeDir;
@@ -115,7 +115,7 @@ class PlatformBridge {
   }
 
   /// Create for a specific platform (testing).
-  factory PlatformBridge.forPlatform(ClawPlatform platform) {
+  factory PlatformBridge.forPlatform(NeomagePlatform platform) {
     return PlatformBridge._(
       platform: platform,
       capabilities: _capabilitiesFor(platform),
@@ -131,7 +131,7 @@ class PlatformBridge {
   /// Home directory.
   String get homeDir => _homeDir;
 
-  /// Config directory (~/.neomclaw).
+  /// Config directory (~/.neomage).
   String get configDir => _configDir;
 
   /// Environment variables.
@@ -142,16 +142,16 @@ class PlatformBridge {
 
   /// Whether running on desktop.
   bool get isDesktop =>
-      platform == ClawPlatform.macOS ||
-      platform == ClawPlatform.linux ||
-      platform == ClawPlatform.windows;
+      platform == NeomagePlatform.macOS ||
+      platform == NeomagePlatform.linux ||
+      platform == NeomagePlatform.windows;
 
   /// Whether running on mobile.
   bool get isMobile =>
-      platform == ClawPlatform.android || platform == ClawPlatform.iOS;
+      platform == NeomagePlatform.android || platform == NeomagePlatform.iOS;
 
   /// Whether running in CLI/headless mode.
-  bool get isCli => platform == ClawPlatform.cli;
+  bool get isCli => platform == NeomagePlatform.cli;
 
   /// Whether the tool system is available (needs process spawning).
   bool get canRunTools => capabilities.hasProcessSpawn;
@@ -175,43 +175,43 @@ class PlatformBridge {
 
   /// Get the shell for the current platform.
   String get defaultShell {
-    if (platform == ClawPlatform.windows) {
+    if (platform == NeomagePlatform.windows) {
       return _environment['COMSPEC'] ?? 'cmd.exe';
     }
     return _environment['SHELL'] ?? '/bin/sh';
   }
 
   /// Path separator for the current platform.
-  String get pathSeparator => platform == ClawPlatform.windows ? '\\' : '/';
+  String get pathSeparator => platform == NeomagePlatform.windows ? '\\' : '/';
 
   /// Get platform-appropriate temp directory.
   String get tempDir => Directory.systemTemp.path;
 
   // ── Private ──
 
-  static ClawPlatform _detectPlatform() {
+  static NeomagePlatform _detectPlatform() {
     // Check for CLI mode via env var
-    if (Platform.environment.containsKey('CLAW_CLI_MODE')) {
-      return ClawPlatform.cli;
+    if (Platform.environment.containsKey('MAGE_CLI_MODE')) {
+      return NeomagePlatform.cli;
     }
 
-    if (Platform.isMacOS) return ClawPlatform.macOS;
-    if (Platform.isLinux) return ClawPlatform.linux;
-    if (Platform.isWindows) return ClawPlatform.windows;
-    if (Platform.isAndroid) return ClawPlatform.android;
-    if (Platform.isIOS) return ClawPlatform.iOS;
+    if (Platform.isMacOS) return NeomagePlatform.macOS;
+    if (Platform.isLinux) return NeomagePlatform.linux;
+    if (Platform.isWindows) return NeomagePlatform.windows;
+    if (Platform.isAndroid) return NeomagePlatform.android;
+    if (Platform.isIOS) return NeomagePlatform.iOS;
 
-    return ClawPlatform.cli; // Fallback
+    return NeomagePlatform.cli; // Fallback
   }
 
-  static PlatformCapabilities _capabilitiesFor(ClawPlatform platform) {
+  static PlatformCapabilities _capabilitiesFor(NeomagePlatform platform) {
     return switch (platform) {
-      ClawPlatform.macOS ||
-      ClawPlatform.linux ||
-      ClawPlatform.windows => PlatformCapabilities.desktop(),
-      ClawPlatform.android || ClawPlatform.iOS => PlatformCapabilities.mobile(),
-      ClawPlatform.web => PlatformCapabilities.web(),
-      ClawPlatform.cli => PlatformCapabilities.cli(),
+      NeomagePlatform.macOS ||
+      NeomagePlatform.linux ||
+      NeomagePlatform.windows => PlatformCapabilities.desktop(),
+      NeomagePlatform.android || NeomagePlatform.iOS => PlatformCapabilities.mobile(),
+      NeomagePlatform.web => PlatformCapabilities.web(),
+      NeomagePlatform.cli => PlatformCapabilities.cli(),
     };
   }
 
@@ -221,8 +221,8 @@ class PlatformBridge {
 
   static String _resolveConfigDir(Map<String, String> env, String home) {
     final xdg = env['XDG_CONFIG_HOME'];
-    if (xdg != null) return '$xdg/neomclaw';
-    return '/.neomclaw';
+    if (xdg != null) return '$xdg/neomage';
+    return '/.neomage';
   }
 }
 
@@ -237,7 +237,7 @@ class PlatformPaths {
 
   /// Project-level settings.
   String projectSettings(String projectDir) =>
-      '$projectDir/.neomclaw/settings.json';
+      '$projectDir/.neomage/settings.json';
 
   /// MCP config file.
   String get mcpConfigFile => '${bridge.configDir}/.mcp.json';
@@ -261,7 +261,7 @@ class PlatformPaths {
   String get analyticsDir => '${bridge.configDir}/analytics';
 
   /// Log file.
-  String get logFile => '${bridge.configDir}/claw.log';
+  String get logFile => '${bridge.configDir}/neomage.log';
 
   /// Credentials file.
   String get credentialsFile => '${bridge.configDir}/credentials.json';

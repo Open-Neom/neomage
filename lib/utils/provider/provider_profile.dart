@@ -1,7 +1,7 @@
 // Provider profile management — port of:
-//   neom_claw/src/utils/providerProfile.ts (314 LOC)
-//   neom_claw/src/utils/providerRecommendation.ts (317 LOC)
-//   neom_claw/src/utils/api.ts (718 LOC)
+//   neomage/src/utils/providerProfile.ts (314 LOC)
+//   neomage/src/utils/providerRecommendation.ts (317 LOC)
+//   neomage/src/utils/api.ts (718 LOC)
 //
 // Provider profile building for OpenAI/Ollama/Codex/Gemini,
 // Ollama model recommendation and ranking, API schema generation,
@@ -284,8 +284,8 @@ Future<Map<String, String>> buildLaunchEnv({
 
   // ── Gemini ──
   if (profile == ProviderProfile.gemini) {
-    env['NEOMCLAW_USE_GEMINI'] = '1';
-    env.remove('NEOMCLAW_USE_OPENAI');
+    env['MAGE_USE_GEMINI'] = '1';
+    env.remove('MAGE_USE_OPENAI');
     env['GEMINI_MODEL'] =
         env['GEMINI_MODEL'] ?? persistedEnv.geminiModel ?? _defaultGeminiModel;
     env['GEMINI_BASE_URL'] =
@@ -311,9 +311,9 @@ Future<Map<String, String>> buildLaunchEnv({
   }
 
   // ── OpenAI-compatible profiles ──
-  env['NEOMCLAW_USE_OPENAI'] = '1';
+  env['MAGE_USE_OPENAI'] = '1';
   _removeKeys(env, [
-    'NEOMCLAW_USE_GEMINI',
+    'MAGE_USE_GEMINI',
     'GEMINI_API_KEY',
     'GEMINI_MODEL',
     'GEMINI_BASE_URL',

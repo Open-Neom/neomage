@@ -1,4 +1,4 @@
-// ConfigTool — port of neom_claw/src/tools/ConfigTool/.
+// ConfigTool — port of neomage/src/tools/ConfigTool/.
 // Get and set application settings: theme, model, permissions, verbose mode,
 // with validation, type coercion, supported-settings registry, and AppState sync.
 
@@ -27,10 +27,10 @@ enum SettingType {
 
 /// Storage source for a configuration setting.
 enum SettingSource {
-  /// Stored in global config file (~/.neomclaw/config.json).
+  /// Stored in global config file (~/.neomage/config.json).
   global,
 
-  /// Stored in project settings (.neomclaw/settings.json).
+  /// Stored in project settings (.neomage/settings.json).
   settings,
 }
 

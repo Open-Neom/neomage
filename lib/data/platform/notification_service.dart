@@ -1,4 +1,4 @@
-// Notification service — port of neom_claw notification system.
+// Notification service — port of neomage notification system.
 // Platform-agnostic notifications with desktop/mobile/web support.
 
 import 'dart:async';
@@ -20,7 +20,7 @@ class NotificationAction {
 }
 
 /// A notification to display.
-class ClawNotification {
+class NeomageNotification {
   final String id;
   final String title;
   final String body;
@@ -31,7 +31,7 @@ class ClawNotification {
   final String? category;
   final Map<String, dynamic>? data;
 
-  ClawNotification({
+  NeomageNotification({
     required this.id,
     required this.title,
     required this.body,
@@ -66,19 +66,19 @@ class NotificationActionEvent extends NotificationEvent {
 abstract class NotificationBackend {
   Future<bool> isSupported();
   Future<bool> requestPermission();
-  Future<void> show(ClawNotification notification);
+  Future<void> show(NeomageNotification notification);
   Future<void> dismiss(String notificationId);
   Future<void> dismissAll();
 }
 
 /// In-app notification backend (always available).
 class InAppNotificationBackend implements NotificationBackend {
-  final StreamController<ClawNotification> _notifications =
+  final StreamController<NeomageNotification> _notifications =
       StreamController.broadcast();
-  final Map<String, ClawNotification> _active = {};
+  final Map<String, NeomageNotification> _active = {};
 
-  Stream<ClawNotification> get notifications => _notifications.stream;
-  List<ClawNotification> get activeNotifications => _active.values.toList();
+  Stream<NeomageNotification> get notifications => _notifications.stream;
+  List<NeomageNotification> get activeNotifications => _active.values.toList();
 
   @override
   Future<bool> isSupported() async => true;
@@ -87,7 +87,7 @@ class InAppNotificationBackend implements NotificationBackend {
   Future<bool> requestPermission() async => true;
 
   @override
-  Future<void> show(ClawNotification notification) async {
+  Future<void> show(NeomageNotification notification) async {
     _active[notification.id] = notification;
     _notifications.add(notification);
 
@@ -118,7 +118,7 @@ class NotificationService {
   final List<NotificationBackend> _backends;
   final StreamController<NotificationEvent> _events =
       StreamController.broadcast();
-  final List<ClawNotification> _history = [];
+  final List<NeomageNotification> _history = [];
   static const _maxHistory = 100;
 
   NotificationService({List<NotificationBackend>? backends})
@@ -128,7 +128,7 @@ class NotificationService {
   Stream<NotificationEvent> get events => _events.stream;
 
   /// Notification history.
-  List<ClawNotification> get history => List.unmodifiable(_history);
+  List<NeomageNotification> get history => List.unmodifiable(_history);
 
   /// Show a notification.
   Future<void> notify({
@@ -139,7 +139,7 @@ class NotificationService {
     Duration? autoHide,
     String? category,
   }) async {
-    final notification = ClawNotification(
+    final notification = NeomageNotification(
       id: 'notif_${DateTime.now().millisecondsSinceEpoch}',
       title: title,
       body: body,

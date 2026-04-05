@@ -1,7 +1,7 @@
-// Process user input — port of neom_claw/src/utils/processUserInput/.
+// Process user input — port of neomage/src/utils/processUserInput/.
 // Input parsing, @-mentions, file references, command detection, context extraction.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ---------------------------------------------------------------------------
 // Segment types

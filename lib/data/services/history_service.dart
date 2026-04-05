@@ -1,10 +1,10 @@
-// HistoryService — port of neom_claw/src/services/SessionMemory/ +
+// HistoryService — port of neomage/src/services/SessionMemory/ +
 // src/assistant/sessionHistory.ts.
 // Manages conversation history, search, replay, and analytics.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ─── Types ───
 
@@ -390,7 +390,7 @@ class HistoryService {
         Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '.';
-    return '$home/.claw/history';
+    return '$home/.neomage/history';
   }
 
   /// Entry stream for new entries.

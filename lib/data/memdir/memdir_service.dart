@@ -1,8 +1,8 @@
-// Memdir service — port of neom_claw/src/memdir/memdir.ts.
+// Memdir service — port of neomage/src/memdir/memdir.ts.
 // Core orchestration for persistent memory: loading, building prompts,
 // and managing MEMORY.md entrypoint content.
 
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'memdir_paths.dart';
 import 'memory_scan.dart';

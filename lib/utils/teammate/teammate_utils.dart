@@ -1,11 +1,11 @@
-// Teammate utilities — port of neom_claw teammate.ts + teammateMailbox.ts +
+// Teammate utilities — port of neomage teammate.ts + teammateMailbox.ts +
 // teammateContext.ts + teamDiscovery.ts + teamMemoryOps.ts.
 // Agent swarm coordination: identity resolution, mailbox messaging,
 // in-process teammate context, team discovery, and team memory operations.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -192,7 +192,7 @@ bool isPlanModeRequired() {
   final inProcessCtx = getTeammateContext();
   if (inProcessCtx != null) return inProcessCtx.planModeRequired;
   if (_dynamicTeamContext != null) return _dynamicTeamContext!.planModeRequired;
-  return _isEnvTruthy(Platform.environment['NEOMCLAW_PLAN_MODE_REQUIRED']);
+  return _isEnvTruthy(Platform.environment['MAGE_PLAN_MODE_REQUIRED']);
 }
 
 /// Check if this session is a team lead.
@@ -378,8 +378,8 @@ String _sanitizePathComponent(String component) {
 
 /// Get the teams directory from env or default.
 String _getTeamsDir() {
-  return Platform.environment['NEOMCLAW_TEAMS_DIR'] ??
-      p.join(Platform.environment['HOME'] ?? '.', '.neomclaw', 'teams');
+  return Platform.environment['MAGE_TEAMS_DIR'] ??
+      p.join(Platform.environment['HOME'] ?? '.', '.neomage', 'teams');
 }
 
 /// Get the path to a teammate's inbox file.
@@ -1613,8 +1613,8 @@ Map<String, dynamic>? _readTeamFile(String teamName) {
 
 /// Checks if a path is a team memory file.
 bool isTeamMemFile(String path) {
-  // Team memory files live under .neomclaw/teams/<team>/memory/
-  return path.contains('.neomclaw/teams/') && path.contains('/memory/');
+  // Team memory files live under .neomage/teams/<team>/memory/
+  return path.contains('.neomage/teams/') && path.contains('/memory/');
 }
 
 /// Check if a search tool use targets team memory files.

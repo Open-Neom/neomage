@@ -12,7 +12,7 @@ import 'api_provider.dart';
 const _uuid = Uuid();
 
 /// OpenAI-compatible API shim — direct port of
-/// neom_claw/src/services/api/openaiShim.ts
+/// neomage/src/services/api/openaiShim.ts
 ///
 /// Translates Anthropic-format messages into OpenAI chat completion requests
 /// and streams back events in the Anthropic streaming format so the rest

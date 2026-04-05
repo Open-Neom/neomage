@@ -1,4 +1,4 @@
-// OAuth service — ported from NeomClaw src/services/oauth/.
+// OAuth service — ported from Neomage src/services/oauth/.
 // PKCE authorization code flow for Anthropic's OAuth endpoints.
 
 import 'dart:convert';
@@ -23,16 +23,16 @@ class OAuthConfig {
     required this.scopes,
   });
 
-  /// Production NeomClaw.ai OAuth config.
-  static const OAuthConfig neomClawAi = OAuthConfig(
-    authorizeUrl: 'https://neomclaw.com/cai/oauth/authorize',
-    tokenUrl: 'https://platform.neomclaw.com/v1/oauth/token',
+  /// Production Neomage.ai OAuth config.
+  static const OAuthConfig neomageAi = OAuthConfig(
+    authorizeUrl: 'https://neomage.com/cai/oauth/authorize',
+    tokenUrl: 'https://platform.neomage.com/v1/oauth/token',
     clientId: '9d1c250a-e61b-44d9-88ed-5944d1962f5e',
-    redirectUrl: 'https://platform.neomclaw.com/oauth/code/callback',
+    redirectUrl: 'https://platform.neomage.com/oauth/code/callback',
     scopes: [
       'user:profile',
       'user:inference',
-      'user:sessions:neomclaw',
+      'user:sessions:neomage',
       'user:mcp_servers',
       'user:file_upload',
     ],
@@ -40,10 +40,10 @@ class OAuthConfig {
 
   /// Production Console OAuth config.
   static const OAuthConfig console = OAuthConfig(
-    authorizeUrl: 'https://platform.neomclaw.com/oauth/authorize',
-    tokenUrl: 'https://platform.neomclaw.com/v1/oauth/token',
+    authorizeUrl: 'https://platform.neomage.com/oauth/authorize',
+    tokenUrl: 'https://platform.neomage.com/v1/oauth/token',
     clientId: '9d1c250a-e61b-44d9-88ed-5944d1962f5e',
-    redirectUrl: 'https://platform.neomclaw.com/oauth/code/callback',
+    redirectUrl: 'https://platform.neomage.com/oauth/code/callback',
     scopes: ['org:create_api_key', 'user:profile'],
   );
 }

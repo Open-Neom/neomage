@@ -1,4 +1,4 @@
-// SessionsWebSocket — ported from openclaude src/remote/SessionsWebSocket.ts.
+// SessionsWebSocket — ported from neomagent src/remote/SessionsWebSocket.ts.
 // WebSocket client for subscribing to CCR sessions with automatic reconnection,
 // ping keep-alive, and permanent/transient close-code handling.
 

@@ -1,4 +1,4 @@
-// Context compaction service — ported from openclaude src/services/compact/compact.ts.
+// Context compaction service — ported from neomagent src/services/compact/compact.ts.
 // Three-phase system: microcompact → auto-compact → full compaction.
 // Supports three strategies: auto, manual, and micro.
 

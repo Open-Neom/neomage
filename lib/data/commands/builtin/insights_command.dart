@@ -1,12 +1,12 @@
-// /insights command — generates usage insights report analyzing NeomClaw sessions.
-// Faithful port of neom_claw/src/commands/insights.ts (3200 TS LOC).
+// /insights command — generates usage insights report analyzing Neomage sessions.
+// Faithful port of neomage/src/commands/insights.ts (3200 TS LOC).
 //
 // Covers: session scanning, tool/language stats extraction, facet extraction
 // via model API, multi-clauding detection, data aggregation, parallel insight
 // generation, HTML report building, and the command definition itself.
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -68,7 +68,7 @@ const Map<String, String> labelMap = {
   'wrong_approach': 'Wrong Approach',
   'buggy_code': 'Buggy Code',
   'user_rejected_action': 'User Rejected Action',
-  'neomclaw_got_blocked': 'NeomClaw Got Blocked',
+  'neomage_got_blocked': 'Neomage Got Blocked',
   'user_stopped_early': 'User Stopped Early',
   'wrong_file_or_location': 'Wrong File/Location',
   'excessive_changes': 'Excessive Changes',
@@ -125,13 +125,13 @@ const List<String> outcomeOrder = [
 
 /// Prompt for facet extraction from sessions.
 const String facetExtractionPrompt =
-    '''Analyze this NeomClaw session and extract structured facets.
+    '''Analyze this Neomage session and extract structured facets.
 
 CRITICAL GUIDELINES:
 
 1. **goal_categories**: Count ONLY what the USER explicitly asked for.
-   - DO NOT count NeomClaw's autonomous codebase exploration
-   - DO NOT count work NeomClaw decided to do on its own
+   - DO NOT count Neomage's autonomous codebase exploration
+   - DO NOT count work Neomage decided to do on its own
    - ONLY count when user says "can you...", "please...", "I need...", "let's..."
 
 2. **user_satisfaction_counts**: Base ONLY on explicit user signals.
@@ -142,7 +142,7 @@ CRITICAL GUIDELINES:
    - "this is broken", "I give up" → frustrated
 
 3. **friction_counts**: Be specific about what went wrong.
-   - misunderstood_request: NeomClaw interpreted incorrectly
+   - misunderstood_request: Neomage interpreted incorrectly
    - wrong_approach: Right goal, wrong solution method
    - buggy_code: Code didn't work correctly
    - user_rejected_action: User said no/stop to a tool call
@@ -289,13 +289,13 @@ class SessionFacets {
   final Map<String, int> goalCategories;
   final String outcome;
   final Map<String, int> userSatisfactionCounts;
-  final String neomClawHelpfulness;
+  final String neomageHelpfulness;
   final String sessionType;
   final Map<String, int> frictionCounts;
   final String frictionDetail;
   final String primarySuccess;
   final String briefSummary;
-  final List<String>? userInstructionsToNeomClaw;
+  final List<String>? userInstructionsToNeomage;
 
   const SessionFacets({
     required this.sessionId,
@@ -303,13 +303,13 @@ class SessionFacets {
     required this.goalCategories,
     required this.outcome,
     required this.userSatisfactionCounts,
-    required this.neomClawHelpfulness,
+    required this.neomageHelpfulness,
     required this.sessionType,
     required this.frictionCounts,
     required this.frictionDetail,
     required this.primarySuccess,
     required this.briefSummary,
-    this.userInstructionsToNeomClaw,
+    this.userInstructionsToNeomage,
   });
 
   factory SessionFacets.fromJson(
@@ -322,14 +322,14 @@ class SessionFacets {
       goalCategories: _castMapInt(json['goal_categories']),
       outcome: json['outcome'] as String? ?? '',
       userSatisfactionCounts: _castMapInt(json['user_satisfaction_counts']),
-      neomClawHelpfulness: json['claude_helpfulness'] as String? ?? '',
+      neomageHelpfulness: json['claude_helpfulness'] as String? ?? '',
       sessionType: json['session_type'] as String? ?? '',
       frictionCounts: _castMapInt(json['friction_counts']),
       frictionDetail: json['friction_detail'] as String? ?? '',
       primarySuccess: json['primary_success'] as String? ?? 'none',
       briefSummary: json['brief_summary'] as String? ?? '',
-      userInstructionsToNeomClaw: _castListString(
-        json['user_instructions_to_neomclaw'],
+      userInstructionsToNeomage: _castListString(
+        json['user_instructions_to_neomage'],
       ),
     );
   }
@@ -340,14 +340,14 @@ class SessionFacets {
     'goal_categories': goalCategories,
     'outcome': outcome,
     'user_satisfaction_counts': userSatisfactionCounts,
-    'claude_helpfulness': neomClawHelpfulness,
+    'claude_helpfulness': neomageHelpfulness,
     'session_type': sessionType,
     'friction_counts': frictionCounts,
     'friction_detail': frictionDetail,
     'primary_success': primarySuccess,
     'brief_summary': briefSummary,
-    if (userInstructionsToNeomClaw != null)
-      'user_instructions_to_neomclaw': userInstructionsToNeomClaw,
+    if (userInstructionsToNeomage != null)
+      'user_instructions_to_neomage': userInstructionsToNeomage,
   };
 
   /// Validate that a parsed JSON object has the required fields.
@@ -827,7 +827,7 @@ ToolStatsResult extractToolStats(List<Map<String, dynamic>> messages) {
 // Multi-Clauding Detection
 // ============================================================================
 
-/// Detect multi-clawing (using multiple NeomClaw sessions concurrently).
+/// Detect multi-session (using multiple Neomage sessions concurrently).
 ///
 /// Uses a sliding window to find the pattern: session1 -> session2 -> session1
 /// within a 30-minute window.
@@ -851,8 +851,8 @@ detectMultiClauding(
 
   allMessages.sort((a, b) => a.ts.compareTo(b.ts));
 
-  final multiNeomClawSessionPairs = <String>{};
-  final messagesDuringMultiNeomClaw = <String>{};
+  final multiNeomageSessionPairs = <String>{};
+  final messagesDuringMultiNeomage = <String>{};
 
   int windowStart = 0;
   final sessionLastIndex = <String, int>{};
@@ -877,12 +877,12 @@ detectMultiClauding(
         final between = allMessages[j];
         if (between.sessionId != msg.sessionId) {
           final pair = [msg.sessionId, between.sessionId]..sort();
-          multiNeomClawSessionPairs.add(pair.join(':'));
-          messagesDuringMultiNeomClaw.add(
+          multiNeomageSessionPairs.add(pair.join(':'));
+          messagesDuringMultiNeomage.add(
             '${allMessages[prevIndex].ts}:${msg.sessionId}',
           );
-          messagesDuringMultiNeomClaw.add('${between.ts}:${between.sessionId}');
-          messagesDuringMultiNeomClaw.add('${msg.ts}:${msg.sessionId}');
+          messagesDuringMultiNeomage.add('${between.ts}:${between.sessionId}');
+          messagesDuringMultiNeomage.add('${msg.ts}:${msg.sessionId}');
           break;
         }
       }
@@ -892,7 +892,7 @@ detectMultiClauding(
   }
 
   final sessionsWithOverlaps = <String>{};
-  for (final pair in multiNeomClawSessionPairs) {
+  for (final pair in multiNeomageSessionPairs) {
     final parts = pair.split(':');
     if (parts.length == 2) {
       sessionsWithOverlaps.add(parts[0]);
@@ -901,9 +901,9 @@ detectMultiClauding(
   }
 
   return (
-    overlapEvents: multiNeomClawSessionPairs.length,
+    overlapEvents: multiNeomageSessionPairs.length,
     sessionsInvolved: sessionsWithOverlaps.length,
-    userMessagesDuring: messagesDuringMultiNeomClaw.length,
+    userMessagesDuring: messagesDuringMultiNeomage.length,
   );
 }
 
@@ -1009,8 +1009,8 @@ AggregatedData aggregateData(
         }
       }
 
-      result.helpfulness[sessionFacets.neomClawHelpfulness] =
-          (result.helpfulness[sessionFacets.neomClawHelpfulness] ?? 0) + 1;
+      result.helpfulness[sessionFacets.neomageHelpfulness] =
+          (result.helpfulness[sessionFacets.neomageHelpfulness] ?? 0) + 1;
 
       result.sessionTypes[sessionFacets.sessionType] =
           (result.sessionTypes[sessionFacets.sessionType] ?? 0) + 1;
@@ -1095,7 +1095,7 @@ List<InsightSection> buildInsightSections() {
   return [
     const InsightSection(
       name: 'project_areas',
-      prompt: '''Analyze this NeomClaw usage data and identify project areas.
+      prompt: '''Analyze this Neomage usage data and identify project areas.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1109,18 +1109,18 @@ Include 4-5 areas. Skip internal CC operations.''',
     const InsightSection(
       name: 'interaction_style',
       prompt:
-          '''Analyze this NeomClaw usage data and describe the user's interaction style.
+          '''Analyze this Neomage usage data and describe the user's interaction style.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
-  "narrative": "2-3 paragraphs analyzing HOW the user interacts with NeomClaw. Use second person 'you'. Use **bold** for key insights.",
+  "narrative": "2-3 paragraphs analyzing HOW the user interacts with Neomage. Use second person 'you'. Use **bold** for key insights.",
   "key_pattern": "One sentence summary of most distinctive interaction style"
 }''',
     ),
     const InsightSection(
       name: 'what_works',
       prompt:
-          '''Analyze this NeomClaw usage data and identify what's working well for this user. Use second person ("you").
+          '''Analyze this Neomage usage data and identify what's working well for this user. Use second person ("you").
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1135,7 +1135,7 @@ Include 3 impressive workflows.''',
     const InsightSection(
       name: 'friction_analysis',
       prompt:
-          '''Analyze this NeomClaw usage data and identify friction points for this user. Use second person ("you").
+          '''Analyze this Neomage usage data and identify friction points for this user. Use second person ("you").
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1149,12 +1149,12 @@ Include 3 friction categories with 2 examples each.''',
     ),
     const InsightSection(
       name: 'suggestions',
-      prompt: '''Analyze this NeomClaw usage data and suggest improvements.
+      prompt: '''Analyze this Neomage usage data and suggest improvements.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
-  "neomclaw_md_additions": [
-    {"addition": "A specific line to add to NEOMCLAW.md", "why": "1 sentence explaining why", "prompt_scaffold": "Instructions for where to add"}
+  "neomage_md_additions": [
+    {"addition": "A specific line to add to NEOMAGE.md", "why": "1 sentence explaining why", "prompt_scaffold": "Instructions for where to add"}
   ],
   "features_to_try": [
     {"feature": "Feature name", "one_liner": "What it does", "why_for_you": "Why this would help", "example_code": "Command to copy"}
@@ -1169,7 +1169,7 @@ Include 2-3 items for each category.''',
     const InsightSection(
       name: 'on_the_horizon',
       prompt:
-          '''Analyze this NeomClaw usage data and identify future opportunities.
+          '''Analyze this Neomage usage data and identify future opportunities.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1183,7 +1183,7 @@ Include 3 opportunities. Think BIG.''',
     ),
     const InsightSection(
       name: 'fun_ending',
-      prompt: '''Analyze this NeomClaw usage data and find a memorable moment.
+      prompt: '''Analyze this Neomage usage data and find a memorable moment.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1201,7 +1201,7 @@ RESPOND WITH ONLY A VALID JSON OBJECT:
 /// Get the usage data directory path.
 String getDataDir() {
   final home = Platform.environment['HOME'] ?? '';
-  return p.join(home, '.neomclaw', 'usage-data');
+  return p.join(home, '.neomage', 'usage-data');
 }
 
 /// Get the facets cache directory path.
@@ -1213,7 +1213,7 @@ String getSessionMetaDir() => p.join(getDataDir(), 'session-meta');
 /// Get the projects directory path.
 String getProjectsDir() {
   final home = Platform.environment['HOME'] ?? '';
-  return p.join(home, '.neomclaw', 'projects');
+  return p.join(home, '.neomage', 'projects');
 }
 
 // ============================================================================
@@ -1339,14 +1339,14 @@ bool isMinimalSession(String sessionId, Map<String, SessionFacets> facets) {
 // Command Definition
 // ============================================================================
 
-/// The /insights command — generates a usage report analyzing NeomClaw sessions.
+/// The /insights command — generates a usage report analyzing Neomage sessions.
 class InsightsCommand extends PromptCommand {
   @override
   String get name => 'insights';
 
   @override
   String get description =>
-      'Generate a report analyzing your NeomClaw sessions';
+      'Generate a report analyzing your Neomage sessions';
 
   @override
   String get progressMessage => 'analyzing your sessions';
@@ -1429,7 +1429,7 @@ class InsightsCommand extends PromptCommand {
     return [
       TextBlock(
         'The user just ran /insights to generate a usage report analyzing '
-        'their NeomClaw sessions.\n\n'
+        'their Neomage sessions.\n\n'
         'Stats: $stats\n'
         'Date range: ${aggregated.dateRange.start} to ${aggregated.dateRange.end}\n'
         'Sessions with facets: ${aggregated.sessionsWithFacets}\n'

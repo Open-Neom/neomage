@@ -1,4 +1,4 @@
-// Auto-dream service — port of neom_claw/src/services/autoDream/.
+// Auto-dream service — port of neomage/src/services/autoDream/.
 // Background memory consolidation. Fires a /dream prompt as a forked
 // subagent when a time-gate passes AND enough sessions have accumulated.
 //
@@ -14,7 +14,7 @@
 //   - consolidationPrompt.ts (prompt builder)
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:sint/sint.dart';
 

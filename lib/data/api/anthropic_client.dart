@@ -11,7 +11,7 @@ import 'errors.dart';
 import 'retry.dart';
 
 /// Native Anthropic Messages API client with streaming support.
-/// Direct port of neom_claw/src/services/api/claude.ts core functionality.
+/// Direct port of neomage/src/services/api/claude.ts core functionality.
 /// Includes retry logic with exponential backoff for transient errors.
 class AnthropicClient extends ApiProvider {
   @override

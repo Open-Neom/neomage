@@ -1,10 +1,10 @@
-// Fast mode — port of neom_claw/src/utils/fastMode.ts.
+// Fast mode — port of neomage/src/utils/fastMode.ts.
 // Fast mode configuration, availability checks, runtime state management,
 // cooldown handling, org-level status prefetch, and overage rejection.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -262,7 +262,7 @@ class FastModeManager {
   /// Check if fast mode is enabled (not disabled by environment).
   bool get isFastModeEnabled {
     if (_config.getApiProvider() != 'firstParty') return false;
-    return !_config.isEnvTruthy('NEOMCLAW_DISABLE_FAST_MODE');
+    return !_config.isEnvTruthy('MAGE_DISABLE_FAST_MODE');
   }
 
   /// Check if fast mode is available (enabled + no blocking reason).
@@ -316,7 +316,7 @@ class FastModeManager {
       final disabled = _orgStatus as FastModeOrgDisabled;
       if (disabled.reason == FastModeDisabledReason.networkError ||
           disabled.reason == FastModeDisabledReason.unknown) {
-        if (_config.isEnvTruthy('NEOMCLAW_SKIP_FAST_MODE_NETWORK_ERRORS')) {
+        if (_config.isEnvTruthy('MAGE_SKIP_FAST_MODE_NETWORK_ERRORS')) {
           return null;
         }
       }
@@ -585,7 +585,7 @@ class FastModeManager {
     String? apiKey,
     Map<String, String>? oauthTokens,
   ) async {
-    final endpoint = '${_config.getBaseApiUrl()}/api/neomclaw_penguin_mode';
+    final endpoint = '${_config.getBaseApiUrl()}/api/neomage_penguin_mode';
     final accessToken = oauthTokens?['accessToken'];
     final hasOAuth = accessToken != null && _config.hasProfileScope();
 

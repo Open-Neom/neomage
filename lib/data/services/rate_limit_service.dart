@@ -1,8 +1,8 @@
-// Rate limit / policy limits service — port of neom_claw/src/services/policyLimits.
+// Rate limit / policy limits service — port of neomage/src/services/policyLimits.
 // Fetches and caches organization-level policy restrictions.
 
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:http/http.dart' as http;
 
@@ -110,7 +110,7 @@ class RateLimitService {
     final auth = apiKey ?? oauthToken;
     if (auth == null) return null;
 
-    final uri = Uri.parse('$baseUrl/api/neomclaw/policy_limits');
+    final uri = Uri.parse('$baseUrl/api/neomage/policy_limits');
     final headers = <String, String>{'Content-Type': 'application/json'};
     if (apiKey != null) {
       headers['x-api-key'] = apiKey!;

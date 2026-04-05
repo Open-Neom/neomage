@@ -1,11 +1,11 @@
 /// Types for text input handling, vim mode, and command queuing.
 ///
-/// Migrated from the OpenClaude TypeScript `types/textInputTypes.ts`.
+/// Migrated from the Neomage TypeScript `types/textInputTypes.ts`.
 library;
 
-import 'package:neom_claw/domain/models/ids.dart';
-import 'package:neom_claw/domain/models/message.dart';
-import 'package:neom_claw/domain/models/permissions.dart';
+import 'package:neomage/domain/models/ids.dart';
+import 'package:neomage/domain/models/message.dart';
+import 'package:neomage/domain/models/permissions.dart';
 
 // ---------------------------------------------------------------------------
 // Message origin

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:sint/sint.dart';
+
+import '../../utils/constants/neomage_translation_constants.dart';
 
 // ---------------------------------------------------------------------------
 // Data models
@@ -286,7 +289,7 @@ class _PlanModeViewState extends State<PlanModeView>
                 TextButton.icon(
                   onPressed: widget.onExitPlanMode,
                   icon: const Icon(Icons.close, size: 16),
-                  label: const Text('Exit Plan Mode'),
+                  label: Text(NeomageTranslationConstants.exitPlanMode.tr),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.white70,
                     textStyle: const TextStyle(fontSize: 12),
@@ -550,14 +553,14 @@ class _PlanModeViewState extends State<PlanModeView>
                     // Action buttons for active step
                     if (isActive) ...[
                       _ActionButton(
-                        label: 'Execute',
+                        label: NeomageTranslationConstants.execute.tr,
                         icon: Icons.play_arrow,
                         color: Colors.cyanAccent,
                         onTap: () => widget.onExecuteNext?.call(step),
                       ),
                       const SizedBox(width: 4),
                       _ActionButton(
-                        label: 'Skip',
+                        label: NeomageTranslationConstants.skip.tr,
                         icon: Icons.skip_next,
                         color: Colors.orange,
                         onTap: () => widget.onSkipStep?.call(step),

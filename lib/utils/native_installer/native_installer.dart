@@ -1,6 +1,6 @@
 /// Native Installer Implementation
 ///
-/// Faithful port of neom_claw/src/utils/nativeInstaller/*.ts
+/// Faithful port of neomage/src/utils/nativeInstaller/*.ts
 /// Covers: installer.ts, download.ts, pidLock.ts, packageManagers.ts
 ///
 /// Provides:
@@ -13,7 +13,7 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
@@ -33,7 +33,7 @@ const int lockStaleMs = 7 * 24 * 60 * 60 * 1000;
 
 /// GCS bucket URL for external binary downloads.
 const String gcsBucketUrl =
-    'https://storage.googleapis.com/neom-claw-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/neom-claw-releases';
+    'https://storage.googleapis.com/neomage-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/neomage-releases';
 
 /// Artifactory npm registry URL for internal binary downloads.
 const String artifactoryRegistryUrl =
@@ -342,9 +342,9 @@ bool _checkPidExists(int pid) {
   }
 }
 
-/// Validate that a running process is actually a NeomClaw process.
+/// Validate that a running process is actually a Neomage process.
 /// Helps mitigate PID reuse issues.
-bool _isNeomClawProcess(int pid, String expectedExecPath) {
+bool _isNeomageProcess(int pid, String expectedExecPath) {
   if (!isProcessRunning(pid)) return false;
   if (pid == pid) return true; // Current process always valid
 
@@ -352,7 +352,7 @@ bool _isNeomClawProcess(int pid, String expectedExecPath) {
     final result = Process.runSync('ps', ['-p', '$pid', '-o', 'command=']);
     if (result.exitCode != 0) return true; // Trust PID check if command fails
     final command = (result.stdout as String).toLowerCase();
-    return command.contains('neomclaw') ||
+    return command.contains('neomage') ||
         command.contains(expectedExecPath.toLowerCase());
   } catch (_) {
     return true; // Trust PID check on failure
@@ -379,7 +379,7 @@ bool isLockActive(String lockFilePath) {
   if (content == null) return false;
 
   if (!isProcessRunning(content.pid)) return false;
-  if (!_isNeomClawProcess(content.pid, content.execPath)) return false;
+  if (!_isNeomageProcess(content.pid, content.execPath)) return false;
 
   // Fallback: if the lock is very old (> 2 hours), double-check
   try {
@@ -575,7 +575,7 @@ class StallTimeoutError implements Exception {
 
 /// Get the stall timeout in milliseconds, checking env override first.
 int getStallTimeoutMs() {
-  final envVal = Platform.environment['NEOMCLAW_STALL_TIMEOUT_MS_FOR_TESTING'];
+  final envVal = Platform.environment['MAGE_STALL_TIMEOUT_MS_FOR_TESTING'];
   if (envVal != null) {
     final parsed = int.tryParse(envVal);
     if (parsed != null && parsed > 0) return parsed;
@@ -866,7 +866,7 @@ String getPlatform() {
 
 /// Get the binary name for the platform.
 String getBinaryName(String platform) {
-  return platform.startsWith('win32') ? 'neomclaw.exe' : 'neomclaw';
+  return platform.startsWith('win32') ? 'neomage.exe' : 'neomage';
 }
 
 /// Detect CPU architecture.
@@ -918,7 +918,7 @@ String _getUserBinDir() {
       Platform.environment['LOCALAPPDATA'] ??
           p.join(_homeDir(), 'AppData', 'Local'),
       'Programs',
-      'neomclaw',
+      'neomage',
     );
   }
   return p.join(_homeDir(), '.local', 'bin');
@@ -949,15 +949,15 @@ _BaseDirectories _getBaseDirectories() {
   final executableName = getBinaryName(platform);
 
   return _BaseDirectories(
-    versions: p.join(_getXDGDataHome(), 'neomclaw', 'versions'),
-    staging: p.join(_getXDGCacheHome(), 'neomclaw', 'staging'),
-    locks: p.join(_getXDGStateHome(), 'neomclaw', 'locks'),
+    versions: p.join(_getXDGDataHome(), 'neomage', 'versions'),
+    staging: p.join(_getXDGCacheHome(), 'neomage', 'staging'),
+    locks: p.join(_getXDGStateHome(), 'neomage', 'locks'),
     executable: p.join(_getUserBinDir(), executableName),
   );
 }
 
-/// Check if a file is a possible NeomClaw binary (exists, non-empty, executable).
-Future<bool> _isPossibleNeomClawBinary(String filePath) async {
+/// Check if a file is a possible Neomage binary (exists, non-empty, executable).
+Future<bool> _isPossibleNeomageBinary(String filePath) async {
   try {
     final file = File(filePath);
     final stat = await file.stat();
@@ -1091,7 +1091,7 @@ class NativeInstallerController extends SintController {
 
       // Check if already installed
       final alreadyInstalled =
-          await _isPossibleNeomClawBinary(installPath) && !forceReinstall;
+          await _isPossibleNeomageBinary(installPath) && !forceReinstall;
 
       if (!alreadyInstalled) {
         installState.value = 'downloading';

@@ -1,4 +1,4 @@
-// MCPTool -- faithful port of neom_claw/src/tools/MCPTool.
+// MCPTool -- faithful port of neomage/src/tools/MCPTool.
 // Generic wrapper for MCP (Model Context Protocol) server tools.
 //
 // Includes full port of:

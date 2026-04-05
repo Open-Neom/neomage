@@ -1,8 +1,9 @@
-// WebFetchTool — port of neom_claw/src/tools/WebFetchTool/.
+// WebFetchTool — port of neomage/src/tools/WebFetchTool/.
 // Fetches URL content, converts HTML to markdown, applies prompt via secondary model.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'dart:convert';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// Maximum markdown content length before truncation.
 const maxMarkdownLength = 100000;
@@ -157,8 +158,8 @@ bool isPermittedRedirect(Uri original, Uri redirect) {
 const preapprovedHosts = {
   // Anthropic
   'docs.anthropic.com',
-  'platform.neomclaw.com',
-  'code.neomclaw.com',
+  'platform.neomage.com',
+  'code.neomage.com',
   'modelcontextprotocol.io',
 
   // Python
@@ -540,7 +541,7 @@ Future<WebFetchOutput> fetchUrl(
   final client = httpClient ?? HttpClient();
   try {
     final request = await client.getUrl(uri).timeout(fetchTimeout);
-    request.headers.set('User-Agent', 'FlutterClaw/1.0 (AI Coding Assistant)');
+    request.headers.set('User-Agent', 'Neomage/1.0 (AI Coding Assistant)');
     request.headers.set('Accept', 'text/markdown, text/html, */*');
 
     final response = await request.close().timeout(fetchTimeout);

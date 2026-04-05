@@ -1,8 +1,8 @@
-// File watcher service — port of neom_claw chokidar-based file watching.
+// File watcher service — port of neomage chokidar-based file watching.
 // Watches files and directories for changes with debouncing.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 /// File change event types.
 enum FileChangeType { created, modified, deleted }
@@ -134,7 +134,7 @@ class FileWatcherService {
     }
   }
 
-  /// Watch for config file changes (~/.neomclaw/settings.json, etc.).
+  /// Watch for config file changes (~/.neomage/settings.json, etc.).
   Future<String?> watchConfig(
     String configPath,
     void Function(FileChange) callback,

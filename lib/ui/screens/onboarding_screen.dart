@@ -1,27 +1,32 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sint_sentinel/sint_sentinel.dart';
 import 'package:sint/sint.dart';
 
-import '../../claw_routes.dart';
-import '../../data/api/anthropic_client.dart';
-import '../../data/api/api_provider.dart';
-import '../../data/api/gemini_client.dart';
-import '../../data/api/openai_shim.dart';
-import '../../data/auth/auth_service.dart';
-import '../../domain/models/message.dart';
-import '../../utils/config/settings.dart';
-import '../../utils/constants/neom_claw_assets.dart';
+import '../../neomage_routes.dart';
+import 'package:neomage/data/api/anthropic_client.dart';
+import 'package:neomage/data/api/api_provider.dart';
+import 'package:neomage/data/api/gemini_client.dart';
+import 'package:neomage/data/api/openai_shim.dart';
+import 'package:neomage/data/auth/auth_service.dart';
+import 'package:neomage/data/services/ollama_service.dart';
+import 'package:neomage/domain/models/message.dart';
+import 'package:neomage/utils/config/settings.dart';
+import '../../utils/constants/neomage_translation_constants.dart';
+import '../../utils/constants/neomage_assets.dart';
 import '../controllers/chat_controller.dart';
 
 // ---------------------------------------------------------------------------
-// Onboarding wizard — multi-step setup ported from NeomClaw's onboarding.
-// Steps: Welcome -> API Config -> Permission Mode -> Workspace -> Features
-//        -> Completion
+// Onboarding wizard — multi-step setup.
+// Steps: Welcome -> Choose Mode (Cloud/Local) -> Config -> Permission Mode
+//        -> [Desktop: Workspace -> Features] -> Completion
 // ---------------------------------------------------------------------------
+
+/// Setup mode: Cloud (API key) or Local (Ollama).
+enum _SetupMode { cloud, local }
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -32,7 +37,18 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen>
     with TickerProviderStateMixin {
-  static const _totalSteps = 6;
+  /// Workspace/Features steps only on desktop platforms.
+  static bool get _isDesktop =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.macOS ||
+       defaultTargetPlatform == TargetPlatform.windows ||
+       defaultTargetPlatform == TargetPlatform.linux);
+
+  /// Total steps varies by platform:
+  /// Desktop: Welcome, ChooseMode, Config, Permission, Workspace, Features, Completion = 7
+  /// Mobile/Web: Welcome, ChooseMode, Config, Permission, Completion = 5
+  /// (Local mode on non-desktop is hidden — Ollama only works on desktop)
+  static int get _totalSteps => _isDesktop ? 7 : 5;
 
   final _pageController = PageController();
   final _authService = AuthService();
@@ -40,7 +56,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // Current step (0-indexed).
   int _currentStep = 0;
 
-  // ── Step 1: API Configuration state ──
+  // ── Step 1: Choose Mode ──
+  _SetupMode _setupMode = _SetupMode.cloud;
+
+  // ── Step 2 (Cloud): API Configuration state ──
   ApiProviderType _providerType = ApiProviderType.gemini;
   final _apiKeyController = TextEditingController();
   final _baseUrlController = TextEditingController();
@@ -49,13 +68,22 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   bool _testingConnection = false;
   _ConnectionTestResult? _connectionTestResult;
 
-  // ── Step 2: Permission mode state ──
+  // ── Step 2 (Local): Ollama state ──
+  final _ollamaService = OllamaService();
+  OllamaStatus _ollamaStatus = OllamaStatus.unknown;
+  List<OllamaModel> _ollamaModels = [];
+  String? _selectedOllamaModel;
+  bool _ollamaChecking = false;
+  String? _pullingModel;
+  double? _pullProgress;
+
+  // ── Step 3: Permission mode state ──
   _PermissionModeOption _permissionMode = _PermissionModeOption.defaultMode;
 
   // ── Step 3: Workspace state ──
   final _workspaceDirController = TextEditingController();
   bool _enableGitIntegration = true;
-  bool _createNeomClawMd = true;
+  bool _createNeomageMd = true;
 
   // ── Step 4: Features carousel ──
   final _featuresPageController = PageController();
@@ -150,20 +178,28 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   bool _validateCurrentStep() {
-    if (_currentStep == 1) {
-      // API config — key required for non-local providers.
-      final needsKey = _providerType != ApiProviderType.ollama;
-      if (needsKey && _apiKeyController.text.trim().isEmpty) {
-        _showSnack('Please enter an API key');
-        return false;
-      }
-      if (_providerType == ApiProviderType.custom &&
-          _baseUrlController.text.trim().isEmpty) {
-        _showSnack('Custom endpoint requires a base URL');
-        return false;
+    if (_currentStep == 2) {
+      if (_setupMode == _SetupMode.cloud) {
+        // Cloud API config — key required for non-local providers.
+        final needsKey = _providerType != ApiProviderType.ollama;
+        if (needsKey && _apiKeyController.text.trim().isEmpty) {
+          _showSnack('Please enter an API key');
+          return false;
+        }
+        if (_providerType == ApiProviderType.custom &&
+            _baseUrlController.text.trim().isEmpty) {
+          _showSnack('Custom endpoint requires a base URL');
+          return false;
+        }
+      } else {
+        // Local — must have selected an Ollama model.
+        if (_selectedOllamaModel == null || _selectedOllamaModel!.isEmpty) {
+          _showSnack(NeomageTranslationConstants.ollamaSelectModel.tr);
+          return false;
+        }
       }
     }
-    if (_currentStep == 3) {
+    if (_isDesktop && _currentStep == 4) {
       if (_workspaceDirController.text.trim().isEmpty) {
         _showSnack('Please select a workspace directory');
         return false;
@@ -174,6 +210,68 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  // ── Ollama helpers ──
+
+  Future<void> _checkOllama() async {
+    setState(() => _ollamaChecking = true);
+    try {
+      final status = await _ollamaService.checkStatus();
+      final models = status == OllamaStatus.running
+          ? await _ollamaService.listModels()
+          : <OllamaModel>[];
+      if (mounted) {
+        setState(() {
+          _ollamaStatus = status;
+          _ollamaModels = models;
+          _ollamaChecking = false;
+          // Auto-select first model if available and none selected.
+          if (_selectedOllamaModel == null && models.isNotEmpty) {
+            _selectedOllamaModel = models.first.name;
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _ollamaStatus = OllamaStatus.error;
+          _ollamaChecking = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _pullOllamaModel(String model) async {
+    setState(() {
+      _pullingModel = model;
+      _pullProgress = 0;
+    });
+
+    await for (final progress in _ollamaService.pullModel(model)) {
+      if (!mounted) return;
+      if (progress.isDone) {
+        setState(() {
+          _pullingModel = null;
+          _pullProgress = null;
+        });
+        // Refresh model list after download.
+        await _checkOllama();
+        if (mounted) {
+          setState(() => _selectedOllamaModel = model);
+        }
+        return;
+      }
+      if (progress.isError) {
+        setState(() {
+          _pullingModel = null;
+          _pullProgress = null;
+        });
+        _showSnack('Error: ${progress.status}');
+        return;
+      }
+      setState(() => _pullProgress = progress.progress);
+    }
   }
 
   // ── API test connection ──
@@ -230,8 +328,23 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         maxTokens: 8,
       );
 
-      // We only need the first event — if we get one, the key is valid.
-      await stream.first.timeout(const Duration(seconds: 10));
+      // We need to check the first event — if it's an error, the key is invalid.
+      final firstEvent = await stream.first.timeout(const Duration(seconds: 10));
+
+      if (firstEvent is ErrorEvent) {
+        final errMsg = firstEvent.message;
+        SintSentinel.logger.w('Connection test got error event for ${_providerType.name}: $errMsg');
+        final friendlyMsg = errMsg.contains('401') || errMsg.contains('Unauthorized') || errMsg.contains('invalid')
+            ? 'Invalid API key'
+            : errMsg.contains('403') || errMsg.contains('Forbidden')
+                ? 'API key does not have access to this model'
+                : 'API error: ${errMsg.length > 120 ? '${errMsg.substring(0, 120)}...' : errMsg}';
+        setState(() {
+          _testingConnection = false;
+          _connectionTestResult = _ConnectionTestResult.failure(friendlyMsg);
+        });
+        return;
+      }
 
       SintSentinel.logger.i('Connection test succeeded for ${_providerType.name}');
       setState(() {
@@ -305,28 +418,40 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     setState(() => _finishing = true);
 
     try {
-      // Persist API configuration — save key for the correct provider.
-      final key = _apiKeyController.text.trim();
+      if (_setupMode == _SetupMode.local) {
+        // Local (Ollama) — configure as Ollama provider.
+        await _authService.saveProviderConfig(
+          type: ApiProviderType.ollama,
+          model: _selectedOllamaModel ?? 'llama3.1',
+          baseUrl: _ollamaService.openAiBaseUrl,
+        );
+      } else {
+        // Cloud — persist API key and provider config.
+        final key = _apiKeyController.text.trim();
 
-      if (key.isNotEmpty) {
-        await _authService.setApiKeyForProvider(_providerType, key);
+        if (key.isNotEmpty) {
+          await _authService.setApiKeyForProvider(_providerType, key);
+        }
+
+        final model = _selectedModel;
+        final baseUrl = _providerType == ApiProviderType.custom
+            ? _baseUrlController.text.trim()
+            : null;
+
+        await _authService.saveProviderConfig(
+          type: _providerType,
+          model: model,
+          baseUrl: baseUrl,
+        );
       }
 
-      final model = _selectedModel;
-      final baseUrl = _providerType == ApiProviderType.custom
-          ? _baseUrlController.text.trim()
-          : null;
-
-      await _authService.saveProviderConfig(
-        type: _providerType,
-        model: model,
-        baseUrl: baseUrl,
-      );
+      // Mark onboarding as complete so splash screen won't show it again.
+      await _authService.setOnboardingComplete();
 
       // Persist workspace prefs via SharedPreferences (AppSettings).
       final settings = await AppSettings.load();
       // Permission mode is stored as a string for simplicity.
-      // Workspace dir, git toggle, NEOMCLAW.md are handled by the engine.
+      // Workspace dir, git toggle, NEOMAGE.md are handled by the engine.
 
       if (mounted) {
         SintSentinel.logger.d('Initializing ChatController...');
@@ -334,7 +459,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         final ok = await chat.initialize();
         if (ok && mounted) {
           SintSentinel.logger.i('Onboarding complete — navigating to chat');
-          Sint.offAllNamed(ClawRouteConstants.chat);
+          Sint.offAllNamed(NeomageRouteConstants.chat);
         } else if (mounted) {
           SintSentinel.logger.w('ChatController initialization failed');
           _showSnack('Initialization failed. Check your API key.');
@@ -424,48 +549,81 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 onPageChanged: (i) => setState(() => _currentStep = i),
                 children: [
                   _buildWelcomePage(theme, cs),
-                  _ApiConfigStep(
-                    providerType: _providerType,
-                    onProviderChanged: (t) {
-                      setState(() {
-                        _providerType = t;
-                        _selectedModel = _modelsForProvider(t).first;
-                        _connectionTestResult = null;
-                      });
-                    },
-                    apiKeyController: _apiKeyController,
-                    obscureApiKey: _obscureApiKey,
-                    onToggleObscure: () =>
-                        setState(() => _obscureApiKey = !_obscureApiKey),
-                    selectedModel: _selectedModel,
-                    models: _modelsForProvider(_providerType),
-                    onModelChanged: (m) => setState(() => _selectedModel = m),
-                    baseUrlController: _baseUrlController,
-                    showBaseUrl:
-                        _providerType == ApiProviderType.custom ||
-                        _providerType == ApiProviderType.ollama,
-                    testingConnection: _testingConnection,
-                    testResult: _connectionTestResult,
-                    onTestConnection: _testConnection,
+                  // Step 1: Choose Mode (Cloud vs Local)
+                  _ChooseModeStep(
+                    mode: _setupMode,
+                    onModeChanged: (m) => setState(() => _setupMode = m),
+                    isDesktop: _isDesktop,
+                  ),
+                  // Step 2: Config (Cloud API or Ollama depending on mode)
+                  // Uses IndexedStack to keep both widgets alive and avoid
+                  // the render-tree crash caused by swapping children in a
+                  // PageView via if/else.
+                  IndexedStack(
+                    index: _setupMode == _SetupMode.cloud ? 0 : 1,
+                    children: [
+                      _ApiConfigStep(
+                        providerType: _providerType,
+                        onProviderChanged: (t) {
+                          setState(() {
+                            _providerType = t;
+                            _selectedModel = _modelsForProvider(t).first;
+                            _connectionTestResult = null;
+                          });
+                        },
+                        apiKeyController: _apiKeyController,
+                        obscureApiKey: _obscureApiKey,
+                        onToggleObscure: () =>
+                            setState(() => _obscureApiKey = !_obscureApiKey),
+                        selectedModel: _selectedModel,
+                        models: _modelsForProvider(_providerType),
+                        onModelChanged: (m) =>
+                            setState(() => _selectedModel = m),
+                        baseUrlController: _baseUrlController,
+                        showBaseUrl:
+                            _providerType == ApiProviderType.custom ||
+                            _providerType == ApiProviderType.ollama,
+                        testingConnection: _testingConnection,
+                        testResult: _connectionTestResult,
+                        onTestConnection: _testConnection,
+                      ),
+                      _OllamaSetupStep(
+                        ollamaService: _ollamaService,
+                        status: _ollamaStatus,
+                        models: _ollamaModels,
+                        selectedModel: _selectedOllamaModel,
+                        checking: _ollamaChecking,
+                        pullingModel: _pullingModel,
+                        pullProgress: _pullProgress,
+                        onCheckStatus: _checkOllama,
+                        onSelectModel: (m) =>
+                            setState(() => _selectedOllamaModel = m),
+                        onPullModel: _pullOllamaModel,
+                      ),
+                    ],
                   ),
                   _PermissionStep(
                     selected: _permissionMode,
                     onChanged: (m) => setState(() => _permissionMode = m),
                   ),
-                  _WorkspaceStep(
-                    dirController: _workspaceDirController,
-                    gitEnabled: _enableGitIntegration,
-                    onGitChanged: (v) =>
-                        setState(() => _enableGitIntegration = v),
-                    createNeomClawMd: _createNeomClawMd,
-                    onNeomClawMdChanged: (v) =>
-                        setState(() => _createNeomClawMd = v),
-                  ),
-                  _FeaturesStep(
-                    pageController: _featuresPageController,
-                    currentPage: _featuresPage,
-                    onPageChanged: (p) => setState(() => _featuresPage = p),
-                  ),
+                  // Workspace step only on desktop (macOS, Windows, Linux).
+                  if (_isDesktop)
+                    _WorkspaceStep(
+                      dirController: _workspaceDirController,
+                      gitEnabled: _enableGitIntegration,
+                      onGitChanged: (v) =>
+                          setState(() => _enableGitIntegration = v),
+                      createNeomageMd: _createNeomageMd,
+                      onNeomageMdChanged: (v) =>
+                          setState(() => _createNeomageMd = v),
+                    ),
+                  // Features step only on desktop (macOS, Windows, Linux).
+                  if (_isDesktop)
+                    _FeaturesStep(
+                      pageController: _featuresPageController,
+                      currentPage: _featuresPage,
+                      onPageChanged: (p) => setState(() => _featuresPage = p),
+                    ),
                   _CompletionStep(
                     finishing: _finishing,
                     onStart: _finish,
@@ -487,14 +645,25 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
-                  vertical: 12,
+                  vertical: 16,
                 ),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: FilledButton(
-                    onPressed: _next,
-                    child: const Text('Get Started'),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 320),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: FilledButton(
+                        onPressed: _next,
+                        style: FilledButton.styleFrom(
+                          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(NeomageTranslationConstants.getStarted.tr),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -507,76 +676,90 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   // ── Welcome page (step 0) ──
 
   Widget _buildWelcomePage(ThemeData theme, ColorScheme cs) {
+    final isWeb = kIsWeb;
+
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Animated logo
-            ScaleTransition(
-              scale: _logoScale,
-              child: FadeTransition(
-                opacity: _logoOpacity,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Image.asset(
-                    NeomClawAssets.appIcon,
-                    width: 100,
-                    height: 100,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Language toggle ──
+              _LanguageToggle(
+                onChanged: () => setState(() {}),
+              ),
+              const SizedBox(height: 32),
+
+              // Animated logo — bigger for web
+              ScaleTransition(
+                scale: _logoScale,
+                child: FadeTransition(
+                  opacity: _logoOpacity,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(32),
+                    child: Image.asset(
+                      NeomageAssets.icon,
+                      package: 'neomage',
+                      width: isWeb ? 180 : 140,
+                      height: isWeb ? 180 : 140,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            // Animated title
-            AnimatedBuilder(
-              animation: _titleAnimController,
-              builder: (_, child) => Opacity(
-                opacity: _titleOpacity.value,
-                child: Transform.translate(
-                  offset: Offset(0, _titleSlide.value),
-                  child: child,
+              const SizedBox(height: 28),
+              // Animated title
+              AnimatedBuilder(
+                animation: _titleAnimController,
+                builder: (_, child) => Opacity(
+                  opacity: _titleOpacity.value,
+                  child: Transform.translate(
+                    offset: Offset(0, _titleSlide.value),
+                    child: child,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      NeomageTranslationConstants.appTitle.tr,
+                      style: theme.textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      NeomageTranslationConstants.welcomeSubtitle.tr,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 36),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 10,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        _FeatureChip(icon: Icons.code, label: NeomageTranslationConstants.codeEditing.tr),
+                        _FeatureChip(
+                          icon: Icons.search,
+                          label: NeomageTranslationConstants.codebaseSearch.tr,
+                        ),
+                        _FeatureChip(
+                          icon: Icons.terminal,
+                          label: NeomageTranslationConstants.shellCommands.tr,
+                        ),
+                        _FeatureChip(icon: Icons.extension, label: NeomageTranslationConstants.mcpTools.tr),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              child: Column(
-                children: [
-                  Text(
-                    'Neom Claw',
-                    style: theme.textTheme.headlineLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'AI coding assistant\nAny model. Any platform.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: cs.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      _FeatureChip(icon: Icons.code, label: 'Code editing'),
-                      _FeatureChip(
-                        icon: Icons.search,
-                        label: 'Codebase search',
-                      ),
-                      _FeatureChip(
-                        icon: Icons.terminal,
-                        label: 'Shell commands',
-                      ),
-                      _FeatureChip(icon: Icons.extension, label: 'MCP tools'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -651,10 +834,10 @@ class _BottomNav extends StatelessWidget {
           TextButton.icon(
             onPressed: onBack,
             icon: const Icon(Icons.arrow_back, size: 18),
-            label: const Text('Back'),
+            label: Text(NeomageTranslationConstants.back.tr),
           ),
           const Spacer(),
-          TextButton(onPressed: onSkip, child: const Text('Skip')),
+          TextButton(onPressed: onSkip, child: Text(NeomageTranslationConstants.skip.tr)),
           const SizedBox(width: 8),
           FilledButton(
             onPressed: onNext,
@@ -675,12 +858,123 @@ class _FeatureChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Chip(
-      avatar: Icon(icon, size: 16, color: cs.primary),
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-      backgroundColor: cs.surfaceContainerHighest,
-      side: BorderSide.none,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: cs.outlineVariant.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: cs.primary),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: cs.onSurface,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Language toggle — allows switching between Spanish and English on welcome page
+// ---------------------------------------------------------------------------
+
+class _LanguageToggle extends StatelessWidget {
+  final VoidCallback onChanged;
+
+  const _LanguageToggle({required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final currentLocale = Sint.locale?.languageCode ?? 'es';
+    final isSpanish = currentLocale == 'es';
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.language, size: 20, color: cs.onSurfaceVariant),
+        const SizedBox(width: 12),
+        // Spanish button
+        _LangButton(
+          label: 'ES',
+          isSelected: isSpanish,
+          colorScheme: cs,
+          onTap: () {
+            Sint.updateLocale(const Locale('es'));
+            onChanged();
+          },
+        ),
+        const SizedBox(width: 8),
+        // English button
+        _LangButton(
+          label: 'EN',
+          isSelected: !isSpanish,
+          colorScheme: cs,
+          onTap: () {
+            Sint.updateLocale(const Locale('en'));
+            onChanged();
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _LangButton extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final ColorScheme colorScheme;
+  final VoidCallback onTap;
+
+  const _LangButton({
+    required this.label,
+    required this.isSelected,
+    required this.colorScheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? colorScheme.primaryContainer
+              : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? colorScheme.primary.withValues(alpha: 0.5)
+                : colorScheme.outlineVariant.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            color: isSelected
+                ? colorScheme.onPrimaryContainer
+                : colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -734,22 +1028,47 @@ class _ApiConfigStep extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'API Configuration',
+                NeomageTranslationConstants.apiConfigTitle.tr,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Connect to your preferred AI provider.',
+                NeomageTranslationConstants.apiConfigSubtitle.tr,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: cs.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Explanatory info card
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: cs.tertiaryContainer.withAlpha(50),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline, size: 20, color: cs.tertiary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        NeomageTranslationConstants.apiConfigExplanation.tr,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
 
               // Provider selector — wrap-friendly
-              Text('Provider', style: theme.textTheme.labelLarge),
+              Text(NeomageTranslationConstants.provider.tr, style: theme.textTheme.labelLarge),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -777,8 +1096,8 @@ class _ApiConfigStep extends StatelessWidget {
                   controller: apiKeyController,
                   obscureText: obscureApiKey,
                   decoration: InputDecoration(
-                    labelText: 'API Key',
-                    hintText: 'sk-...',
+                    labelText: NeomageTranslationConstants.apiKey.tr,
+                    hintText: NeomageTranslationConstants.apiKeyHint.tr,
                     prefixIcon: const Icon(Icons.key),
                     suffixIcon: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -800,7 +1119,7 @@ class _ApiConfigStep extends StatelessWidget {
                               apiKeyController.text = data!.text!;
                             }
                           },
-                          tooltip: 'Paste from clipboard',
+                          tooltip: NeomageTranslationConstants.pasteFromClipboard.tr,
                         ),
                       ],
                     ),
@@ -814,8 +1133,8 @@ class _ApiConfigStep extends StatelessWidget {
                 initialValue: models.contains(selectedModel)
                     ? selectedModel
                     : models.first,
-                decoration: const InputDecoration(
-                  labelText: 'Model',
+                decoration: InputDecoration(
+                  labelText: NeomageTranslationConstants.model.tr,
                   prefixIcon: Icon(Icons.smart_toy),
                 ),
                 items: models
@@ -831,9 +1150,9 @@ class _ApiConfigStep extends StatelessWidget {
               if (showBaseUrl) ...[
                 TextField(
                   controller: baseUrlController,
-                  decoration: const InputDecoration(
-                    labelText: 'Base URL',
-                    hintText: 'https://your-endpoint.com/v1',
+                  decoration: InputDecoration(
+                    labelText: NeomageTranslationConstants.baseUrl.tr,
+                    hintText: NeomageTranslationConstants.baseUrlHint.tr,
                     prefixIcon: Icon(Icons.link),
                   ),
                 ),
@@ -841,19 +1160,25 @@ class _ApiConfigStep extends StatelessWidget {
               ],
 
               // Test connection button
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: testingConnection ? null : onTestConnection,
-                  icon: testingConnection
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.wifi_tethering),
-                  label: Text(
-                    testingConnection ? 'Testing...' : 'Test Connection',
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 280),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: OutlinedButton.icon(
+                      onPressed: testingConnection ? null : onTestConnection,
+                      icon: testingConnection
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.wifi_tethering),
+                      label: Text(
+                        testingConnection ? 'Testing...' : 'Test Connection',
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -1119,15 +1444,15 @@ class _WorkspaceStep extends StatelessWidget {
   final TextEditingController dirController;
   final bool gitEnabled;
   final ValueChanged<bool> onGitChanged;
-  final bool createNeomClawMd;
-  final ValueChanged<bool> onNeomClawMdChanged;
+  final bool createNeomageMd;
+  final ValueChanged<bool> onNeomageMdChanged;
 
   const _WorkspaceStep({
     required this.dirController,
     required this.gitEnabled,
     required this.onGitChanged,
-    required this.createNeomClawMd,
-    required this.onNeomClawMdChanged,
+    required this.createNeomageMd,
+    required this.onNeomageMdChanged,
   });
 
   @override
@@ -1166,7 +1491,7 @@ class _WorkspaceStep extends StatelessWidget {
                   prefixIcon: const Icon(Icons.folder_open),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.drive_file_move_outline),
-                    tooltip: 'Browse',
+                    tooltip: NeomageTranslationConstants.browse.tr,
                     onPressed: () {
                       // In a full implementation this would open a
                       // native directory picker.
@@ -1186,9 +1511,9 @@ class _WorkspaceStep extends StatelessWidget {
               // Git integration toggle
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Git Integration'),
-                subtitle: const Text(
-                  'Enable git-aware features like diff view and commit helpers',
+                title: Text(NeomageTranslationConstants.gitIntegration.tr),
+                subtitle: Text(
+                  NeomageTranslationConstants.gitIntegrationDesc.tr,
                 ),
                 secondary: Icon(Icons.commit, color: cs.primary),
                 value: gitEnabled,
@@ -1196,16 +1521,16 @@ class _WorkspaceStep extends StatelessWidget {
               ),
               const Divider(),
 
-              // NEOMCLAW.md setup
+              // NEOMAGE.md setup
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Create NEOMCLAW.md'),
-                subtitle: const Text(
-                  'Initialize a memory file with project context and instructions',
+                title: Text(NeomageTranslationConstants.createNeomageMd.tr),
+                subtitle: Text(
+                  NeomageTranslationConstants.createNeomageMdDesc.tr,
                 ),
                 secondary: Icon(Icons.description_outlined, color: cs.primary),
-                value: createNeomClawMd,
-                onChanged: onNeomClawMdChanged,
+                value: createNeomageMd,
+                onChanged: onNeomageMdChanged,
               ),
               const Divider(),
               const SizedBox(height: 16),
@@ -1224,7 +1549,7 @@ class _WorkspaceStep extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'NEOMCLAW.md is loaded automatically at the start of '
+                        'NEOMAGE.md is loaded automatically at the start of '
                         'each conversation. It can contain coding standards, '
                         'repo structure notes, and custom instructions.',
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -1474,7 +1799,7 @@ class _CompletionStep extends StatelessWidget {
             TextButton.icon(
               onPressed: finishing ? null : onBack,
               icon: const Icon(Icons.arrow_back, size: 16),
-              label: const Text('Back to settings'),
+              label: Text(NeomageTranslationConstants.backToSettings.tr),
             ),
           ],
         ),
@@ -1514,4 +1839,510 @@ class _ConnectionTestResult {
 
   factory _ConnectionTestResult.failure(String msg) =>
       _ConnectionTestResult._(success: false, message: msg);
+}
+
+// ---------------------------------------------------------------------------
+// Step 1: Choose Mode (Cloud vs Local)
+// ---------------------------------------------------------------------------
+
+class _ChooseModeStep extends StatelessWidget {
+  final _SetupMode mode;
+  final ValueChanged<_SetupMode> onModeChanged;
+  final bool isDesktop;
+
+  const _ChooseModeStep({
+    required this.mode,
+    required this.onModeChanged,
+    required this.isDesktop,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                NeomageTranslationConstants.chooseModeTitle.tr,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                NeomageTranslationConstants.chooseModeSubtitle.tr,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Cloud option
+              _ModeCard(
+                icon: Icons.cloud_outlined,
+                title: NeomageTranslationConstants.cloudMode.tr,
+                description: NeomageTranslationConstants.cloudModeDesc.tr,
+                selected: mode == _SetupMode.cloud,
+                onTap: () => onModeChanged(_SetupMode.cloud),
+                colorScheme: cs,
+              ),
+              const SizedBox(height: 16),
+
+              // Local option
+              _ModeCard(
+                icon: Icons.computer,
+                title: NeomageTranslationConstants.localMode.tr,
+                description: NeomageTranslationConstants.localModeDesc.tr,
+                selected: mode == _SetupMode.local,
+                onTap: isDesktop ? () => onModeChanged(_SetupMode.local) : null,
+                colorScheme: cs,
+                badge: isDesktop
+                    ? null
+                    : NeomageTranslationConstants.localModeDesktopOnly.tr,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+  final bool selected;
+  final VoidCallback? onTap;
+  final ColorScheme colorScheme;
+  final String? badge;
+
+  const _ModeCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.selected,
+    required this.onTap,
+    required this.colorScheme,
+    this.badge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final disabled = onTap == null;
+    final theme = Theme.of(context);
+
+    return Opacity(
+      opacity: disabled ? 0.45 : 1.0,
+      child: Material(
+        color: selected
+            ? colorScheme.primaryContainer.withAlpha(80)
+            : colorScheme.surfaceContainerHighest.withAlpha(40),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: selected
+                ? colorScheme.primary
+                : colorScheme.outlineVariant.withAlpha(60),
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? colorScheme.primary.withAlpha(30)
+                        : colorScheme.surfaceContainerHighest.withAlpha(80),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 28,
+                    color: selected
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (selected) ...[
+                            const SizedBox(width: 8),
+                            Icon(Icons.check_circle,
+                                size: 18, color: colorScheme.primary),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        description,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (badge != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: colorScheme.errorContainer.withAlpha(60),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            badge!,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: colorScheme.onErrorContainer,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Step 2-alt: Ollama Setup (Local Mode)
+// ---------------------------------------------------------------------------
+
+class _OllamaSetupStep extends StatelessWidget {
+  final OllamaService ollamaService;
+  final OllamaStatus status;
+  final List<OllamaModel> models;
+  final String? selectedModel;
+  final bool checking;
+  final String? pullingModel;
+  final double? pullProgress;
+  final VoidCallback onCheckStatus;
+  final ValueChanged<String> onSelectModel;
+  final ValueChanged<String> onPullModel;
+
+  const _OllamaSetupStep({
+    required this.ollamaService,
+    required this.status,
+    required this.models,
+    required this.selectedModel,
+    required this.checking,
+    required this.pullingModel,
+    required this.pullProgress,
+    required this.onCheckStatus,
+    required this.onSelectModel,
+    required this.onPullModel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    // Auto-check on first build if status is unknown.
+    if (status == OllamaStatus.unknown && !checking) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => onCheckStatus());
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                NeomageTranslationConstants.ollamaSetupTitle.tr,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                NeomageTranslationConstants.ollamaSetupSubtitle.tr,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Status card
+              _buildStatusCard(theme, cs),
+              const SizedBox(height: 24),
+
+              // Installed models
+              if (status == OllamaStatus.running) ...[
+                if (models.isNotEmpty) ...[
+                  Text(
+                    NeomageTranslationConstants.ollamaInstalledModels.tr,
+                    style: theme.textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  ...models.map((m) => _buildModelTile(m, theme, cs)),
+                  const SizedBox(height: 24),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: cs.tertiaryContainer.withAlpha(40),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 20, color: cs.tertiary),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            NeomageTranslationConstants.ollamaNoModels.tr,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // Recommended models
+                Text(
+                  NeomageTranslationConstants.ollamaRecommended.tr,
+                  style: theme.textTheme.labelLarge,
+                ),
+                const SizedBox(height: 8),
+                ...ollamaRecommendedModels.map(
+                    (r) => _buildRecommendedTile(r, theme, cs)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(ThemeData theme, ColorScheme cs) {
+    final isRunning = status == OllamaStatus.running;
+    final isChecking = checking;
+
+    if (isChecking) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest.withAlpha(60),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 12),
+            Text('Checking Ollama...'),
+          ],
+        ),
+      );
+    }
+
+    if (isRunning) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.green.withAlpha(20),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.green.withAlpha(60)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.green, size: 24),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                NeomageTranslationConstants.ollamaRunning.tr,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: onCheckStatus,
+              child: Text(NeomageTranslationConstants.refresh.tr),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Not running / error
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cs.errorContainer.withAlpha(40),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cs.error.withAlpha(40)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: cs.error, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  NeomageTranslationConstants.ollamaNotDetected.tr,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            NeomageTranslationConstants.ollamaNotDetectedDesc.tr,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: cs.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: () {
+                  // Open ollama.com — in a real app, use url_launcher.
+                },
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('ollama.com'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: onCheckStatus,
+                icon: const Icon(Icons.refresh, size: 16),
+                label: Text(NeomageTranslationConstants.retry.tr),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModelTile(OllamaModel model, ThemeData theme, ColorScheme cs) {
+    final isSelected = selectedModel == model.name;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: ListTile(
+        dense: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(
+            color: isSelected ? cs.primary : cs.outlineVariant.withAlpha(40),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        tileColor: isSelected ? cs.primaryContainer.withAlpha(40) : null,
+        leading: Icon(
+          isSelected ? Icons.check_circle : Icons.circle_outlined,
+          color: isSelected ? cs.primary : cs.onSurfaceVariant,
+        ),
+        title: Text(model.displayName,
+            style: const TextStyle(fontWeight: FontWeight.w500)),
+        subtitle: Text(
+          [
+            if (model.sizeLabel.isNotEmpty) model.sizeLabel,
+            if (model.family != null) model.family!,
+            if (model.parameterSize != null) model.parameterSize!,
+          ].join(' \u2022 '),
+          style: theme.textTheme.bodySmall,
+        ),
+        onTap: () => onSelectModel(model.name),
+      ),
+    );
+  }
+
+  Widget _buildRecommendedTile(
+    ({String name, String desc, String size}) rec,
+    ThemeData theme,
+    ColorScheme cs,
+  ) {
+    final isInstalled = models.any((m) => m.name == rec.name);
+    final isPulling = pullingModel == rec.name;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: ListTile(
+        dense: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        title: Text(rec.name,
+            style: const TextStyle(fontWeight: FontWeight.w500)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('${rec.desc} \u2022 ${rec.size}',
+                style: theme.textTheme.bodySmall),
+            if (isPulling && pullProgress != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: LinearProgressIndicator(
+                  value: pullProgress,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+          ],
+        ),
+        trailing: isInstalled
+            ? Chip(
+                label: Text(NeomageTranslationConstants.installed.tr),
+                visualDensity: VisualDensity.compact,
+              )
+            : isPulling
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.download),
+                    tooltip: NeomageTranslationConstants.download.tr,
+                    onPressed: () => onPullModel(rec.name),
+                  ),
+      ),
+    );
+  }
 }

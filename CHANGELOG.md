@@ -1,59 +1,42 @@
 ## 1.0.0
 
-Complete migration from OpenClaude TypeScript (~385K LOC) to Flutter/Dart.
-291 files, ~185K LOC. Verified on macOS and Web.
+Neomage: multi-provider AI agent engine for Flutter, restructured as a pub.dev package.
 
-### Core
-- Multi-provider support: Gemini, OpenAI, Anthropic, DeepSeek, Qwen, Ollama
-- Native GeminiClient with query-param auth (not routed through OpenAI shim)
-- Streaming chat with real-time token display
-- Agentic tool execution loop with 31 tools
-- Full context compaction system (strategies, token counting, hooks)
-- 24 builtin slash commands
-- MCP (Model Context Protocol) client
-- Plugin system with install/uninstall/lifecycle management
-- Skills framework with registry
-- Hook system (lifecycle, permissions, pre/post compact)
-- Remote session management (HTTP + WebSocket with reconnection)
+### Package (lib/)
 
-### UI
-- 30 widgets ported from OpenClaude components
-- 8 screens: chat, onboarding, settings, splash, doctor, MCP panel, session browser, Ollama setup
-- Vim mode emulation
-- Keybinding system with resolver
-- Dark/light Material 3 theme with extended ARGB colors
-- Markdown rendering with syntax highlighting
-- Command palette (Ctrl+K)
+- **Multi-provider API clients**: Gemini (native), OpenAI, Anthropic, DeepSeek, Qwen, Ollama — all via a unified `ApiProvider` interface
+- **Streaming**: SSE parser conforming to W3C EventSource spec, typed stream events (`TextDelta`, `ThinkingDelta`, `ToolUseStart`, etc.)
+- **Agentic tool system**: 31 built-in tools (Bash, FileRead/Write/Edit, Grep, Glob, WebSearch, Agent, SendMessage, TodoWrite, etc.)
+- **Bash security**: 20+ validation checks — command substitution, IFS injection, obfuscated flags, dangerous variables, redirection analysis
+- **Query engine**: Multi-turn agentic conversation loop with automatic tool execution
+- **Context compaction**: Token-aware conversation summarization with configurable strategies
+- **Skills framework**: 283 loadable markdown skills across 40+ categories
+- **Personality system**: 10 modular personality files (Identity, Cognition, Agency, Memory, etc.) assembled into dynamic system prompts
+- **MCP client**: Model Context Protocol support for external tool servers
+- **Retry with backoff**: Configurable exponential backoff with 429/529 awareness
+- **Domain models**: `Message`, `ContentBlock` (sealed), `ToolDefinition`, `TokenUsage`, branded IDs (`SessionId`, `AgentId`)
+- **Error classification**: `ApiError` with typed categories (rateLimited, authenticationError, promptTooLong, etc.)
+- **Platform abstraction**: dart:io stubs for web compatibility
+- **Sint framework**: State management, DI, navigation via Sint + SintSentinel
+
+### Example App (example/)
+
+- Full AI coding assistant: 8 screens (chat, onboarding, settings, Ollama setup, MCP panel, doctor, session browser, splash)
+- 30+ widgets (input bar, message renderer, markdown preview, diff view, command palette, permission dialogs, etc.)
+- Vim mode, keybinding system, dark/light Material 3 theme
+- Skills browser with search, categories, and two loading modes (session visible / context silent)
+- Localization: English + Spanish
+- Cross-platform: macOS, Web, Linux, Windows, iOS, Android
 
 ### Infrastructure
-- Sint framework for state management, DI, navigation
-- SintSentinel circuit breaker + centralized Logger
-- flutter_secure_storage for API keys (Keychain on macOS)
-- Provider-agnostic — no model-specific references
-- Cross-platform: macOS, Web (verified), iOS, Android, Linux, Windows
-- App icons generated for all platforms
-- 160/160 pub.dev score structure
 
-### Architecture
-- Extension types for branded IDs (SessionId, AgentId)
-- Sealed classes for unions (ContentBlock, PermissionDecision, etc.)
-- Barrel file exports with show/hide for clean API surface
-- Platform abstraction layer (web + native IO)
+- Package/app split: reusable logic in `lib/`, full app in `example/`
+- Barrel exports with `show`/`hide` for clean API surface
+- 0 analysis errors, pub.dev dry-run validated
 
 ## 0.1.0
 
-- Initial release of NeomClaw (neom_claw)
-- Multi-provider support: Gemini (default), Qwen, OpenAI, DeepSeek, Anthropic, Ollama
-- Streaming chat with real-time token display
-- Agentic tool execution loop: bash, file read/write/edit, grep, glob
-- Image and file attachments with preview
-- Ollama local model management: auto-discovery, download, delete, test
-- MCP (Model Context Protocol) client panel
-- Settings with provider configuration and connection testing
-- Onboarding flow with provider selection
-- Cross-platform: macOS, Linux, Windows, Web, iOS, Android
-- Dark/light Material 3 theme
-- Markdown rendering with syntax highlighting
-- Command palette (Ctrl+K)
-- Session management and conversation history
-- OpenAI-compatible shim for provider-agnostic architecture
+- Initial development release
+- Multi-provider support: Gemini, OpenAI, Anthropic, DeepSeek, Qwen, Ollama
+- Streaming chat, agentic tool execution, MCP client
+- Cross-platform Flutter app

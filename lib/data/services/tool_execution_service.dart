@@ -1,4 +1,4 @@
-// Tool execution service — faithful port of neom_claw/src/services/tools/.
+// Tool execution service — faithful port of neomage/src/services/tools/.
 // Covers: toolExecution.ts, toolHooks.ts, StreamingToolExecutor.ts,
 //         toolOrchestration.ts.
 //
@@ -265,7 +265,7 @@ AbortController createChildAbortController(AbortController parent) {
 // ---------------------------------------------------------------------------
 
 /// MCP server transport type.
-enum McpServerType { stdio, sse, http, ws, sdk, sseIde, wsIde, neomClawAiProxy }
+enum McpServerType { stdio, sse, http, ws, sdk, sseIde, wsIde, neomageAiProxy }
 
 /// Check if a tool name corresponds to an MCP tool.
 bool isMcpTool(String toolName) => toolName.startsWith('mcp__');

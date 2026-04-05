@@ -1,6 +1,6 @@
 /// Plugin Schemas and Validation
 ///
-/// Ported from neom_claw/src/utils/plugins/schemas.ts and validatePlugin.ts
+/// Ported from neomage/src/utils/plugins/schemas.ts and validatePlugin.ts
 ///
 /// This module provides:
 /// - Plugin manifest schema definitions and validation
@@ -12,19 +12,19 @@
 library;
 
 import 'dart:convert' show jsonDecode;
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'package:path/path.dart' as path;
 
 // ---------------------------------------------------------------------------
 // Official marketplace name protection
 // ---------------------------------------------------------------------------
 
-/// Official marketplace names reserved for Anthropic/NeomClaw official use.
+/// Official marketplace names reserved for Anthropic/Neomage official use.
 /// These names are allowed ONLY for official marketplaces and blocked for third parties.
 const Set<String> allowedOfficialMarketplaceNames = {
-  'neom-claw-marketplace',
-  'neom-claw-plugins',
-  'neom-claw-plugins-official',
+  'neomage-marketplace',
+  'neomage-plugins',
+  'neomage-plugins-official',
   'anthropic-marketplace',
   'anthropic-plugins',
   'agent-skills',
@@ -47,16 +47,16 @@ bool isMarketplaceAutoUpdate(String marketplaceName, {bool? autoUpdate}) {
           !_noAutoUpdateOfficialMarketplaces.contains(normalizedName));
 }
 
-/// Pattern to detect names that impersonate official Anthropic/NeomClaw marketplaces.
+/// Pattern to detect names that impersonate official Anthropic/Neomage marketplaces.
 final RegExp blockedOfficialNamePattern = RegExp(
-  r'(?:official[^a-z0-9]*(anthropic|neomclaw)|(?:anthropic|neomclaw)[^a-z0-9]*official|^(?:anthropic|neomclaw)[^a-z0-9]*(marketplace|plugins|official))',
+  r'(?:official[^a-z0-9]*(anthropic|neomage)|(?:anthropic|neomage)[^a-z0-9]*official|^(?:anthropic|neomage)[^a-z0-9]*(marketplace|plugins|official))',
   caseSensitive: false,
 );
 
 /// Pattern to detect non-ASCII characters for homograph attack prevention.
 final RegExp _nonAsciiPattern = RegExp(r'[^\u0020-\u007E]');
 
-/// Check if a marketplace name impersonates an official Anthropic/NeomClaw marketplace.
+/// Check if a marketplace name impersonates an official Anthropic/Neomage marketplace.
 bool isBlockedOfficialName(String name) {
   if (allowedOfficialMarketplaceNames.contains(name.toLowerCase())) {
     return false;
@@ -488,7 +488,7 @@ String _marketplaceSourceHint(String p) {
   final stripped = p.replaceAll(RegExp(r'^(\.\./)+'), '');
   final corrected = stripped != p ? './$stripped' : './plugins/my-plugin';
   return 'Plugin source paths are resolved relative to the marketplace root '
-      '(the directory containing .neomclaw-plugin/), not relative to marketplace.json. '
+      '(the directory containing .neomage-plugin/), not relative to marketplace.json. '
       'Use "$corrected" instead of "$p".';
 }
 
@@ -538,7 +538,7 @@ List<ValidationError> validateMarketplaceName(String name) {
       const ValidationError(
         path: 'name',
         message:
-            'Marketplace name impersonates an official Anthropic/NeomClaw marketplace',
+            'Marketplace name impersonates an official Anthropic/Neomage marketplace',
       ),
     );
   }
@@ -636,7 +636,7 @@ Future<ValidationResult> validatePluginManifest(String filePath) async {
         path: key,
         message:
             "Field '$key' belongs in the marketplace entry (marketplace.json), "
-            "not plugin.json. It's harmless here but unused -- NeomClaw "
+            "not plugin.json. It's harmless here but unused -- Neomage "
             "ignores it at load time.",
       ),
     );
@@ -675,8 +675,8 @@ Future<ValidationResult> validatePluginManifest(String filePath) async {
         ValidationWarning(
           path: 'name',
           message:
-              'Plugin name "$name" is not kebab-case. NeomClaw accepts '
-              'it, but the NeomClaw.ai marketplace sync requires kebab-case '
+              'Plugin name "$name" is not kebab-case. Neomage accepts '
+              'it, but the Neomage.ai marketplace sync requires kebab-case '
               '(lowercase letters, digits, and hyphens only, e.g., "my-plugin").',
         ),
       );
@@ -953,7 +953,7 @@ ValidationResult validateComponentFile(
       ValidationWarning(
         path: 'description',
         message:
-            'No description in frontmatter. A description helps users and NeomClaw '
+            'No description in frontmatter. A description helps users and Neomage '
             'understand when to use this $typeStr.',
       ),
     );
@@ -1168,7 +1168,7 @@ String _detectManifestType(String filePath) {
 
   if (fileName == 'plugin.json') return 'plugin';
   if (fileName == 'marketplace.json') return 'marketplace';
-  if (dirName == '.neomclaw-plugin') return 'plugin';
+  if (dirName == '.neomage-plugin') return 'plugin';
 
   return 'unknown';
 }
@@ -1180,10 +1180,10 @@ Future<ValidationResult> validateManifest(String filePath) async {
   // Check if it's a directory
   final entityType = await FileSystemEntity.type(absolutePath);
   if (entityType == FileSystemEntityType.directory) {
-    // Look for manifest files in .neomclaw-plugin directory
+    // Look for manifest files in .neomage-plugin directory
     final marketplacePath = path.join(
       absolutePath,
-      '.neomclaw-plugin',
+      '.neomage-plugin',
       'marketplace.json',
     );
     final marketplaceResult = await validateMarketplaceManifest(
@@ -1196,7 +1196,7 @@ Future<ValidationResult> validateManifest(String filePath) async {
 
     final pluginPath = path.join(
       absolutePath,
-      '.neomclaw-plugin',
+      '.neomage-plugin',
       'plugin.json',
     );
     final pluginResult = await validatePluginManifest(pluginPath);
@@ -1211,7 +1211,7 @@ Future<ValidationResult> validateManifest(String filePath) async {
         const ValidationError(
           path: 'directory',
           message:
-              'No manifest found in directory. Expected .neomclaw-plugin/marketplace.json or .neomclaw-plugin/plugin.json',
+              'No manifest found in directory. Expected .neomage-plugin/marketplace.json or .neomage-plugin/plugin.json',
         ),
       ],
       warnings: const [],

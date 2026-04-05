@@ -6,7 +6,7 @@ library;
 
 import 'dart:async';
 import 'dart:collection';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 // ---------------------------------------------------------------------------
 // Configuration

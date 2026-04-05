@@ -1,9 +1,9 @@
-// Ripgrep utilities — port of neom_claw/src/utils/ripgrep.ts.
+// Ripgrep utilities — port of neomage/src/utils/ripgrep.ts.
 // Ripgrep command building, execution, result parsing, streaming, and
 // file counting. Adapted for Dart/Flutter with dart:io process management.
 
 import 'dart:async';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:path/path.dart' as p;
@@ -403,7 +403,7 @@ Future<List<String>> _ripGrepWithRetry(
     }
   }
 
-  // If we timed out with no results, throw an error so NeomClaw knows the
+  // If we timed out with no results, throw an error so Neomage knows the
   // search didn't complete rather than thinking there were no matches.
   if (isTimeout && lines.isEmpty) {
     final timeoutSecs = _isWsl() ? 60 : 20;

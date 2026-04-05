@@ -1,4 +1,4 @@
-// Compact service — faithful port of neom_claw/src/services/compact/.
+// Compact service — faithful port of neomage/src/services/compact/.
 // Covers: compact.ts, sessionMemoryCompact.ts, microCompact.ts,
 //         autoCompact.ts, prompt.ts, grouping.ts, postCompactCleanup.ts,
 //         compactWarningState.ts, timeBasedMCConfig.ts.

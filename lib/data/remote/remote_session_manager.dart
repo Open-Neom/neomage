@@ -1,4 +1,4 @@
-// RemoteSessionManager — ported from openclaude src/remote/RemoteSessionManager.ts.
+// RemoteSessionManager — ported from neomagent src/remote/RemoteSessionManager.ts.
 // Coordinates WebSocket subscription, HTTP POST for user messages, and the
 // permission request/response flow for a remote CCR session.
 
@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
 
-import 'package:neom_claw/data/remote/sessions_websocket.dart';
+import 'package:neomage/data/remote/sessions_websocket.dart';
 
 // ---------------------------------------------------------------------------
 // Remote permission response

@@ -1,9 +1,9 @@
-// MCP client — port of neom_claw/src/services/mcp/client.ts.
+// MCP client — port of neomage/src/services/mcp/client.ts.
 // Manages connections to MCP servers, tool discovery, and execution.
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import '../tools/tool.dart';
 import '../tools/tool_registry.dart';
@@ -212,7 +212,7 @@ class McpClient {
       'params': {
         'protocolVersion': '2024-11-05',
         'capabilities': {},
-        'clientInfo': {'name': 'flutter_claw', 'version': '0.1.0'},
+        'clientInfo': {'name': 'neomage', 'version': '0.1.0'},
       },
     };
 

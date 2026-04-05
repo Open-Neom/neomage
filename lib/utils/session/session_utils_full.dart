@@ -1,4 +1,4 @@
-// Extended session management — port of neom_claw sessionRestore.ts +
+// Extended session management — port of neomage sessionRestore.ts +
 // sessionStart.ts + sessionState.ts + sessionEnvironment.ts +
 // sessionActivity.ts + sessionTitle.ts + sessionFileAccessHooks.ts +
 // sessionIngressAuth.ts.
@@ -7,7 +7,7 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neom_claw/core/platform/claw_io.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -149,7 +149,7 @@ void _startHeartbeatTimer() {
   _clearIdleTimer();
   _heartbeatTimer = Timer.periodic(_sessionActivityInterval, (_) {
     final shouldSend = _isEnvTruthy(
-      Platform.environment['NEOMCLAW_REMOTE_SEND_KEEPALIVES'],
+      Platform.environment['MAGE_REMOTE_SEND_KEEPALIVES'],
     );
     if (shouldSend) {
       _activityCallback?.call();
@@ -189,7 +189,7 @@ void unregisterSessionActivityCallback() {
 /// Send a single keep-alive signal.
 void sendSessionActivitySignal() {
   final shouldSend = _isEnvTruthy(
-    Platform.environment['NEOMCLAW_REMOTE_SEND_KEEPALIVES'],
+    Platform.environment['MAGE_REMOTE_SEND_KEEPALIVES'],
   );
   if (shouldSend) {
     _activityCallback?.call();
@@ -327,7 +327,7 @@ bool _sessionEnvScriptChecked = false;
 
 /// Get the session env directory path.
 Future<String> getSessionEnvDirPath(String sessionId) async {
-  final dir = p.join(_getNeomClawConfigHomeDir(), 'session-env', sessionId);
+  final dir = p.join(_getNeomageConfigHomeDir(), 'session-env', sessionId);
   await Directory(dir).create(recursive: true);
   return dir;
 }
@@ -403,8 +403,8 @@ Future<String?> getSessionEnvironmentScript(String sessionId) async {
 
   final scripts = <String>[];
 
-  // Check for NEOMCLAW_ENV_FILE.
-  final envFile = Platform.environment['NEOMCLAW_ENV_FILE'];
+  // Check for MAGE_ENV_FILE.
+  final envFile = Platform.environment['MAGE_ENV_FILE'];
   if (envFile != null) {
     try {
       final envScript = (await File(envFile).readAsString()).trim();
@@ -846,7 +846,7 @@ void exitRestoredWorktree({
 
 /// Detect session file type from a path.
 String? detectSessionFileType(String filePath) {
-  if (filePath.contains('.neomclaw/') && filePath.endsWith('.md')) {
+  if (filePath.contains('.neomage/') && filePath.endsWith('.md')) {
     return 'session_memory';
   }
   if (filePath.endsWith('.jsonl') && filePath.contains('projects/')) {
@@ -857,7 +857,7 @@ String? detectSessionFileType(String filePath) {
 
 /// Detect session pattern type from a glob pattern.
 String? detectSessionPatternType(String pattern) {
-  if (pattern.contains('.neomclaw/') && pattern.contains('.md')) {
+  if (pattern.contains('.neomage/') && pattern.contains('.md')) {
     return 'session_memory';
   }
   if (pattern.contains('.jsonl') && pattern.contains('projects/')) {
@@ -868,7 +868,7 @@ String? detectSessionPatternType(String pattern) {
 
 /// Check if a file path is an auto memory file.
 bool isAutoMemFile(String filePath) {
-  return filePath.contains('.neomclaw/') &&
+  return filePath.contains('.neomage/') &&
       (filePath.endsWith('.md') || filePath.contains('/memory/'));
 }
 
@@ -1004,7 +1004,7 @@ bool _sessionIngressTokenChecked = false;
 
 /// Well-known token file path for CCR.
 const String _ccrSessionIngressTokenPath =
-    '/home/claude/.neomclaw/remote/.session_ingress_token';
+    '/home/claude/.neomage/remote/.session_ingress_token';
 
 /// Read token from a well-known file path.
 String? _readTokenFromWellKnownFile(String path) {
@@ -1020,11 +1020,11 @@ String? _readTokenFromWellKnownFile(String path) {
 String? _getTokenFromFileDescriptor() {
   if (_sessionIngressTokenChecked) return _cachedSessionIngressToken;
 
-  final fdEnv = Platform.environment['NEOMCLAW_WEBSOCKET_AUTH_FILE_DESCRIPTOR'];
+  final fdEnv = Platform.environment['MAGE_WEBSOCKET_AUTH_FILE_DESCRIPTOR'];
   if (fdEnv == null) {
     // No FD env var — try the well-known file.
     final path =
-        Platform.environment['NEOMCLAW_SESSION_INGRESS_TOKEN_FILE'] ??
+        Platform.environment['MAGE_SESSION_INGRESS_TOKEN_FILE'] ??
         _ccrSessionIngressTokenPath;
     _cachedSessionIngressToken = _readTokenFromWellKnownFile(path);
     _sessionIngressTokenChecked = true;
@@ -1052,7 +1052,7 @@ String? _getTokenFromFileDescriptor() {
   } catch (_) {
     // FD read failed — try the well-known file.
     final path =
-        Platform.environment['NEOMCLAW_SESSION_INGRESS_TOKEN_FILE'] ??
+        Platform.environment['MAGE_SESSION_INGRESS_TOKEN_FILE'] ??
         _ccrSessionIngressTokenPath;
     _cachedSessionIngressToken = _readTokenFromWellKnownFile(path);
     _sessionIngressTokenChecked = true;
@@ -1064,7 +1064,7 @@ String? _getTokenFromFileDescriptor() {
 /// Priority: env var > file descriptor > well-known file.
 String? getSessionIngressAuthToken() {
   // 1. Check environment variable.
-  final envToken = Platform.environment['NEOMCLAW_SESSION_ACCESS_TOKEN'];
+  final envToken = Platform.environment['MAGE_SESSION_ACCESS_TOKEN'];
   if (envToken != null && envToken.isNotEmpty) return envToken;
 
   // 2. Check file descriptor (legacy path), with file fallback.
@@ -1077,7 +1077,7 @@ Map<String, String> getSessionIngressAuthHeaders() {
   if (token == null) return {};
   if (token.startsWith('sk-ant-sid')) {
     final headers = <String, String>{'Cookie': 'sessionKey=$token'};
-    final orgUuid = Platform.environment['NEOMCLAW_ORGANIZATION_UUID'];
+    final orgUuid = Platform.environment['MAGE_ORGANIZATION_UUID'];
     if (orgUuid != null) {
       headers['X-Organization-Uuid'] = orgUuid;
     }
@@ -1103,7 +1103,7 @@ bool _isEnvTruthy(String? value) {
   return v == '1' || v == 'true' || v == 'yes';
 }
 
-String _getNeomClawConfigHomeDir() {
-  return Platform.environment['NEOMCLAW_CONFIG_HOME'] ??
-      p.join(Platform.environment['HOME'] ?? '.', '.neomclaw');
+String _getNeomageConfigHomeDir() {
+  return Platform.environment['MAGE_CONFIG_HOME'] ??
+      p.join(Platform.environment['HOME'] ?? '.', '.neomage');
 }

@@ -1,6 +1,6 @@
 /// Context analysis for conversations.
 ///
-/// Ported from neom_claw/src/utils/analyzeContext.ts (1382 LOC).
+/// Ported from neomage/src/utils/analyzeContext.ts (1382 LOC).
 library;
 
 import 'dart:async';
@@ -564,12 +564,12 @@ class ContextAnalyzer extends SintController {
   }
 
   /// Count memory file tokens.
-  Future<({int neomClawMdTokens, List<MemoryFile> details})>
+  Future<({int neomageMdTokens, List<MemoryFile> details})>
   countMemoryFileTokens(
     List<({String path, String type, String content})> memoryFiles,
   ) async {
     if (memoryFiles.isEmpty) {
-      return (neomClawMdTokens: 0, details: <MemoryFile>[]);
+      return (neomageMdTokens: 0, details: <MemoryFile>[]);
     }
 
     final results = await Future.wait(
@@ -595,7 +595,7 @@ class ContextAnalyzer extends SintController {
       );
     }
 
-    return (neomClawMdTokens: total, details: details);
+    return (neomageMdTokens: total, details: details);
   }
 
   // ---------------------------------------------------------------------------
@@ -861,7 +861,7 @@ class ContextAnalyzer extends SintController {
     required List<Map<String, dynamic>> messages,
     required String model,
     required int systemPromptTokens,
-    required int neomClawMdTokens,
+    required int neomageMdTokens,
     required int builtInToolTokens,
     required int mcpToolTokens,
     required int agentTokens,
@@ -953,12 +953,12 @@ class ContextAnalyzer extends SintController {
       );
     }
 
-    if (neomClawMdTokens > 0) {
+    if (neomageMdTokens > 0) {
       cats.add(
         ContextCategory(
           name: 'Memory files',
-          tokens: neomClawMdTokens,
-          color: 'neomclaw',
+          tokens: neomageMdTokens,
+          color: 'neomage',
         ),
       );
     }

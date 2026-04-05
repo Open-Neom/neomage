@@ -1,4 +1,4 @@
-// Local API server for neom_claw web mode.
+// Local API server for neomage web mode.
 //
 // Run with:
 //   dart run bin/server.dart
@@ -13,7 +13,7 @@ import 'dart:io';
 
 const int _port = 3219;
 
-void _log(String message) => developer.log(message, name: 'neom_claw');
+void _log(String message) => developer.log(message, name: 'neomage');
 
 // ---------------------------------------------------------------------------
 // Active processes — keyed by PID
@@ -26,7 +26,7 @@ final Map<int, Process> _activeProcesses = {};
 
 Future<void> main() async {
   final server = await HttpServer.bind('127.0.0.1', _port);
-  _log('neom_claw local server running on http://localhost:$_port');
+  _log('neomage local server running on http://localhost:$_port');
   _log('Press Ctrl+C to stop.');
 
   await for (final request in server) {

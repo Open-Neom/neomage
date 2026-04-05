@@ -1,4 +1,4 @@
-// PromptInput — port of neom_claw/src/components/PromptInput/.
+// PromptInput — port of neomage/src/components/PromptInput/.
 // Main chat input widget with @-mentions, slash commands, file drop, autocomplete.
 
 import 'dart:async';

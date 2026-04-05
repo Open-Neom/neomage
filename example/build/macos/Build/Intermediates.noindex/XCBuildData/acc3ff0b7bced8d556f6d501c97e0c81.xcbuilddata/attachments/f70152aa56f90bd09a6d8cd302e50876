@@ -1,0 +1,19 @@
+{
+  "" : {
+    "diagnostics" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/file_picker-primary.dia",
+    "emit-module-dependencies" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/file_picker-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/file_picker-primary-emit-module.dia",
+    "pch" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/file_picker-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/file_picker-primary.swiftdeps"
+  },
+  "/Users/serzen/.pub-cache/hosted/pub.dev/file_picker-10.3.10/macos/file_picker/Sources/file_picker/FilePickerPlugin.swift" : {
+    "const-values" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/FilePickerPlugin.swiftconstvalues",
+    "dependencies" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/FilePickerPlugin.d",
+    "diagnostics" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/FilePickerPlugin.dia",
+    "index-unit-output-path" : "/Pods.build/Debug/file_picker.build/Objects-normal/arm64/FilePickerPlugin.o",
+    "llvm-bc" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/FilePickerPlugin.bc",
+    "object" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/FilePickerPlugin.o",
+    "swift-dependencies" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/FilePickerPlugin.swiftdeps",
+    "swiftmodule" : "/Users/serzen/codebase_ia/neomage/example/build/macos/Build/Intermediates.noindex/Pods.build/Debug/file_picker.build/Objects-normal/arm64/FilePickerPlugin~partial.swiftmodule"
+  }
+}

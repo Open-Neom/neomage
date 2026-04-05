@@ -1,4 +1,4 @@
-// Bootstrap app state — ported from NeomClaw src/bootstrap/state.ts.
+// Bootstrap app state — ported from Neomage src/bootstrap/state.ts.
 // Centralized state for session, metrics, and configuration.
 
 import 'package:uuid/uuid.dart';
