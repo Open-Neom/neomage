@@ -176,6 +176,6 @@ Neomage's tool system architecture, system prompt design, and agentic loop patte
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Apache License — see [LICENSE](LICENSE).
 
 Built by the [Open Neom](https://github.com/Open-Neom) community.
