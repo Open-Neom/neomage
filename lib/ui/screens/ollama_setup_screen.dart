@@ -16,7 +16,7 @@ import '../controllers/chat_controller.dart';
 // ─── Controller ──
 
 class OllamaSetupController extends SintController {
-  final OllamaService _ollama = OllamaService();
+  final OllamaClient _ollama = OllamaClient();
   final AuthService _auth = AuthService();
 
   final status = OllamaStatus.unknown.obs;
@@ -92,7 +92,7 @@ class OllamaSetupController extends SintController {
     testError.value = null;
 
     try {
-      final result = await _ollama.testChat(
+      final result = await _ollama.chat(
         model,
         'Introduce yourself in one sentence: what model are you and what can you do?',
       );

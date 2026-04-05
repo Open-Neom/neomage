@@ -69,7 +69,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   _ConnectionTestResult? _connectionTestResult;
 
   // ── Step 2 (Local): Ollama state ──
-  final _ollamaService = OllamaService();
+  final _ollamaService = OllamaClient();
   OllamaStatus _ollamaStatus = OllamaStatus.unknown;
   List<OllamaModel> _ollamaModels = [];
   String? _selectedOllamaModel;
@@ -2039,7 +2039,7 @@ class _ModeCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _OllamaSetupStep extends StatelessWidget {
-  final OllamaService ollamaService;
+  final OllamaClient ollamaService;
   final OllamaStatus status;
   final List<OllamaModel> models;
   final String? selectedModel;

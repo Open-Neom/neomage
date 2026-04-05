@@ -25,6 +25,10 @@ dependencies:
   neom_cli: ^1.0.0
   neom_docs: ^1.0.0
 
+  # Ollama — Local model management
+  neom_ollama:
+    path: ../neom_modules/ai/neom_ollama
+
   # HTTP + Streaming
   http: ^1.4.0
   crypto: ^3.0.0

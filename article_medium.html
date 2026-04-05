@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neomage: The Open-Source Agentic AI Engine That Flutter Was Missing</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.75;
+    color: #1a1a2e;
+    background: #ffffff;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 40px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: #0f0f23;
+    margin-bottom: 12px;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    font-style: italic;
+    color: #555;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f0f23;
+    margin-top: 36px;
+    margin-bottom: 14px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e8e8f0;
+    letter-spacing: -0.3px;
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #16213e;
+    margin-top: 24px;
+    margin-bottom: 10px;
+  }
+
+  p {
+    margin-bottom: 14px;
+    color: #2a2a3e;
+  }
+
+  strong { color: #0f0f23; }
+
+  a {
+    color: #4361ee;
+    text-decoration: none;
+    border-bottom: 1px solid #4361ee40;
+  }
+
+  hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #d0d0e0, transparent);
+    margin: 32px 0;
+  }
+
+  ol, ul {
+    margin-bottom: 14px;
+    padding-left: 24px;
+  }
+
+  li {
+    margin-bottom: 6px;
+    color: #2a2a3e;
+  }
+
+  pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    border: 1px solid #313244;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 12.5px;
+  }
+
+  p code, li code {
+    background: #f0f0f8;
+    color: #4361ee;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+
+  /* Syntax highlighting colors */
+  .kw { color: #cba6f7; }   /* keywords */
+  .st { color: #a6e3a1; }   /* strings */
+  .cm { color: #6c7086; }   /* comments */
+  .fn { color: #89b4fa; }   /* functions */
+  .tp { color: #f9e2af; }   /* types */
+  .op { color: #89dceb; }   /* operators */
+  .nb { color: #fab387; }   /* numbers/built-ins */
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  thead th {
+    background: #f4f4fb;
+    color: #0f0f23;
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 2px solid #d0d0e0;
+  }
+
+  tbody td {
+    padding: 8px 14px;
+    border-bottom: 1px solid #eeeef4;
+    color: #2a2a3e;
+  }
+
+  tbody tr:hover { background: #fafaff; }
+
+  .flow-diagram {
+    background: #f8f8fd;
+    border: 1px solid #e0e0f0;
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: #4361ee;
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #4361ee, #7209b7);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-right: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .closing {
+    text-align: center;
+    font-style: italic;
+    color: #555;
+    margin-top: 36px;
+    padding-top: 20px;
+    border-top: 2px solid #e8e8f0;
+    font-size: 15px;
+  }
+
+  .links-section {
+    background: #f8f8fd;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border: 1px solid #e0e0f0;
+  }
+
+  .links-section li {
+    margin-bottom: 4px;
+  }
+
+  @media print {
+    body { padding: 0; max-width: none; }
+    pre { break-inside: avoid; }
+    h2 { break-after: avoid; }
+    table { break-inside: avoid; }
+  }
+
+  @page {
+    size: A4;
+    margin: 2cm 2.2cm;
+  }
+</style>
+</head>
+<body>
+
+<h1>Neomage: The Open-Source Agentic AI Engine That Flutter Was Missing</h1>
+
+<p class="subtitle">How a 191,870-line Flutter package brings the power of Claude Code's architecture to every AI provider &mdash; and why it matters for the community.</p>
+
+<div class="header-meta">
+  <span class="badge">FLUTTER</span>
+  <span class="badge">AI AGENTS</span>
+  <span class="badge">OPEN SOURCE</span>
+  <span class="badge">DART</span>
+</div>
+
+<hr>
+
+<p>Last week we published <a href="https://pub.dev/packages/neomage">Neomage v1.0.0</a> on pub.dev. It's a multi-provider agentic AI engine for Flutter &mdash; 300 Dart files, 36 built-in tools, 284 skills, 12 personality modules, and native support for Gemini, OpenAI, Anthropic, DeepSeek, Qwen, and Ollama.</p>
+
+<p>But the numbers don't tell the real story. The real story is <strong>why</strong> Flutter needs this and <strong>how</strong> it changes what you can build.</p>
+
+<hr>
+
+<h2>The Problem: AI in Flutter is Fragmented</h2>
+
+<p>If you wanted to build an AI-powered app in Flutter before Neomage, you had two options:</p>
+
+<ol>
+  <li><strong>Use a single-provider SDK</strong> &mdash; <code>google_generative_ai</code> for Gemini, a community wrapper for OpenAI, maybe roll your own for Anthropic. Your app is locked to one provider. Switching means rewriting your API layer.</li>
+  <li><strong>Build everything from scratch</strong> &mdash; SSE parsing, streaming, tool definitions, the agentic loop, context management, permission systems. Weeks of work before you write your first feature.</li>
+</ol>
+
+<p>Both options share the same problem: <strong>there was no Flutter-native equivalent of what Claude Code, LangChain, or Vercel AI SDK provide on the TypeScript side.</strong> The infrastructure for building truly agentic applications simply didn't exist in Dart.</p>
+
+<p>Neomage fills that gap.</p>
+
+<hr>
+
+<h2>What Neomage Actually Is</h2>
+
+<p>Neomage is not a chatbot UI kit. It's not a wrapper around one API. It's an <strong>engine</strong> &mdash; the layer between your Flutter app and any AI provider that handles the hard parts:</p>
+
+<h3>One Interface, Any Provider</h3>
+
+<pre><span class="cm">// Switch providers by changing one config &mdash; same interface everywhere</span>
+<span class="kw">final</span> provider = <span class="tp">OpenAiShim</span>(<span class="tp">ApiConfig</span>(
+  type: <span class="tp">ApiProviderType</span>.gemini,
+  apiKey: <span class="st">'your-key'</span>,
+  model: <span class="st">'gemini-2.5-flash'</span>,
+));
+
+<span class="cm">// Or use Anthropic</span>
+<span class="kw">final</span> claude = <span class="tp">AnthropicClient</span>(<span class="tp">ApiConfig</span>.anthropic(apiKey: <span class="st">'sk-...'</span>));
+
+<span class="cm">// Or run locally with Ollama &mdash; no API key needed</span>
+<span class="kw">final</span> local = <span class="tp">OpenAiShim</span>(<span class="tp">ApiConfig</span>(
+  type: <span class="tp">ApiProviderType</span>.ollama,
+  baseUrl: <span class="st">'http://localhost:11434/v1'</span>,
+  model: <span class="st">'llama3.1:8b'</span>,
+));</pre>
+
+<p>Every provider returns the same <code>Stream&lt;StreamEvent&gt;</code>. Your UI code doesn't know or care which model is behind it. This is the same shim pattern that Claude Code uses internally &mdash; we studied it, understood it, and ported it to Dart.</p>
+
+<h3>The Agentic Loop</h3>
+
+<p>This is the core of what makes Neomage different from a simple API wrapper. The <code>QueryEngine</code> implements a multi-turn execution loop:</p>
+
+<div class="flow-diagram">
+user message &rarr; API call &rarr; tool extraction &rarr; permission check &rarr;<br>
+tool execution &rarr; result injection &rarr; compaction check &rarr; repeat
+</div>
+
+<p>When you tell Neomage "read the pubspec.yaml and update the version," it doesn't respond with instructions. It <strong>does it</strong> &mdash; reads the file, edits it, verifies the change, and reports back. Up to 25 autonomous turns per query, with automatic context compaction when approaching token limits.</p>
+
+<pre><span class="kw">final</span> engine = <span class="tp">QueryEngine</span>(
+  provider: provider,
+  toolRegistry: toolRegistry,
+  systemPrompt: systemPrompt,
+  compactionService: compactionService,
+);
+
+<span class="kw">final</span> result = <span class="kw">await</span> engine.<span class="fn">query</span>(
+  messages: [<span class="tp">Message</span>.<span class="fn">user</span>(<span class="st">'Fix the bug in auth_service.dart'</span>)],
+  onTextDelta: (text) => <span class="fn">print</span>(text),
+  onToolUse: (name, input) => <span class="fn">print</span>(<span class="st">'Using: $name'</span>),
+);</pre>
+
+<h3>36 Built-in Tools</h3>
+
+<p>Every tool has a detailed description that tells the AI model exactly how to use it &mdash; following patterns directly inspired by Claude Code's tool system:</p>
+
+<table>
+  <thead>
+    <tr><th>Tool</th><th>What it does</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Bash</strong></td><td>Execute shell commands with security validation</td></tr>
+    <tr><td><strong>Read</strong></td><td>Read files with offset/limit, images, PDFs, notebooks</td></tr>
+    <tr><td><strong>Write</strong></td><td>Create files with parent directory auto-creation</td></tr>
+    <tr><td><strong>Edit</strong></td><td>Surgical string replacements with quote normalization</td></tr>
+    <tr><td><strong>Grep</strong></td><td>Ripgrep-powered regex search across codebases</td></tr>
+    <tr><td><strong>Glob</strong></td><td>Fast file pattern matching</td></tr>
+    <tr><td><strong>Agent</strong></td><td>Spawn sub-agents for parallel task execution</td></tr>
+    <tr><td><strong>WebSearch</strong></td><td>Search the web with domain filtering</td></tr>
+    <tr><td><strong>WebFetch</strong></td><td>Fetch and process web content</td></tr>
+    <tr><td><strong>SendMessage</strong></td><td>Inter-agent communication</td></tr>
+    <tr><td><strong>TodoWrite</strong></td><td>Structured task tracking</td></tr>
+    <tr><td><strong>LSP</strong></td><td>Language Server Protocol integration</td></tr>
+  </tbody>
+</table>
+
+<p>Each tool description isn't just a label &mdash; it's a multi-paragraph instruction set that teaches the model when to use it, what to avoid, and how to handle edge cases. For example, the Bash tool explicitly tells the model: <em>"Use Glob instead of <code>find</code>. Use Grep instead of <code>grep</code>. Use Read instead of <code>cat</code>."</em> This level of guidance is what makes even small local models behave like capable agents.</p>
+
+<hr>
+
+<h2>The Personality System: Teaching Any Model to Be an Agent</h2>
+
+<p>Here's something most AI frameworks miss: <strong>a small model doesn't know it can use tools unless you tell it very clearly.</strong></p>
+
+<p>Neomage includes 12 modular personality files written in plain Markdown &mdash; no XML, no YAML, no framework-specific DSL. Just headers, bullet points, and bold text that any model from 3B parameters up can understand:</p>
+
+<ul>
+  <li><strong>IDENTITY</strong> &mdash; Who Neomage is. Strategic mentor, not servile chatbot.</li>
+  <li><strong>COGNITION</strong> &mdash; Chain of thought protocol: UNDERSTAND &rarr; PLAN &rarr; EXECUTE &rarr; VERIFY &rarr; REPORT.</li>
+  <li><strong>TOOLS</strong> &mdash; Eight critical rules, starting with: "You DO have access to the user's files. NEVER say you can't."</li>
+  <li><strong>AGENCY</strong> &mdash; Autonomy levels: what to do freely, what to confirm, what to always ask about.</li>
+  <li><strong>MEMORY</strong> &mdash; Context hierarchy and thread continuity.</li>
+  <li><strong>METACOGNITION</strong> &mdash; Self-monitoring before every response.</li>
+  <li><strong>And 6 more</strong> &mdash; Coherence, Introspection, Consolidation, Artifacts, Manus, Capabilities.</li>
+</ul>
+
+<p>These modules are loaded at startup and assembled dynamically with session context &mdash; the model, working directory, git branch, platform, and any user-specific instructions:</p>
+
+<pre><span class="kw">await</span> <span class="tp">NeomageSystemPrompt</span>.<span class="fn">load</span>();
+
+<span class="kw">final</span> systemPrompt = <span class="tp">NeomageSystemPrompt</span>.<span class="fn">build</span>(
+  model: <span class="st">'gemini-2.5-flash'</span>,
+  workingDirectory: <span class="st">'/home/user/my_app'</span>,
+  gitBranch: <span class="st">'feature/auth'</span>,
+  platform: <span class="st">'Darwin 24.4.0'</span>,
+  isGitRepo: <span class="kw">true</span>,
+);</pre>
+
+<p>The result is a ~2,500-word system prompt that transforms even a basic model into an agent that reads files, runs commands, and reports results &mdash; instead of saying "I can't access your filesystem."</p>
+
+<hr>
+
+<h2>284 Skills Across 40+ Categories</h2>
+
+<p>Skills are loadable knowledge modules &mdash; Markdown files that inject domain expertise into the active session:</p>
+
+<ul>
+  <li><strong>Architecture</strong>: Microservices, clean architecture, event-driven design</li>
+  <li><strong>Flutter</strong>: State management, navigation, platform channels</li>
+  <li><strong>Testing</strong>: Unit, integration, E2E, TDD, mutation testing</li>
+  <li><strong>Security</strong>: OWASP, authentication, secrets management</li>
+  <li><strong>AI/ML</strong>: Prompt engineering, RAG, fine-tuning</li>
+  <li><strong>Git Workflow</strong>: Branching strategies, code review, CI/CD</li>
+  <li><strong>And 34 more categories</strong></li>
+</ul>
+
+<p>Users browse and load skills from the Skills panel in the UI. When loaded, the skill content is injected into the system prompt, giving the model specialized knowledge for the current task.</p>
+
+<hr>
+
+<h2>Built for Flutter, Not Ported to Flutter</h2>
+
+<p>Neomage isn't a JavaScript library wrapped in a Dart binding. Every line is native Dart, built on Flutter's platform abstractions:</p>
+
+<ul>
+  <li><strong>Cross-platform IO</strong> &mdash; Conditional exports (<code>dart:io</code> on native, stubs on web) mean the same code runs on macOS, Linux, Windows, iOS, Android, and Web.</li>
+  <li><strong>Sint framework</strong> &mdash; Reactive state management with <code>SintController</code>, <code>.obs</code> observables, and <code>Obx()</code> widgets. No Provider, no Riverpod, no boilerplate.</li>
+  <li><strong>Streaming</strong> &mdash; Native Dart <code>Stream&lt;StreamEvent&gt;</code> with typed events (<code>TextDelta</code>, <code>ContentBlockStart</code>, <code>ToolUseStart</code>, <code>ThinkingDelta</code>). Plug directly into <code>StreamBuilder</code> or <code>Obx</code>.</li>
+  <li><strong>Hive + SharedPreferences</strong> &mdash; API keys in encrypted Hive boxes, preferences in SharedPreferences. No external backend required.</li>
+</ul>
+
+<p>The example app in the repository is a full AI coding assistant &mdash; streaming chat, model switching, Ollama local models, command palette, vim mode, settings, onboarding, Material 3 theming &mdash; all built with Neomage as the only AI dependency.</p>
+
+<hr>
+
+<h2>Standing on the Shoulders of Giants</h2>
+
+<p>We want to be transparent about where Neomage comes from. This project wouldn't exist without:</p>
+
+<p><strong>Anthropic</strong> &mdash; For open-sourcing <a href="https://github.com/anthropics/claude-code">Claude Code</a>. We studied every line of their 517,000-line TypeScript codebase. The tool system architecture, the system prompt design, the agentic loop, the permission model, the compaction strategies &mdash; all of it informed Neomage's design. When we say "inspired by," we mean we read <code>prompts.ts</code>, understood why each tool description is three paragraphs long, and translated that philosophy to Dart.</p>
+
+<p><strong>Google</strong> &mdash; For the Gemini API and for Flutter itself. Neomage runs on 6 platforms because Flutter exists. The Gemini client was our first provider implementation, and it remains the default for new users.</p>
+
+<p><strong>OpenAI</strong> &mdash; For establishing the chat completions API standard. Neomage's <code>OpenAiShim</code> speaks this protocol to Ollama, DeepSeek, Qwen, OpenRouter, Together, Groq, Fireworks, LM Studio, and any other compatible endpoint. One shim, dozens of providers.</p>
+
+<p><strong>Qwen (Alibaba Cloud)</strong> &mdash; For the Qwen model family and DashScope API. Having a first-class Qwen provider means Neomage works for developers in regions where other providers are less accessible.</p>
+
+<p><strong>Ollama</strong> &mdash; For making local inference accessible. Running <code>ollama pull llama3.1</code> and having a fully functional agentic AI in your Flutter app &mdash; offline, private, no API key &mdash; is the kind of developer experience we want to enable.</p>
+
+<hr>
+
+<h2>What You Can Build</h2>
+
+<p>Neomage is a package, not an app. Here's what you can build with it:</p>
+
+<ul>
+  <li><strong>AI coding assistants</strong> &mdash; The example app is one. Fork it, customize it, ship it.</li>
+  <li><strong>Document processors</strong> &mdash; Read files, analyze content, generate reports. The tool system handles the I/O.</li>
+  <li><strong>DevOps dashboards</strong> &mdash; Run commands, parse outputs, monitor systems. Bash tool + streaming = real-time ops.</li>
+  <li><strong>Educational tools</strong> &mdash; The skills system can inject domain knowledge for tutoring, code review, or exam prep.</li>
+  <li><strong>Local-first AI apps</strong> &mdash; Ollama support means full agentic capabilities without internet or API costs.</li>
+  <li><strong>Multi-agent systems</strong> &mdash; The Agent tool spawns sub-agents. SendMessage enables inter-agent communication. TodoWrite tracks distributed work.</li>
+</ul>
+
+<hr>
+
+<h2>Getting Started</h2>
+
+<pre><span class="cm"># pubspec.yaml</span>
+<span class="fn">dependencies</span>:
+  <span class="fn">neomage</span>: <span class="st">^1.0.0</span></pre>
+
+<pre><span class="kw">import</span> <span class="st">'package:neomage/neomage.dart'</span>;
+
+<span class="cm">// 1. Create a provider</span>
+<span class="kw">final</span> provider = <span class="tp">OpenAiShim</span>(<span class="tp">ApiConfig</span>(
+  type: <span class="tp">ApiProviderType</span>.ollama,
+  baseUrl: <span class="st">'http://localhost:11434/v1'</span>,
+  model: <span class="st">'llama3.1:8b'</span>,
+));
+
+<span class="cm">// 2. Register tools</span>
+<span class="kw">final</span> registry = <span class="tp">ToolRegistry</span>();
+registry.<span class="fn">register</span>(<span class="tp">BashTool</span>());
+registry.<span class="fn">register</span>(<span class="tp">FileReadTool</span>());
+registry.<span class="fn">register</span>(<span class="tp">FileEditTool</span>());
+registry.<span class="fn">register</span>(<span class="tp">GrepTool</span>());
+
+<span class="cm">// 3. Build the system prompt</span>
+<span class="kw">await</span> <span class="tp">NeomageSystemPrompt</span>.<span class="fn">load</span>();
+<span class="kw">final</span> prompt = <span class="tp">NeomageSystemPrompt</span>.<span class="fn">build</span>(
+  model: <span class="st">'llama3.1:8b'</span>,
+  workingDirectory: <span class="tp">Directory</span>.current.path,
+);
+
+<span class="cm">// 4. Create the engine and query</span>
+<span class="kw">final</span> engine = <span class="tp">QueryEngine</span>(
+  provider: provider,
+  toolRegistry: registry,
+  systemPrompt: prompt,
+);
+
+<span class="kw">final</span> result = <span class="kw">await</span> engine.<span class="fn">query</span>(
+  messages: [<span class="tp">Message</span>.<span class="fn">user</span>(<span class="st">'List all Dart files in this project'</span>)],
+  onTextDelta: (t) => stdout.<span class="fn">write</span>(t),
+  onToolUse: (name, _) => <span class="fn">print</span>(<span class="st">'\n[Tool: $name]'</span>),
+);</pre>
+
+<p>That's it. Your Flutter app now has an agentic AI that can read files, run commands, search code, and report results &mdash; with any provider, on any platform.</p>
+
+<hr>
+
+<h2>The Road Ahead</h2>
+
+<p>Neomage 1.0.0 is the foundation. Here's what's coming:</p>
+
+<ul>
+  <li><strong>MCP server marketplace</strong> &mdash; Connect to Model Context Protocol servers for extended capabilities (databases, APIs, browsers).</li>
+  <li><strong>Multi-agent orchestration</strong> &mdash; Coordinator mode for complex workflows with multiple specialized agents.</li>
+  <li><strong>Voice input/output</strong> &mdash; STT/TTS integration for mobile-first experiences.</li>
+  <li><strong>Plugin system</strong> &mdash; Third-party tool packages that register with the engine automatically.</li>
+  <li><strong>Context-aware suggestions</strong> &mdash; Proactive prompts based on project state and user patterns.</li>
+</ul>
+
+<hr>
+
+<h2>Join the Community</h2>
+
+<div class="links-section">
+  <ul style="list-style: none; padding-left: 0;">
+    <li><strong>pub.dev</strong>: <a href="https://pub.dev/packages/neomage">neomage</a></li>
+    <li><strong>GitHub</strong>: <a href="https://github.com/Open-Neom/neomage">Open-Neom/neomage</a></li>
+    <li><strong>Publisher</strong>: <a href="https://openneom.dev">openneom.dev</a></li>
+  </ul>
+</div>
+
+<p>Neomage is MIT-licensed and part of the <a href="https://github.com/Open-Neom">Open Neom</a> ecosystem.</p>
+
+<p>If you're building AI-powered Flutter apps, you no longer have to start from zero. The engine is here.</p>
+
+<p class="closing">Neomage &mdash; Your AI agent to create, explore, and execute.</p>
+
+</body>
+</html>

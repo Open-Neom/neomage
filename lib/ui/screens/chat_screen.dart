@@ -972,7 +972,7 @@ class _ModelSelectorDialogState extends State<_ModelSelectorDialog> {
   Future<void> _loadOllamaModels() async {
     setState(() => _loadingOllama = true);
     try {
-      final service = OllamaService();
+      final service = OllamaClient();
       final status = await service.checkStatus();
       if (status == OllamaStatus.running) {
         final models = await service.listModels();

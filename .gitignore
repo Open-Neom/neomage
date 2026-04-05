@@ -71,3 +71,9 @@ app.*.map.json
 
 # Working directories
 migrate_working_dir/
+# iOS build artifacts (CRITICAL)
+example/ios/build/
+example/ios/Flutter/ephemeral/
+# Android build artifacts
+example/android/build/
+# General Flutter builds
