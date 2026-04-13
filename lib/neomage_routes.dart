@@ -7,7 +7,7 @@ import 'ui/screens/mcp_panel_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/session_browser_screen.dart';
 import 'ui/screens/settings_screen.dart';
-import 'ui/screens/choose_agent_screen.dart';
+import 'ui/screens/choose_agent_page.dart';
 import 'ui/screens/splash_screen.dart';
 
 // ---------------------------------------------------------------------------

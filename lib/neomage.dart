@@ -24,8 +24,14 @@ export 'domain/models/hook_schemas.dart';
 export 'domain/models/permissions.dart';
 export 'domain/models/plugin.dart';
 export 'domain/models/tool_definition.dart';
+export 'domain/models/compaction_policy.dart';
+export 'domain/models/normalized_message.dart';
 export 'domain/models/text_input_types.dart'
     hide VimMode, PromptInputMode, QueuePriority, QueuedCommand, isValidImagePaste;
+
+// Domain — Services
+export 'domain/services/queued_compaction_service.dart';
+export 'domain/services/message_normalizer_service.dart';
 
 // Data — API
 export 'data/api/api_provider.dart';
@@ -94,6 +100,8 @@ export 'data/tools/skill_tool.dart'
         SkillRegistry;
 
 // Data — Compact + Session + Memory
+export 'data/compact/queued_compaction_engine.dart';
+export 'data/compact/identifier_preserver.dart';
 export 'data/compact/compaction_service.dart'
     show
         CompactionService,
@@ -251,6 +259,7 @@ export 'data/services/settings_sync_service.dart';
 export 'data/services/session_memory_service.dart'
     hide SessionMemoryConfig, SessionMemoryState, roughTokenCountEstimation;
 export 'data/services/auto_dream_service.dart';
+export 'data/services/message_normalizer.dart';
 
 // Data — Platform (extended)
 export 'data/platform/remote_bridge.dart';

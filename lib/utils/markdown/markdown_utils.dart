@@ -288,18 +288,40 @@ String stripMarkdown(String markdown) {
   // Remove headings markers
   result = result.replaceAll(RegExp(r'^#{1,6}\s+', multiLine: true), '');
 
-  // Remove bold/italic
-  result = result.replaceAll(RegExp(r'\*\*(.+?)\*\*'), r'$1');
-  result = result.replaceAll(RegExp(r'__(.+?)__'), r'$1');
-  result = result.replaceAll(RegExp(r'\*(.+?)\*'), r'$1');
-  result = result.replaceAll(RegExp(r'_(.+?)_'), r'$1');
-  result = result.replaceAll(RegExp(r'~~(.+?)~~'), r'$1');
+  // Remove bold/italic — replaceAllMapped is required; replaceAll with a
+  // String replacement does NOT interpret $1 as a backreference in Dart.
+  result = result.replaceAllMapped(
+    RegExp(r'\*\*(.+?)\*\*'),
+    (m) => m.group(1)!,
+  );
+  result = result.replaceAllMapped(
+    RegExp(r'__(.+?)__'),
+    (m) => m.group(1)!,
+  );
+  result = result.replaceAllMapped(
+    RegExp(r'\*(.+?)\*'),
+    (m) => m.group(1)!,
+  );
+  result = result.replaceAllMapped(
+    RegExp(r'_(.+?)_'),
+    (m) => m.group(1)!,
+  );
+  result = result.replaceAllMapped(
+    RegExp(r'~~(.+?)~~'),
+    (m) => m.group(1)!,
+  );
+
+  // Remove images first (before links, since ![...](...) contains [...](...).)
+  result = result.replaceAllMapped(
+    RegExp(r'!\[([^\]]*)\]\([^)]+\)'),
+    (m) => m.group(1)!,
+  );
 
   // Remove links, keep text
-  result = result.replaceAll(RegExp(r'\[([^\]]+)\]\([^)]+\)'), r'$1');
-
-  // Remove images
-  result = result.replaceAll(RegExp(r'!\[([^\]]*)\]\([^)]+\)'), r'$1');
+  result = result.replaceAllMapped(
+    RegExp(r'\[([^\]]+)\]\([^)]+\)'),
+    (m) => m.group(1)!,
+  );
 
   // Remove blockquote markers
   result = result.replaceAll(RegExp(r'^>\s+', multiLine: true), '');

@@ -2,12 +2,11 @@
 // Detects system specs automatically, recommends the best local model,
 // shows KPIs, and provides step-by-step installation commands.
 
-import 'dart:io';
 import 'dart:math';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:neom_ollama/neom_ollama.dart';
 
 // ═══════════════════════════════════════════
 // Data Models
@@ -53,7 +52,7 @@ class _KPIs {
 }
 
 // ═══════════════════════════════════════════
-// Hardware Detection
+// Hardware Detection — delegated to neom_ollama HardwareProfiler
 // ═══════════════════════════════════════════
 
 class _SystemSpecs {
@@ -62,6 +61,7 @@ class _SystemSpecs {
   final MacGen? macGen;
   final MacTier? macTier;
   final bool isMac;
+  final bool isEstimated;
 
   const _SystemSpecs({
     required this.ramGB,
@@ -69,61 +69,36 @@ class _SystemSpecs {
     this.macGen,
     this.macTier,
     required this.isMac,
+    this.isEstimated = false,
   });
 
   static Future<_SystemSpecs> detect() async {
-    if (kIsWeb) {
-      return const _SystemSpecs(ramGB: 16, chipName: 'Unknown (Web)', isMac: false);
-    }
+    final hw = await const HardwareProfiler().detect();
 
-    int ramGB = 16;
-    String chipName = 'Unknown';
     MacGen? macGen;
     MacTier? macTier;
-    bool isMac = Platform.isMacOS;
-
-    try {
-      if (Platform.isMacOS) {
-        final memResult = await Process.run('sysctl', ['-n', 'hw.memsize']);
-        if (memResult.exitCode == 0) {
-          final bytes = int.tryParse(memResult.stdout.toString().trim()) ?? 0;
-          ramGB = (bytes / (1024 * 1024 * 1024)).round();
-        }
-
-        final cpuResult = await Process.run('sysctl', ['-n', 'machdep.cpu.brand_string']);
-        if (cpuResult.exitCode == 0) {
-          chipName = cpuResult.stdout.toString().trim();
-
-          final lower = chipName.toLowerCase();
-          if (lower.contains('m4')) macGen = MacGen.m4;
-          else if (lower.contains('m3')) macGen = MacGen.m3;
-          else if (lower.contains('m2')) macGen = MacGen.m2;
-          else if (lower.contains('m1')) macGen = MacGen.m1;
-
-          if (lower.contains('ultra') || lower.contains('max')) macTier = MacTier.max;
-          else if (lower.contains('pro')) macTier = MacTier.pro;
-          else macTier = MacTier.base;
-        }
-      } else if (Platform.isLinux || Platform.isWindows) {
-        isMac = false;
-        if (Platform.isLinux) {
-          final memResult = await Process.run('grep', ['MemTotal', '/proc/meminfo']);
-          if (memResult.exitCode == 0) {
-            final match = RegExp(r'(\d+)').firstMatch(memResult.stdout.toString());
-            if (match != null) {
-              ramGB = (int.parse(match.group(1)!) / (1024 * 1024)).round();
-            }
-          }
-        }
-      }
-    } catch (_) {}
+    if (hw.macChip != null) {
+      macGen = switch (hw.macChip) {
+        'M4' => MacGen.m4,
+        'M3' => MacGen.m3,
+        'M2' => MacGen.m2,
+        'M1' => MacGen.m1,
+        _ => null,
+      };
+      macTier = switch (hw.macTier) {
+        'max' || 'ultra' => MacTier.max,
+        'pro' => MacTier.pro,
+        _ => MacTier.base,
+      };
+    }
 
     return _SystemSpecs(
-      ramGB: ramGB,
-      chipName: chipName,
+      ramGB: hw.totalRamGB,
+      chipName: hw.cpuName,
       macGen: macGen,
       macTier: macTier,
-      isMac: isMac,
+      isMac: hw.isMac,
+      isEstimated: hw.isEstimated,
     );
   }
 }

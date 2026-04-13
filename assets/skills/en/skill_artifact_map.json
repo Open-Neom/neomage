@@ -1,0 +1,3707 @@
+{
+  "version": "1.0",
+  "date": "2026-04-12",
+  "description": "Mapping of skills to primary/secondary artifacts and recommended instruments",
+  "artifacts": [
+    "stepRail",
+    "formatSelector",
+    "docGenerator",
+    "priorityMatrix",
+    "distillFilter",
+    "resourceCalibrator",
+    "goalTracker",
+    "plasticitySelector",
+    "compareTable",
+    "flowChart",
+    "timeline",
+    "kanbanBoard",
+    "calculator",
+    "flashcardDeck",
+    "mindMap",
+    "dataChart",
+    "checklist",
+    "weekPlanner",
+    "tradingResult"
+  ],
+  "instruments": [
+    "PULSE",
+    "LOAD",
+    "RHYTHM",
+    "LENS",
+    "FIELD",
+    "TRANSIT",
+    "MIRROR",
+    "SPARK",
+    "COMPASS",
+    "WEAVE",
+    "CLOSE",
+    "VITAL",
+    "BALANCE",
+    "STILL",
+    "HARVEST"
+  ],
+  "skills": {
+    "adaptability/error_detective": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "pensar",
+      "displayCategory": "Debugging"
+    },
+    "adaptability/error_handling_patterns": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail",
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "pensar",
+      "displayCategory": "Debugging"
+    },
+    "agency/architecture_decision_records": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "HARVEST",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agency/doc_coauthoring": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "HARVEST",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/agent_framework": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/agent_manager": {
+      "primaryArtifact": "kanbanBoard",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/agent_memory_mcp": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "mindMap"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "MIRROR",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/agent_orchestration": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "kanbanBoard",
+        "stepRail"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/agent_tool_builder": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/architect": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable",
+        "stepRail"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/autonomous_agents": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/code_reviewer": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/computer_use_agents": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "LENS",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/crewai": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "kanbanBoard"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/mcp_builder": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "SPARK",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/multi_agent_brainstorming": {
+      "primaryArtifact": "mindMap",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "WEAVE",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/multi_agent_optimize": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/planner": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "kanbanBoard",
+        "weekPlanner"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/security_reviewer": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/subagent_driven_dev": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "kanbanBoard"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "agents/tdd_guide": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "agentes",
+      "displayCategory": "Agentes IA"
+    },
+    "ai_ml/ai_agents_architect": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable",
+        "stepRail"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "SPARK",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/ai_engineer": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/ai_product": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "priorityMatrix"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "SPARK",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/ai_wrapper_product": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "SPARK",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/embedding_strategies": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/gemini_api": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/hybrid_search": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/llm_ai_assistant": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "SPARK",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/llm_app_patterns": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/llm_evaluation": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/llm_langchain": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/llm_prompt_optimize": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "distillFilter"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "LENS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/ml_engineer": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart",
+        "dataChart"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/ml_pipeline": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "LENS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/ml_workflow": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "kanbanBoard"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/mlops": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "checklist",
+        "stepRail"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "LENS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/rag_implementation": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/similarity_search": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/vector_database": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "ai_ml/vector_index_tuning": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Machine Learning"
+    },
+    "api_design/api_doc_generator": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "HARVEST",
+      "pillar": "construir",
+      "displayCategory": "APIs"
+    },
+    "api_design/api_documenter": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "HARVEST",
+      "pillar": "construir",
+      "displayCategory": "APIs"
+    },
+    "api_design/api_fuzzing": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "SPARK",
+      "pillar": "construir",
+      "displayCategory": "APIs"
+    },
+    "api_design/api_patterns": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "APIs"
+    },
+    "api_design/api_principles": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "APIs"
+    },
+    "api_design/api_security": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "APIs"
+    },
+    "api_design/api_testing": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "APIs"
+    },
+    "api_design/graphql": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "APIs"
+    },
+    "api_design/graphql_architect": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "APIs"
+    },
+    "api_design/openapi_spec": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "APIs"
+    },
+    "api_design/rest_api_design": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable",
+        "stepRail"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "APIs"
+    },
+    "architecture/architect_review": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/architecture": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable",
+        "stepRail"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/architecture_patterns": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/c4_architecture": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/c4_code": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/c4_component": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/c4_container": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/c4_context": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/clean_architecture": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/cqrs": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/event_sourcing": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "timeline"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/event_store": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "timeline"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/microservices": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable",
+        "stepRail"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/projections": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "dataChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/saga": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail",
+        "timeline"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/senior_architect": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable",
+        "stepRail"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/senior_fullstack": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/software_architecture": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "architecture/system_design": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable",
+        "stepRail"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Arquitectura"
+    },
+    "backend/backend_architect": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Backend"
+    },
+    "backend/backend_guidelines": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Backend"
+    },
+    "backend/feature_development": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "kanbanBoard"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Backend"
+    },
+    "backend/firebase": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Backend"
+    },
+    "backend/fullstack_feature": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "kanbanBoard",
+        "flowChart"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Backend"
+    },
+    "business/business_analyst": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "compareTable",
+        "priorityMatrix"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "WEAVE",
+      "pillar": "negocio",
+      "displayCategory": "Estrategia de negocio"
+    },
+    "business/business_case": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "resourceCalibrator",
+        "dataChart"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Estrategia de negocio"
+    },
+    "business/competitive_landscape": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "dataChart"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "negocio",
+      "displayCategory": "Estrategia de negocio"
+    },
+    "business/competitor_alternatives": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "dataChart"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Estrategia de negocio"
+    },
+    "business/culture_index": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "plasticitySelector"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "BALANCE",
+      "pillar": "negocio",
+      "displayCategory": "Recursos humanos"
+    },
+    "business/employment_contracts": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "negocio",
+      "displayCategory": "Recursos humanos"
+    },
+    "business/financial_projections": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "calculator",
+        "resourceCalibrator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Finanzas"
+    },
+    "business/hr_pro": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "BALANCE",
+      "pillar": "negocio",
+      "displayCategory": "Recursos humanos"
+    },
+    "business/kpi_dashboard": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "goalTracker"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "KPIs y métricas"
+    },
+    "business/launch_strategy": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "timeline",
+        "kanbanBoard"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Marketing"
+    },
+    "business/legal_advisor": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "negocio",
+      "displayCategory": "Legal y contratos"
+    },
+    "business/market_sizing": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "calculator",
+        "resourceCalibrator"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Estrategia de negocio"
+    },
+    "business/marketing_ideas": {
+      "primaryArtifact": "mindMap",
+      "secondaryArtifacts": [
+        "priorityMatrix"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "PULSE",
+      "pillar": "negocio",
+      "displayCategory": "Marketing"
+    },
+    "business/marketing_psychology": {
+      "primaryArtifact": "mindMap",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "negocio",
+      "displayCategory": "Marketing"
+    },
+    "business/micro_saas": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "resourceCalibrator",
+        "calculator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "SPARK",
+      "pillar": "negocio",
+      "displayCategory": "Estrategia de negocio"
+    },
+    "business/pricing_strategy": {
+      "primaryArtifact": "calculator",
+      "secondaryArtifacts": [
+        "compareTable",
+        "dataChart"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Cotizaciones y precios"
+    },
+    "business/product_manager": {
+      "primaryArtifact": "priorityMatrix",
+      "secondaryArtifacts": [
+        "kanbanBoard",
+        "goalTracker"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Producto"
+    },
+    "business/risk_manager": {
+      "primaryArtifact": "priorityMatrix",
+      "secondaryArtifacts": [
+        "dataChart",
+        "checklist"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "negocio",
+      "displayCategory": "Estrategia de negocio"
+    },
+    "business/sales_automator": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail",
+        "dataChart"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Ventas"
+    },
+    "business/startup_analyst": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "compareTable",
+        "resourceCalibrator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "WEAVE",
+      "pillar": "negocio",
+      "displayCategory": "Estrategia de negocio"
+    },
+    "chain_of_thought/brainstorming": {
+      "primaryArtifact": "mindMap",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "PULSE",
+      "pillar": "pensar",
+      "displayCategory": "Planificación"
+    },
+    "chain_of_thought/prompt_engineering": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "compareTable",
+        "distillFilter"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "LENS",
+      "pillar": "pensar",
+      "displayCategory": "Prompts"
+    },
+    "code_quality/ai_review": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Code review"
+    },
+    "code_quality/clean_code": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Refactoring"
+    },
+    "code_quality/cleanup_refactor": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Refactoring"
+    },
+    "code_quality/cleanup_tech_debt": {
+      "primaryArtifact": "kanbanBoard",
+      "secondaryArtifacts": [
+        "priorityMatrix",
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Refactoring"
+    },
+    "code_quality/code_explain": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "construir",
+      "displayCategory": "Refactoring"
+    },
+    "code_quality/code_migrate": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist",
+        "compareTable"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Migración"
+    },
+    "code_quality/code_review": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Code review"
+    },
+    "code_quality/code_reviewer": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Code review"
+    },
+    "code_quality/dependency_audit": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Dependencias"
+    },
+    "code_quality/dependency_upgrade": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Dependencias"
+    },
+    "code_quality/deps_audit": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Dependencias"
+    },
+    "code_quality/deps_upgrade": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Dependencias"
+    },
+    "code_quality/doc_generate": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "HARVEST",
+      "pillar": "construir",
+      "displayCategory": "Documentación"
+    },
+    "code_quality/find_bugs": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "code_quality/full_review": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail",
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Code review"
+    },
+    "code_quality/legacy_modernize": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "compareTable",
+        "kanbanBoard"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Migración"
+    },
+    "code_quality/legacy_modernizer": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "compareTable",
+        "kanbanBoard"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Migración"
+    },
+    "code_quality/perf_ai_review": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "dataChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "LOAD",
+      "pillar": "construir",
+      "displayCategory": "Rendimiento"
+    },
+    "code_quality/perf_multi_review": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "dataChart",
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "LOAD",
+      "pillar": "construir",
+      "displayCategory": "Rendimiento"
+    },
+    "code_quality/pr_enhance": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "code_quality/production_audit": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "priorityMatrix"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "code_quality/receiving_review": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Code review"
+    },
+    "code_quality/refactor_clean": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Refactoring"
+    },
+    "code_quality/refactor_context_restore": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "mindMap"
+      ],
+      "instrument": "TRANSIT",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Refactoring"
+    },
+    "code_quality/requesting_review": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Code review"
+    },
+    "code_quality/review_checklist": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Code review"
+    },
+    "code_quality/review_excellence": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Code review"
+    },
+    "code_quality/tech_debt": {
+      "primaryArtifact": "kanbanBoard",
+      "secondaryArtifacts": [
+        "priorityMatrix"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Refactoring"
+    },
+    "cognitive_pipeline/parallel_dispatch": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "kanbanBoard"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "LOAD",
+      "pillar": "agentes",
+      "displayCategory": "Pipeline cognitivo"
+    },
+    "cognitive_pipeline/tool_design": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "COMPASS",
+      "pillar": "agentes",
+      "displayCategory": "Pipeline cognitivo"
+    },
+    "coherence/context_window_management": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [
+        "resourceCalibrator"
+      ],
+      "instrument": "LOAD",
+      "altInstrument": "MIRROR",
+      "pillar": "pensar",
+      "displayCategory": "Gestión de contexto"
+    },
+    "coherence/verification_before_completion": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "LENS",
+      "pillar": "pensar",
+      "displayCategory": "Evaluación"
+    },
+    "consolidation/prompt_caching": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "resourceCalibrator"
+      ],
+      "instrument": "LOAD",
+      "altInstrument": "LENS",
+      "pillar": "pensar",
+      "displayCategory": "Gestión de contexto"
+    },
+    "content_writing/writing_skills": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "formatSelector",
+        "distillFilter"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "SPARK",
+      "pillar": "crear",
+      "displayCategory": "Redacción"
+    },
+    "context/context_driven_dev": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "mindMap"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "WEAVE",
+      "pillar": "pensar",
+      "displayCategory": "Gestión de contexto"
+    },
+    "context/context_manager": {
+      "primaryArtifact": "mindMap",
+      "secondaryArtifacts": [
+        "distillFilter"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "TRANSIT",
+      "pillar": "pensar",
+      "displayCategory": "Gestión de contexto"
+    },
+    "context/context_restore": {
+      "primaryArtifact": "mindMap",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "TRANSIT",
+      "altInstrument": "MIRROR",
+      "pillar": "pensar",
+      "displayCategory": "Gestión de contexto"
+    },
+    "context/context_save": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [
+        "mindMap"
+      ],
+      "instrument": "HARVEST",
+      "altInstrument": "CLOSE",
+      "pillar": "pensar",
+      "displayCategory": "Gestión de contexto"
+    },
+    "dart_flutter/dart_coding_style": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Dart & Flutter"
+    },
+    "dart_flutter/dart_hooks": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Dart & Flutter"
+    },
+    "dart_flutter/dart_patterns": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Dart & Flutter"
+    },
+    "dart_flutter/dart_security": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Dart & Flutter"
+    },
+    "dart_flutter/dart_testing": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Dart & Flutter"
+    },
+    "data_storage/cost_optimization": {
+      "primaryArtifact": "resourceCalibrator",
+      "secondaryArtifacts": [
+        "calculator",
+        "dataChart"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/data_driven_feature": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "dataChart"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/data_engineer": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/data_pipeline": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/data_quality": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "dataChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/data_scientist": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "flowChart",
+        "compareTable"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/data_storytelling": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "formatSelector",
+        "distillFilter"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "SPARK",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/database_admin": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/database_architect": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/database_cost": {
+      "primaryArtifact": "calculator",
+      "secondaryArtifacts": [
+        "resourceCalibrator",
+        "dataChart"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/database_design": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/database_migration": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist",
+        "timeline"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/migration_observability": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "checklist",
+        "timeline"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "data_storage/sql_migrations": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Datos"
+    },
+    "debugging/debugger": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/debugging_strategies": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart",
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/diagnostics_analysis": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/diagnostics_smart": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/diagnostics_trace": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "timeline",
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/error_analysis": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/error_trace": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "timeline"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/incident_responder": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist",
+        "timeline"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "LOAD",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/incident_response": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist",
+        "timeline"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "LOAD",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/incident_smart_fix": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/multi_agent_debug": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/postmortem": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "timeline",
+        "checklist"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "HARVEST",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/smart_debug": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "debugging/systematic_debugging": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart",
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Debugging"
+    },
+    "design_ui/accesibilidad_interfaces": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "crear",
+      "displayCategory": "Diseño UI/UX"
+    },
+    "design_ui/dashboards_kpi": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "goalTracker"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "crear",
+      "displayCategory": "Diseño UI/UX"
+    },
+    "design_ui/diseno_movil": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "crear",
+      "displayCategory": "Diseño UI/UX"
+    },
+    "design_ui/principios_diseno_ui_ux": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "crear",
+      "displayCategory": "Diseño UI/UX"
+    },
+    "design_ui/sistemas_de_diseno": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "checklist",
+        "flowChart"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "COMPASS",
+      "pillar": "crear",
+      "displayCategory": "Diseño UI/UX"
+    },
+    "distillation/context_compression": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "HARVEST",
+      "altInstrument": "LOAD",
+      "pillar": "pensar",
+      "displayCategory": "Gestión de contexto"
+    },
+    "distillation/context_optimization": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [
+        "resourceCalibrator"
+      ],
+      "instrument": "HARVEST",
+      "altInstrument": "LOAD",
+      "pillar": "pensar",
+      "displayCategory": "Gestión de contexto"
+    },
+    "documentation/arquitectura_documentacion": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "flowChart",
+        "formatSelector"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "HARVEST",
+      "pillar": "crear",
+      "displayCategory": "Documentación"
+    },
+    "documentation/documentacion_api": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "HARVEST",
+      "pillar": "crear",
+      "displayCategory": "Documentación"
+    },
+    "documentation/explicacion_codigo": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "HARVEST",
+      "pillar": "crear",
+      "displayCategory": "Documentación"
+    },
+    "documentation/plantillas_documentacion": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "HARVEST",
+      "pillar": "crear",
+      "displayCategory": "Documentación"
+    },
+    "documentation/readme_efectivo": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "HARVEST",
+      "pillar": "crear",
+      "displayCategory": "Documentación"
+    },
+    "documents/pdf_generation": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [],
+      "instrument": "PULSE",
+      "altInstrument": null,
+      "pillar": "crear",
+      "displayCategory": "Generar documentos"
+    },
+    "documents/pptx_generation": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [],
+      "instrument": "PULSE",
+      "altInstrument": "SPARK",
+      "pillar": "crear",
+      "displayCategory": "Generar documentos"
+    },
+    "documents/xlsx_generation": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "dataChart"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": null,
+      "pillar": "crear",
+      "displayCategory": "Generar documentos"
+    },
+    "evaluation/clarity_gate": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "distillFilter"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "LENS",
+      "pillar": "pensar",
+      "displayCategory": "Evaluación"
+    },
+    "evaluation/evaluation": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "LENS",
+      "pillar": "pensar",
+      "displayCategory": "Evaluación"
+    },
+    "finance/asset-allocation": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "resourceCalibrator",
+        "calculator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Inversiones"
+    },
+    "finance/crypto-derivatives": {
+      "primaryArtifact": "tradingResult",
+      "secondaryArtifacts": [
+        "dataChart",
+        "calculator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Inversiones"
+    },
+    "finance/earnings-forecast": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "calculator",
+        "tradingResult"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "WEAVE",
+      "pillar": "negocio",
+      "displayCategory": "Finanzas"
+    },
+    "finance/etf-analysis": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "dataChart",
+        "tradingResult"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Inversiones"
+    },
+    "finance/harmonic": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "tradingResult"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Trading"
+    },
+    "finance/ichimoku": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "tradingResult"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Trading"
+    },
+    "finance/okx-market": {
+      "primaryArtifact": "tradingResult",
+      "secondaryArtifacts": [
+        "dataChart"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Inversiones"
+    },
+    "finance/onchain-analysis": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "tradingResult",
+        "flowChart"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "negocio",
+      "displayCategory": "Inversiones"
+    },
+    "finance/quant-statistics": {
+      "primaryArtifact": "calculator",
+      "secondaryArtifacts": [
+        "dataChart",
+        "tradingResult"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "WEAVE",
+      "pillar": "negocio",
+      "displayCategory": "Trading"
+    },
+    "finance/yfinance": {
+      "primaryArtifact": "tradingResult",
+      "secondaryArtifacts": [
+        "dataChart",
+        "calculator"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Inversiones"
+    },
+    "flutter/flutter_expert": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart",
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Dart & Flutter"
+    },
+    "flutter/state_management": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Dart & Flutter"
+    },
+    "flutter/widget_patterns": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Dart & Flutter"
+    },
+    "frontend/component_scaffold": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Frontend"
+    },
+    "frontend/frontend_developer": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Frontend"
+    },
+    "frontend/frontend_guidelines": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Frontend"
+    },
+    "frontend/javascript_mastery": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "construir",
+      "displayCategory": "Frontend"
+    },
+    "frontend/javascript_testing": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Frontend"
+    },
+    "frontend/mobile_developer": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist",
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Frontend"
+    },
+    "frontend/modern_javascript": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "construir",
+      "displayCategory": "Frontend"
+    },
+    "frontend/typescript_advanced": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "construir",
+      "displayCategory": "Frontend"
+    },
+    "frontend/typescript_expert": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Frontend"
+    },
+    "frontend/typescript_scaffold": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Frontend"
+    },
+    "git_workflow/address_comments": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "git_workflow/changelog": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "timeline"
+      ],
+      "instrument": "HARVEST",
+      "altInstrument": "PULSE",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "git_workflow/commit": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [],
+      "instrument": "PULSE",
+      "altInstrument": "CLOSE",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "git_workflow/create_pr": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "HARVEST",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "git_workflow/finishing_branch": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "CLOSE",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "git_workflow/fix_review": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "git_workflow/git_best_practices": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "git_workflow/git_onboard": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flashcardDeck"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "git_workflow/git_workflow": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "git_workflow/iterate_pr": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "git_workflow/lint_validate": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [],
+      "instrument": "LENS",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "git_workflow/pr_enhance": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Git y PRs"
+    },
+    "internationalization/internacionalizacion_fundamentos": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "crear",
+      "displayCategory": "Traducción"
+    },
+    "internationalization/patrones_localizacion": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "crear",
+      "displayCategory": "Traducción"
+    },
+    "introspection/agent_evaluation": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "distillFilter",
+        "compareTable"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "HARVEST",
+      "pillar": "pensar",
+      "displayCategory": "Evaluación"
+    },
+    "introspection/behavioral_modes": {
+      "primaryArtifact": "plasticitySelector",
+      "secondaryArtifacts": [
+        "mindMap"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "HARVEST",
+      "pillar": "pensar",
+      "displayCategory": "Evaluación"
+    },
+    "languages/async_python": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "WEAVE",
+      "pillar": "construir",
+      "displayCategory": "Python"
+    },
+    "languages/bash_defensive": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Python"
+    },
+    "languages/python_patterns": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Python"
+    },
+    "languages/python_performance": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "stepRail",
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "LOAD",
+      "pillar": "construir",
+      "displayCategory": "Python"
+    },
+    "languages/python_scaffold": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Python"
+    },
+    "languages/python_testing": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Python"
+    },
+    "memory/agent_memory_systems": {
+      "primaryArtifact": "mindMap",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "MIRROR",
+      "pillar": "pensar",
+      "displayCategory": "Memoria"
+    },
+    "memory/conversation_memory": {
+      "primaryArtifact": "mindMap",
+      "secondaryArtifacts": [
+        "distillFilter"
+      ],
+      "instrument": "HARVEST",
+      "altInstrument": "WEAVE",
+      "pillar": "pensar",
+      "displayCategory": "Memoria"
+    },
+    "memory/memory_systems": {
+      "primaryArtifact": "mindMap",
+      "secondaryArtifacts": [
+        "flowChart",
+        "flashcardDeck"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "MIRROR",
+      "pillar": "pensar",
+      "displayCategory": "Memoria"
+    },
+    "metacognition/context_degradation": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [
+        "dataChart"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "LOAD",
+      "pillar": "pensar",
+      "displayCategory": "Gestión de contexto"
+    },
+    "metacognition/context_fundamentals": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [
+        "mindMap"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "HARVEST",
+      "pillar": "pensar",
+      "displayCategory": "Gestión de contexto"
+    },
+    "performance/ingenieria_rendimiento": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "stepRail",
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "LOAD",
+      "pillar": "construir",
+      "displayCategory": "Rendimiento"
+    },
+    "performance/optimizacion_aplicaciones": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "dataChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "LOAD",
+      "pillar": "construir",
+      "displayCategory": "Rendimiento"
+    },
+    "performance/optimizacion_sql": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "dataChart",
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "LOAD",
+      "pillar": "construir",
+      "displayCategory": "Rendimiento"
+    },
+    "performance/optimizacion_web": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "dataChart",
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "LOAD",
+      "pillar": "construir",
+      "displayCategory": "Rendimiento"
+    },
+    "performance/perfilado_rendimiento": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "LOAD",
+      "pillar": "construir",
+      "displayCategory": "Rendimiento"
+    },
+    "personality/beautiful_prose": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "PULSE",
+      "pillar": "crear",
+      "displayCategory": "Redacción"
+    },
+    "planning/autonomous_agent_patterns": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "pensar",
+      "displayCategory": "Planificación"
+    },
+    "planning/concise_planning": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "kanbanBoard"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "pensar",
+      "displayCategory": "Planificación"
+    },
+    "planning/executing_plans": {
+      "primaryArtifact": "kanbanBoard",
+      "secondaryArtifacts": [
+        "stepRail",
+        "goalTracker"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "RHYTHM",
+      "pillar": "pensar",
+      "displayCategory": "Planificación"
+    },
+    "planning/multi_agent_patterns": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "pensar",
+      "displayCategory": "Planificación"
+    },
+    "product/gestion_producto": {
+      "primaryArtifact": "kanbanBoard",
+      "secondaryArtifacts": [
+        "priorityMatrix",
+        "goalTracker"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Producto"
+    },
+    "product/producto_ia": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "compareTable",
+        "priorityMatrix"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "SPARK",
+      "pillar": "negocio",
+      "displayCategory": "Producto"
+    },
+    "product/producto_wrapper_ia": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "SPARK",
+      "pillar": "negocio",
+      "displayCategory": "Producto"
+    },
+    "prompting/prompt_engineer": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "compareTable",
+        "distillFilter"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "LENS",
+      "pillar": "crear",
+      "displayCategory": "Prompts"
+    },
+    "prompting/prompt_library": {
+      "primaryArtifact": "formatSelector",
+      "secondaryArtifacts": [
+        "flashcardDeck"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "SPARK",
+      "pillar": "crear",
+      "displayCategory": "Prompts"
+    },
+    "prompting/prompt_patterns": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "distillFilter"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "SPARK",
+      "pillar": "crear",
+      "displayCategory": "Prompts"
+    },
+    "research/deep_research": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [
+        "compareTable",
+        "formatSelector"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "pensar",
+      "displayCategory": "Investigación"
+    },
+    "research/dimensionamiento_mercado": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "calculator",
+        "resourceCalibrator"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "COMPASS",
+      "pillar": "pensar",
+      "displayCategory": "Estrategia de negocio"
+    },
+    "research/ingenieria_investigacion": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "pensar",
+      "displayCategory": "Investigación"
+    },
+    "research/investigacion_profunda": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [
+        "compareTable",
+        "formatSelector"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "pensar",
+      "displayCategory": "Investigación"
+    },
+    "research/rag_engineer": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail",
+        "compareTable"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "pensar",
+      "displayCategory": "Investigación"
+    },
+    "security/auth_patterns": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable",
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/backend_security": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/clerk_auth": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/compliance_check": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/frontend_security": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/gdpr": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/memory_safety": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/mobile_security": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/security_audit": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "priorityMatrix",
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/security_auditor": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "priorityMatrix"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/security_bluebook": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/security_dependencies": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/security_hardening": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/security_requirements": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/security_sast": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/stride_analysis": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "priorityMatrix",
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/threat_mitigation": {
+      "primaryArtifact": "priorityMatrix",
+      "secondaryArtifacts": [
+        "checklist",
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/threat_modeling": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "priorityMatrix",
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "security/xss_scan": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "LENS",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Seguridad"
+    },
+    "testing/e2e_testing": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "testing/tdd": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "testing/tdd_cycle": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "RHYTHM",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "testing/tdd_green": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "testing/tdd_orchestrator": {
+      "primaryArtifact": "kanbanBoard",
+      "secondaryArtifacts": [
+        "stepRail",
+        "flowChart"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "testing/tdd_red": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "testing/tdd_refactor": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "testing/tdd_workflow": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail",
+        "kanbanBoard"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "RHYTHM",
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "testing/test_automator": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist",
+        "flowChart"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "testing/test_fixing": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "testing/testing_patterns": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "testing/unit_testing": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "MIRROR",
+      "pillar": "construir",
+      "displayCategory": "Testing"
+    },
+    "token_efficiency/caveman_commit": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [],
+      "instrument": "PULSE",
+      "altInstrument": null,
+      "pillar": "agentes",
+      "displayCategory": "Pipeline cognitivo"
+    },
+    "token_efficiency/caveman_mode": {
+      "primaryArtifact": "distillFilter",
+      "secondaryArtifacts": [],
+      "instrument": "LOAD",
+      "altInstrument": null,
+      "pillar": "agentes",
+      "displayCategory": "Pipeline cognitivo"
+    },
+    "token_efficiency/caveman_review": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [],
+      "instrument": "PULSE",
+      "altInstrument": null,
+      "pillar": "agentes",
+      "displayCategory": "Pipeline cognitivo"
+    },
+    "tools/analytics_tracking": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "stepRail"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Herramientas"
+    },
+    "tools/app_builder": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart",
+        "kanbanBoard"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "SPARK",
+      "pillar": "construir",
+      "displayCategory": "Herramientas"
+    },
+    "tools/audio_transcriber": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Herramientas"
+    },
+    "tools/browser_automation": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "LENS",
+      "pillar": "construir",
+      "displayCategory": "Automatización"
+    },
+    "tools/file_organizer": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "checklist"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Herramientas"
+    },
+    "tools/file_uploads": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [],
+      "instrument": "PULSE",
+      "altInstrument": null,
+      "pillar": "construir",
+      "displayCategory": "Herramientas"
+    },
+    "tools/oss_hunter": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "formatSelector"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Herramientas"
+    },
+    "tools/personal_tool_builder": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Herramientas"
+    },
+    "tools/skill_creator": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Herramientas"
+    },
+    "tools/twilio": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "flowChart"
+      ],
+      "instrument": "LENS",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Herramientas"
+    },
+    "workflow/track_management": {
+      "primaryArtifact": "kanbanBoard",
+      "secondaryArtifacts": [
+        "goalTracker",
+        "weekPlanner"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Automatización"
+    },
+    "workflow/workflow_automation": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "stepRail",
+        "kanbanBoard"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Automatización"
+    },
+    "workflow/workflow_orchestration": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "kanbanBoard",
+        "stepRail"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "construir",
+      "displayCategory": "Automatización"
+    },
+    "workflow/workflow_patterns": {
+      "primaryArtifact": "flowChart",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "WEAVE",
+      "altInstrument": "FIELD",
+      "pillar": "construir",
+      "displayCategory": "Automatización"
+    },
+    "writing_quality/avoid_ai_writing": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "distillFilter"
+      ],
+      "instrument": "MIRROR",
+      "altInstrument": "PULSE",
+      "pillar": "crear",
+      "displayCategory": "Redacción"
+    },
+    "cotizaciones/calculadora_costos": {
+      "primaryArtifact": "calculator",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Cotizaciones y precios"
+    },
+    "cotizaciones/comparador_proveedores": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Cotizaciones y precios"
+    },
+    "cotizaciones/cotizacion_productos": {
+      "primaryArtifact": "calculator",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Cotizaciones y precios"
+    },
+    "cotizaciones/cotizacion_servicios": {
+      "primaryArtifact": "resourceCalibrator",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Cotizaciones y precios"
+    },
+    "cotizaciones/negociacion_precios": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Cotizaciones y precios"
+    },
+    "ventas/cierre_ventas": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Ventas"
+    },
+    "ventas/objeciones": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Ventas"
+    },
+    "ventas/pitch_elevador": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Ventas"
+    },
+    "ventas/propuesta_comercial": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Ventas"
+    },
+    "ventas/seguimiento_clientes": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Ventas"
+    },
+    "marketing/calendario_contenido": {
+      "primaryArtifact": "weekPlanner",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "FIELD",
+      "pillar": "crear",
+      "displayCategory": "Marketing"
+    },
+    "marketing/copy_persuasivo": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "FIELD",
+      "pillar": "crear",
+      "displayCategory": "Marketing"
+    },
+    "marketing/email_marketing": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "FIELD",
+      "pillar": "crear",
+      "displayCategory": "Marketing"
+    },
+    "marketing/google_mi_negocio": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Marketing"
+    },
+    "marketing/redes_sociales": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "SPARK",
+      "altInstrument": "FIELD",
+      "pillar": "crear",
+      "displayCategory": "Marketing"
+    },
+    "legal/acta_constitutiva": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Legal y contratos"
+    },
+    "legal/aviso_privacidad": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Legal y contratos"
+    },
+    "legal/carta_poder": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Legal y contratos"
+    },
+    "legal/contrato_arrendamiento": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Legal y contratos"
+    },
+    "legal/contrato_servicios": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Legal y contratos"
+    },
+    "finanzas/ahorro_emergencia": {
+      "primaryArtifact": "calculator",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "pensar",
+      "displayCategory": "Finanzas"
+    },
+    "finanzas/credito_empresarial": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Finanzas"
+    },
+    "finanzas/declaracion_anual": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Finanzas"
+    },
+    "finanzas/flujo_efectivo": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Finanzas"
+    },
+    "finanzas/presupuesto_personal": {
+      "primaryArtifact": "calculator",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Finanzas"
+    },
+    "recursos_humanos/descripcion_puesto": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Recursos humanos"
+    },
+    "recursos_humanos/entrevista_trabajo": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "pensar",
+      "displayCategory": "Recursos humanos"
+    },
+    "recursos_humanos/nomina_imss": {
+      "primaryArtifact": "calculator",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "Recursos humanos"
+    },
+    "redaccion/comunicado_prensa": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "FIELD",
+      "pillar": "crear",
+      "displayCategory": "Redacción"
+    },
+    "redaccion/correo_profesional": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "FIELD",
+      "pillar": "crear",
+      "displayCategory": "Redacción"
+    },
+    "redaccion/cv_profesional": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "PULSE",
+      "altInstrument": "FIELD",
+      "pillar": "crear",
+      "displayCategory": "Redacción"
+    },
+    "kpis/dashboard_negocio": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "KPIs y métricas"
+    },
+    "kpis/indicadores_ventas": {
+      "primaryArtifact": "dataChart",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "KPIs y métricas"
+    },
+    "kpis/reporte_mensual": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "FIELD",
+      "altInstrument": "COMPASS",
+      "pillar": "negocio",
+      "displayCategory": "KPIs y métricas"
+    },
+    "documentos/factura_cfdi": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Generar documentos"
+    },
+    "documentos/nota_venta": {
+      "primaryArtifact": "docGenerator",
+      "secondaryArtifacts": [
+        "compareTable"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Generar documentos"
+    },
+    "tramites/cuenta_bancaria_empresa": {
+      "primaryArtifact": "compareTable",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Trámites"
+    },
+    "tramites/imss_alta": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Trámites"
+    },
+    "tramites/marca_impi": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Trámites"
+    },
+    "tramites/permiso_municipal": {
+      "primaryArtifact": "checklist",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Trámites"
+    },
+    "tramites/sat_rfc": {
+      "primaryArtifact": "stepRail",
+      "secondaryArtifacts": [
+        "docGenerator"
+      ],
+      "instrument": "COMPASS",
+      "altInstrument": "FIELD",
+      "pillar": "negocio",
+      "displayCategory": "Trámites"
+    }
+  },
+  "pillars": {
+    "negocio": {
+      "label": "Negocio",
+      "description": "Ventas, finanzas, legal, marketing, producto",
+      "icon": "business_center",
+      "categories": [
+        "business",
+        "finance",
+        "product"
+      ]
+    },
+    "construir": {
+      "label": "Construir",
+      "description": "Código, arquitectura, testing, DevOps, seguridad",
+      "icon": "build_circle",
+      "categories": [
+        "code_quality",
+        "architecture",
+        "api_design",
+        "backend",
+        "frontend",
+        "dart_flutter",
+        "flutter",
+        "data_storage",
+        "debugging",
+        "testing",
+        "git_workflow",
+        "security",
+        "performance",
+        "languages",
+        "tools",
+        "workflow"
+      ]
+    },
+    "crear": {
+      "label": "Crear",
+      "description": "Textos, diseño, contenido, documentos, prompts",
+      "icon": "create",
+      "categories": [
+        "content_writing",
+        "writing_quality",
+        "design_ui",
+        "documentation",
+        "documents",
+        "prompting",
+        "personality",
+        "internationalization"
+      ]
+    },
+    "pensar": {
+      "label": "Pensar",
+      "description": "Análisis, memoria, decisión, reflexión, planificación",
+      "icon": "psychology",
+      "categories": [
+        "chain_of_thought",
+        "metacognition",
+        "planning",
+        "research",
+        "evaluation",
+        "distillation",
+        "memory",
+        "context",
+        "coherence",
+        "introspection",
+        "consolidation",
+        "adaptability"
+      ]
+    },
+    "agentes": {
+      "label": "Agentes",
+      "description": "Pipeline cognitivo, IA avanzada, multi-agente",
+      "icon": "smart_toy",
+      "categories": [
+        "agents",
+        "ai_ml",
+        "cognitive_pipeline",
+        "agency",
+        "token_efficiency"
+      ],
+      "advanced": true
+    }
+  },
+  "category_pillar_map": {
+    "business": "negocio",
+    "finance": "negocio",
+    "product": "negocio",
+    "code_quality": "construir",
+    "architecture": "construir",
+    "api_design": "construir",
+    "backend": "construir",
+    "frontend": "construir",
+    "dart_flutter": "construir",
+    "flutter": "construir",
+    "data_storage": "construir",
+    "debugging": "construir",
+    "testing": "construir",
+    "git_workflow": "construir",
+    "security": "construir",
+    "performance": "construir",
+    "languages": "construir",
+    "tools": "construir",
+    "workflow": "construir",
+    "content_writing": "crear",
+    "writing_quality": "crear",
+    "design_ui": "crear",
+    "documentation": "crear",
+    "documents": "crear",
+    "prompting": "crear",
+    "personality": "crear",
+    "internationalization": "crear",
+    "chain_of_thought": "pensar",
+    "metacognition": "pensar",
+    "planning": "pensar",
+    "research": "pensar",
+    "evaluation": "pensar",
+    "distillation": "pensar",
+    "memory": "pensar",
+    "context": "pensar",
+    "coherence": "pensar",
+    "introspection": "pensar",
+    "consolidation": "pensar",
+    "adaptability": "pensar",
+    "agents": "agentes",
+    "ai_ml": "agentes",
+    "cognitive_pipeline": "agentes",
+    "agency": "agentes",
+    "token_efficiency": "agentes"
+  }
+}

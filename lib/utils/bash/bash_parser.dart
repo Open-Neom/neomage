@@ -1270,11 +1270,16 @@ CommandCategory classifyCommand(String command) {
 
   final baseName = exe.split('/').last;
 
-  // Direct lookup.
-  final cat = _categoryMap[baseName];
-  if (cat != null) return cat;
+  // Special sub-command patterns FIRST (before generic lookup) so that
+  // `flutter test`, `cargo test`, `npm test`, etc. resolve to the correct
+  // category instead of falling through to packageManager via the map.
+  const polysemous = {'cargo', 'dart', 'flutter', 'go', 'npm', 'yarn', 'pnpm'};
+  if (!polysemous.contains(baseName)) {
+    // Direct lookup.
+    final cat = _categoryMap[baseName];
+    if (cat != null) return cat;
+  }
 
-  // Special sub-command patterns.
   if (baseName == 'cargo') {
     if (command.contains('test')) return CommandCategory.testing;
     if (command.contains('fmt') || command.contains('clippy')) {
@@ -1345,11 +1350,33 @@ String? extractExecutable(String input) {
   };
 
   if (prefixCommands.contains(exe)) {
-    // Skip any flags (starting with -).
+    // Skip flags (starting with -), VAR=value env assignments, and known
+    // flag arguments that take a numeric / string parameter (e.g. `nice -n 10`,
+    // `timeout 5s`, `taskset -c 0`). Heuristic: also skip purely numeric
+    // tokens, which are nearly always values for the previous flag, never
+    // an executable name.
+    var skipNext = false;
     for (final arg in cmd.arguments) {
-      if (!arg.startsWith('-')) {
-        return arg.split('/').last;
+      if (skipNext) {
+        skipNext = false;
+        continue;
       }
+      if (arg.startsWith('-')) {
+        // Single-letter flags like `-n`, `-c` typically take a value.
+        if (RegExp(r'^-[A-Za-z]$').hasMatch(arg)) {
+          skipNext = true;
+        }
+        continue;
+      }
+      // Skip env-var assignments like PATH=/usr/bin or FOO=bar.
+      if (RegExp(r'^[A-Za-z_][A-Za-z0-9_]*=').hasMatch(arg)) {
+        continue;
+      }
+      // Skip purely numeric / duration tokens (e.g. `5`, `10`, `5s`).
+      if (RegExp(r'^\d+[smhd]?$').hasMatch(arg)) {
+        continue;
+      }
+      return arg.split('/').last;
     }
   }
 
@@ -1918,6 +1945,13 @@ String interpretExitCode(int exitCode, String command) {
   if (exitCode == 0) return 'Success';
 
   final exe = extractExecutable(command) ?? '';
+
+  // Command-specific overrides that conflict with signal range.
+  // git uses 128 as a "fatal git error" sentinel even though 128 normally
+  // means "killed by signal 0", so check it first.
+  if (exitCode == 128 && (exe == 'git' || exe == 'gh')) {
+    return 'Fatal git error';
+  }
 
   // General signals.
   if (exitCode >= 128) {
