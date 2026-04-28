@@ -1,3 +1,32 @@
+## 1.2.0 — 2026-04-27
+- **Switch `neom_ollama` to hosted dep**: was `path: ../neom_modules/ai/
+  neom_ollama` during local development; now consumes `neom_ollama: ^1.2.0`
+  from pub.dev. This unblocks the package for `flutter pub publish` (path
+  deps are forbidden on pub.dev) and brings in:
+  - Hardware profiling (`HardwareProfile.detect()`).
+  - Thinking trace parsing (Qwen3, DeepSeek-R1, QwQ, gpt-oss).
+  - **`PlainTextToolCallParser`** — recovers tool calls embedded as text
+    (LMStudio bracket form, Hermes / Qwen `<tool_call>` tag, fenced JSON,
+    bare-JSON last-resort) for local models that don't always populate
+    structured `tool_calls`.
+- **Skills localization redesign**: replace the `skills/es/` folder of 348
+  duplicate-with-disclaimer markdowns with a single `skill_meta_es.json`
+  catalog. All LLM-facing skill bodies now load from `skills/en/` only; the
+  Spanish-facing UI descriptions (short taglines, MX market order) live in
+  the meta catalog. Saves ~1.5 MB in the asset bundle and removes a source
+  of drift between locales.
+- Delete 54 `assets/skills/es/...` entries from `pubspec.yaml` flutter
+  assets section.
+- Add `skill_meta_es.json` asset declaration (54 categories + 164 curated
+  skill descriptions with `mxOrder` relevance hints for the MX market).
+- Fix `.gitignore`: add `pubspec.lock` + `pubspec_overrides.yaml` (library
+  packages should not track these) and remove a malformed line that had
+  fused a comment with a pattern.
+
+## 1.1.0 — 2026-04-16
+- Add skills locale folders: `skills/es/` and `skills/en/` with 348 skills each
+- Add 108 asset declarations in pubspec.yaml for locale-specific skill folders
+
 ## 1.0.0
 
 Neomage: multi-provider AI agent engine for Flutter, restructured as a pub.dev package.

@@ -542,7 +542,8 @@ export 'utils/message_queue/message_queue_manager.dart'
         QueuedCommand,
         Signal,
         TextContentBlock,
-        ImageContentBlock;
+        ImageContentBlock,
+        NormalizedMessage;
 export 'utils/heatmap/heatmap_utils.dart'
     hide DailyActivity, LogOption, RenderableMessage;
 

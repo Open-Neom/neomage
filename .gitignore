@@ -76,4 +76,8 @@ example/ios/build/
 example/ios/Flutter/ephemeral/
 # Android build artifacts
 example/android/build/
-# General Flutter buildspubspec.lock
+
+# Library package: local lockfile + dev overrides (NOT committed for libraries)
+pubspec.lock
+pubspec_overrides.yaml
+example/pubspec_overrides.yaml

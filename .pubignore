@@ -1,0 +1,22 @@
+# Files that ship to pub.dev but aren't part of the package surface.
+# Same syntax as .gitignore.
+
+# Internal QA / development artifacts (PDFs, HTML samples, .docx).
+article_medium.html
+article_medium.md
+article_medium.pdf
+*.xlsx
+*.docx
+
+# Empty / scaffolding directories.
+adapters/
+models/
+
+# Development entry-point — not consumed by package users.
+bin/
+
+# Top-level dev override (already gitignored, double-belt).
+pubspec_overrides.yaml
+
+# Doc subtree we don't want in the bundle (kept in git for QA).
+doc/regression-testing/
