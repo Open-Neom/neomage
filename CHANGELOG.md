@@ -1,3 +1,23 @@
+## 1.3.0 — 2026-04-28
+
+- **`GeminiRealtimeClient` + `GeminiRealtimeEvent`** (`lib/realtime/`):
+  pure-Dart client for the Gemini Live (`BidiGenerateContent`) WebSocket
+  API. Streams audio bidirectionally over a single socket so apps can
+  build real-time voice conversations without TTS round-trips.
+  - **Audio formats**: input PCM 16-bit 16 kHz mono LE; output PCM 16-bit
+    24 kHz mono LE. Caller wires its own mic (`record`, Web Audio API,
+    etc.) and speaker (`flutter_pcm_sound`, etc.); the client only does
+    bytes-in/bytes-out so `neomage` stays platform-agnostic.
+  - **Sealed `GeminiRealtimeEvent` hierarchy**: `GeminiSetupComplete`,
+    `GeminiAudioOut`, `GeminiTextDelta`, `GeminiTurnComplete`,
+    `GeminiInterrupted`, `GeminiRealtimeError`. Pattern-match in
+    consumers — no untyped JSON needed.
+  - **Test-first**: 14 unit tests via an injectable `WebSocketChannel`
+    fake. Covers setup envelopes, system instructions, base64 PCM
+    encoding, text turns, server-content dispatch (audio + text +
+    interrupt + turn-complete + error).
+- New direct dependency: `web_socket_channel: ^3.0.0`.
+
 ## 1.2.0 — 2026-04-27
 - **Switch `neom_ollama` to hosted dep**: was `path: ../neom_modules/ai/
   neom_ollama` during local development; now consumes `neom_ollama: ^1.2.0`

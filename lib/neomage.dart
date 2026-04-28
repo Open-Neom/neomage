@@ -553,3 +553,7 @@ export 'core/agent/neomage_system_prompt.dart';
 // State
 export 'state/app_state.dart'
     hide PermissionMode, ConnectionStatus, SessionState, SessionMessage;
+
+// Realtime — Gemini Live (BidiGenerateContent) WebSocket client.
+export 'realtime/gemini_realtime_client.dart';
+export 'realtime/gemini_realtime_event.dart';
