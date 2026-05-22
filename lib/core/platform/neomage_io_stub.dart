@@ -7,9 +7,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-// Re-export dart:convert Encoding types (code that imported dart:io
-// sometimes got Encoding from there)
-export 'dart:convert' show Encoding, utf8, ascii, latin1;
+// Re-export of dart:convert removed to avoid analyzer/compilation conflict on native targets
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Platform

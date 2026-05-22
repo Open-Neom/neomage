@@ -215,7 +215,7 @@ void main() {
     });
     test('long string only checks first 500 chars', () {
       // No markdown in first 500 chars, only after → returns false.
-      final text = ('plain text ' * 50) + '**bold**';
+      final text = '${'plain text ' * 50}**bold**';
       expect(text.length, greaterThan(500));
       expect(enc.containsMarkdown(text), isFalse);
     });

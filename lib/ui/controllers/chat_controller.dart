@@ -25,6 +25,7 @@ import 'package:neomage/data/tools/glob_tool.dart';
 import 'package:neomage/data/tools/grep_tool.dart';
 import 'package:neomage/data/tools/tool.dart';
 import 'package:neomage/data/tools/tool_registry.dart';
+import 'package:neomage/data/tools/js_sandbox_tool.dart';
 import 'package:neomage/data/compact/compaction_service.dart';
 import 'package:neomage/data/session/session_history.dart';
 import 'package:neomage/data/session/session_memory.dart';
@@ -324,6 +325,8 @@ class ChatController extends SintController {
 
   ToolRegistry _createToolRegistry() {
     final registry = ToolRegistry();
+
+    registry.register(JsSandboxTool());
 
     if (!kIsWeb) {
       if (Platform.isMacOS || Platform.isLinux || Platform.isWindows) {

@@ -6,8 +6,8 @@
 //   - utils.ts: quote normalization, desanitization, patch generation,
 //     snippet extraction, edit equivalence checking
 
-import 'dart:convert';
 import 'dart:math';
+import 'dart:convert';
 
 import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:typed_data';

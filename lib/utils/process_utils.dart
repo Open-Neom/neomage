@@ -180,9 +180,11 @@ class ManagedProcess {
   ManagedProcess._(this._process) {
     _stdoutSub = _process.stdout
         .transform(utf8.decoder)
+        .cast<String>()
         .listen(_stdoutController.add);
     _stderrSub = _process.stderr
         .transform(utf8.decoder)
+        .cast<String>()
         .listen(_stderrController.add);
   }
 

@@ -8,9 +8,9 @@ article_medium.pdf
 *.xlsx
 *.docx
 
-# Empty / scaffolding directories.
-adapters/
-models/
+# Empty / scaffolding directories at root level.
+/adapters/
+/models/
 
 # Development entry-point — not consumed by package users.
 bin/

@@ -2235,7 +2235,7 @@ class _EmptyState extends StatelessWidget {
                   package: 'neomage',
                   width: isMobile ? 56 : 72,
                   height: isMobile ? 56 : 72,
-                  errorBuilder: (_, __, ___) => Icon(
+                  errorBuilder: (context, error, stackTrace) => Icon(
                     Icons.auto_awesome,
                     size: isMobile ? 48 : 64,
                     color: colorScheme.primary.withValues(alpha: 0.3),

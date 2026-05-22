@@ -195,10 +195,15 @@ _ModelRec _recommend(_HwCapability hw, UseCase useCase, ContextSize ctx, bool ne
 _KPIs _calculateKPIs(String params, _HwCapability hw, ContextSize ctx, {bool isGemma = false}) {
   final p = double.tryParse(params.replaceAll('B', '')) ?? 3;
   int baseSpeed;
-  if (p <= 2) baseSpeed = 45;
-  else if (p <= 4) baseSpeed = 35;
-  else if (p <= 9) baseSpeed = 22;
-  else baseSpeed = 12;
+  if (p <= 2) {
+    baseSpeed = 45;
+  } else if (p <= 4) {
+    baseSpeed = 35;
+  } else if (p <= 9) {
+    baseSpeed = 22;
+  } else {
+    baseSpeed = 12;
+  }
 
   var speed = (baseSpeed * hw.speedFactor).round();
   if (ctx == ContextSize.long) speed = (speed * 0.7).round();
@@ -433,7 +438,7 @@ class _ChooseAgentPageState extends State<ChooseAgentPage> {
             subtitle: Text('APIs, webhooks, structured data', style: TextStyle(color: textMuted, fontSize: 11)),
             contentPadding: EdgeInsets.zero,
             dense: true,
-            activeColor: accent,
+            activeThumbColor: accent,
           ),
 
           if (!isMac) ...[
@@ -444,7 +449,7 @@ class _ChooseAgentPageState extends State<ChooseAgentPage> {
               value: _hasGpu,
               onChanged: (v) => setState(() => _hasGpu = v),
               title: Text('Dedicated GPU (NVIDIA/AMD)', style: TextStyle(color: textMain, fontSize: 13)),
-              contentPadding: EdgeInsets.zero, dense: true, activeColor: accent,
+              contentPadding: EdgeInsets.zero, dense: true, activeThumbColor: accent,
             ),
             if (_hasGpu) ...[
               const SizedBox(height: 8),
@@ -472,7 +477,7 @@ class _ChooseAgentPageState extends State<ChooseAgentPage> {
               ),
               SizedBox(
                 width: 50,
-                child: Text('${_effectiveRam} GB',
+                child: Text('$_effectiveRam GB',
                   style: TextStyle(color: accent, fontWeight: FontWeight.w700, fontSize: 13)),
               ),
             ],
@@ -561,7 +566,7 @@ class _ChooseAgentPageState extends State<ChooseAgentPage> {
     required ValueChanged<T> onChanged, required Color textMain, required Color border,
   }) {
     return DropdownButtonFormField<T>(
-      value: value,
+      initialValue: value,
       items: items.entries.map((e) =>
         DropdownMenuItem(value: e.key, child: Text(e.value, style: TextStyle(fontSize: 13, color: textMain)))).toList(),
       onChanged: (v) { if (v != null) onChanged(v); },

@@ -1,3 +1,24 @@
+## 1.4.0 — 2026-05-21
+
+- **Swarm Orchestration (Multi-Agent Swarm)**: Introduced `SwarmOrchestrator` (`lib/utils/swarm/swarm_orchestrator.dart`) supporting coordinated agent roles (`coordinator`, `researcher`, `implementer`, `reviewer`, `tester`, `planner`).
+  - **Directed Acyclic Graph (DAG)** scheduling via `DependencyGraph` with cycle detection using a DFS color-marking algorithm.
+  - **Topological Sorting** (`topologicalSort`) to resolve execution chains in real-time.
+  - **Work-Stealing Scheduler** to dynamically allocate pending tasks to idle agent threads, maximizing concurrency and throughput.
+  - **Message Bus**: Direct/Broadcast messaging between agents using a pub/sub `MessageBus` with `sharedMemory`.
+- **Advanced Context Compaction**: Consolidated `CompactionService` and `QueuedCompactionEngine` (`lib/data/compact/`):
+  - **Microcompaction**: In-memory cheap strip-down that replaces large tool outputs (e.g. from grep, glob, or read_file) with lightweight markers (`[Old tool result content cleared]`).
+  - **Auto-Compaction**: Automatic context-window protection that triggers when projected token usage crosses configurable thresholds.
+  - **Partial Compaction**: A cache-friendly dual-direction compacting algorithm (`PartialCompactDirection.from` and `PartialCompactDirection.upTo`) that preserves Prompt Caching headers on LLM API endpoints.
+  - **PTL Truncation**: Graceful `truncateHeadForPtlRetry` to auto-recover when API calls return Prompt Too Long errors.
+- **Offline Sovereignty & Local AI Execution**:
+  - **Offline TTS (Sherpa ONNX)**: Integrated `SherpaOnnxSaiaTtsProvider` option under `neom_tts` leveraging VITS/Piper models in isolates for native offline voice synthesis with sub-millisecond local latency.
+  - **In-process Local Inference**: Embedded `LocalLlamaProvider` wrapping a native llamadart runtime to execute GGUF models (e.g., Llama 3.2 3B or Qwen 2.5 Coder) via FFI.
+  - **Hardware Profiler**: Integrated `HardwareProfiler` to dynamically detect hardware tiers and configure GPU layer offloading.
+  - **JavaScript Sandbox**: Consolidated `JsSandboxTool` leveraging isolated QuickJS runtime to safely compute deterministic algorithms or parsing code without bash/host side effects.
+- **IDE Bridge & Developer Integration**: Consolidated the `IdeBridgeServer` WebSocket server to establish a bi-directional JSON-RPC edit bridge with VS Code, JetBrains, and command line editors, exposing high-level commands like remote file navigation (`openFile`), split diffs (`showDiff`), compilation diagnostics (`getDiagnostics`), and atomic edits (`applyEdit`).
+- **Terminal & Bash Security Suite**: Upgraded the `bash_security.dart` parser to subject terminal command strings to an extensive static validator utilizing 23 security rules (checks for IFS injection, quote-obfuscated flags, process substitution blocks `$(...)`, locale hacks, and restricted directory targets).
+- **MCP (Model Context Protocol) Client Integration**: Built-in support to connect to stdio/websocket MCP servers, proxy-registering remote tools directly into the global `ToolRegistry` with safety checks and read-only annotations.
+
 ## 1.3.0 — 2026-04-28
 
 - **`GeminiRealtimeClient` + `GeminiRealtimeEvent`** (`lib/realtime/`):

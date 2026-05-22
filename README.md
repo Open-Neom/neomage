@@ -5,20 +5,24 @@
 [![pub package](https://img.shields.io/pub/v/neomage.svg)](https://pub.dev/packages/neomage)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Multi-provider AI agent engine for Flutter. API clients for Gemini, OpenAI, Anthropic, DeepSeek, Qwen, and Ollama with tool execution, skills, and MCP.
+Multi-provider AI agent engine for Flutter. Robust API clients for Gemini (including Gemini Live bidirectional voice streaming), OpenAI, Anthropic, DeepSeek, Qwen, and Ollama with tool execution, skills, multi-agent swarms, and MCP.
 
 Part of the [Open Neom](https://github.com/Open-Neom) ecosystem.
 
 ## Features
 
 - **Multi-provider** — Gemini, OpenAI, Anthropic, DeepSeek, Qwen, Ollama. One interface, any backend.
+- **Swarm Orchestration (Multi-Agent Swarm)** — High-performance concurrent multi-agent scheduler (`SwarmOrchestrator`) using a DAG (`DependencyGraph`) with DFS cycle-detection, topological sorting, work-stealing scheduling, and inter-agent direct/broadcast `MessageBus`.
+- **Offline Sovereignty & Local AI** — Run local GGUF models (e.g. Llama 3.2, Qwen 2.5 Coder) in-process via `LocalLlamaProvider`, native offline voice synthesis (Piper/VITS via Sherpa ONNX in isolates), and deterministic JS execution using an isolated QuickJS `JsSandboxTool`.
+- **IDE Bridge & Editor Integration** — WebSocket JSON-RPC edit bridge to VS Code, JetBrains (IntelliJ, PyCharm, etc.), and terminal editors to perform split diffs, diagnostic extraction, atomic edits, and remote file navigation.
+- **Gemini Live Realtime Voice** — Pure-Dart client (`GeminiRealtimeClient`) for Gemini's bidirectional voice WebSocket API, streaming audio natively with PCM 16-bit 16 kHz input / 24 kHz output.
 - **Agentic tool system** — 31 built-in tools (Bash, FileRead/Write/Edit, Grep, Glob, WebSearch, Agent, etc.) with automatic multi-turn execution loop.
 - **Streaming** — Real-time SSE parsing with typed stream events (`TextDelta`, `ToolUseStart`, `ThinkingDelta`, etc.).
 - **Skills framework** — 283 loadable markdown skills across 40+ categories (architecture, testing, debugging, agents, security, etc.).
 - **Personality system** — 12 modular personality modules (Identity, Cognition, Tools, Agency, Memory, etc.) assembled into a dynamic system prompt with environment context.
 - **MCP client** — Model Context Protocol support for extending capabilities with external tool servers.
-- **Bash security** — Command validation with 20+ security checks (injection detection, IFS validation, obfuscated flags, etc.).
-- **Context compaction** — Automatic conversation summarization to stay within token limits.
+- **Bash security** — Advanced command validation with 23+ security checks (injection detection, IFS validation, quote-obfuscated flags, process substitution blocks, and locale hacks).
+- **Advanced Context Compaction** — Three-phase pipeline including in-memory *Microcompaction*, reactively-triggered *Auto-Compaction*, and dual-direction cache-friendly *Partial Compaction* preserving LLM Prompt Caching.
 - **Retry with backoff** — Configurable exponential backoff with 529/rate-limit awareness.
 - **Cross-platform** — macOS, Linux, Windows, Web, iOS, Android.
 
