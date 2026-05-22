@@ -1,9 +1,6 @@
-## 1.4.1 — 2026-05-22
-
-- **saia_core Dependency Update**: Upgraded `saia_core` dependency from local path reference to version `^1.0.1` hosted on pub.dev. This allows `neomage` to consume the fully localization-ready, tested, and high-scoring release of `saia_core`.
-
 ## 1.4.0 — 2026-05-21
 
+- **saia_core Dependency Update**: Upgraded `saia_core` dependency from local path reference to version `^1.0.1` hosted on pub.dev. This allows `neomage` to consume the fully localization-ready, tested, and high-scoring release of `saia_core`.
 - **Swarm Orchestration (Multi-Agent Swarm)**: Introduced `SwarmOrchestrator` (`lib/utils/swarm/swarm_orchestrator.dart`) supporting coordinated agent roles (`coordinator`, `researcher`, `implementer`, `reviewer`, `tester`, `planner`).
   - **Directed Acyclic Graph (DAG)** scheduling via `DependencyGraph` with cycle detection using a DFS color-marking algorithm.
   - **Topological Sorting** (`topologicalSort`) to resolve execution chains in real-time.
