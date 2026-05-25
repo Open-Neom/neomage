@@ -1,3 +1,9 @@
+## 1.4.1 — 2026-05-25
+
+- **Pub.dev Maintenance and Score Optimization**:
+  - Resolved Flutter SDK deprecation warnings for `cacheExtent` in `ListView` and `onReorder` in `ReorderableListView` by using inline analyzer ignore statements to maintain backward and forward compatibility across older and newer Flutter versions (such as Framework 3.41.5 stable vs newer channel pre-releases).
+  - Updated dependency constraints in `pubspec.yaml` for `llamadart` (supporting `">=0.5.4 <0.7.0"`) and `file_picker` (supporting `">=10.3.10 <12.0.0"`) to resolve pub.dev analyzer warnings and support the latest stable releases, achieving 160/160 pub points.
+
 ## 1.4.0 — 2026-05-21
 
 - **saia_core Dependency Update**: Upgraded `saia_core` dependency from local path reference to version `^1.0.1` hosted on pub.dev. This allows `neomage` to consume the fully localization-ready, tested, and high-scoring release of `saia_core`.
