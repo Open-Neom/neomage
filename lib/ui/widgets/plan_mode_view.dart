@@ -425,6 +425,7 @@ class _PlanModeViewState extends State<PlanModeView>
                 physics: const NeverScrollableScrollPhysics(),
                 buildDefaultDragHandles: false,
                 itemCount: phase.steps.length,
+                // ignore: deprecated_member_use
                 onReorder: (oldIndex, newIndex) {
                   widget.onReorderStep?.call(phase, oldIndex, newIndex);
                 },

@@ -31,7 +31,7 @@ dependencies:
   # structured tool_calls (Llama 3.2, Phi, Qwen, Hermes, DeepSeek, …).
   neom_ollama: ^1.2.0
   saia_core: ^1.0.1
-  llamadart: ^0.5.4
+  llamadart: ">=0.5.4 <0.7.0"
   flutter_js: ^0.8.1
 
   # HTTP + Streaming
@@ -47,7 +47,7 @@ dependencies:
   flutter_markdown_plus: ^1.0.1
   google_fonts: ^8.0.2
   url_launcher: ^6.3.0
-  file_picker: ^10.3.10
+  file_picker: ">=10.3.10 <12.0.0"
   image_picker: ^1.1.0
 
   # Persistence

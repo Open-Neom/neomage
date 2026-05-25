@@ -661,6 +661,7 @@ class _LogPanelState extends State<LogPanel> {
         itemCount: _filtered.length,
         // Use estimated extent for virtualisation; expanded items are taller.
         itemExtent: null,
+        // ignore: deprecated_member_use
         cacheExtent: 500,
         itemBuilder: (context, index) {
           final entry = _filtered[index];
