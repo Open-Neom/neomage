@@ -1,3 +1,9 @@
+## 1.4.2 — 2026-05-27
+
+- **File Picker Compatibility & Platform Support Fix**:
+  - Upgraded `file_picker` dependency to `^11.0.2` to resolve compilation errors and restore complete platform support (iOS, Android, Web, Windows, macOS, Linux) on pub.dev.
+  - Migrated `FilePicker.platform.pickFiles` calls to the new static `FilePicker.pickFiles` API to conform with modern versions of the package.
+
 ## 1.4.1 — 2026-05-25
 
 - **Pub.dev Maintenance and Score Optimization**:
