@@ -41,7 +41,7 @@ class GeminiRealtimeClient {
       'google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
 
   /// Default model id for low-latency voice. Override per session.
-  static const String defaultModel = 'models/gemini-2.0-flash-exp';
+  static const String defaultModel = 'models/gemini-2.5-flash-lite';
 
   final String apiKey;
   final String model;
