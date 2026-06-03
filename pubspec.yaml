@@ -2,7 +2,7 @@ name: neomage
 description: Agnostic AI agent engine for Flutter. API clients for AI
   Providers and Ollama with tool execution, skills, MCP, and a Gemini
   Live realtime voice/audio WebSocket client.
-version: 1.4.2
+version: 1.4.3
 homepage: https://github.com/Open-Neom/neomage
 repository: https://github.com/Open-Neom/neomage
 issue_tracker: https://github.com/Open-Neom/neomage/issues
@@ -47,7 +47,7 @@ dependencies:
   flutter_markdown_plus: ^1.0.1
   google_fonts: ^8.0.2
   url_launcher: ^6.3.0
-  file_picker: ^11.0.2
+  file_picker: ^10.1.9
   image_picker: ^1.1.0
 
   # Persistence
