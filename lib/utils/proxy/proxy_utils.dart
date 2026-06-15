@@ -330,12 +330,9 @@ void resetKeepAliveForTesting() {
 /// Whether keep-alive is currently disabled.
 bool get isKeepAliveDisabled => _keepAliveDisabled;
 
-/// Environment-like map type for dependency injection in tests.
-typedef EnvLike = Map<String, String?>;
-
 /// Get the active proxy URL if one is configured.
 /// Prefers lowercase variants over uppercase.
-String? getProxyUrl([EnvLike? env]) {
+String? getProxyUrl([Map<String, String?>? env]) {
   final e = env ?? Platform.environment;
   return e['https_proxy'] ??
       e['HTTPS_PROXY'] ??
@@ -344,7 +341,7 @@ String? getProxyUrl([EnvLike? env]) {
 }
 
 /// Get the NO_PROXY environment variable value.
-String? getNoProxy([EnvLike? env]) {
+String? getNoProxy([Map<String, String?>? env]) {
   final e = env ?? Platform.environment;
   return e['no_proxy'] ?? e['NO_PROXY'];
 }
@@ -698,7 +695,7 @@ class ProxyConfiguration {
   bool get hasTLSCustomization => hasMTLS || hasCustomCA;
 
   /// Create from current environment.
-  factory ProxyConfiguration.fromEnvironment([EnvLike? env]) {
+  factory ProxyConfiguration.fromEnvironment([Map<String, String?>? env]) {
     final e = env ?? Platform.environment;
     return ProxyConfiguration(
       httpsProxy: e['https_proxy'] ?? e['HTTPS_PROXY'],

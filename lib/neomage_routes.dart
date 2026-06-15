@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sint/sint.dart';
+import 'package:neom_tts/tts_routes.dart';
 
 import 'ui/screens/chat_screen.dart';
 import 'ui/screens/doctor_screen.dart';
@@ -109,6 +110,7 @@ class NeomageRoutes {
       page: () => const _PlaceholderScreen(title: 'About'),
       transition: Transition.rightToLeft,
     ),
+    ...TtsRoutes.routes,
   ];
 
   /// Unknown-route handler — returns a simple 404 page.

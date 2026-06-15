@@ -25,6 +25,7 @@ dependencies:
   sint_sentinel: ^1.1.0
   neom_cli: ^1.0.0
   neom_docs: ^1.0.0
+  neom_tts: ^1.0.0
 
   # Ollama — local model management, hardware profiling, thinking trace,
   # and plain-text tool-call recovery for models that don't return

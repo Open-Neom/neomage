@@ -514,7 +514,7 @@ class ResumeCommand extends LocalCommand {
   String? get argumentHint => '[<session-id>|last]';
 
   @override
-  List<String> get aliases => const ['continue'];
+  List<String> get aliases => const ['continue', 'reanudar', 'retomar', 'continuar'];
 
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
@@ -577,7 +577,7 @@ class StatusCommand extends LocalCommand {
   String get description => 'Show current session status and information';
 
   @override
-  List<String> get aliases => const ['info'];
+  List<String> get aliases => const ['info', 'estado', 'como_vas', 'comovas'];
 
   @override
   bool get supportsNonInteractive => true;

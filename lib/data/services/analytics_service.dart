@@ -39,13 +39,7 @@ Map<String, V> stripProtoFields<V>(Map<String, V> metadata) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Log event metadata type
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Internal metadata type for logEvent — intentionally excludes raw strings
-/// to avoid accidentally logging code / file paths.
-typedef LogEventMetadata = Map<String, Object?>;
+// Log event metadata type is replaced by Map<String, Object?>.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Queued event
@@ -53,7 +47,7 @@ typedef LogEventMetadata = Map<String, Object?>;
 
 class _QueuedEvent {
   final String eventName;
-  final LogEventMetadata metadata;
+  final Map<String, Object?> metadata;
   final bool isAsync;
 
   const _QueuedEvent({
@@ -69,8 +63,8 @@ class _QueuedEvent {
 
 /// Sink interface for the analytics backend.
 abstract class AnalyticsSink {
-  void logEvent(String eventName, LogEventMetadata metadata);
-  Future<void> logEventAsync(String eventName, LogEventMetadata metadata);
+  void logEvent(String eventName, Map<String, Object?> metadata);
+  Future<void> logEventAsync(String eventName, Map<String, Object?> metadata);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -131,11 +125,6 @@ class SinkKillswitch {
 // Event sampling
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Configuration for sampling individual event types.
-/// Each event name maps to an object containing sample_rate (0–1).
-/// Events not in the config are logged at 100% rate.
-typedef EventSamplingConfig = Map<String, EventSampleRate>;
-
 class EventSampleRate {
   final double sampleRate;
   const EventSampleRate({required this.sampleRate});
@@ -149,7 +138,7 @@ class EventSampleRate {
 
 /// Determine if an event should be sampled based on its sample rate.
 /// Returns the sample rate if sampled, `null` if not configured, `0` if dropped.
-double? shouldSampleEvent(String eventName, EventSamplingConfig config) {
+double? shouldSampleEvent(String eventName, Map<String, EventSampleRate> config) {
   final eventConfig = config[eventName];
   if (eventConfig == null) return null;
 
@@ -1226,13 +1215,13 @@ class AnalyticsController extends SintController {
   final isDatadogGateEnabled = Rxn<bool>();
 
   /// Sampling config.
-  EventSamplingConfig _samplingConfig = {};
+  Map<String, EventSampleRate> _samplingConfig = {};
 
   /// Sink killswitch.
   SinkKillswitch? _killswitch;
 
   /// Set the sampling config.
-  void setSamplingConfig(EventSamplingConfig config) {
+  void setSamplingConfig(Map<String, EventSampleRate> config) {
     _samplingConfig = config;
   }
 
@@ -1269,7 +1258,7 @@ class AnalyticsController extends SintController {
   /// Log an event (synchronous).
   ///
   /// If no sink is attached, events are queued and drained when the sink attaches.
-  void logEvent(String eventName, LogEventMetadata metadata) {
+  void logEvent(String eventName, Map<String, Object?> metadata) {
     // Check sampling.
     final sampleResult = shouldSampleEvent(eventName, _samplingConfig);
     if (sampleResult != null && sampleResult == 0) return;
@@ -1296,7 +1285,7 @@ class AnalyticsController extends SintController {
   /// Log an event (asynchronous).
   Future<void> logEventAsync(
     String eventName,
-    LogEventMetadata metadata,
+    Map<String, Object?> metadata,
   ) async {
     final sampleResult = shouldSampleEvent(eventName, _samplingConfig);
     if (sampleResult != null && sampleResult == 0) return;

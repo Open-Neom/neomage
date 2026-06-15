@@ -989,6 +989,24 @@ class _StatusTab extends StatelessWidget {
                     ],
                   );
                 }),
+                const SizedBox(height: 24),
+                Text(
+                  'Voice Settings',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.volume_up),
+                    title: const Text('Configure Text-to-Speech (TTS)'),
+                    subtitle: const Text('Choose provider, voice and adjust speed'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Sint.toNamed('/ttsSettings'),
+                  ),
+                ),
               ],
             ),
           ),

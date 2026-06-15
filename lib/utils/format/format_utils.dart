@@ -430,8 +430,6 @@ List<String> wrapText(String text, int width) {
 // ---------------------------------------------------------------------------
 
 /// A tree node can contain nested maps or string leaves.
-typedef TreeNode = Map<String, dynamic>;
-
 /// Options for tree rendering.
 class TreeifyOptions {
   const TreeifyOptions({
@@ -453,7 +451,7 @@ const _treeEmpty = ' ';
 
 /// Render a tree node as a string.
 String treeify(
-  TreeNode obj, {
+  Map<String, dynamic> obj, {
   TreeifyOptions options = const TreeifyOptions(),
 }) {
   if (obj.isEmpty) return '(empty)';
@@ -649,14 +647,11 @@ String _stripBOM(String s) {
 // frontmatterParser.ts
 // ---------------------------------------------------------------------------
 
-/// Parsed frontmatter data (loosely typed).
-typedef FrontmatterData = Map<String, dynamic>;
-
 /// Result of parsing markdown with frontmatter.
 class ParsedMarkdown {
   const ParsedMarkdown({required this.frontmatter, required this.content});
 
-  final FrontmatterData frontmatter;
+  final Map<String, dynamic> frontmatter;
   final String content;
 }
 
@@ -708,7 +703,7 @@ ParsedMarkdown parseFrontmatter(String markdown, {String? sourcePath}) {
   final frontmatterText = match.group(1) ?? '';
   final content = markdown.substring(match.end);
 
-  FrontmatterData frontmatter = {};
+  Map<String, dynamic> frontmatter = {};
   try {
     final parsed = _parseSimpleYaml(frontmatterText);
     if (parsed is Map<String, dynamic>) {

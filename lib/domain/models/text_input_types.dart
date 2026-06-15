@@ -123,8 +123,7 @@ class BaseInputState {
   });
 }
 
-/// State for a standard (non-vim) text input.
-typedef TextInputState = BaseInputState;
+// TextInputState was a legacy alias and is removed. Use BaseInputState directly.
 
 /// State for a vim-mode text input, extending [BaseInputState] with
 /// the current [VimMode].

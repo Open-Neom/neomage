@@ -14,8 +14,7 @@ import 'package:path/path.dart' as p;
 // Part 1 — Query Helpers (from queryHelpers.ts)
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Representation of a permission prompt tool.
-typedef PermissionPromptTool = Map<String, dynamic>;
+// PermissionPromptTool typedef was removed.
 
 /// Small cache size for ask operations.
 const int _askReadFileStateCacheSize = 10;

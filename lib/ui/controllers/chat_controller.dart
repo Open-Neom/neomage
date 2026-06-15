@@ -39,6 +39,7 @@ import 'package:neomage/data/commands/builtin/help_command.dart';
 import 'package:neomage/data/commands/builtin/memory_command.dart';
 import 'package:neomage/data/commands/builtin/model_command.dart';
 import 'package:neomage/data/commands/builtin/session_command.dart';
+import 'package:neomage/data/commands/builtin/extended_commands.dart';
 import 'package:neomage/utils/constants/system.dart';
 import 'package:neomage/utils/telemetry/telemetry_service.dart';
 import 'package:neomage/data/analytics/analytics_service.dart';
@@ -869,6 +870,34 @@ class ChatController extends SintController {
       ],
     );
 
+    // Unconditionally register Status and Tools commands
+    _commandRegistry.register(
+      StatusCommand(
+        getCurrentModel: () => _provider?.config.model ?? 'unknown',
+        getSessionId: () => sessionId.value,
+        getMessageCount: () => messages.length,
+        getTokenCount: () => totalInputTokens.value + totalOutputTokens.value,
+        getCwd: () => Directory.current.path,
+      ),
+      category: CommandCategory.session,
+    );
+
+    if (_toolRegistry != null) {
+      _commandRegistry.register(
+        ToolsCommand(
+          getTools: () => _toolRegistry!.allRegistrations.map((r) => {
+            'name': r.name,
+            'description': r.tool.description,
+            'enabled': r.enabled,
+            'readOnly': r.tool.isReadOnly,
+            'destructive': r.tool.isDestructive,
+            'source': r.tool.isMcp ? 'mcp' : 'builtin',
+          }).toList(),
+        ),
+        category: CommandCategory.tools,
+      );
+    }
+
     // Commands that require non-web services
     if (!kIsWeb) {
       if (_memdirService != null) {
@@ -882,6 +911,14 @@ class ChatController extends SintController {
           SessionCommand(
             historyManager: _sessionHistoryManager!,
             getCurrentSessionId: () => sessionId.value,
+            onSessionResume: (id) => loadSession(id),
+          ),
+          category: CommandCategory.session,
+        );
+        _commandRegistry.register(
+          ResumeCommand(
+            listSessions: () => _sessionHistoryManager!.listSessions(),
+            resumeSession: (id) => loadSession(id),
           ),
           category: CommandCategory.session,
         );

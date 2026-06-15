@@ -557,3 +557,5 @@ export 'state/app_state.dart'
 // Realtime — Gemini Live (BidiGenerateContent) WebSocket client.
 export 'realtime/gemini_realtime_client.dart';
 export 'realtime/gemini_realtime_event.dart';
+
+

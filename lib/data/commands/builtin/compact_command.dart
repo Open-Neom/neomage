@@ -24,6 +24,9 @@ class CompactCommand extends LocalCommand {
       'Clear conversation history but keep a summary of prior context';
 
   @override
+  List<String> get aliases => const ['resumir', 'comprimir', 'compactar'];
+
+  @override
   bool get supportsNonInteractive => true;
 
   @override

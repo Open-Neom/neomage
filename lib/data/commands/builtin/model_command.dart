@@ -19,6 +19,9 @@ class ModelCommand extends LocalCommand {
   String get description => 'Switch the active model';
 
   @override
+  List<String> get aliases => const ['modelos', 'modelo', 'ia'];
+
+  @override
   String? get argumentHint => '<model-name>';
 
   @override

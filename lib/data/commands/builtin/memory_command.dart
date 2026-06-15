@@ -16,6 +16,9 @@ class MemoryCommand extends LocalCommand {
   String get description => 'View and manage persistent memory files';
 
   @override
+  List<String> get aliases => const ['memoria', 'recuerdos', 'que_sabes'];
+
+  @override
   String? get argumentHint => '[list|show <file>|delete <file>]';
 
   @override

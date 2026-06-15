@@ -59,8 +59,7 @@ class Message {
   );
 }
 
-/// Alias for a user message after normalisation.
-typedef NormalizedUserMessage = Message;
+/// Message represents a user message after normalisation.
 
 /// Attachment on a message.
 class Attachment {
@@ -235,7 +234,7 @@ class TurnInterruptionNone extends TurnInterruptionState {
 
 /// The user had typed a prompt but the assistant never responded.
 class TurnInterruptionPrompt extends TurnInterruptionState {
-  final NormalizedUserMessage message;
+  final Message message;
 
   const TurnInterruptionPrompt({required this.message});
 }

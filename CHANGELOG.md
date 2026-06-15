@@ -1,3 +1,8 @@
+# Changelog - neomage
+
+## Unreleased - System updates
+- Actualizaciones de estabilidad y compatibilidad.
+
 ## 1.4.2 — 2026-05-27
 
 - **File Picker Compatibility & Platform Support Fix**:

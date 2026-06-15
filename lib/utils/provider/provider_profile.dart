@@ -804,13 +804,6 @@ class SystemPromptBlock {
   const SystemPromptBlock({required this.text, this.cacheScope});
 }
 
-/// System prompt is a list of strings.
-typedef SystemPrompt = List<String>;
-
-// ═══════════════════════════════════════════════════════════════════
-// System Prompt Splitting
-// ═══════════════════════════════════════════════════════════════════
-
 /// Split system prompt blocks by content type for API cache control.
 ///
 /// Modes:
@@ -818,7 +811,7 @@ typedef SystemPrompt = List<String>;
 /// 2. useGlobalCache + dynamicBoundary found: up to 4 blocks with global cache.
 /// 3. Default: up to 3 blocks with org-level caching.
 List<SystemPromptBlock> splitSysPromptPrefix({
-  required SystemPrompt systemPrompt,
+  required List<String> systemPrompt,
   bool skipGlobalCacheForSystemPrompt = false,
   bool useGlobalCacheFeature = false,
   String? dynamicBoundary,
@@ -924,7 +917,7 @@ List<SystemPromptBlock> splitSysPromptPrefix({
 
 /// Append system context entries to the system prompt.
 List<String> appendSystemContext({
-  required SystemPrompt systemPrompt,
+  required List<String> systemPrompt,
   required Map<String, String> context,
 }) {
   return [

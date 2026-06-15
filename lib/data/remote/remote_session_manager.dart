@@ -115,11 +115,7 @@ class RemoteSessionCallbacks {
 // Remote message content (for HTTP POST)
 // ---------------------------------------------------------------------------
 
-/// Content payload sent to the remote session via HTTP POST.
-///
-/// Mirrors the `RemoteMessageContent` union from the TS teleport API.
-/// In practice this is either a text prompt or a list of content blocks.
-typedef RemoteMessageContent = Object;
+// RemoteMessageContent typedef was removed.
 
 // ---------------------------------------------------------------------------
 // RemoteSessionManager
@@ -186,7 +182,7 @@ class RemoteSessionManager {
   ///
   /// Returns `true` if the server acknowledged the message successfully.
   Future<bool> sendMessage(
-    RemoteMessageContent content, {
+    Object content, {
     String? uuid,
   }) async {
     developer.log(

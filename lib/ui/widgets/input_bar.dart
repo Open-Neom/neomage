@@ -64,7 +64,7 @@ class _InputBarState extends State<InputBar> {
 
   Future<void> _pickFiles() async {
     try {
-      final result = await FilePicker.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.any,
         withData: true,
@@ -199,7 +199,7 @@ class _InputBarState extends State<InputBar> {
               onTap: () async {
                 Navigator.pop(ctx);
                 try {
-                  final result = await FilePicker.pickFiles(
+                  final result = await FilePicker.platform.pickFiles(
                     type: FileType.custom,
                     allowedExtensions: ['pdf'],
                     withData: true,

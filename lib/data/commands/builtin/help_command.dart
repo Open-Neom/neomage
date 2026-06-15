@@ -16,7 +16,15 @@ class HelpCommand extends LocalCommand {
   String get description => 'Show available commands and usage';
 
   @override
-  List<String> get aliases => const ['?', 'commands'];
+  List<String> get aliases => const [
+        '?',
+        'commands',
+        'ayuda',
+        'que_onda',
+        'queonda',
+        'opciones',
+        'h',
+      ];
 
   @override
   bool get supportsNonInteractive => true;

@@ -7,10 +7,12 @@ import '../command.dart';
 class SessionCommand extends LocalCommand {
   final SessionHistoryManager historyManager;
   final String Function() getCurrentSessionId;
+  final Future<bool> Function(String sessionId)? onSessionResume;
 
   SessionCommand({
     required this.historyManager,
     required this.getCurrentSessionId,
+    this.onSessionResume,
   });
 
   @override
@@ -20,7 +22,10 @@ class SessionCommand extends LocalCommand {
   String get description => 'View and manage conversation sessions';
 
   @override
-  String? get argumentHint => '[list|resume <id>|delete <id>]';
+  List<String> get aliases => const ['sesiones', 'historial', 'platicas'];
+
+  @override
+  String? get argumentHint => '[list|current|resume <id>|delete <id>]';
 
   @override
   Future<CommandResult> execute(String args, ToolUseContext context) async {
@@ -33,6 +38,22 @@ class SessionCommand extends LocalCommand {
         return _list();
       case 'current':
         return TextCommandResult('Current session: ${getCurrentSessionId()}');
+      case 'resume':
+      case 'load':
+        if (parts.length < 2) {
+          return const TextCommandResult('Usage: /session resume <id>');
+        }
+        if (onSessionResume == null) {
+          return const TextCommandResult(
+            'Session resume is not supported in this context.',
+          );
+        }
+        final id = parts[1];
+        final success = await onSessionResume!(id);
+        if (!success) {
+          return TextCommandResult('Session not found: $id');
+        }
+        return TextCommandResult('Resumed session: $id');
       case 'delete':
         if (parts.length < 2) {
           return const TextCommandResult('Usage: /session delete <id>');
@@ -41,7 +62,7 @@ class SessionCommand extends LocalCommand {
       default:
         return TextCommandResult(
           'Unknown subcommand: $subcommand\n'
-          'Usage: /session [list|current|delete <id>]',
+          'Usage: /session [list|current|resume <id>|delete <id>]',
         );
     }
   }

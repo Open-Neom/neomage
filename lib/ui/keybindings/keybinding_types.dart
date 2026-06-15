@@ -47,8 +47,7 @@ class ParsedKeystroke {
   }
 }
 
-/// A chord — sequence of keystrokes (e.g., Ctrl+K followed by Ctrl+S).
-typedef Chord = List<ParsedKeystroke>;
+// Chord typedef was removed.
 
 /// Keybinding contexts.
 enum KeybindingContext {
@@ -84,7 +83,7 @@ enum KeybindingContext {
 
 /// A resolved keybinding.
 class ParsedBinding {
-  final Chord chord;
+  final List<ParsedKeystroke> chord;
   final String? action;
   final KeybindingContext context;
 
@@ -159,7 +158,7 @@ ParsedKeystroke parseKeystroke(String input) {
 }
 
 /// Parse a chord string like "ctrl+k ctrl+s".
-Chord parseChord(String input) {
+List<ParsedKeystroke> parseChord(String input) {
   return input
       .split(RegExp(r'\s+'))
       .where((s) => s.isNotEmpty)

@@ -11,7 +11,7 @@ class ClearCommand extends LocalCommand {
   String get description => 'Clear conversation history and start fresh';
 
   @override
-  List<String> get aliases => const ['reset', 'new'];
+  List<String> get aliases => const ['reset', 'new', 'limpiar', 'borrar'];
 
   @override
   bool get supportsNonInteractive => true;
