@@ -548,7 +548,7 @@ class _ChooseAgentPageState extends State<ChooseAgentPage> {
           _step(2, 'Download the model',
             'ollama pull ${rec.name}', 'Saves to Ollama cache.', accent, textMain, textMuted, success),
           _step(3, 'Run it',
-            'ollama run ${rec.name}', 'Or connect via Neomage / OpenClaw.', accent, textMain, textMuted, success),
+            'ollama run ${rec.name}', 'Or connect via Neomage / Gateway.', accent, textMain, textMuted, success),
         ],
       ),
     );

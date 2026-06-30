@@ -82,7 +82,7 @@ class NeomageSystemPrompt {
     buffer.writeln();
     buffer.writeln(_tools);
 
-    // Environment (like OpenClaw's # Environment section)
+    // Environment section
     buffer.writeln();
     buffer.writeln('# Environment');
     buffer.writeln();

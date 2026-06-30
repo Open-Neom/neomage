@@ -178,7 +178,7 @@ The test suite covers domain models, API error classification, bash security val
 
 Neomage is built on the shoulders of giants. We gratefully acknowledge the following projects and organizations whose work, APIs, and open-source contributions made this possible:
 
-- **[Anthropic](https://anthropic.com)** — For the Claude API and for open-sourcing [Claude Code (OpenClaw)](https://github.com/anthropics/claude-code), whose tool system architecture, system prompt design, agentic loop patterns, and permission model served as the primary reference architecture for Neomage's engine.
+- **[Anthropic](https://anthropic.com)** — For the Claude API and for open-sourcing [Claude Code](https://github.com/anthropics/claude-code), whose tool system architecture, system prompt design, agentic loop patterns, and permission model served as the primary reference architecture for Neomage's engine.
 - **[Google](https://ai.google.dev)** — For the Gemini API and the [Flutter](https://flutter.dev) framework, which powers Neomage's cross-platform capabilities across macOS, Linux, Windows, Web, iOS, and Android.
 - **[OpenAI](https://openai.com)** — For establishing the chat completions API standard that became the lingua franca for AI providers, enabling Neomage's multi-provider compatibility via the OpenAI-compatible shim.
 - **[Qwen (Alibaba Cloud)](https://www.alibabacloud.com/en/solutions/generative-ai/qwen)** — For the Qwen model family and DashScope API, expanding Neomage's reach to additional high-quality models.
