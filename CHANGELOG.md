@@ -1,3 +1,6 @@
+
+## [2.0.0-unreleased] - 2026-07-21
+- Refactor and compatibility updates for openai_shim.dart.
 # Changelog - neomage
 
 ## Unreleased - System updates
