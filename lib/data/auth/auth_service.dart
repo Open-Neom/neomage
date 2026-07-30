@@ -1,11 +1,19 @@
+import 'dart:io' show Platform;
+
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:sint_sentinel/sint_sentinel.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../utils/crypto/crypto_utils.dart';
 import '../api/api_provider.dart';
 
 /// Auth service — manages API keys and provider configuration.
-/// Uses Hive for key storage (cross-platform, no entitlements needed).
+///
+/// SECURITY (H3): API keys are stored in the OS keychain (macOS Keychain /
+/// GNOME Keyring via [SecureStorage]) whenever the platform supports it.
+/// Values previously stored as plaintext in the Hive box are migrated
+/// opportunistically on first read/write. Hive remains as fallback on
+/// platforms without keychain support.
 class AuthService {
   static const _anthropicKeyKey = 'anthropic_api_key';
   static const _openaiKeyKey = 'openai_api_key';
@@ -19,7 +27,18 @@ class AuthService {
 
   static const _boxName = 'neomage_auth';
 
+  static const SecureStorage _secure = SecureStorage(serviceName: 'neomage');
+
   AuthService();
+
+  /// OS keychain available only on desktop platforms.
+  static bool get _secureStorageSupported {
+    try {
+      return Platform.isMacOS || Platform.isLinux;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<Box> _openBox() async {
     if (Hive.isBoxOpen(_boxName)) return Hive.box(_boxName);
@@ -29,16 +48,54 @@ class AuthService {
   // ── API Key Management ──
 
   Future<String?> _readKey(String key) async {
+    if (_secureStorageSupported) {
+      try {
+        final secureValue = await _secure.read(key);
+        if (secureValue != null && secureValue.isNotEmpty) return secureValue;
+      } catch (_) {
+        // Fall through to legacy Hive storage.
+      }
+    }
+
     final box = await _openBox();
-    return box.get(key) as String?;
+    final legacy = box.get(key) as String?;
+
+    // Opportunistic migration: move plaintext Hive value to the keychain.
+    if (legacy != null && legacy.isNotEmpty && _secureStorageSupported) {
+      try {
+        if (await _secure.write(key, legacy)) {
+          await box.delete(key);
+          SintSentinel.logger.i('Migrated $key from Hive to OS keychain');
+        }
+      } catch (_) {}
+    }
+    return legacy;
   }
 
   Future<void> _writeKey(String key, String value) async {
+    if (_secureStorageSupported) {
+      try {
+        if (await _secure.write(key, value)) {
+          // Remove any legacy plaintext copy.
+          final box = await _openBox();
+          if (box.containsKey(key)) await box.delete(key);
+          return;
+        }
+      } catch (_) {
+        // Fall through to Hive fallback.
+      }
+    }
+
     final box = await _openBox();
     await box.put(key, value);
   }
 
   Future<void> _deleteKey(String key) async {
+    if (_secureStorageSupported) {
+      try {
+        await _secure.delete(key);
+      } catch (_) {}
+    }
     final box = await _openBox();
     await box.delete(key);
   }
