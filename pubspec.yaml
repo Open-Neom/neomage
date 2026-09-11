@@ -32,6 +32,10 @@ dependencies:
   # structured tool_calls (Llama 3.2, Phi, Qwen, Hermes, DeepSeek, …).
   neom_ollama: ^1.2.0
   saia_core: ^1.0.1
+  # Las habilidades salieron de aquí a su propio paquete: son contenido, y
+  # tenerlas dentro obligaba a cualquier consumidor a cargar también con
+  # llamadart y el resto del motor. Ver saia_skills/README.md.
+  saia_skills: ^0.1.0
   llamadart: ">=0.5.4 <0.7.0"
   flutter_js: ^0.8.1
 
@@ -71,122 +75,12 @@ flutter:
     - assets/neomage_icon.png
     - assets/neomage_logo.png
     # Skills index
-    - assets/skills/skills_index.json
     # Spanish MX metadata (short descriptions + MX relevance ordering)
-    - assets/skills/skill_meta_es.json
     # Personality modules
     - assets/personality/
     # Skills by category
-    - assets/skills/chain_of_thought/
-    - assets/skills/metacognition/
-    - assets/skills/planning/
-    - assets/skills/research/
-    - assets/skills/distillation/
-    - assets/skills/agency/
-    - assets/skills/memory/
-    - assets/skills/adaptability/
-    - assets/skills/coherence/
-    - assets/skills/introspection/
-    - assets/skills/consolidation/
-    - assets/skills/personality/
-    - assets/skills/cognitive_pipeline/
-    - assets/skills/agents/
-    - assets/skills/ai_ml/
-    - assets/skills/api_design/
-    - assets/skills/architecture/
-    - assets/skills/backend/
-    - assets/skills/business/
-    - assets/skills/code_quality/
-    - assets/skills/content_writing/
-    - assets/skills/context/
-    - assets/skills/data_storage/
-    - assets/skills/debugging/
-    - assets/skills/design_ui/
-    - assets/skills/documentation/
-    - assets/skills/documents/
-    - assets/skills/evaluation/
-    - assets/skills/flutter/
-    - assets/skills/frontend/
-    - assets/skills/git_workflow/
-    - assets/skills/internationalization/
-    - assets/skills/languages/
-    - assets/skills/performance/
-    - assets/skills/product/
-    - assets/skills/prompting/
-    - assets/skills/security/
-    - assets/skills/testing/
-    - assets/skills/tools/
-    - assets/skills/workflow/
     # México / Negocio
-    - assets/skills/cotizaciones/
-    - assets/skills/dart_flutter/
-    - assets/skills/documentos/
-    - assets/skills/finance/
-    - assets/skills/finanzas/
-    - assets/skills/kpis/
-    - assets/skills/legal/
-    - assets/skills/marketing/
-    - assets/skills/recursos_humanos/
-    - assets/skills/redaccion/
-    - assets/skills/token_efficiency/
-    - assets/skills/tramites/
-    - assets/skills/ventas/
-    - assets/skills/writing_quality/
     # Skills — English (LLM-optimized)
-    - assets/skills/en/adaptability/
-    - assets/skills/en/agency/
-    - assets/skills/en/agents/
-    - assets/skills/en/ai_ml/
-    - assets/skills/en/api_design/
-    - assets/skills/en/architecture/
-    - assets/skills/en/backend/
-    - assets/skills/en/business/
-    - assets/skills/en/chain_of_thought/
-    - assets/skills/en/code_quality/
-    - assets/skills/en/cognitive_pipeline/
-    - assets/skills/en/coherence/
-    - assets/skills/en/consolidation/
-    - assets/skills/en/content_writing/
-    - assets/skills/en/context/
-    - assets/skills/en/cotizaciones/
-    - assets/skills/en/dart_flutter/
-    - assets/skills/en/data_storage/
-    - assets/skills/en/debugging/
-    - assets/skills/en/design_ui/
-    - assets/skills/en/distillation/
-    - assets/skills/en/documentation/
-    - assets/skills/en/documentos/
-    - assets/skills/en/documents/
-    - assets/skills/en/evaluation/
-    - assets/skills/en/finance/
-    - assets/skills/en/finanzas/
-    - assets/skills/en/flutter/
-    - assets/skills/en/frontend/
-    - assets/skills/en/git_workflow/
-    - assets/skills/en/internationalization/
-    - assets/skills/en/introspection/
-    - assets/skills/en/kpis/
-    - assets/skills/en/languages/
-    - assets/skills/en/legal/
-    - assets/skills/en/marketing/
-    - assets/skills/en/memory/
-    - assets/skills/en/metacognition/
-    - assets/skills/en/performance/
-    - assets/skills/en/personality/
-    - assets/skills/en/planning/
-    - assets/skills/en/product/
-    - assets/skills/en/prompting/
-    - assets/skills/en/recursos_humanos/
-    - assets/skills/en/redaccion/
-    - assets/skills/en/research/
-    - assets/skills/en/security/
-    - assets/skills/en/testing/
-    - assets/skills/en/token_efficiency/
-    - assets/skills/en/tools/
-    - assets/skills/en/tramites/
-    - assets/skills/en/ventas/
-    - assets/skills/en/workflow/
-    - assets/skills/en/writing_quality/
     # Skills en espanol: removidos en 2026-04 — eran duplicados EN con un
     # disclaimer "Contenido tecnico en ingles" (664 KB muertos). El UI hoy
     # lee siempre desde `en/` + `skill_meta_es.json` para la presentacion.

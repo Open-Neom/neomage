@@ -4,8 +4,9 @@
 
 import 'dart:async';
 
-import 'package:flutter/services.dart' show AssetManifest, rootBundle;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:saia_skills/saia_skills.dart';
 
 // ─── Types ───
 
@@ -631,39 +632,42 @@ Include:
   /// Skills are registered with source=builtin and grouped by category.
   Future<void> _loadBundledSkills() async {
     try {
-      final assetManifest = await AssetManifest.loadFromAssetBundle(rootBundle);
-      final allAssets = assetManifest.listAssets();
-      final regex = RegExp(r'assets/skills/([^/]+)/([^/]+\.md)$');
+      // El catálogo lo resuelve `saia_skills`.
+      //
+      // Aquí había una expresión regular propia —`assets/skills/<cat>/…`—
+      // que dejó de casar cuando el contenido se mudó a su paquete y la
+      // ruta perdió el segmento `skills/`. No fallaba: cargaba cero
+      // habilidades y seguía adelante, porque el `catch` de abajo existe
+      // para los contextos sin Flutter. Un catálogo vacío y uno no
+      // disponible se veían igual.
+      //
+      // Era la segunda copia del mismo parseo en este paquete; el panel de
+      // la interfaz tenía otra. Las dos podían desincronizarse por su
+      // cuenta, y lo hicieron.
+      final porCategoria = await SaiaSkillCatalog.byCategory();
 
-      for (final assetPath in allAssets) {
-        final match = regex.firstMatch(assetPath);
-        if (match == null) continue;
+      porCategoria.forEach((category, skills) {
+        for (final s in skills) {
+          final skill = SkillDefinition(
+            name: s.id,
+            description: 'Bundled skill: ${_humanize(s.id)}',
+            prompt: '', // Se carga bajo demanda vía loadSkillContent()
+            source: SkillSource.builtin,
+            tags: [category],
+            metadata: {'assetPath': s.assetPath, 'category': category},
+          );
 
-        final category = match.group(1)!;
-        final fileName = match.group(2)!;
-        final name = fileName.replaceAll('.md', '');
+          register(skill);
+          bundledByCategory.putIfAbsent(category, () => []);
+          bundledByCategory[category]!.add(skill);
+        }
+      });
 
-        // Register as a lightweight definition (prompt loaded on-demand).
-        final skill = SkillDefinition(
-          name: name,
-          description: 'Bundled skill: ${_humanize(name)}',
-          prompt: '', // Loaded on-demand via loadSkillContent()
-          source: SkillSource.builtin,
-          tags: [category],
-          metadata: {'assetPath': assetPath, 'category': category},
-        );
-
-        register(skill);
-        bundledByCategory.putIfAbsent(category, () => []);
-        bundledByCategory[category]!.add(skill);
-      }
-
-      // Sort each category alphabetically.
       for (final list in bundledByCategory.values) {
         list.sort((a, b) => a.name.compareTo(b.name));
       }
     } catch (_) {
-      // AssetManifest may not be available in non-Flutter contexts (CLI, tests).
+      // El manifiesto de assets no existe fuera de Flutter (CLI, tests).
     }
   }
 

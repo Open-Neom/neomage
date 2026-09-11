@@ -4,8 +4,9 @@
 //   - Load in Context: silently injects the skill into the system context
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show AssetManifest, rootBundle;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:sint/sint.dart';
+import 'package:saia_skills/saia_skills.dart';
 
 import '../controllers/chat_controller.dart';
 
@@ -109,61 +110,34 @@ class _SkillsPanelState extends State<SkillsPanel> {
     super.dispose();
   }
 
-  /// Asset prefix — package assets are accessed via 'packages/neomage/' prefix.
-  static const _assetPrefix = 'packages/neomage/assets/skills/';
-
-  /// Discover skills from the AssetManifest.
+  /// Descubre las habilidades del catálogo.
+  ///
+  /// Antes esto recorría el manifiesto de assets a mano y sacaba la
+  /// categoría con `segments.indexOf('skills')`. Al mudarse el contenido a
+  /// `saia_skills` la ruta perdió ese segmento
+  /// —`packages/saia_skills/assets/<categoria>/<skill>.md`— y el índice
+  /// devolvía −1: el panel se quedaba vacío sin ningún error, y el
+  /// analizador no tenía nada que señalar.
+  ///
+  /// Ahora lo resuelve el propio paquete. Es la razón de haberlo extraído:
+  /// el parseo de rutas vivía duplicado en cada consumidor, y cada copia
+  /// podía desincronizarse por su cuenta.
   Future<void> _discoverSkills() async {
     try {
-      // Use the modern AssetManifest API (works with both .json and .bin formats)
-      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
-      final allAssets = manifest.listAssets();
-
-      // Try package-prefixed path first, fallback to direct path (for standalone use)
-      var skillPaths = allAssets
-          .where((k) => k.startsWith(_assetPrefix) && k.endsWith('.md'))
-          .where((k) => !k.endsWith('README.md'))
-          .toList();
-
-      if (skillPaths.isEmpty) {
-        // Fallback: direct path (when running as the main app, not as a dependency)
-        skillPaths = allAssets
-            .where((k) => k.startsWith('assets/skills/') && k.endsWith('.md'))
-            .where((k) => !k.endsWith('README.md'))
-            .toList();
-      }
-
-      skillPaths.sort();
+      final porCategoria = await SaiaSkillCatalog.byCategory();
 
       final categories = <String, List<_SkillEntry>>{};
-
-      for (final path in skillPaths) {
-        // path: packages/neomage/assets/skills/{category}/{skill_name}.md
-        // or:   assets/skills/{category}/{skill_name}.md
-        final segments = path.split('/');
-        if (segments.length < 4) continue;
-
-        // Find 'skills' segment to extract category
-        final skillsIdx = segments.indexOf('skills');
-        if (skillsIdx < 0 || skillsIdx + 2 >= segments.length) continue;
-
-        final category = segments[skillsIdx + 1];
-        final fileName = segments.last.replaceAll('.md', '');
-        final displayName = _formatDisplayName(fileName);
-
-        categories.putIfAbsent(category, () => []);
-        categories[category]!.add(_SkillEntry(
-          name: fileName,
-          displayName: displayName,
-          category: category,
-          assetPath: path,
-        ));
-      }
-
-      // Sort skills within each category
-      for (final list in categories.values) {
-        list.sort((a, b) => a.displayName.compareTo(b.displayName));
-      }
+      porCategoria.forEach((categoria, skills) {
+        categories[categoria] = skills
+            .map((s) => _SkillEntry(
+                  name: s.id,
+                  displayName: _formatDisplayName(s.id),
+                  category: categoria,
+                  assetPath: s.assetPath,
+                ))
+            .toList()
+          ..sort((a, b) => a.displayName.compareTo(b.displayName));
+      });
 
       if (mounted) {
         setState(() {
@@ -301,7 +275,7 @@ $content''';
                   style: TextStyle(color: cs.onSurfaceVariant)),
               const SizedBox(height: 8),
               Text(
-                'Add .md files to assets/skills/ to get started.',
+                'Las habilidades vienen del paquete saia_skills.',
                 style: TextStyle(
                   fontSize: 12,
                   color: cs.onSurfaceVariant.withValues(alpha: 0.7),
