@@ -7,6 +7,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -721,13 +722,19 @@ Future<String?> _runAndCacheApiKeyHelper(
 }
 
 Future<String?> _executeApiKeyHelper(bool isNonInteractiveSession) async {
+  if (isApiKeyHelperFromProjectOrLocalSettings()) {
+    return null;
+  }
   final apiKeyHelper = getConfiguredApiKeyHelper();
-  if (apiKeyHelper == null) return null;
+  if (apiKeyHelper == null || apiKeyHelper.contains('\x00')) return null;
 
   final result = await Process.run(
     Platform.isWindows ? 'cmd' : 'sh',
     Platform.isWindows ? ['/c', apiKeyHelper] : ['-c', apiKeyHelper],
-  );
+    runInShell: false,
+    environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+    includeParentEnvironment: false,
+  ).timeout(const Duration(seconds: 30));
 
   if (result.exitCode != 0) {
     final why = 'exited ${result.exitCode}';
@@ -1118,11 +1125,17 @@ _getAwsCredsFromCredentialExport() async {
 
 /// Refresh AWS auth (exposed for direct use).
 Future<bool> refreshAwsAuth(String awsAuthRefresh) async {
+  if (awsAuthRefresh.trim().isEmpty || awsAuthRefresh.contains('\x00')) {
+    return false;
+  }
   try {
     final result = await Process.run(
       Platform.isWindows ? 'cmd' : 'sh',
       Platform.isWindows ? ['/c', awsAuthRefresh] : ['-c', awsAuthRefresh],
-    );
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(milliseconds: awsAuthRefreshTimeoutMs));
     return result.exitCode == 0;
   } catch (e) {
     stderr.writeln('Error running awsAuthRefresh: $e');
@@ -1180,11 +1193,17 @@ Future<bool> _runGcpAuthRefresh() async {
 
 /// Refresh GCP auth (exposed for direct use).
 Future<bool> refreshGcpAuth(String gcpAuthRefresh) async {
+  if (gcpAuthRefresh.trim().isEmpty || gcpAuthRefresh.contains('\x00')) {
+    return false;
+  }
   try {
     final result = await Process.run(
       Platform.isWindows ? 'cmd' : 'sh',
       Platform.isWindows ? ['/c', gcpAuthRefresh] : ['-c', gcpAuthRefresh],
-    );
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(milliseconds: gcpAuthRefreshTimeoutMs));
     return result.exitCode == 0;
   } catch (e) {
     stderr.writeln('Error running gcpAuthRefresh: $e');
@@ -1229,14 +1248,18 @@ Map<String, String> getOtelHeadersFromHelper() {
   }
 
   try {
+    if (otelHeadersHelper.contains('\x00')) return {};
     final result = Process.runSync(
       Platform.isWindows ? 'cmd' : 'sh',
       Platform.isWindows
           ? ['/c', otelHeadersHelper]
           : ['-c', otelHeadersHelper],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
     );
     final output = (result.stdout as String).trim();
-    if (output.isEmpty) {
+    if (output.isEmpty || output.length > 262144) {
       throw Exception('otelHeadersHelper did not return a valid value');
     }
 
@@ -1249,12 +1272,18 @@ Map<String, String> getOtelHeadersFromHelper() {
 
     final validated = <String, String>{};
     for (final entry in headers.entries) {
+      final cleanKey = entry.key.trim();
+      if (!NeomageNetworkGuard.isValidHeaderName(cleanKey)) {
+        throw Exception('otelHeadersHelper returned invalid header name');
+      }
       if (entry.value is! String) {
         throw Exception(
-          'otelHeadersHelper returned non-string value for key "${entry.key}"',
+          'otelHeadersHelper returned non-string value for key "$cleanKey"',
         );
       }
-      validated[entry.key] = entry.value as String;
+      validated[cleanKey] = NeomageNetworkGuard.sanitizeHeaderValue(
+        entry.value as String,
+      );
     }
 
     _cachedOtelHeaders = validated;

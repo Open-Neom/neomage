@@ -4,10 +4,10 @@
 //   - Load in Context: silently injects the skill into the system context
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:sint/sint.dart';
-import 'package:saia_skills/saia_skills.dart';
 
+import '../../data/skills/skill_catalog_source.dart';
+import '../../data/skills/skill_registry.dart';
 import '../controllers/chat_controller.dart';
 
 // ── Category Metadata ──
@@ -71,13 +71,13 @@ class _SkillEntry {
   final String name;
   final String displayName;
   final String category;
-  final String assetPath;
+  final CatalogSkillEntry entry;
 
   const _SkillEntry({
     required this.name,
     required this.displayName,
     required this.category,
-    required this.assetPath,
+    required this.entry,
   });
 }
 
@@ -110,30 +110,19 @@ class _SkillsPanelState extends State<SkillsPanel> {
     super.dispose();
   }
 
-  /// Descubre las habilidades del catálogo.
-  ///
-  /// Antes esto recorría el manifiesto de assets a mano y sacaba la
-  /// categoría con `segments.indexOf('skills')`. Al mudarse el contenido a
-  /// `saia_skills` la ruta perdió ese segmento
-  /// —`packages/saia_skills/assets/<categoria>/<skill>.md`— y el índice
-  /// devolvía −1: el panel se quedaba vacío sin ningún error, y el
-  /// analizador no tenía nada que señalar.
-  ///
-  /// Ahora lo resuelve el propio paquete. Es la razón de haberlo extraído:
-  /// el parseo de rutas vivía duplicado en cada consumidor, y cada copia
-  /// podía desincronizarse por su cuenta.
+  /// Discovers skills from bundled assets and any registered [SkillCatalogSource]s.
   Future<void> _discoverSkills() async {
     try {
-      final porCategoria = await SaiaSkillCatalog.byCategory();
+      final porCategoria = await SkillRegistry.discoverCatalogSkills();
 
       final categories = <String, List<_SkillEntry>>{};
       porCategoria.forEach((categoria, skills) {
         categories[categoria] = skills
             .map((s) => _SkillEntry(
                   name: s.id,
-                  displayName: _formatDisplayName(s.id),
+                  displayName: s.displayNameOverride ?? _formatDisplayName(s.id),
                   category: categoria,
-                  assetPath: s.assetPath,
+                  entry: s,
                 ))
             .toList()
           ..sort((a, b) => a.displayName.compareTo(b.displayName));
@@ -164,7 +153,7 @@ class _SkillsPanelState extends State<SkillsPanel> {
   /// Load skill into the active chat session (visible to user).
   Future<void> _loadInSession(_SkillEntry skill) async {
     try {
-      final content = await rootBundle.loadString(skill.assetPath);
+      final content = await skill.entry.loadContent();
       final chat = Sint.find<ChatController>();
 
       final prompt = '''I'd like to learn about the "${skill.displayName}" skill.
@@ -196,7 +185,7 @@ $content''';
   /// Load skill silently into context (not visible to user).
   Future<void> _loadInContext(_SkillEntry skill) async {
     try {
-      final content = await rootBundle.loadString(skill.assetPath);
+      final content = await skill.entry.loadContent();
       final chat = Sint.find<ChatController>();
 
       // Send as a context signal — the skill content enhances the
@@ -275,7 +264,7 @@ $content''';
                   style: TextStyle(color: cs.onSurfaceVariant)),
               const SizedBox(height: 8),
               Text(
-                'Las habilidades vienen del paquete saia_skills.',
+                'Add markdown skills in assets/skills/, .neomage/skills/, or register a SkillCatalogSource.',
                 style: TextStyle(
                   fontSize: 12,
                   color: cs.onSurfaceVariant.withValues(alpha: 0.7),

@@ -16,7 +16,7 @@
 import 'dart:async';
 import 'package:neomage/core/platform/neomage_io.dart';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Configuration (config.ts port)
@@ -247,20 +247,26 @@ const _dirExistsGuidance =
     'This directory already exists. Read existing files before creating new ones '
     'to avoid duplicating information.';
 
+String _sanitizeDreamPromptPath(String raw) {
+  return raw.replaceAll(RegExp(r'[\x00-\x1F\x7F`$;&|<>()]'), '').trim();
+}
+
 /// Build the consolidation prompt for a dream run.
 String buildConsolidationPrompt(
   String memoryRoot,
   String transcriptDir,
   String extra,
 ) {
+  final safeMemRoot = _sanitizeDreamPromptPath(memoryRoot);
+  final safeTranscriptDir = _sanitizeDreamPromptPath(transcriptDir);
   return '''# Dream: Memory Consolidation
 
 You are performing a dream — a reflective pass over your memory files. Synthesize what you've learned recently into durable, well-organized memories so that future sessions can orient quickly.
 
-Memory directory: `$memoryRoot`
+Memory directory: `$safeMemRoot`
 $_dirExistsGuidance
 
-Session transcripts: `$transcriptDir` (large JSONL files — grep narrowly, don't read whole files)
+Session transcripts: `$safeTranscriptDir` (large JSONL files — grep narrowly, don't read whole files)
 
 ---
 
@@ -278,7 +284,7 @@ Look for new information worth persisting. Sources in rough priority order:
 1. **Daily logs** (`logs/YYYY/MM/YYYY-MM-DD.md`) if present — these are the append-only stream
 2. **Existing memories that drifted** — facts that contradict something you see in the codebase now
 3. **Transcript search** — if you need specific context (e.g., "what was the error message from yesterday's build failure?"), grep the JSONL transcripts for narrow terms:
-   `grep -rn "<narrow term>" $transcriptDir/ --include="*.jsonl" | tail -50`
+   `grep -rn "<narrow term>" "$safeTranscriptDir/" --include="*.jsonl" | tail -50`
 
 Don't exhaustively read transcripts. Look only for things you already suspect matter.
 

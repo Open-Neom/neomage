@@ -239,7 +239,7 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
+              onPressed: () => Sint.pop(),
               child: const Text('Cancel'),
             ),
             FilledButton(
@@ -257,7 +257,7 @@ class _McpPanelScreenState extends State<McpPanelScreen> {
                   command: command,
                   args: args,
                 );
-                Navigator.of(ctx).pop();
+                Sint.pop();
                 _connectServer(config);
               },
               child: const Text('Connect'),

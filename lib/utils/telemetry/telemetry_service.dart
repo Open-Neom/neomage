@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
+
+import 'package:neomage/core/platform/neomage_io.dart';
+
+import '../security/neomage_network_guard.dart';
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -209,6 +212,19 @@ class FileTelemetrySink implements TelemetrySink {
     await _sink?.flush();
     await _sink?.close();
 
+    if (NeomageNetworkGuard.checkProtectedFilesystemPath(_directory) != null ||
+        NeomageNetworkGuard.checkProtectedFilesystemPath(path) != null) {
+      throw const FileSystemException(
+        'Refusing telemetry write to protected system path',
+      );
+    }
+    if (FileSystemEntity.isLinkSync(_directory) ||
+        FileSystemEntity.isLinkSync(path)) {
+      throw const FileSystemException(
+        'Refusing telemetry write through symbolic link',
+      );
+    }
+
     final dir = Directory(_directory);
     if (!dir.existsSync()) {
       dir.createSync(recursive: true);
@@ -269,6 +285,17 @@ class HttpTelemetrySink implements TelemetrySink {
 
   @override
   Future<bool> send(List<TelemetryEvent> events) async {
+    final uri = Uri.tryParse(endpoint.trim());
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      uri,
+      allowLoopbackInsecure: true,
+      secureSchemes: const <String>{'https'},
+      insecureSchemes: const <String>{'http'},
+    )) {
+      stderr.writeln('[telemetry:http] blocked unsafe telemetry endpoint');
+      return false;
+    }
+
     final payload = jsonEncode({
       'events': events.map((e) => e.toJson()).toList(),
       'sentAt': DateTime.now().toIso8601String(),
@@ -276,13 +303,18 @@ class HttpTelemetrySink implements TelemetrySink {
 
     for (var attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        final uri = Uri.parse(endpoint);
         final request = await _httpClient
-            .postUrl(uri)
+            .postUrl(uri!)
             .timeout(Duration(seconds: timeoutSeconds));
+        request.followRedirects = false;
         request.headers.set('Content-Type', 'application/json');
         if (authToken != null) {
-          request.headers.set('Authorization', 'Bearer $authToken');
+          final cleanToken = NeomageNetworkGuard.sanitizeHeaderValue(
+            authToken!,
+          );
+          if (cleanToken.isNotEmpty) {
+            request.headers.set('Authorization', 'Bearer $cleanToken');
+          }
         }
         request.write(payload);
 
@@ -302,7 +334,9 @@ class HttpTelemetrySink implements TelemetrySink {
       } on SocketException {
         // Network unreachable — retry.
       } catch (e) {
-        stderr.writeln('[telemetry:http] send error: $e');
+        stderr.writeln(
+          '[telemetry:http] send error: ${NeomageNetworkGuard.redactTransportError(e.toString())}',
+        );
         return false;
       }
 
@@ -332,7 +366,11 @@ final RegExp _emailRegex = RegExp(
   r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}',
 );
 final RegExp _apiKeyRegex = RegExp(
-  r'(?:sk-|api[_-]?key[_-]?|token[_-]?|secret[_-]?)[a-zA-Z0-9_\-]{16,}',
+  r'(?:Bearer\s+[A-Za-z0-9._\-~+/]+=*|AIza[0-9A-Za-z_\-]{20,}|gh[pousr]_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9\-]{10,}|(?:sk-|api[_-]?key[_-]?|token[_-]?|secret[_-]?)[a-zA-Z0-9_\-]{12,})',
+  caseSensitive: false,
+);
+final RegExp _urlQuerySecretRegex = RegExp(
+  r'([?&](?:key|api_key|apikey|token|access_token|refresh_token|secret|password|client_secret)=)([^&\s"<>]+)',
   caseSensitive: false,
 );
 
@@ -366,6 +404,10 @@ Map<String, dynamic> scrubPii(Map<String, dynamic> data, {String? homeDir}) {
 String _scrubString(String input, String home) {
   var s = input;
   s = s.replaceAll(_emailRegex, '[EMAIL_REDACTED]');
+  s = s.replaceAllMapped(
+    _urlQuerySecretRegex,
+    (m) => '${m.group(1)}[API_KEY_REDACTED]',
+  );
   s = s.replaceAll(_apiKeyRegex, '[API_KEY_REDACTED]');
   if (home.isNotEmpty) {
     s = s.replaceAll(home, '~');
@@ -379,11 +421,17 @@ String _scrubString(String input, String home) {
 
 /// Measures wall-clock duration of arbitrary operations.
 class PerformanceTracker {
+  static const int maxTrackedEntries = 1000;
+
   final Map<String, _TimerEntry> _running = {};
   final List<PerformanceMetric> _completed = [];
 
   /// Start tracking an operation identified by [operationId].
   void start(String operationId, {Map<String, dynamic>? metadata}) {
+    while (_running.length >= maxTrackedEntries &&
+        !_running.containsKey(operationId)) {
+      _running.remove(_running.keys.first);
+    }
     _running[operationId] = _TimerEntry(
       startTime: DateTime.now(),
       metadata: metadata ?? {},
@@ -401,6 +449,9 @@ class PerformanceTracker {
       ...entry.metadata,
       if (extraMetadata != null) ...extraMetadata,
     };
+    if (_completed.length >= maxTrackedEntries) {
+      _completed.removeAt(0);
+    }
     _completed.add(
       PerformanceMetric(
         operationId: operationId,

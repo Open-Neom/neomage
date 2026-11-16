@@ -10,7 +10,9 @@ import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
-import 'package:sint/sint.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+import 'package:path/path.dart' as p;
+import 'package:sint/rx.dart';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -284,16 +286,48 @@ class ToolResultStorage extends SintController {
   // Path helpers
   // -------------------------------------------------------------------------
 
+  /// Sanitizes an untrusted session ID or tool-use ID into a safe single
+  /// filename component, preserving clean alphanumeric IDs (`toolu_01...`)
+  /// verbatim and deterministically hashing any path-traversal or control
+  /// characters (`../../../settings.local`).
+  static String sanitizeStorageIdentifier(String raw) {
+    if (RegExp(r'^[A-Za-z0-9_-]{1,128}$').hasMatch(raw)) {
+      return raw;
+    }
+    final cleaned = raw.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '');
+    final prefix = cleaned.length > 32 ? cleaned.substring(0, 32) : cleaned;
+    final digest = NeomageNetworkGuard.sha256Hex(raw).substring(0, 16);
+    return prefix.isEmpty ? 'id_$digest' : '${prefix}_$digest';
+  }
+
+  void _assertSafeProjectDir() {
+    if (projectDir.isEmpty ||
+        projectDir.contains('\x00') ||
+        projectDir.startsWith('//') ||
+        projectDir.startsWith(r'\\') ||
+        NeomageNetworkGuard.isProtectedSystemOrCredentialPath(projectDir)) {
+      throw FileSystemException(
+        'Unsafe projectDir for ToolResultStorage',
+        projectDir,
+      );
+    }
+  }
+
   /// Get the session directory.
-  String getSessionDir() => '$projectDir/$sessionId';
+  String getSessionDir() {
+    _assertSafeProjectDir();
+    final safeSid = sanitizeStorageIdentifier(sessionId);
+    return p.join(projectDir, safeSid);
+  }
 
   /// Get the tool results directory for this session.
-  String getToolResultsDir() => '${getSessionDir()}/$toolResultsSubdir';
+  String getToolResultsDir() => p.join(getSessionDir(), toolResultsSubdir);
 
   /// Get the filepath where a tool result would be persisted.
   String getToolResultPath(String id, {required bool isJson}) {
     final ext = isJson ? 'json' : 'txt';
-    return '${getToolResultsDir()}/$id.$ext';
+    final safeId = sanitizeStorageIdentifier(id);
+    return p.join(getToolResultsDir(), '$safeId.$ext');
   }
 
   // -------------------------------------------------------------------------
@@ -320,8 +354,17 @@ class ToolResultStorage extends SintController {
 
   /// Ensure the session-specific tool results directory exists.
   Future<void> ensureToolResultsDir() async {
+    final sessionDir = getSessionDir();
+    final resultsDir = getToolResultsDir();
+    if (await FileSystemEntity.isLink(sessionDir) ||
+        await FileSystemEntity.isLink(resultsDir)) {
+      throw FileSystemException(
+        'Refusing to use symlinked tool-results directory',
+        resultsDir,
+      );
+    }
     try {
-      await Directory(getToolResultsDir()).create(recursive: true);
+      await Directory(resultsDir).create(recursive: true);
     } catch (_) {
       // Directory may already exist.
     }
@@ -347,30 +390,35 @@ class ToolResultStorage extends SintController {
       }
     }
 
-    await ensureToolResultsDir();
-    final filepath = getToolResultPath(toolUseId, isJson: isJson);
-    final contentStr = isJson
-        ? const JsonEncoder.withIndent('  ').convert(content)
-        : content.toString();
-
     try {
+      await ensureToolResultsDir();
+      final filepath = getToolResultPath(toolUseId, isJson: isJson);
+      if (await FileSystemEntity.isLink(filepath)) {
+        return const PersistToolResultError(
+          error: 'Refusing to write tool result through symlink',
+        );
+      }
+      final contentStr = isJson
+          ? const JsonEncoder.withIndent('  ').convert(content)
+          : content.toString();
+
       final file = File(filepath);
       if (!await file.exists()) {
         await file.writeAsString(contentStr);
       }
+
+      final preview = generatePreview(contentStr, previewSizeBytes);
+
+      return PersistedToolResult(
+        filepath: filepath,
+        originalSize: contentStr.length,
+        isJson: isJson,
+        preview: preview.preview,
+        hasMore: preview.hasMore,
+      );
     } catch (e) {
       return PersistToolResultError(error: _getFileSystemErrorMessage(e));
     }
-
-    final preview = generatePreview(contentStr, previewSizeBytes);
-
-    return PersistedToolResult(
-      filepath: filepath,
-      originalSize: contentStr.length,
-      isJson: isJson,
-      preview: preview.preview,
-      hasMore: preview.hasMore,
-    );
   }
 
   // -------------------------------------------------------------------------

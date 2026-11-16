@@ -4,13 +4,18 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:neomage/core/platform/neomage_io.dart';
 import 'package:uuid/uuid.dart';
+
+import '../../utils/security/neomage_network_guard.dart';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
+
+/// Maximum incoming WebSocket frame size (4 MiB).
+const _maxWsFrameBytes = 4 * 1024 * 1024;
 
 /// Delay between reconnection attempts.
 const _reconnectDelayMs = 2000;
@@ -177,24 +182,70 @@ class SessionsWebSocket {
 
   // ── Public API ──
 
+  /// Builds and validates the CCR subscription WebSocket URI.
+  ///
+  /// Exposed for unit testing to verify path/query injection and SSRF guards
+  /// across VM and Chrome Web.
+  Uri buildSubscriptionUri() {
+    if (!NeomageNetworkGuard.isSafeIdentifier(_sessionId) ||
+        !NeomageNetworkGuard.isSafeIdentifier(_orgUuid)) {
+      throw ArgumentError('Unsafe session or organization identifier');
+    }
+    final baseUri = Uri.tryParse(_baseWsUrl.trim());
+    if (!NeomageNetworkGuard.isSafeWebSocketEndpointUri(
+      baseUri,
+      allowLoopbackInsecure: true,
+    )) {
+      throw ArgumentError(
+        'Blocked unsafe baseWsUrl: '
+        '${NeomageNetworkGuard.redactUrlCredentials(_baseWsUrl)}',
+      );
+    }
+    final basePath = baseUri!.path.endsWith('/')
+        ? baseUri.path.substring(0, baseUri.path.length - 1)
+        : baseUri.path;
+    return baseUri.replace(
+      path:
+          '$basePath/v1/sessions/ws/${Uri.encodeComponent(_sessionId)}/subscribe',
+      queryParameters: <String, String>{
+        ...baseUri.queryParameters,
+        'organization_uuid': _orgUuid,
+      },
+    );
+  }
+
   /// Connect to the sessions WebSocket endpoint.
   Future<void> connect() async {
     if (_state == WebSocketState.connecting) return;
 
     _state = WebSocketState.connecting;
 
-    final url =
-        '$_baseWsUrl/v1/sessions/ws/$_sessionId/subscribe'
-        '?organization_uuid=$_orgUuid';
+    late final Uri uri;
+    try {
+      uri = buildSubscriptionUri();
+    } catch (e) {
+      _state = WebSocketState.closed;
+      _callbacks.onError?.call(e);
+      _callbacks.onClose?.call();
+      return;
+    }
 
-    final accessToken = _getAccessToken();
+    final accessToken = NeomageNetworkGuard.sanitizeHeaderValue(
+      _getAccessToken(),
+    );
+    if (accessToken.isEmpty) {
+      _state = WebSocketState.closed;
+      _callbacks.onError?.call(StateError('Missing OAuth access token'));
+      _callbacks.onClose?.call();
+      return;
+    }
     final headers = <String, dynamic>{
       'Authorization': 'Bearer $accessToken',
       'anthropic-version': '2023-06-01',
     };
 
     try {
-      _ws = await WebSocket.connect(url, headers: headers);
+      _ws = await WebSocket.connect(uri.toString(), headers: headers);
       _state = WebSocketState.connected;
       _reconnectAttempts = 0;
       _sessionNotFoundRetries = 0;
@@ -202,14 +253,20 @@ class SessionsWebSocket {
       _callbacks.onConnected?.call();
 
       _wsSubscription = _ws!.listen(
-        (data) => _handleMessage(data is String ? data : data.toString()),
+        _handleRawFrame,
         onDone: () => _handleClose(_ws?.closeCode ?? 1006),
         onError: (Object error) {
-          _callbacks.onError?.call(error);
+          _callbacks.onError?.call(
+            StateError(
+              NeomageNetworkGuard.redactTransportError(error.toString()),
+            ),
+          );
         },
       );
     } catch (e) {
-      _callbacks.onError?.call(e);
+      _callbacks.onError?.call(
+        StateError(NeomageNetworkGuard.redactTransportError(e.toString())),
+      );
       _handleClose(1006); // abnormal closure
     }
   }
@@ -267,6 +324,26 @@ class SessionsWebSocket {
 
   // ── Internal ──
 
+  void _handleRawFrame(dynamic raw) {
+    if (raw is String) {
+      if (raw.length > _maxWsFrameBytes) {
+        _callbacks.onError?.call(
+          StateError('SessionsWebSocket frame exceeded size limit'),
+        );
+        return;
+      }
+      _handleMessage(raw);
+    } else if (raw is List<int>) {
+      if (raw.length > _maxWsFrameBytes) {
+        _callbacks.onError?.call(
+          StateError('SessionsWebSocket binary frame exceeded size limit'),
+        );
+        return;
+      }
+      _handleMessage(utf8.decode(raw, allowMalformed: true));
+    }
+  }
+
   void _handleMessage(String data) {
     try {
       final decoded = jsonDecode(data);
@@ -277,7 +354,11 @@ class SessionsWebSocket {
         );
       }
     } catch (e) {
-      _callbacks.onError?.call(e);
+      _callbacks.onError?.call(
+        FormatException(
+          NeomageNetworkGuard.redactTransportError(e.toString()),
+        ),
+      );
     }
   }
 

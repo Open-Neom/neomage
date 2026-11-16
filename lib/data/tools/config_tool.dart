@@ -128,13 +128,28 @@ const List<String> notificationChannels = [
 /// Teammate modes.
 const List<String> teammateModes = ['tmux', 'in-process', 'auto'];
 
-/// Default permission modes.
+/// Default permission modes (note: tool calls may only set 'default' or 'plan';
+/// 'acceptEdits' and 'dontAsk' cannot be self-escalated by the model).
 const List<String> permissionModes = [
   'default',
   'plan',
   'acceptEdits',
   'dontAsk',
 ];
+
+const Set<String> _escalatedPermissionModes = {
+  'acceptEdits',
+  'dontAsk',
+  'bypassPermissions',
+};
+
+const Set<String> _forbiddenConfigSegments = {
+  '__proto__',
+  'constructor',
+  'prototype',
+};
+
+const int _maxConfigStringLength = 4096;
 
 /// Default model options.
 const List<String> defaultModelOptions = ['sonnet', 'opus', 'haiku'];
@@ -239,8 +254,20 @@ class SupportedSettingsRegistry {
     _settings['permissions.defaultMode'] = SettingConfig(
       source: SettingSource.settings,
       type: SettingType.string,
-      description: 'Default permission mode for tool usage',
-      options: permissionModes,
+      description:
+          'Default permission mode for tool usage '
+          '(tool writes restricted to default or plan)',
+      options: const ['default', 'plan'],
+      validateOnWrite: (value) async {
+        final mode = value?.toString().trim() ?? '';
+        if (_escalatedPermissionModes.contains(mode)) {
+          return SettingValidation.invalid(
+            'Privilege escalation blocked: permissions.defaultMode cannot '
+            'be set to "$mode" via Config tool',
+          );
+        }
+        return const SettingValidation.valid();
+      },
     );
 
     _settings['language'] = SettingConfig(
@@ -348,6 +375,11 @@ class InMemorySettingsStore implements SettingsStore {
     if (path.isEmpty) {
       return const SettingValidation.invalid('Invalid setting path');
     }
+    for (final seg in path) {
+      if (seg.isEmpty || _forbiddenConfigSegments.contains(seg)) {
+        return SettingValidation.invalid('Forbidden setting path segment: $seg');
+      }
+    }
 
     Map<String, dynamic> current = _data;
     for (var i = 0; i < path.length - 1; i++) {
@@ -420,6 +452,9 @@ class ConfigToolOutput {
 Map<String, dynamic> buildNestedObject(List<String> path, dynamic value) {
   if (path.isEmpty) return {};
   final key = path.first;
+  if (_forbiddenConfigSegments.contains(key)) {
+    throw ArgumentError('Forbidden config path segment: $key');
+  }
   if (path.length == 1) return {key: value};
   return {key: buildNestedObject(path.sublist(1), value)};
 }
@@ -523,12 +558,37 @@ To write a setting, provide both the setting key and the new value.
     Map<String, dynamic> input,
     ToolPermissionContext permContext,
   ) async {
+    final setting = (input['setting'] as String? ?? '').trim();
+    final segments = setting.split('.');
+    if (segments.any(_forbiddenConfigSegments.contains)) {
+      return const DenyDecision(
+        PermissionDenyDecision(reason: 'Forbidden configuration key'),
+      );
+    }
+
     // Auto-allow reading configs.
     if (input['value'] == null) {
       return const AllowDecision(PermissionAllowDecision());
     }
-    final setting = input['setting'] as String;
+
     final value = input['value'];
+    if (setting == 'permissions.defaultMode' &&
+        _escalatedPermissionModes.contains(value?.toString().trim())) {
+      return DenyDecision(
+        PermissionDenyDecision(
+          reason:
+              'Privilege escalation blocked: cannot set '
+              'permissions.defaultMode to "$value"',
+        ),
+      );
+    }
+    if (permContext.mode == PermissionMode.plan) {
+      return const DenyDecision(
+        PermissionDenyDecision(
+          reason: 'Modifying settings is not permitted in plan mode',
+        ),
+      );
+    }
     return AskDecision(
       PermissionAskDecision(message: 'Set $setting to ${jsonEncode(value)}'),
     );
@@ -547,6 +607,25 @@ To write a setting, provide both the setting key and the new value.
     final parsed = ConfigToolInput.fromJson(input);
     final setting = parsed.setting;
 
+    if (setting.contains('\x00') ||
+        setting.split('.').any(_forbiddenConfigSegments.contains)) {
+      return _errorResult('Forbidden setting key: "$setting"');
+    }
+
+    // Block privilege self-escalation before option lookup so even custom
+    // registries cannot weaken permissions.defaultMode to dontAsk/acceptEdits.
+    if (!parsed.isGet &&
+        (setting == 'permissions.defaultMode' ||
+            setting.startsWith('permissions.')) &&
+        _escalatedPermissionModes.contains(parsed.value?.toString().trim())) {
+      return _errorResult(
+        'Privilege escalation blocked: $setting cannot be set to '
+        '"${parsed.value}" by tool call',
+        operation: 'set',
+        setting: setting,
+      );
+    }
+
     // 1. Check if setting is supported.
     if (!_registry.isSupported(setting)) {
       return _errorResult('Unknown setting: "$setting"');
@@ -554,6 +633,9 @@ To write a setting, provide both the setting key and the new value.
 
     final config = _registry.getConfig(setting)!;
     final path = _registry.getPath(setting);
+    if (path.any(_forbiddenConfigSegments.contains)) {
+      return _errorResult('Forbidden setting path for "$setting"');
+    }
 
     // 2. GET operation.
     if (parsed.isGet) {
@@ -574,6 +656,22 @@ To write a setting, provide both the setting key and the new value.
 
     // 3. SET operation.
     var finalValue = parsed.value;
+    if (finalValue is String) {
+      if (finalValue.contains('\x00')) {
+        return _errorResult(
+          'Invalid NUL byte in setting value',
+          operation: 'set',
+          setting: setting,
+        );
+      }
+      if (finalValue.length > _maxConfigStringLength) {
+        return _errorResult(
+          'Setting value exceeds maximum length ($_maxConfigStringLength)',
+          operation: 'set',
+          setting: setting,
+        );
+      }
+    }
 
     // Coerce and validate boolean values.
     if (config.type == SettingType.boolean) {

@@ -11,7 +11,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ===========================================================================
 // Queue Priority

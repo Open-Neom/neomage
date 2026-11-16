@@ -7,6 +7,7 @@ library;
 import 'dart:async';
 import 'dart:collection';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -140,6 +141,12 @@ class ProcessExited extends ProcessEvent {
 
 /// Manages process execution, tracking, and lifecycle.
 class ProcessManager {
+  /// Maximum captured characters per stream (`16 MiB`).
+  static const int defaultMaxCaptureChars = 16 * 1024 * 1024;
+
+  /// Maximum completed process records retained in `_processInfo`.
+  static const int maxTrackedProcessHistory = 512;
+
   final Map<int, Process> _processes = {};
   final Map<int, ProcessInfo> _processInfo = {};
   final StreamController<ProcessEvent> _eventController =
@@ -148,14 +155,44 @@ class ProcessManager {
   /// Stream of process events.
   Stream<ProcessEvent> get onOutput => _eventController.stream;
 
+  static void _validateProcessConfig(ProcessConfig config) {
+    if (config.command.isEmpty || config.command.contains('\x00')) {
+      throw ArgumentError.value(config.command, 'command', 'Invalid command');
+    }
+    for (final arg in config.args) {
+      if (arg.contains('\x00')) {
+        throw ArgumentError('Process argument contains NUL byte');
+      }
+    }
+    final wd = config.workDir;
+    if (wd != null &&
+        (wd.contains('\x00') || wd.startsWith('//') || wd.startsWith(r'\\'))) {
+      throw ArgumentError.value(wd, 'workDir', 'Unsafe working directory');
+    }
+  }
+
+  void _pruneProcessHistoryIfNeeded() {
+    if (_processInfo.length <= maxTrackedProcessHistory) return;
+    final removable = _processInfo.entries
+        .where((e) => e.value.status != ProcessStatus.running)
+        .map((e) => e.key)
+        .take(_processInfo.length - maxTrackedProcessHistory)
+        .toList();
+    for (final key in removable) {
+      _processInfo.remove(key);
+    }
+  }
+
   /// Run a process and wait for it to complete.
   Future<ProcessOutput> run(ProcessConfig config) async {
+    _validateProcessConfig(config);
     final sw = Stopwatch()..start();
     final process = await Process.start(
       config.command,
       config.args,
       workingDirectory: config.workDir,
-      environment: config.env,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(null, config.env),
+      includeParentEnvironment: false,
       runInShell: config.runInShell,
     );
 
@@ -166,6 +203,7 @@ class ProcessManager {
       command: config.fullCommand,
       startTime: DateTime.now(),
     );
+    _pruneProcessHistoryIfNeeded();
     _eventController.add(ProcessStarted(pid, config.fullCommand));
 
     // Send stdin if provided
@@ -180,14 +218,26 @@ class ProcessManager {
     final stdoutSub = process.stdout
         .transform(const SystemEncoding().decoder)
         .listen((data) {
-          if (config.captureStdout) stdoutBuf.write(data);
+          if (config.captureStdout &&
+              stdoutBuf.length < defaultMaxCaptureChars) {
+            final remaining = defaultMaxCaptureChars - stdoutBuf.length;
+            stdoutBuf.write(
+              data.length <= remaining ? data : data.substring(0, remaining),
+            );
+          }
           _eventController.add(StdoutData(pid, data));
         });
 
     final stderrSub = process.stderr
         .transform(const SystemEncoding().decoder)
         .listen((data) {
-          if (config.captureStderr) stderrBuf.write(data);
+          if (config.captureStderr &&
+              stderrBuf.length < defaultMaxCaptureChars) {
+            final remaining = defaultMaxCaptureChars - stderrBuf.length;
+            stderrBuf.write(
+              data.length <= remaining ? data : data.substring(0, remaining),
+            );
+          }
           _eventController.add(StderrData(pid, data));
         });
 
@@ -229,11 +279,13 @@ class ProcessManager {
 
   /// Start an interactive process (returns the raw [Process]).
   Future<Process> runInteractive(ProcessConfig config) async {
+    _validateProcessConfig(config);
     final process = await Process.start(
       config.command,
       config.args,
       workingDirectory: config.workDir,
-      environment: config.env,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(null, config.env),
+      includeParentEnvironment: false,
       runInShell: config.runInShell,
       mode: ProcessStartMode.inheritStdio,
     );
@@ -245,6 +297,7 @@ class ProcessManager {
       command: config.fullCommand,
       startTime: DateTime.now(),
     );
+    _pruneProcessHistoryIfNeeded();
     _eventController.add(ProcessStarted(pid, config.fullCommand));
 
     // Track exit
@@ -509,9 +562,20 @@ class Shell {
 
   /// Find the full path to a command using `which` (or `where` on Windows).
   static Future<String?> which(String command) async {
+    if (command.isEmpty ||
+        command.startsWith('-') ||
+        !RegExp(r'^[A-Za-z0-9._+-]{1,128}$').hasMatch(command)) {
+      return null;
+    }
     try {
       final cmd = Platform.isWindows ? 'where' : 'which';
-      final result = await Process.run(cmd, [command]);
+      final result = await Process.run(
+        cmd,
+        [command],
+        runInShell: false,
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+        includeParentEnvironment: false,
+      ).timeout(const Duration(seconds: 5));
       if (result.exitCode == 0) {
         return (result.stdout as String).trim().split('\n').first;
       }
@@ -531,6 +595,7 @@ class Shell {
   /// Returns false if the command contains potentially dangerous patterns
   /// like `rm -rf /`, `mkfs`, `dd`, or writing to system paths.
   static bool isCommandSafe(String command) {
+    if (command.contains('\x00')) return false;
     final dangerous = [
       RegExp(r'\brm\s+(-[a-zA-Z]*f[a-zA-Z]*\s+)?/\s'),
       RegExp(r'\brm\s+-[a-zA-Z]*r[a-zA-Z]*f?[a-zA-Z]*\s+/\b'),
@@ -550,14 +615,15 @@ class Shell {
 
   /// Quote an argument for safe shell inclusion.
   static String quoteArg(String arg) {
-    if (arg.isEmpty) return "''";
+    final cleaned = arg.replaceAll('\x00', '');
+    if (cleaned.isEmpty) return "''";
     if (Platform.isWindows) {
       // Windows quoting
-      if (!arg.contains(RegExp(r'[\s"&|<>^%]'))) return arg;
-      return '"${arg.replaceAll('"', '\\"')}"';
+      if (!cleaned.contains(RegExp(r'[\s"&|<>^%]'))) return cleaned;
+      return '"${cleaned.replaceAll('"', '\\"')}"';
     }
     // POSIX
-    if (RegExp(r'^[a-zA-Z0-9._/=:@-]+$').hasMatch(arg)) return arg;
-    return "'${arg.replaceAll("'", "'\\''")}'";
+    if (RegExp(r'^[a-zA-Z0-9._/=:@-]+$').hasMatch(cleaned)) return cleaned;
+    return "'${cleaned.replaceAll("'", "'\\''")}'";
   }
 }

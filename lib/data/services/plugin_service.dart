@@ -5,7 +5,7 @@
 
 import 'dart:async';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Enums
@@ -220,6 +220,47 @@ class InstalledPluginsV2 {
 // ═══════════════════════════════════════════════════════════════════════════
 // Helper functions
 // ═══════════════════════════════════════════════════════════════════════════
+
+const Set<String> _forbiddenPluginTokens = {
+  '__proto__',
+  'constructor',
+  'prototype',
+  '.',
+  '..',
+};
+
+final RegExp _safePluginSegmentRegex = RegExp(
+  r'^(?:builtin:)?[A-Za-z0-9][A-Za-z0-9._-]{0,127}$',
+);
+
+/// Validates that a plugin identifier (`name` or `name@marketplace` or
+/// `builtin:name`) contains no path traversal (`..`, `/`, `\`), control bytes,
+/// or prototype-pollution keys (`__proto__`, `constructor`, `prototype`).
+bool isValidPluginIdentifier(String plugin) {
+  final trimmed = plugin.trim();
+  if (trimmed.isEmpty || trimmed.length > 256) return false;
+  if (trimmed.contains('/') ||
+      trimmed.contains(r'\') ||
+      trimmed.contains('..') ||
+      RegExp(r'[\x00-\x1F\x7F]').hasMatch(trimmed)) {
+    return false;
+  }
+  final parsed = parsePluginIdentifier(trimmed);
+  if (parsed.name.isEmpty ||
+      _forbiddenPluginTokens.contains(parsed.name.toLowerCase()) ||
+      !_safePluginSegmentRegex.hasMatch(parsed.name)) {
+    return false;
+  }
+  final mp = parsed.marketplace;
+  if (mp != null) {
+    if (mp.isEmpty ||
+        _forbiddenPluginTokens.contains(mp.toLowerCase()) ||
+        !RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$').hasMatch(mp)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /// Parse a plugin identifier string into name and optional marketplace.
 PluginIdentifier parsePluginIdentifier(String plugin) {
@@ -490,6 +531,12 @@ class PluginOperationsService {
     PluginScope scope = PluginScope.user,
   ]) async {
     assertInstallableScope(scope);
+    if (!isValidPluginIdentifier(plugin)) {
+      return const PluginOperationResult(
+        success: false,
+        message: 'Rejected invalid or unsafe plugin identifier',
+      );
+    }
     final id = parsePluginIdentifier(plugin);
 
     final entry = await getPluginById(plugin);
@@ -500,6 +547,13 @@ class PluginOperationsService {
       return PluginOperationResult(
         success: false,
         message: 'Plugin "${id.name}" not found in $location',
+      );
+    }
+
+    if (!isValidPluginIdentifier(entry.name)) {
+      return const PluginOperationResult(
+        success: false,
+        message: 'Rejected unsafe marketplace plugin entry name',
       );
     }
 
@@ -539,6 +593,12 @@ class PluginOperationsService {
     bool deleteDataDirFlag = true,
   ]) async {
     assertInstallableScope(scope);
+    if (!isValidPluginIdentifier(plugin)) {
+      return const PluginOperationResult(
+        success: false,
+        message: 'Rejected invalid or unsafe plugin identifier',
+      );
+    }
 
     final allPlugins = await loadAllPlugins();
     final foundPlugin = findPluginByIdentifier(plugin, allPlugins);
@@ -701,6 +761,12 @@ class PluginOperationsService {
     bool enabled, [
     PluginScope? scope,
   ]) async {
+    if (!isValidPluginIdentifier(plugin)) {
+      return const PluginOperationResult(
+        success: false,
+        message: 'Rejected invalid or unsafe plugin identifier',
+      );
+    }
     final operation = enabled ? 'enable' : 'disable';
 
     // Built-in plugins: always user scope.

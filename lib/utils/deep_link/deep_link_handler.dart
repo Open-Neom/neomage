@@ -16,174 +16,13 @@ import 'dart:async';
 import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
-// ═══════════════════════════════════════════════════════════════════════════
-// CONSTANTS
-// ═══════════════════════════════════════════════════════════════════════════
+import '../security/neomage_network_guard.dart';
+import 'deep_link_parser.dart';
+export 'deep_link_parser.dart';
 
-/// The custom URI protocol scheme.
-const String deepLinkProtocol = 'neomage-cli';
-
-/// macOS bundle ID for the URL handler app.
-const String macosBundleId = 'com.neomage-url-handler';
-
-/// Display name for the URL handler app.
-const String appName = 'Neomage URL Handler';
-
-/// Desktop file name for Linux registration.
-const String desktopFileName = 'neomage-url-handler.desktop';
-
-/// macOS app bundle name.
-const String macosAppName = 'Neomage URL Handler.app';
-
-/// Maximum length for pre-filled prompts.
-/// 5000 chars — practical ceiling considering Windows cmd.exe limits.
-const int maxQueryLength = 5000;
-
-/// Maximum length for cwd parameter.
-/// PATH_MAX on Linux is 4096.
-const int maxCwdLength = 4096;
-
-/// Stale FETCH_HEAD warning threshold (7 days).
-const int staleFetchWarnMs = 7 * 24 * 60 * 60 * 1000;
-
-/// Long prefill threshold for banner warning.
-const int longPrefillThreshold = 1000;
-
-/// Failure backoff period (24 hours).
-const int failureBackoffMs = 24 * 60 * 60 * 1000;
-
-// ═══════════════════════════════════════════════════════════════════════════
-// DEEP LINK PARSING (parseDeepLink.ts)
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Parsed deep link action.
-class DeepLinkAction {
-  final String? query;
-  final String? cwd;
-  final String? repo;
-
-  const DeepLinkAction({this.query, this.cwd, this.repo});
-
-  @override
-  String toString() => 'DeepLinkAction(query: $query, cwd: $cwd, repo: $repo)';
-}
-
-/// GitHub owner/repo slug pattern.
-final RegExp _repoSlugPattern = RegExp(r'^[\w.\-]+\/[\w.\-]+$');
-
-/// Check if a string contains ASCII control characters (0x00-0x1F, 0x7F).
-/// These can act as command separators in shells.
-bool _containsControlChars(String s) {
-  for (int i = 0; i < s.length; i++) {
-    final code = s.codeUnitAt(i);
-    if (code <= 0x1f || code == 0x7f) return true;
-  }
-  return false;
-}
-
-/// Partially sanitize Unicode by removing hidden/invisible characters.
-/// Strips zero-width chars, directional overrides, and other steganographic chars.
-String _partiallySanitizeUnicode(String input) {
-  // Remove zero-width chars, directional marks, and other invisible Unicode
-  return input.replaceAll(
-    RegExp(r'[\u200B-\u200F\u2028-\u202F\u2060-\u206F\uFEFF\uFFF9-\uFFFB]'),
-    '',
-  );
-}
-
-/// Parse a neomage-cli:// URI into a structured action.
-/// Throws [FormatException] if the URI is malformed or contains dangerous characters.
-DeepLinkAction parseDeepLink(String uri) {
-  // Normalize: accept with or without trailing colon in protocol
-  String? normalized;
-  if (uri.startsWith('$deepLinkProtocol://')) {
-    normalized = uri;
-  } else if (uri.startsWith('$deepLinkProtocol:')) {
-    normalized = uri.replaceFirst('$deepLinkProtocol:', '$deepLinkProtocol://');
-  }
-
-  if (normalized == null) {
-    throw FormatException(
-      'Invalid deep link: expected $deepLinkProtocol:// scheme, got "$uri"',
-    );
-  }
-
-  final url = Uri.tryParse(normalized);
-  if (url == null) {
-    throw FormatException('Invalid deep link URL: "$uri"');
-  }
-
-  if (url.host != 'open') {
-    throw FormatException('Unknown deep link action: "${url.host}"');
-  }
-
-  final cwd = url.queryParameters['cwd'];
-  final repo = url.queryParameters['repo'];
-  final rawQuery = url.queryParameters['q'];
-
-  // Validate cwd if present — must be an absolute path
-  if (cwd != null &&
-      !cwd.startsWith('/') &&
-      !RegExp(r'^[a-zA-Z]:[/\\]').hasMatch(cwd)) {
-    throw FormatException(
-      'Invalid cwd in deep link: must be an absolute path, got "$cwd"',
-    );
-  }
-
-  // Reject control characters in cwd
-  if (cwd != null && _containsControlChars(cwd)) {
-    throw FormatException(
-      'Deep link cwd contains disallowed control characters',
-    );
-  }
-  if (cwd != null && cwd.length > maxCwdLength) {
-    throw FormatException(
-      'Deep link cwd exceeds $maxCwdLength characters (got ${cwd.length})',
-    );
-  }
-
-  // Validate repo slug format
-  if (repo != null && !_repoSlugPattern.hasMatch(repo)) {
-    throw FormatException(
-      'Invalid repo in deep link: expected "owner/repo", got "$repo"',
-    );
-  }
-
-  String? query;
-  if (rawQuery != null && rawQuery.trim().isNotEmpty) {
-    // Strip hidden Unicode characters (ASCII smuggling / hidden prompt injection)
-    query = _partiallySanitizeUnicode(rawQuery.trim());
-    if (_containsControlChars(query)) {
-      throw FormatException(
-        'Deep link query contains disallowed control characters',
-      );
-    }
-    if (query.length > maxQueryLength) {
-      throw FormatException(
-        'Deep link query exceeds $maxQueryLength characters (got ${query.length})',
-      );
-    }
-  }
-
-  return DeepLinkAction(query: query, cwd: cwd, repo: repo);
-}
-
-/// Build a neomage-cli:// deep link URL.
-String buildDeepLink(DeepLinkAction action) {
-  final params = <String, String>{};
-  if (action.query != null) params['q'] = action.query!;
-  if (action.cwd != null) params['cwd'] = action.cwd!;
-  if (action.repo != null) params['repo'] = action.repo!;
-
-  final uri = Uri(
-    scheme: deepLinkProtocol,
-    host: 'open',
-    queryParameters: params.isEmpty ? null : params,
-  );
-  return uri.toString();
-}
+bool _containsControlChars(String s) => containsDeepLinkControlChars(s);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TERMINAL LAUNCHER (terminalLauncher.ts)
@@ -289,9 +128,13 @@ Future<TerminalInfo> _detectMacosTerminal({String? storedPreference}) async {
   // Check installed via mdfind (Spotlight)
   for (final terminal in _macosTerminals) {
     try {
-      final result = await Process.run('mdfind', [
-        'kMDItemCFBundleIdentifier == "${terminal.bundleId}"',
-      ]);
+      final result = await Process.run(
+        'mdfind',
+        ['kMDItemCFBundleIdentifier == "${terminal.bundleId}"'],
+        runInShell: false,
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+        includeParentEnvironment: false,
+      ).timeout(const Duration(seconds: 5));
       if (result.exitCode == 0 && (result.stdout as String).trim().isNotEmpty) {
         return TerminalInfo(name: terminal.name, command: terminal.app);
       }
@@ -376,6 +219,7 @@ Future<bool> launchInTerminal(
   DeepLinkAction action, {
   String? storedPreference,
 }) async {
+  _validateExecutablePath(neomagePath);
   final terminal = await detectTerminal(storedPreference: storedPreference);
   if (terminal == null) {
     _logDebug('No terminal emulator detected');
@@ -416,6 +260,41 @@ Future<bool> launchInTerminal(
   return false;
 }
 
+/// Build parameterized `osascript` arguments using `on run argv` so zero
+/// untrusted text is ever interpolated into AppleScript source code.
+List<String> buildMacOsTerminalAppleScriptArgs(
+  String terminalApp,
+  String shellCommand,
+) {
+  if (terminalApp == 'iTerm') {
+    const script = '''on run argv
+  set shCmd to item 1 of argv
+  tell application "iTerm"
+    if running then
+      create window with default profile
+    else
+      activate
+    end if
+    tell current session of current window
+      write text shCmd
+    end tell
+  end tell
+end run''';
+    return <String>['-e', script, '--', shellCommand];
+  }
+  if (terminalApp == 'Terminal') {
+    const script = '''on run argv
+  set shCmd to item 1 of argv
+  tell application "Terminal"
+    do script shCmd
+    activate
+  end tell
+end run''';
+    return <String>['-e', script, '--', shellCommand];
+  }
+  throw ArgumentError.value(terminalApp, 'terminalApp', 'Unsupported AppleScript terminal');
+}
+
 /// Launch in a macOS terminal.
 Future<bool> _launchMacosTerminal(
   TerminalInfo terminal,
@@ -423,33 +302,33 @@ Future<bool> _launchMacosTerminal(
   List<String> neomageArgs,
   String? cwd,
 ) async {
+  Future<ProcessResult> runSafe(String exe, List<String> args) {
+    return Process.run(
+      exe,
+      args,
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 10));
+  }
+
   switch (terminal.command) {
-    // SHELL-STRING PATHS (AppleScript)
+    // PARAMETERIZED ARGV APPLESCRIPT PATHS (zero AppleScript interpolation)
     case 'iTerm':
       final shCmd = _buildShellCommand(neomagePath, neomageArgs, cwd);
-      final script =
-          '''tell application "iTerm"
-  if running then
-    create window with default profile
-  else
-    activate
-  end if
-  tell current session of current window
-    write text ${_appleScriptQuote(shCmd)}
-  end tell
-end tell''';
-      final result = await Process.run('osascript', ['-e', script]);
+      final result = await runSafe(
+        'osascript',
+        buildMacOsTerminalAppleScriptArgs('iTerm', shCmd),
+      );
       if (result.exitCode == 0) return true;
       break;
 
     case 'Terminal':
       final shCmd = _buildShellCommand(neomagePath, neomageArgs, cwd);
-      final script =
-          '''tell application "Terminal"
-  do script ${_appleScriptQuote(shCmd)}
-  activate
-end tell''';
-      final result = await Process.run('osascript', ['-e', script]);
+      final result = await runSafe(
+        'osascript',
+        buildMacOsTerminalAppleScriptArgs('Terminal', shCmd),
+      );
       return result.exitCode == 0;
 
     // PURE ARGV PATHS (no shell)
@@ -462,7 +341,7 @@ end tell''';
       ];
       if (cwd != null) args.add('--working-directory=$cwd');
       args.addAll(['-e', neomagePath, ...neomageArgs]);
-      final result = await Process.run('open', args);
+      final result = await runSafe('open', args);
       if (result.exitCode == 0) return true;
       break;
 
@@ -470,7 +349,7 @@ end tell''';
       final args = ['-na', terminal.command, '--args'];
       if (cwd != null) args.addAll(['--working-directory', cwd]);
       args.addAll(['-e', neomagePath, ...neomageArgs]);
-      final result = await Process.run('open', args);
+      final result = await runSafe('open', args);
       if (result.exitCode == 0) return true;
       break;
 
@@ -478,7 +357,7 @@ end tell''';
       final args = ['-na', terminal.command, '--args'];
       if (cwd != null) args.addAll(['--directory', cwd]);
       args.addAll([neomagePath, ...neomageArgs]);
-      final result = await Process.run('open', args);
+      final result = await runSafe('open', args);
       if (result.exitCode == 0) return true;
       break;
 
@@ -486,7 +365,7 @@ end tell''';
       final args = ['-na', terminal.command, '--args', 'start'];
       if (cwd != null) args.addAll(['--cwd', cwd]);
       args.addAll(['--', neomagePath, ...neomageArgs]);
-      final result = await Process.run('open', args);
+      final result = await runSafe('open', args);
       if (result.exitCode == 0) return true;
       break;
   }
@@ -599,12 +478,21 @@ Future<bool> _spawnDetached(
   List<String> args, {
   String? cwd,
 }) async {
+  if (cwd != null &&
+      (cwd.startsWith('//') ||
+          cwd.startsWith(r'\\') ||
+          _containsControlChars(cwd))) {
+    return false;
+  }
   try {
-    final process = await Process.start(
+    await Process.start(
       command,
       args,
       mode: ProcessStartMode.detached,
       workingDirectory: cwd,
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
     );
     // Detached process — no need to wait
     return true;
@@ -625,18 +513,13 @@ String _buildShellCommand(
   List<String> neomageArgs,
   String? cwd,
 ) {
-  final cdPrefix = cwd != null ? 'cd ${_shellQuote(cwd)} && ' : '';
+  final cdPrefix = cwd != null ? 'cd -- ${_shellQuote(cwd)} && ' : '';
   return '$cdPrefix${[neomagePath, ...neomageArgs].map(_shellQuote).join(' ')}';
 }
 
 /// POSIX single-quote escaping.
 String _shellQuote(String s) {
   return "'${s.replaceAll("'", "'\\''")}'";
-}
-
-/// AppleScript string literal escaping.
-String _appleScriptQuote(String s) {
-  return '"${s.replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"';
 }
 
 /// PowerShell single-quoted string. '' for literal single quote.
@@ -741,7 +624,13 @@ Future<void> _registerMacos(String neomagePath) async {
   // Re-register with LaunchServices
   const lsregister =
       '/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister';
-  await Process.run(lsregister, ['-R', _macosAppDir]);
+  await Process.run(
+    lsregister,
+    ['-R', _macosAppDir],
+    runInShell: false,
+    environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+    includeParentEnvironment: false,
+  ).timeout(const Duration(seconds: 15));
 
   _logDebug(
     'Registered $deepLinkProtocol:// protocol handler at $_macosAppDir',
@@ -768,11 +657,17 @@ MimeType=x-scheme-handler/$deepLinkProtocol;
   // Register with xdg-mime if available
   final xdgMime = await _which('xdg-mime');
   if (xdgMime != null) {
-    final result = await Process.run(xdgMime, [
-      'default',
-      desktopFileName,
-      'x-scheme-handler/$deepLinkProtocol',
-    ]);
+    final result = await Process.run(
+      xdgMime,
+      [
+        'default',
+        desktopFileName,
+        'x-scheme-handler/$deepLinkProtocol',
+      ],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 10));
     if (result.exitCode != 0) {
       throw Exception('xdg-mime exited with code ${result.exitCode}');
     }
@@ -797,7 +692,13 @@ Future<void> _registerWindows(String neomagePath) async {
   ];
 
   for (final args in regCommands) {
-    final result = await Process.run('reg', args);
+    final result = await Process.run(
+      'reg',
+      args,
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 10));
     if (result.exitCode != 0) {
       throw Exception('reg add exited with code ${result.exitCode}');
     }
@@ -808,9 +709,27 @@ Future<void> _registerWindows(String neomagePath) async {
   );
 }
 
+/// Validate that an executable path is safe for OS protocol registration and argv launch.
+void _validateExecutablePath(String neomagePath) {
+  if (neomagePath.trim().isEmpty ||
+      _containsControlChars(neomagePath) ||
+      neomagePath.contains('"') ||
+      neomagePath.contains('<') ||
+      neomagePath.contains('>') ||
+      neomagePath.contains('&') ||
+      neomagePath.split(RegExp(r'[/\\]')).contains('..')) {
+    throw ArgumentError.value(
+      neomagePath,
+      'neomagePath',
+      'Executable path contains unsafe characters or traversal segments',
+    );
+  }
+}
+
 /// Register the neomage-cli:// protocol handler with the operating system.
 Future<void> registerProtocolHandler([String? neomagePath]) async {
   final resolved = neomagePath ?? await _resolveNeomagePath();
+  _validateExecutablePath(resolved);
 
   if (Platform.isMacOS) {
     await _registerMacos(resolved);
@@ -852,11 +771,17 @@ Future<bool> isProtocolHandlerCurrent(String neomagePath) async {
       final content = await File(_linuxDesktopPath()).readAsString();
       return content.contains(_linuxExecLine(neomagePath));
     } else if (Platform.isWindows) {
-      final result = await Process.run('reg', [
-        'query',
-        _windowsCommandKey,
-        '/ve',
-      ]);
+      final result = await Process.run(
+        'reg',
+        [
+          'query',
+          _windowsCommandKey,
+          '/ve',
+        ],
+        runInShell: false,
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+        includeParentEnvironment: false,
+      ).timeout(const Duration(seconds: 10));
       return result.exitCode == 0 &&
           (result.stdout as String).contains(
             _windowsCommandValue(neomagePath),
@@ -925,10 +850,9 @@ Future<int> handleDeepLinkUri(String uri) async {
   // Resolve working directory
   final cwd = action.cwd ?? _homeDir();
 
-  // Read FETCH_HEAD age for repo links
-  DateTime? lastFetch;
+  // Warm FETCH_HEAD check for repo links
   if (action.repo != null) {
-    lastFetch = await readLastFetchTime(cwd);
+    await readLastFetchTime(cwd);
   }
 
   final launched = await launchInTerminal(
@@ -1021,11 +945,20 @@ Future<DateTime?> readLastFetchTime(String cwd) async {
 
 /// Find the .git directory for a working directory.
 Future<String?> _findGitDir(String cwd) async {
+  if (cwd.startsWith('//') ||
+      cwd.startsWith(r'\\') ||
+      _containsControlChars(cwd)) {
+    return null;
+  }
   try {
-    final result = await Process.run('git', [
-      'rev-parse',
-      '--git-dir',
-    ], workingDirectory: cwd);
+    final result = await Process.run(
+      'git',
+      ['rev-parse', '--git-dir'],
+      workingDirectory: cwd,
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     if (result.exitCode == 0) {
       final gitDir = (result.stdout as String).trim();
       return p.isAbsolute(gitDir) ? gitDir : p.join(cwd, gitDir);
@@ -1166,13 +1099,30 @@ String _homeDir() =>
     Platform.environment['USERPROFILE'] ??
     '/tmp';
 
+final RegExp _safeCommandTokenRegex = RegExp(r'^[A-Za-z0-9._+/\\:-]{1,256}$');
+
 /// Resolve a command to its full path using `which` / `where`.
 Future<String?> _which(String command) async {
+  if (command.isEmpty ||
+      command.startsWith('-') ||
+      command.startsWith('//') ||
+      command.startsWith(r'\\') ||
+      _containsControlChars(command) ||
+      !_safeCommandTokenRegex.hasMatch(command)) {
+    return null;
+  }
   try {
     final cmd = Platform.isWindows ? 'where' : 'which';
-    final result = await Process.run(cmd, [command]);
+    final result = await Process.run(
+      cmd,
+      [command],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     if (result.exitCode == 0) {
-      return (result.stdout as String).trim().split('\n').first;
+      final resolved = (result.stdout as String).trim().split('\n').first.trim();
+      return resolved.isNotEmpty ? resolved : null;
     }
   } catch (_) {}
   return null;

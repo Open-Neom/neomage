@@ -8,15 +8,31 @@ import '../../domain/models/plugin.dart';
 import '../mcp/mcp_types.dart';
 import '../skills/skill.dart';
 
+const int _maxPluginJsonBytes = 1024 * 1024;
+final RegExp _controlChars = RegExp(r'[\x00-\x1F\x7F]');
+
+bool _isSafePluginMcpCommand(String rawCommand) {
+  final cmd = rawCommand.trim();
+  if (cmd.isEmpty || cmd.length > 512) return false;
+  if (_controlChars.hasMatch(cmd)) return false;
+  if (cmd.startsWith('-')) return false;
+  final segments = cmd.split(RegExp(r'[/\\]'));
+  if (segments.contains('..')) return false;
+  return true;
+}
+
 /// Load plugins from a directory.
 Future<List<LoadedPlugin>> loadPluginsFromDir(String dirPath) async {
   final dir = Directory(dirPath);
-  if (!await dir.exists()) return const [];
+  if (!await dir.exists() || await FileSystemEntity.isLink(dir.path)) {
+    return const [];
+  }
 
   final plugins = <LoadedPlugin>[];
 
-  await for (final entity in dir.list()) {
+  await for (final entity in dir.list(followLinks: false)) {
     if (entity is! Directory) continue;
+    if (await FileSystemEntity.isLink(entity.path)) continue;
 
     try {
       final plugin = await _loadPlugin(entity.path);
@@ -77,22 +93,27 @@ Future<List<McpServerConfig>> loadPluginMcpConfigs(
 
   for (final plugin in plugins) {
     final mcpFile = File('${plugin.path}/mcp.json');
-    if (!await mcpFile.exists()) continue;
+    if (!await mcpFile.exists() || await FileSystemEntity.isLink(mcpFile.path)) {
+      continue;
+    }
 
     try {
+      if (await mcpFile.length() > _maxPluginJsonBytes) continue;
       final json = jsonDecode(await mcpFile.readAsString());
       if (json is Map<String, dynamic>) {
         for (final entry in json.entries) {
           final value = entry.value;
           if (value is! Map<String, dynamic>) continue;
-          if (value.containsKey('command')) {
+          final rawCommand = value['command'];
+          if (rawCommand is String && _isSafePluginMcpCommand(rawCommand)) {
             configs.add(
               McpStdioConfig(
                 name: entry.key,
-                command: value['command'] as String,
+                command: rawCommand.trim(),
                 args:
                     (value['args'] as List?)
-                        ?.map((a) => a.toString())
+                        ?.where((a) => !_controlChars.hasMatch(a.toString()))
+                        .map((a) => a.toString())
                         .toList() ??
                     [],
               ),
@@ -109,11 +130,14 @@ Future<List<McpServerConfig>> loadPluginMcpConfigs(
 // ── Private ──
 
 Future<LoadedPlugin?> _loadPlugin(String pluginPath) async {
+  if (await FileSystemEntity.isLink(pluginPath)) return null;
   final manifestFile = File('$pluginPath/plugin.json');
 
   PluginManifest? manifest;
   if (await manifestFile.exists()) {
+    if (await FileSystemEntity.isLink(manifestFile.path)) return null;
     try {
+      if (await manifestFile.length() > _maxPluginJsonBytes) return null;
       final json = jsonDecode(await manifestFile.readAsString());
       manifest = _parseManifest(json as Map<String, dynamic>);
     } catch (_) {

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:neomage/core/platform/neomage_io.dart' as io;
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'dart:typed_data';
 
 import 'platform_interface.dart';
@@ -10,18 +12,57 @@ import 'platform_interface.dart';
 /// Delegates every operation directly to `dart:io`.  This file must never be
 /// imported on the web — use conditional imports via `platform_init.dart`.
 class NativePlatformService implements PlatformService {
+  static const int _maxProcessOutputBytes = 16 * 1024 * 1024; // 16 MiB
+  static const int _maxHttpResponseBytes = 16 * 1024 * 1024; // 16 MiB
+
+  static Random _createCsprng() {
+    try {
+      return Random.secure();
+    } catch (_) {
+      return Random();
+    }
+  }
+
+  static void _assertSafePath(String path, {bool mutating = false}) {
+    if (path.isEmpty ||
+        path.contains('\x00') ||
+        path.startsWith('//') ||
+        path.startsWith(r'\\')) {
+      throw ArgumentError('Rejected unsafe filesystem path');
+    }
+    if (NeomageNetworkGuard.isProtectedSystemOrCredentialPath(path)) {
+      throw io.FileSystemException(
+        'Access to protected system or credential path is denied',
+        path,
+      );
+    }
+    if (mutating && io.FileSystemEntity.isLinkSync(path)) {
+      throw io.FileSystemException(
+        'Refusing to mutate symbolic link target',
+        path,
+      );
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Filesystem — basic read / write
   // ---------------------------------------------------------------------------
 
   @override
-  Future<String> readFile(String path) => io.File(path).readAsString();
+  Future<String> readFile(String path) async {
+    _assertSafePath(path);
+    return io.File(path).readAsString();
+  }
 
   @override
-  Future<Uint8List> readFileBytes(String path) => io.File(path).readAsBytes();
+  Future<Uint8List> readFileBytes(String path) async {
+    _assertSafePath(path);
+    return io.File(path).readAsBytes();
+  }
 
   @override
   Future<void> writeFile(String path, String content) async {
+    _assertSafePath(path, mutating: true);
     final file = io.File(path);
     await file.parent.create(recursive: true);
     await file.writeAsString(content);
@@ -29,6 +70,7 @@ class NativePlatformService implements PlatformService {
 
   @override
   Future<void> writeFileBytes(String path, Uint8List bytes) async {
+    _assertSafePath(path, mutating: true);
     final file = io.File(path);
     await file.parent.create(recursive: true);
     await file.writeAsBytes(bytes);
@@ -36,6 +78,7 @@ class NativePlatformService implements PlatformService {
 
   @override
   Future<void> appendFile(String path, String content) async {
+    _assertSafePath(path, mutating: true);
     final file = io.File(path);
     await file.parent.create(recursive: true);
     await file.writeAsString(content, mode: io.FileMode.append);
@@ -46,13 +89,30 @@ class NativePlatformService implements PlatformService {
   // ---------------------------------------------------------------------------
 
   @override
-  Future<bool> fileExists(String path) => io.File(path).exists();
+  Future<bool> fileExists(String path) {
+    if (path.isEmpty ||
+        path.contains('\x00') ||
+        path.startsWith('//') ||
+        path.startsWith(r'\\')) {
+      return Future.value(false);
+    }
+    return io.File(path).exists();
+  }
 
   @override
-  Future<bool> directoryExists(String path) => io.Directory(path).exists();
+  Future<bool> directoryExists(String path) {
+    if (path.isEmpty ||
+        path.contains('\x00') ||
+        path.startsWith('//') ||
+        path.startsWith(r'\\')) {
+      return Future.value(false);
+    }
+    return io.Directory(path).exists();
+  }
 
   @override
   Future<PlatformFileStat> statFile(String path) async {
+    _assertSafePath(path);
     final stat = await io.FileStat.stat(path);
     return PlatformFileStat(
       size: stat.size,
@@ -67,8 +127,11 @@ class NativePlatformService implements PlatformService {
     String path, {
     bool recursive = false,
   }) async {
+    _assertSafePath(path);
     final dir = io.Directory(path);
-    final entries = await dir.list(recursive: recursive).toList();
+    final entries = await dir
+        .list(recursive: recursive, followLinks: false)
+        .toList();
     return entries.map((e) => e.path).toList();
   }
 
@@ -78,21 +141,26 @@ class NativePlatformService implements PlatformService {
 
   @override
   Future<void> createDirectory(String path, {bool recursive = true}) async {
+    _assertSafePath(path, mutating: true);
     await io.Directory(path).create(recursive: recursive);
   }
 
   @override
   Future<void> deleteFile(String path) async {
+    _assertSafePath(path, mutating: true);
     await io.File(path).delete();
   }
 
   @override
   Future<void> deleteDirectory(String path, {bool recursive = false}) async {
+    _assertSafePath(path, mutating: true);
     await io.Directory(path).delete(recursive: recursive);
   }
 
   @override
   Future<void> copyFile(String source, String destination) async {
+    _assertSafePath(source);
+    _assertSafePath(destination, mutating: true);
     final destFile = io.File(destination);
     await destFile.parent.create(recursive: true);
     await io.File(source).copy(destination);
@@ -100,6 +168,8 @@ class NativePlatformService implements PlatformService {
 
   @override
   Future<void> moveFile(String source, String destination) async {
+    _assertSafePath(source, mutating: true);
+    _assertSafePath(destination, mutating: true);
     final destFile = io.File(destination);
     await destFile.parent.create(recursive: true);
     await io.File(source).rename(destination);
@@ -111,17 +181,38 @@ class NativePlatformService implements PlatformService {
 
   @override
   Future<String> createTempFile({String? prefix, String? suffix}) async {
+    final safePrefix = (prefix ?? 'tmp_').replaceAll(
+      RegExp(r'[^A-Za-z0-9._-]'),
+      '_',
+    );
+    final safeSuffix = (suffix ?? '').replaceAll(
+      RegExp(r'[^A-Za-z0-9._-]'),
+      '_',
+    );
+    final rng = _createCsprng();
     final dir = io.Directory.systemTemp;
-    final tempFile = await io.File(
-      '${dir.path}/${prefix ?? 'tmp_'}${DateTime.now().millisecondsSinceEpoch}'
-      '${suffix ?? ''}',
-    ).create();
-    return tempFile.path;
+    for (var attempt = 0; attempt < 8; attempt++) {
+      final nonce = List<int>.generate(12, (_) => rng.nextInt(256))
+          .map((b) => b.toRadixString(16).padLeft(2, '0'))
+          .join();
+      final candidate = io.File('${dir.path}/$safePrefix$nonce$safeSuffix');
+      try {
+        await candidate.create(exclusive: true);
+        return candidate.path;
+      } on io.FileSystemException {
+        continue;
+      }
+    }
+    throw const io.FileSystemException('Failed to create unique temp file');
   }
 
   @override
   Future<String> createTempDirectory({String? prefix}) async {
-    final dir = await io.Directory.systemTemp.createTemp(prefix ?? 'tmp_');
+    final safePrefix = (prefix ?? 'tmp_').replaceAll(
+      RegExp(r'[^A-Za-z0-9._-]'),
+      '_',
+    );
+    final dir = await io.Directory.systemTemp.createTemp(safePrefix);
     return dir.path;
   }
 
@@ -147,6 +238,7 @@ class NativePlatformService implements PlatformService {
 
   @override
   Stream<FileChangeEvent> watchDirectory(String path, {bool recursive = true}) {
+    _assertSafePath(path);
     return io.Directory(path)
         .watch(recursive: recursive)
         .map(
@@ -170,26 +262,74 @@ class NativePlatformService implements PlatformService {
     Duration? timeout,
     bool runInShell = false,
   }) async {
-    final result = await io.Process.run(
+    if (executable.isEmpty ||
+        executable.contains('\x00') ||
+        arguments.any((a) => a.contains('\x00'))) {
+      throw ArgumentError('Process executable/arguments contain NUL bytes');
+    }
+    if (workingDirectory != null &&
+        (workingDirectory.contains('\x00') ||
+            workingDirectory.startsWith('//') ||
+            workingDirectory.startsWith(r'\\'))) {
+      throw ArgumentError('Rejected unsafe workingDirectory');
+    }
+
+    final sanitizedEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(
+      io.Platform.environment,
+      environment,
+    );
+    final process = await io.Process.start(
       executable,
       arguments,
       workingDirectory: workingDirectory,
-      environment: environment,
+      environment: sanitizedEnv,
+      includeParentEnvironment: false,
       runInShell: runInShell,
     );
 
-    final output = ProcessOutput(
-      exitCode: result.exitCode,
-      stdout: result.stdout as String,
-      stderr: result.stderr as String,
-    );
+    final outBuf = BytesBuilder(copy: false);
+    final errBuf = BytesBuilder(copy: false);
+    final outSub = process.stdout.listen((chunk) {
+      final rem = _maxProcessOutputBytes - outBuf.length;
+      if (rem > 0) {
+        outBuf.add(chunk.length <= rem ? chunk : chunk.sublist(0, rem));
+      }
+    });
+    final errSub = process.stderr.listen((chunk) {
+      final rem = _maxProcessOutputBytes - errBuf.length;
+      if (rem > 0) {
+        errBuf.add(chunk.length <= rem ? chunk : chunk.sublist(0, rem));
+      }
+    });
 
-    if (timeout != null) {
-      // io.Process.run doesn't have a built-in timeout, but we can use
-      // startProcess for that.  For simplicity we run it normally here.
+    final effectiveTimeout = timeout ?? const Duration(minutes: 5);
+    int exitCode;
+    try {
+      exitCode = await process.exitCode.timeout(effectiveTimeout);
+      await Future.wait([outSub.asFuture<void>(), errSub.asFuture<void>()])
+          .timeout(const Duration(seconds: 1), onTimeout: () => const []);
+    } on TimeoutException {
+      process.kill();
+      if (!io.Platform.isWindows) {
+        try {
+          await process.exitCode.timeout(const Duration(milliseconds: 200));
+        } catch (_) {
+          process.kill(io.ProcessSignal.sigkill);
+        }
+      }
+      await outSub.cancel();
+      await errSub.cancel();
+      rethrow;
+    } finally {
+      await outSub.cancel();
+      await errSub.cancel();
     }
 
-    return output;
+    return ProcessOutput(
+      exitCode: exitCode,
+      stdout: utf8.decode(outBuf.takeBytes(), allowMalformed: true),
+      stderr: utf8.decode(errBuf.takeBytes(), allowMalformed: true),
+    );
   }
 
   @override
@@ -200,11 +340,28 @@ class NativePlatformService implements PlatformService {
     Map<String, String>? environment,
     bool runInShell = false,
   }) async {
+    if (executable.isEmpty ||
+        executable.contains('\x00') ||
+        arguments.any((a) => a.contains('\x00'))) {
+      throw ArgumentError('Process executable/arguments contain NUL bytes');
+    }
+    if (workingDirectory != null &&
+        (workingDirectory.contains('\x00') ||
+            workingDirectory.startsWith('//') ||
+            workingDirectory.startsWith(r'\\'))) {
+      throw ArgumentError('Rejected unsafe workingDirectory');
+    }
+
+    final sanitizedEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(
+      io.Platform.environment,
+      environment,
+    );
     final process = await io.Process.start(
       executable,
       arguments,
       workingDirectory: workingDirectory,
-      environment: environment,
+      environment: sanitizedEnv,
+      includeParentEnvironment: false,
       runInShell: runInShell,
     );
     return _NativeRunningProcess(process);
@@ -238,15 +395,27 @@ class NativePlatformService implements PlatformService {
     Object? body,
     Duration? timeout,
   }) async {
-    final client = io.HttpClient();
-    if (timeout != null) {
-      client.connectionTimeout = timeout;
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      url,
+      allowLoopbackHttp: true,
+      allowPrivateLanHttp: true,
+    )) {
+      throw ArgumentError('Rejected unsafe HTTP endpoint URI: $url');
     }
+
+    final effectiveTimeout = timeout ?? const Duration(seconds: 30);
+    final client = io.HttpClient()..connectionTimeout = effectiveTimeout;
 
     try {
       final request = await client.openUrl(method, url);
+      request.followRedirects = false;
+      request.maxRedirects = 0;
 
-      headers?.forEach((k, v) => request.headers.set(k, v));
+      headers?.forEach((k, v) {
+        if (NeomageNetworkGuard.isValidHeaderName(k)) {
+          request.headers.set(k, NeomageNetworkGuard.sanitizeHeaderValue(v));
+        }
+      });
 
       if (body != null) {
         if (body is String) {
@@ -262,25 +431,29 @@ class NativePlatformService implements PlatformService {
         }
       }
 
-      final response = await request.close();
-      final responseBytes = await response.fold<List<int>>(
-        <int>[],
-        (prev, chunk) => prev..addAll(chunk),
-      );
+      final response = await request.close().timeout(effectiveTimeout);
+      final responseBytes = BytesBuilder(copy: false);
+      await for (final chunk in response) {
+        if (responseBytes.length + chunk.length > _maxHttpResponseBytes) {
+          throw StateError('HTTP response exceeded 16 MiB limit');
+        }
+        responseBytes.add(chunk);
+      }
 
       final responseHeaders = <String, String>{};
       response.headers.forEach((name, values) {
         responseHeaders[name] = values.join(', ');
       });
 
+      final bytes = responseBytes.takeBytes();
       return PlatformHttpResponse(
         statusCode: response.statusCode,
         headers: responseHeaders,
-        body: utf8.decode(responseBytes, allowMalformed: true),
-        bodyBytes: Uint8List.fromList(responseBytes),
+        body: utf8.decode(bytes, allowMalformed: true),
+        bodyBytes: bytes,
       );
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 
@@ -290,7 +463,16 @@ class NativePlatformService implements PlatformService {
 
   @override
   Future<PlatformWebSocket> connectWebSocket(Uri url) async {
-    final ws = await io.WebSocket.connect(url.toString());
+    if (!NeomageNetworkGuard.isSafeWebSocketEndpointUri(
+      url,
+      allowLoopbackWs: true,
+      allowPrivateLanWs: true,
+    )) {
+      throw ArgumentError('Rejected unsafe WebSocket URI: $url');
+    }
+    final ws = await io.WebSocket.connect(
+      url.toString(),
+    ).timeout(const Duration(seconds: 15));
     return _NativeWebSocket(ws);
   }
 

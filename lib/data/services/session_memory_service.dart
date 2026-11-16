@@ -5,7 +5,7 @@
 
 import 'dart:async';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Configuration

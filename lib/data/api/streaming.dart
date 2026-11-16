@@ -33,11 +33,14 @@ class SseEvent {
 ///  - An empty line dispatches the accumulated event.
 ///  - Lines starting with ":" are comments and are ignored.
 class SseParser {
+  static const int maxEventDataChars = 8 * 1024 * 1024;
+
   String _eventType = '';
   final StringBuffer _dataBuffer = StringBuffer();
   String _lastId = '';
   int? _retry;
   String _lineCarry = '';
+  bool _overflowed = false;
 
   /// Transform a raw byte stream into a stream of [SseEvent]s.
   Stream<SseEvent> parse(Stream<List<int>> byteStream) async* {
@@ -46,6 +49,10 @@ class SseParser {
         .transform(const LineSplitter());
 
     await for (final rawLine in lineStream) {
+      if (rawLine.length > maxEventDataChars) {
+        _overflowed = true;
+        continue;
+      }
       // Handle partial lines carried from previous chunk.
       final line = _lineCarry.isEmpty ? rawLine : '$_lineCarry$rawLine';
       _lineCarry = '';
@@ -55,6 +62,18 @@ class SseParser {
 
       // Empty line — dispatch accumulated event.
       if (line.isEmpty) {
+        if (_overflowed) {
+          _eventType = '';
+          _dataBuffer.clear();
+          _retry = null;
+          _overflowed = false;
+          yield const SseEvent(
+            eventType: 'error',
+            data:
+                '{"error":{"type":"overloaded_error","message":"SSE event exceeded maximum size"}}',
+          );
+          continue;
+        }
         if (_dataBuffer.isNotEmpty) {
           final data = _dataBuffer.toString();
           // Remove trailing newline if present.
@@ -93,15 +112,21 @@ class SseParser {
   void _processField(String field, String value) {
     switch (field) {
       case 'event':
-        _eventType = value;
+        if (value.length <= 128) _eventType = value;
       case 'data':
+        if (_overflowed) return;
+        if (_dataBuffer.length + value.length + 1 > maxEventDataChars) {
+          _overflowed = true;
+          _dataBuffer.clear();
+          return;
+        }
         _dataBuffer.write(value);
         _dataBuffer.write('\n');
       case 'id':
-        if (!value.contains('\u0000')) _lastId = value;
+        if (!value.contains('\u0000') && value.length <= 512) _lastId = value;
       case 'retry':
         final ms = int.tryParse(value);
-        if (ms != null) _retry = ms;
+        if (ms != null && ms >= 0 && ms <= 3600000) _retry = ms;
       // Unknown fields are ignored per spec.
     }
   }
@@ -113,6 +138,7 @@ class SseParser {
     _lastId = '';
     _retry = null;
     _lineCarry = '';
+    _overflowed = false;
   }
 }
 
@@ -284,13 +310,21 @@ sealed class ContentBlockAccumulator {
 
 /// Accumulates text deltas into a complete [TextBlock].
 class TextAccumulator extends ContentBlockAccumulator {
+  static const int maxTextChars = 16 * 1024 * 1024;
   final StringBuffer _buffer = StringBuffer();
 
   TextAccumulator(super.index, [String initial = '']) {
-    if (initial.isNotEmpty) _buffer.write(initial);
+    if (initial.isNotEmpty) append(initial);
   }
 
-  void append(String text) => _buffer.write(text);
+  void append(String text) {
+    final remaining = maxTextChars - _buffer.length;
+    if (remaining <= 0) return;
+    _buffer.write(
+      text.length <= remaining ? text : text.substring(0, remaining),
+    );
+  }
+
   String get currentText => _buffer.toString();
 
   @override
@@ -299,13 +333,21 @@ class TextAccumulator extends ContentBlockAccumulator {
 
 /// Accumulates thinking/reasoning text.
 class ThinkingAccumulator extends ContentBlockAccumulator {
+  static const int maxThinkingChars = 16 * 1024 * 1024;
   final StringBuffer _buffer = StringBuffer();
 
   ThinkingAccumulator(super.index, [String initial = '']) {
-    if (initial.isNotEmpty) _buffer.write(initial);
+    if (initial.isNotEmpty) append(initial);
   }
 
-  void append(String text) => _buffer.write(text);
+  void append(String text) {
+    final remaining = maxThinkingChars - _buffer.length;
+    if (remaining <= 0) return;
+    _buffer.write(
+      text.length <= remaining ? text : text.substring(0, remaining),
+    );
+  }
+
   String get currentText => _buffer.toString();
 
   @override
@@ -314,9 +356,11 @@ class ThinkingAccumulator extends ContentBlockAccumulator {
 
 /// Accumulates tool_use JSON input from partial_json deltas.
 class ToolUseAccumulator extends ContentBlockAccumulator {
+  static const int maxJsonChars = 4 * 1024 * 1024;
   final String toolId;
   final String toolName;
   final StringBuffer _jsonBuffer = StringBuffer();
+  bool _overflowed = false;
 
   ToolUseAccumulator(
     super.index, {
@@ -324,15 +368,25 @@ class ToolUseAccumulator extends ContentBlockAccumulator {
     required this.toolName,
   });
 
-  void append(String partialJson) => _jsonBuffer.write(partialJson);
+  void append(String partialJson) {
+    if (_overflowed) return;
+    if (_jsonBuffer.length + partialJson.length > maxJsonChars) {
+      _overflowed = true;
+      _jsonBuffer.clear();
+      return;
+    }
+    _jsonBuffer.write(partialJson);
+  }
 
   String get currentJson => _jsonBuffer.toString();
 
   Map<String, dynamic> get parsedInput {
+    if (_overflowed) return {};
     final raw = currentJson;
     if (raw.isEmpty) return {};
     try {
-      return jsonDecode(raw) as Map<String, dynamic>;
+      final decoded = jsonDecode(raw);
+      return decoded is Map<String, dynamic> ? decoded : {};
     } catch (_) {
       return {};
     }

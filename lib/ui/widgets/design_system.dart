@@ -1187,7 +1187,7 @@ class NeomageDialog extends StatelessWidget {
                     icon: Icons.close,
                     tooltip: NeomageTranslationConstants.close.tr,
                     size: 18,
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Sint.pop(),
                   ),
                 ],
               ),

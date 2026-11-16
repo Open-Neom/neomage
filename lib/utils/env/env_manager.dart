@@ -6,6 +6,7 @@
 
 import 'dart:async';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -35,11 +36,28 @@ enum NeomagePlatform {
 /// Memoized after first call.
 String? _neomageConfigHomeDirCache;
 
+/// Validates whether an overridden `MAGE_CONFIG_DIR` path is safe to use.
+bool isSafeConfigHomeDirOverride(String? rawDir) {
+  if (rawDir == null) return false;
+  final trimmed = rawDir.trim();
+  if (trimmed.isEmpty ||
+      trimmed.length > 1024 ||
+      trimmed.contains('\x00') ||
+      trimmed.startsWith('-') ||
+      trimmed.startsWith('//') ||
+      trimmed.startsWith(r'\\')) {
+    return false;
+  }
+  final segments = trimmed.split(RegExp(r'[/\\]'));
+  if (segments.contains('..')) return false;
+  return !NeomageNetworkGuard.isProtectedSystemOrCredentialPath(trimmed);
+}
+
 String getNeomageConfigHomeDir() {
   if (_neomageConfigHomeDirCache != null) return _neomageConfigHomeDirCache!;
   final configDir = Platform.environment['MAGE_CONFIG_DIR'];
-  if (configDir != null && configDir.isNotEmpty) {
-    _neomageConfigHomeDirCache = configDir;
+  if (isSafeConfigHomeDirOverride(configDir)) {
+    _neomageConfigHomeDirCache = configDir!.trim();
   } else {
     _neomageConfigHomeDirCache = p.join(_homedir(), '.neomage');
   }
@@ -494,7 +512,13 @@ Future<String?> detectJetBrainsIDEFromParentProcessAsync() async {
   }
 
   try {
-    final result = await Process.run('ps', ['-o', 'command=', '-p', '$pid']);
+    final result = await Process.run(
+      'ps',
+      ['-o', 'command=', '-p', '$pid'],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     final commands = (result.stdout as String).split('\n');
     for (final command in commands) {
       final lower = command.toLowerCase();
@@ -572,8 +596,17 @@ Future<List<String>> detectRuntimes() async {
 }
 
 Future<bool> _isCommandAvailable(String command) async {
+  if (!NeomageNetworkGuard.isSafeIdentifier(command, maxLength: 64)) {
+    return false;
+  }
   try {
-    final result = await Process.run('which', [command]);
+    final result = await Process.run(
+      'which',
+      [command],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     return result.exitCode == 0;
   } catch (_) {
     return false;

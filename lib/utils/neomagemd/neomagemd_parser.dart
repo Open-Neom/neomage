@@ -22,8 +22,10 @@ library;
 
 import 'dart:async';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+import 'package:path/path.dart' as p;
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -37,10 +39,14 @@ const String _memoryInstructionPrompt =
 /// Recommended max character count for a memory file.
 const int maxMemoryCharacterCount = 40000;
 
+/// Hard byte cap for reading any memory or `@include` file (`2 MiB`).
+const int maxMemoryFileBytes = 2 * 1024 * 1024;
+
 const int _maxIncludeDepth = 5;
 
 /// File extensions that are allowed for @include directives.
-/// This prevents binary files from being loaded into memory.
+/// This prevents binary and secret/credential files (`.env`, `.pem`, `.key`)
+/// from being loaded into LLM memory context.
 const Set<String> _textFileExtensions = {
   // Markdown and text
   '.md', '.txt', '.text',
@@ -68,8 +74,8 @@ const Set<String> _textFileExtensions = {
   '.swift',
   // Shell
   '.sh', '.bash', '.zsh', '.fish', '.ps1', '.bat', '.cmd',
-  // Config
-  '.env', '.ini', '.cfg', '.conf', '.config', '.properties',
+  // Config (excluding .env / secret material)
+  '.ini', '.cfg', '.conf', '.config', '.properties',
   // Database
   '.sql', '.graphql', '.gql',
   // Protocol
@@ -91,6 +97,68 @@ const Set<String> _textFileExtensions = {
   // Misc
   '.log', '.diff', '.patch',
 };
+
+const Set<String> _forbiddenSecretExtensions = {
+  '.env',
+  '.pem',
+  '.key',
+  '.p12',
+  '.pfx',
+  '.pkcs12',
+  '.jks',
+  '.keystore',
+  '.kdbx',
+  '.asc',
+  '.gpg',
+};
+
+const Set<String> _forbiddenSecretBasenames = {
+  '.env',
+  '.netrc',
+  '.npmrc',
+  '.pypirc',
+  '.pgpass',
+  'id_rsa',
+  'id_ed25519',
+  'id_ecdsa',
+  'id_dsa',
+  'credentials.json',
+  'service-account.json',
+};
+
+/// Returns `true` if [filePath] is a secret/credential/UNC/protected path that
+/// must never be ingested into LLM prompt memory.
+bool isForbiddenMemoryIncludePath(
+  String filePath, {
+  MemoryType type = MemoryType.project,
+  bool isInclude = true,
+}) {
+  if (filePath.isEmpty || filePath.contains('\x00')) return true;
+  if (filePath.startsWith('//') || filePath.startsWith(r'\\')) return true;
+
+  final normalized = p.posix.normalize(filePath.replaceAll('\\', '/'));
+  final base = p.posix.basename(normalized).toLowerCase();
+  if (_forbiddenSecretBasenames.contains(base) || base.startsWith('.env.')) {
+    return true;
+  }
+  final ext = _getFileExtension(base);
+  if (_forbiddenSecretExtensions.contains(ext)) {
+    return true;
+  }
+
+  final allowManagedRoot =
+      !isInclude &&
+      type == MemoryType.managed &&
+      (normalized == '/etc/neomage' ||
+          normalized.startsWith('/etc/neomage/') ||
+          normalized == '/private/etc/neomage' ||
+          normalized.startsWith('/private/etc/neomage/'));
+  if (!allowManagedRoot &&
+      NeomageNetworkGuard.checkProtectedFilesystemPath(normalized) != null) {
+    return true;
+  }
+  return false;
+}
 
 // ---------------------------------------------------------------------------
 // Memory type
@@ -327,20 +395,50 @@ List<String> _extractIncludePaths(String content, String basePath) {
   return absolutePaths.toList();
 }
 
-/// Expands a path that may be relative, home-relative, or absolute.
+/// Expands a path that may be relative, home-relative, or absolute, normalizing
+/// `.` and `..` segments while rejecting UNC network paths.
 String _expandPath(String path, String basePath) {
+  if (path.contains('\x00') ||
+      path.startsWith('//') ||
+      path.startsWith(r'\\')) {
+    return '';
+  }
+  String raw;
   if (path.startsWith('~/')) {
     final home = Platform.environment['HOME'] ?? '';
-    return '$home${path.substring(1)}';
+    if (home.isEmpty) return '';
+    raw = '$home${path.substring(1)}';
+  } else if (path.startsWith('/')) {
+    raw = path;
+  } else {
+    var rel = path;
+    if (rel.startsWith('./')) rel = rel.substring(2);
+    final normalizedBase = basePath.replaceAll('\\', '/');
+    final lastSlash = normalizedBase.lastIndexOf('/');
+    final baseDir = normalizedBase.endsWith('/')
+        ? normalizedBase
+        : (lastSlash >= 0 ? normalizedBase.substring(0, lastSlash) : '.');
+    raw = '$baseDir/$rel';
   }
-  if (path.startsWith('/')) return path;
-  if (path.startsWith('./')) path = path.substring(2);
+  return p.posix.normalize(raw.replaceAll('\\', '/'));
+}
 
-  // Relative to basePath's directory
-  final baseDir = basePath.endsWith('/')
-      ? basePath
-      : basePath.substring(0, basePath.lastIndexOf('/'));
-  return '$baseDir/$path';
+/// Strict directory-boundary containment check (prevents `/repo_evil` matching
+/// `/repo` and normalizes `..` traversal before comparison).
+bool defaultPathInWorkingPath(String path, String workingPath) {
+  if (path.isEmpty || workingPath.isEmpty) return false;
+  if (path.contains('\x00') || workingPath.contains('\x00')) return false;
+  if (path.startsWith('//') || path.startsWith(r'\\')) return false;
+
+  final normPath = p.posix.normalize(path.replaceAll('\\', '/'));
+  var normWork = p.posix.normalize(workingPath.replaceAll('\\', '/'));
+  while (normWork.length > 1 && normWork.endsWith('/')) {
+    normWork = normWork.substring(0, normWork.length - 1);
+  }
+  if (normWork == '/') {
+    return normPath.startsWith('/') && !normPath.startsWith('//');
+  }
+  return normPath == normWork || normPath.startsWith('$normWork/');
 }
 
 // ---------------------------------------------------------------------------
@@ -393,7 +491,7 @@ class NeomageMdParser extends SintController {
 
   /// Callback for checking if a path is inside the working path.
   bool Function(String path, String workingPath) _pathInWorkingPath =
-      (path, workingPath) => path.startsWith(workingPath);
+      defaultPathInWorkingPath;
 
   /// Callback for checking if a setting source is enabled.
   bool Function(String source) _isSettingSourceEnabled = (_) => true;
@@ -471,10 +569,20 @@ class NeomageMdParser extends SintController {
     String filePath,
     MemoryType type, {
     String? includeBasePath,
+    bool isInclude = false,
   }) {
-    // Skip non-text files
-    final ext = _getFileExtension(filePath);
-    if (ext.isNotEmpty && !_textFileExtensions.contains(ext)) {
+    if (isForbiddenMemoryIncludePath(
+      filePath,
+      type: type,
+      isInclude: isInclude,
+    )) {
+      return (info: null, includePaths: <String>[]);
+    }
+
+    // Skip non-text files (and extensionless dotfiles like `.env`).
+    final baseName = p.posix.basename(filePath.replaceAll('\\', '/'));
+    final ext = _getFileExtension(baseName);
+    if (ext.isEmpty || !_textFileExtensions.contains(ext)) {
       return (info: null, includePaths: <String>[]);
     }
 
@@ -484,9 +592,19 @@ class NeomageMdParser extends SintController {
     final strippedResult = stripHtmlComments(parsed.content);
     final strippedContent = strippedResult.content;
 
-    // Extract include paths
+    // Extract include paths (filtering empty/forbidden targets immediately).
     final includePaths = includeBasePath != null
         ? _extractIncludePaths(parsed.content, includeBasePath)
+              .where(
+                (candidate) =>
+                    candidate.isNotEmpty &&
+                    !isForbiddenMemoryIncludePath(
+                      candidate,
+                      type: type,
+                      isInclude: true,
+                    ),
+              )
+              .toList()
         : <String>[];
 
     final finalContent = strippedContent;
@@ -505,24 +623,74 @@ class NeomageMdParser extends SintController {
     );
   }
 
-  /// Safely reads and parses a memory file async.
+  /// Safely reads and parses a memory file async, blocking symlinks, secret
+  /// files, protected system trees, and oversized (> 2 MiB) payloads.
   Future<({MemoryFileInfo? info, List<String> includePaths})>
   _safelyReadMemoryFileAsync(
     String filePath,
     MemoryType type, {
     String? includeBasePath,
+    bool isInclude = false,
+    bool includeExternal = false,
   }) async {
+    if (isForbiddenMemoryIncludePath(
+      filePath,
+      type: type,
+      isInclude: isInclude,
+    )) {
+      return (info: null, includePaths: <String>[]);
+    }
     try {
-      final rawContent = await File(filePath).readAsString();
+      if (await FileSystemEntity.isLink(filePath)) {
+        return (info: null, includePaths: <String>[]);
+      }
+      final file = File(filePath);
+      final stat = await file.stat();
+      if (stat.type != FileSystemEntityType.file ||
+          stat.size > maxMemoryFileBytes) {
+        return (info: null, includePaths: <String>[]);
+      }
+
+      // Resolve ancestor directory symlinks to prevent symlinked parent escape.
+      try {
+        final resolved = await file.resolveSymbolicLinks();
+        if (isForbiddenMemoryIncludePath(
+          resolved,
+          type: type,
+          isInclude: isInclude,
+        )) {
+          return (info: null, includePaths: <String>[]);
+        }
+        if (isInclude && !includeExternal) {
+          final resolvedCwd = await _resolveWorkingDirSafe(_getOriginalCwd());
+          if (!_pathInWorkingPath(resolved, resolvedCwd) &&
+              !_pathInWorkingPath(resolved, _getOriginalCwd())) {
+            return (info: null, includePaths: <String>[]);
+          }
+        }
+      } catch (_) {
+        // On Web stub or non-resolvable virtual FS, rely on normalized path check above.
+      }
+
+      final rawContent = await file.readAsString();
       return parseMemoryFileContent(
         rawContent,
         filePath,
         type,
         includeBasePath: includeBasePath,
+        isInclude: isInclude,
       );
     } on FileSystemException catch (e) {
       _handleMemoryFileReadError(e, filePath);
       return (info: null, includePaths: <String>[]);
+    }
+  }
+
+  Future<String> _resolveWorkingDirSafe(String cwd) async {
+    try {
+      return await Directory(cwd).resolveSymbolicLinks();
+    } catch (_) {
+      return cwd;
     }
   }
 
@@ -561,15 +729,40 @@ class NeomageMdParser extends SintController {
     return false;
   }
 
-  /// Simple glob matching.
+  /// Linear ReDoS-safe glob matching with full regex metacharacter escaping.
   static bool _matchesGlob(String path, String pattern) {
-    final regexStr = pattern
-        .replaceAll('.', r'\.')
-        .replaceAll('**/', '(.+/)?')
-        .replaceAll('**', '.*')
-        .replaceAll('*', '[^/]*')
-        .replaceAll('?', '[^/]');
-    return RegExp('^$regexStr\$').hasMatch(path);
+    if (pattern.length > 512) return false;
+    final buf = StringBuffer('^');
+    var i = 0;
+    while (i < pattern.length) {
+      final ch = pattern[i];
+      if (ch == '*') {
+        var stars = 1;
+        while (i + stars < pattern.length && pattern[i + stars] == '*') {
+          stars++;
+        }
+        if (stars >= 2) {
+          if (i + stars < pattern.length && pattern[i + stars] == '/') {
+            buf.write('(?:[^/]+/)*');
+            i += stars + 1;
+          } else {
+            buf.write('.*');
+            i += stars;
+          }
+        } else {
+          buf.write('[^/]*');
+          i++;
+        }
+      } else if (ch == '?') {
+        buf.write('[^/]');
+        i++;
+      } else {
+        buf.write(RegExp.escape(ch));
+        i++;
+      }
+    }
+    buf.write(r'$');
+    return RegExp(buf.toString()).hasMatch(path);
   }
 
   // ---------------------------------------------------------------------------
@@ -585,7 +778,18 @@ class NeomageMdParser extends SintController {
     int depth = 0,
     String? parent,
   }) async {
-    final normalizedPath = filePath.toLowerCase();
+    if (filePath.isEmpty ||
+        isForbiddenMemoryIncludePath(
+          filePath,
+          type: type,
+          isInclude: parent != null,
+        )) {
+      return [];
+    }
+
+    final normalizedPath = p.posix
+        .normalize(filePath.replaceAll('\\', '/'))
+        .toLowerCase();
     if (processedPaths.contains(normalizedPath) || depth >= _maxIncludeDepth) {
       return [];
     }
@@ -598,6 +802,8 @@ class NeomageMdParser extends SintController {
       filePath,
       type,
       includeBasePath: filePath,
+      isInclude: parent != null,
+      includeExternal: includeExternal,
     );
 
     final memoryFile = readResult.info;
@@ -640,16 +846,26 @@ class NeomageMdParser extends SintController {
     Set<String>? visitedDirs,
   }) async {
     visitedDirs ??= {};
-    if (visitedDirs.contains(rulesDir)) return [];
+    if (visitedDirs.contains(rulesDir) || visitedDirs.length > 256) return [];
     visitedDirs.add(rulesDir);
+
+    if (isForbiddenMemoryIncludePath(
+      rulesDir,
+      type: type,
+      isInclude: false,
+    )) {
+      return [];
+    }
 
     final result = <MemoryFileInfo>[];
 
     try {
+      if (await FileSystemEntity.isLink(rulesDir)) return [];
       final dir = Directory(rulesDir);
       if (!await dir.exists()) return [];
 
-      await for (final entry in dir.list()) {
+      await for (final entry in dir.list(followLinks: false)) {
+        if (entry is Link) continue;
         if (entry is Directory) {
           result.addAll(
             await processMdRules(

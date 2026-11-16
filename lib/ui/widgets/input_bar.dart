@@ -64,27 +64,27 @@ class _InputBarState extends State<InputBar> {
 
   Future<void> _pickFiles() async {
     try {
-      final result = await FilePicker.pickFiles(
-        allowMultiple: true,
+      final files = await FilePicker.pickFiles(
         type: FileType.any,
-        withData: true,
       );
-      if (result == null) return;
+      if (files.isEmpty) return;
 
-      for (final file in result.files) {
-        if (file.bytes == null) continue;
+      for (final file in files) {
+        final bytes = await file.readAsBytes();
+        if (bytes.isEmpty) continue;
         final mime = _guessMime(file.name);
         final kind = mime.startsWith('image/')
             ? AttachmentKind.image
             : mime == 'application/pdf'
             ? AttachmentKind.pdf
             : AttachmentKind.file;
+        if (!mounted) return;
         setState(() {
           _attachments.add(
             InputAttachment(
               name: file.name,
               mimeType: mime,
-              bytes: file.bytes!,
+              bytes: bytes,
               kind: kind,
             ),
           );
@@ -169,7 +169,7 @@ class _InputBarState extends State<InputBar> {
               label: NeomageTranslationConstants.attachFile.tr,
               subtitle: NeomageTranslationConstants.pickAnyFile.tr,
               onTap: () {
-                Navigator.pop(ctx);
+                Sint.pop();
                 _pickFiles();
               },
             ),
@@ -178,7 +178,7 @@ class _InputBarState extends State<InputBar> {
               label: NeomageTranslationConstants.image.tr,
               subtitle: NeomageTranslationConstants.fromGallery.tr,
               onTap: () {
-                Navigator.pop(ctx);
+                Sint.pop();
                 _pickImage();
               },
             ),
@@ -188,7 +188,7 @@ class _InputBarState extends State<InputBar> {
                 label: NeomageTranslationConstants.camera.tr,
                 subtitle: NeomageTranslationConstants.takePhoto.tr,
                 onTap: () {
-                  Navigator.pop(ctx);
+                  Sint.pop();
                   _pickImage(source: ImageSource.camera);
                 },
               ),
@@ -197,24 +197,26 @@ class _InputBarState extends State<InputBar> {
               label: NeomageTranslationConstants.pdf.tr,
               subtitle: NeomageTranslationConstants.pickPdf.tr,
               onTap: () async {
-                Navigator.pop(ctx);
+                Sint.pop();
                 try {
-                  final result = await FilePicker.pickFiles(
+                  final picked = await FilePicker.pickFile(
                     type: FileType.custom,
                     allowedExtensions: ['pdf'],
-                    withData: true,
                   );
-                  if (result != null && result.files.first.bytes != null) {
-                    setState(() {
-                      _attachments.add(
-                        InputAttachment(
-                          name: result.files.first.name,
-                          mimeType: 'application/pdf',
-                          bytes: result.files.first.bytes!,
-                          kind: AttachmentKind.pdf,
-                        ),
-                      );
-                    });
+                  if (picked != null) {
+                    final bytes = await picked.readAsBytes();
+                    if (bytes.isNotEmpty && mounted) {
+                      setState(() {
+                        _attachments.add(
+                          InputAttachment(
+                            name: picked.name,
+                            mimeType: 'application/pdf',
+                            bytes: bytes,
+                            kind: AttachmentKind.pdf,
+                          ),
+                        );
+                      });
+                    }
                   }
                 } catch (e) {
                   _showError('Failed to pick PDF: $e');

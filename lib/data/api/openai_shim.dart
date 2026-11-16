@@ -2,14 +2,20 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:sint_sentinel/sint_sentinel.dart';
+import 'package:sint_sentinel/sint_sentinel_core.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/models/message.dart';
 import '../../domain/models/tool_definition.dart';
+import '../../utils/security/neomage_network_guard.dart';
 import 'api_provider.dart';
 
 const _uuid = Uuid();
+const int _maxErrorBodyBytes = 512 * 1024;
+const int _maxResponseBytes = 16 * 1024 * 1024;
+const int _maxSseLineChars = 4 * 1024 * 1024;
+const int _maxToolArgChars = 4 * 1024 * 1024;
+const Duration _requestTimeout = Duration(seconds: 120);
 
 /// OpenAI-compatible API shim — direct port of
 /// neomage/src/services/api/openaiShim.ts
@@ -27,11 +33,59 @@ class OpenAiShim extends ApiProvider {
   /// Creates a shim with the given [config] for an OpenAI-compatible provider.
   OpenAiShim(this.config);
 
-  Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    if (config.apiKey != null) 'Authorization': 'Bearer ${config.apiKey}',
-    ...config.extraHeaders,
-  };
+  Map<String, String> get _headers {
+    final sanitizedExtra = <String, String>{};
+    for (final entry in config.extraHeaders.entries) {
+      if (!NeomageNetworkGuard.isValidHeaderName(entry.key)) continue;
+      sanitizedExtra[entry.key] = NeomageNetworkGuard.sanitizeHeaderValue(
+        entry.value,
+      );
+    }
+    final cleanKey = config.apiKey != null
+        ? NeomageNetworkGuard.sanitizeHeaderValue(config.apiKey!)
+        : null;
+    return {
+      'Content-Type': 'application/json',
+      if (cleanKey != null && cleanKey.isNotEmpty)
+        'Authorization': 'Bearer $cleanKey',
+      ...sanitizedExtra,
+    };
+  }
+
+  Uri? _buildCompletionsUri() {
+    var base = config.baseUrl.trim();
+    while (base.endsWith('/')) {
+      base = base.substring(0, base.length - 1);
+    }
+    final uri = Uri.tryParse('$base/chat/completions');
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      uri,
+      allowLoopbackInsecure: true,
+      secureSchemes: const <String>{'https'},
+      insecureSchemes: const <String>{'http'},
+    )) {
+      return null;
+    }
+    return uri;
+  }
+
+  Future<String> _readBoundedUtf8(
+    Stream<List<int>> byteStream,
+    int maxBytes,
+  ) async {
+    final chunks = <int>[];
+    await for (final chunk in byteStream) {
+      final remaining = maxBytes - chunks.length;
+      if (remaining <= 0) break;
+      if (chunk.length <= remaining) {
+        chunks.addAll(chunk);
+      } else {
+        chunks.addAll(chunk.sublist(0, remaining));
+        break;
+      }
+    }
+    return utf8.decode(chunks, allowMalformed: true);
+  }
 
   // ── Anthropic → OpenAI message conversion ──
 
@@ -173,30 +227,47 @@ class OpenAiShim extends ApiProvider {
       body['tools'] = tools.map((t) => t.toOpenAiMap()).toList();
     }
 
-    final url = '${config.baseUrl}/chat/completions';
-    final maskedKey = config.apiKey != null
-        ? '${config.apiKey!.substring(0, 4)}...${config.apiKey!.substring(config.apiKey!.length - 4)}'
-        : 'none';
-    SintSentinel.logger.d('OpenAiShim.createMessageStream: POST $url (key: $maskedKey)');
+    final uri = _buildCompletionsUri();
+    if (uri == null) {
+      yield const ErrorEvent(
+        message: 'Blocked unsafe OpenAI baseUrl',
+        type: 'invalid_request_error',
+      );
+      return;
+    }
 
-    final request = http.Request('POST', Uri.parse(url));
+    final safeUrlLog = NeomageNetworkGuard.redactUrlCredentials(uri.toString());
+    final maskedKey = NeomageNetworkGuard.maskApiKey(config.apiKey);
+    SintSentinel.logger.d(
+      'OpenAiShim.createMessageStream: POST $safeUrlLog (key: $maskedKey)',
+    );
+
+    final request = http.Request('POST', uri)..followRedirects = false;
     request.headers.addAll(_headers);
     request.body = jsonEncode(body);
 
     final client = http.Client();
     try {
       final response = await SintSentinel.guard(
-        () => client.send(request),
+        () => client.send(request).timeout(_requestTimeout),
         tag: 'OpenAiShim.createMessageStream',
       );
 
-      SintSentinel.logger.d('OpenAiShim response status: ${response.statusCode}');
+      SintSentinel.logger.d(
+        'OpenAiShim response status: ${response.statusCode}',
+      );
 
       if (response.statusCode != 200) {
-        final errorBody = await response.stream.bytesToString();
-        SintSentinel.logger.e('OpenAiShim API error ${response.statusCode}: $errorBody');
+        final errorBody = await _readBoundedUtf8(
+          response.stream,
+          _maxErrorBodyBytes,
+        );
+        final redacted = NeomageNetworkGuard.sanitizeApiErrorBody(errorBody);
+        SintSentinel.logger.e(
+          'OpenAiShim API error ${response.statusCode}: $redacted',
+        );
         yield ErrorEvent(
-          message: 'OpenAI API error ${response.statusCode}: $errorBody',
+          message: 'OpenAI API error ${response.statusCode}: $redacted',
           type: 'api_error',
         );
         return;
@@ -268,11 +339,14 @@ class OpenAiShim extends ApiProvider {
                 (tcMap['function'] as Map<String, dynamic>?)?['arguments']
                     as String?;
             if (args != null) {
-              toolCallBuffers[tcIndex]!.argumentsBuffer.write(args);
-              yield ContentBlockDeltaEvent(
-                index: currentIndex + tcIndex,
-                text: args,
-              );
+              final buf = toolCallBuffers[tcIndex]!.argumentsBuffer;
+              if (buf.length + args.length <= _maxToolArgChars) {
+                buf.write(args);
+                yield ContentBlockDeltaEvent(
+                  index: currentIndex + tcIndex,
+                  text: args,
+                );
+              }
             }
           }
         }
@@ -332,28 +406,56 @@ class OpenAiShim extends ApiProvider {
       body['tools'] = tools.map((t) => t.toOpenAiMap()).toList();
     }
 
-    final url = Uri.parse('${config.baseUrl}/chat/completions');
-    SintSentinel.logger.d('OpenAiShim.createMessage: POST $url');
-
-    final response = await SintSentinel.guard(
-      () => http.post(url, headers: _headers, body: jsonEncode(body)),
-      tag: 'OpenAiShim.createMessage',
-    );
-
-    SintSentinel.logger.d('OpenAiShim.createMessage response: ${response.statusCode}');
-
-    if (response.statusCode != 200) {
-      SintSentinel.logger.e('OpenAiShim API error ${response.statusCode}: ${response.body}');
-      throw Exception(
-        'OpenAI API error ${response.statusCode}: ${response.body}',
-      );
+    final uri = _buildCompletionsUri();
+    if (uri == null) {
+      throw ArgumentError('Blocked unsafe OpenAI baseUrl');
     }
+    final safeUrlLog = NeomageNetworkGuard.redactUrlCredentials(uri.toString());
+    SintSentinel.logger.d('OpenAiShim.createMessage: POST $safeUrlLog');
 
-    return _parseOpenAiResponse(jsonDecode(response.body));
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', uri)..followRedirects = false;
+      request.headers.addAll(_headers);
+      request.body = jsonEncode(body);
+
+      final streamed = await SintSentinel.guard(
+        () => client.send(request).timeout(_requestTimeout),
+        tag: 'OpenAiShim.createMessage',
+      );
+      final responseBody = await _readBoundedUtf8(
+        streamed.stream,
+        _maxResponseBytes,
+      );
+
+      SintSentinel.logger.d(
+        'OpenAiShim.createMessage response: ${streamed.statusCode}',
+      );
+
+      if (streamed.statusCode != 200) {
+        final redacted = NeomageNetworkGuard.sanitizeApiErrorBody(responseBody);
+        SintSentinel.logger.e(
+          'OpenAiShim API error ${streamed.statusCode}: $redacted',
+        );
+        throw Exception(
+          'OpenAI API error ${streamed.statusCode}: $redacted',
+        );
+      }
+
+      return _parseOpenAiResponse(
+        jsonDecode(responseBody) as Map<String, dynamic>,
+      );
+    } finally {
+      client.close();
+    }
   }
 
   Message _parseOpenAiResponse(Map<String, dynamic> json) {
-    final choice = (json['choices'] as List).first as Map<String, dynamic>;
+    final choices = json['choices'] as List?;
+    if (choices == null || choices.isEmpty) {
+      throw const FormatException('OpenAI response missing choices');
+    }
+    final choice = choices.first as Map<String, dynamic>;
     final msg = choice['message'] as Map<String, dynamic>;
     final content = <ContentBlock>[];
 
@@ -367,11 +469,18 @@ class OpenAiShim extends ApiProvider {
       for (final tc in toolCalls) {
         final tcMap = tc as Map<String, dynamic>;
         final fn = tcMap['function'] as Map<String, dynamic>;
+        Map<String, dynamic> parsedArgs = const <String, dynamic>{};
+        try {
+          final decodedArgs = jsonDecode(fn['arguments'] as String? ?? '{}');
+          if (decodedArgs is Map<String, dynamic>) {
+            parsedArgs = decodedArgs;
+          }
+        } catch (_) {}
         content.add(
           ToolUseBlock(
-            id: tcMap['id'] as String,
-            name: fn['name'] as String,
-            input: jsonDecode(fn['arguments'] as String),
+            id: tcMap['id'] as String? ?? 'call_${_uuid.v4()}',
+            name: fn['name'] as String? ?? '',
+            input: parsedArgs,
           ),
         );
       }
@@ -401,6 +510,7 @@ class OpenAiShim extends ApiProvider {
   ) async* {
     await for (final line
         in byteStream.transform(utf8.decoder).transform(const LineSplitter())) {
+      if (line.length > _maxSseLineChars) continue;
       if (line.startsWith('data: ')) {
         final data = line.substring(6).trim();
         if (data == '[DONE]') return;

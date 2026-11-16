@@ -3,6 +3,7 @@
 
 import 'dart:async';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -212,36 +213,99 @@ class ContextBuilder {
     return true;
   }
 
+  static const int maxContextFileBytes = 4 * 1024 * 1024; // 4 MiB
+  static final RegExp _safeGitRefPattern = RegExp(
+    r'^[A-Za-z0-9._/~^:@{}\-]+$',
+  );
+
+  /// Validates a git revision/ref argument to prevent `git diff` option
+  /// injection (`--output=...`, `--ext-diff`, etc.).
+  static bool isSafeGitRef(String? rawRef) {
+    if (rawRef == null) return false;
+    final trimmed = rawRef.trim();
+    if (trimmed.isEmpty ||
+        trimmed.length > 128 ||
+        trimmed.startsWith('-') ||
+        trimmed.contains('\x00') ||
+        trimmed.contains(r'\') ||
+        trimmed.contains('@{/') ||
+        trimmed.endsWith('.lock')) {
+      return false;
+    }
+    return _safeGitRefPattern.hasMatch(trimmed);
+  }
+
+  /// Validates a local file path before reading it into LLM prompt context.
+  static bool isAllowedContextFilePath(String rawPath) {
+    if (rawPath.isEmpty ||
+        rawPath.contains('\x00') ||
+        rawPath.startsWith('//') ||
+        rawPath.startsWith(r'\\')) {
+      return false;
+    }
+    return !NeomageNetworkGuard.isProtectedSystemOrCredentialPath(rawPath);
+  }
+
   /// Add a file to context.
   Future<bool> addFile(String path, {int? maxLines}) async {
+    if (!isAllowedContextFilePath(path)) return false;
+    if (await FileSystemEntity.isLink(path)) return false;
     final file = File(path);
     if (!await file.exists()) return false;
 
-    final content = await file.readAsString();
-    final lines = content.split('\n');
-    final truncated = maxLines != null && lines.length > maxLines
-        ? '${lines.take(maxLines).join('\n')}\n[... ${lines.length - maxLines} more lines]'
-        : content;
+    try {
+      final resolved = await file.resolveSymbolicLinks();
+      if (!isAllowedContextFilePath(resolved)) return false;
+      final stat = await file.stat();
+      if (stat.type != FileSystemEntityType.file ||
+          stat.size < 0 ||
+          stat.size > maxContextFileBytes) {
+        return false;
+      }
 
-    return add(
-      FileContext(
-        path: path,
-        fileContent: truncated,
-        language: _detectLanguage(path),
-      ),
-    );
+      final content = await file.readAsString();
+      final lines = content.split('\n');
+      final truncated = maxLines != null && lines.length > maxLines
+          ? '${lines.take(maxLines).join('\n')}\n[... ${lines.length - maxLines} more lines]'
+          : content;
+
+      return add(
+        FileContext(
+          path: path,
+          fileContent: truncated,
+          language: _detectLanguage(path),
+        ),
+      );
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Add git diff to context.
   Future<bool> addGitDiff({String? ref, bool staged = false}) async {
     try {
-      final args = staged
-          ? ['diff', '--staged']
-          : ref != null
-          ? ['diff', ref]
-          : ['diff'];
+      final List<String> args;
+      String? cleanRef;
+      if (staged) {
+        args = ['diff', '--no-ext-diff', '--staged'];
+      } else if (ref != null) {
+        if (!isSafeGitRef(ref)) return false;
+        cleanRef = ref.trim();
+        args = ['diff', '--no-ext-diff', cleanRef];
+      } else {
+        args = ['diff', '--no-ext-diff'];
+      }
 
-      final result = await Process.run('git', args);
+      final result = await Process.run(
+        'git',
+        args,
+        runInShell: false,
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+          null,
+          const <String, String>{'GIT_TERMINAL_PROMPT': '0'},
+        ),
+        includeParentEnvironment: false,
+      ).timeout(const Duration(seconds: 10));
       if (result.exitCode == 0) {
         final diff = (result.stdout as String).trim();
         if (diff.isNotEmpty) {
@@ -250,8 +314,8 @@ class ContextBuilder {
               diff: diff,
               description: staged
                   ? 'staged changes'
-                  : ref != null
-                  ? 'diff vs $ref'
+                  : cleanRef != null
+                  ? 'diff vs $cleanRef'
                   : 'unstaged changes',
             ),
           );
@@ -282,7 +346,7 @@ class ContextBuilder {
     if (!await dir.exists()) return;
 
     try {
-      final items = await dir.list().toList();
+      final items = await dir.list(followLinks: false).toList();
       items.sort((a, b) {
         // Dirs first, then files
         final aIsDir = a is Directory ? 0 : 1;
@@ -469,22 +533,39 @@ Future<Map<String, dynamic>> _detectProjectInfo(String dir) async {
   }
 
   // Check git
-  try {
-    final gitResult = await Process.run('git', [
-      'rev-parse',
-      '--show-toplevel',
-    ], workingDirectory: dir);
-    if (gitResult.exitCode == 0) {
-      info['gitRoot'] = (gitResult.stdout as String).trim();
-      final branchResult = await Process.run('git', [
-        'branch',
-        '--show-current',
-      ], workingDirectory: dir);
-      if (branchResult.exitCode == 0) {
-        info['gitBranch'] = (branchResult.stdout as String).trim();
+  if (dir.isNotEmpty &&
+      !dir.contains('\x00') &&
+      !dir.startsWith('//') &&
+      !dir.startsWith(r'\\')) {
+    try {
+      final gitEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(
+        null,
+        const <String, String>{'GIT_TERMINAL_PROMPT': '0'},
+      );
+      final gitResult = await Process.run(
+        'git',
+        ['rev-parse', '--show-toplevel'],
+        workingDirectory: dir,
+        runInShell: false,
+        environment: gitEnv,
+        includeParentEnvironment: false,
+      ).timeout(const Duration(seconds: 5));
+      if (gitResult.exitCode == 0) {
+        info['gitRoot'] = (gitResult.stdout as String).trim();
+        final branchResult = await Process.run(
+          'git',
+          ['branch', '--show-current'],
+          workingDirectory: dir,
+          runInShell: false,
+          environment: gitEnv,
+          includeParentEnvironment: false,
+        ).timeout(const Duration(seconds: 5));
+        if (branchResult.exitCode == 0) {
+          info['gitBranch'] = (branchResult.stdout as String).trim();
+        }
       }
-    }
-  } catch (_) {}
+    } catch (_) {}
+  }
 
   return info;
 }

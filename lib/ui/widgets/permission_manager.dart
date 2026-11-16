@@ -123,10 +123,10 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
   void _showAddRuleDialog() {
     showDialog(
       context: context,
-      builder: (ctx) => _RuleEditorDialog(
+      builder: (_) => _RuleEditorDialog(
         onSave: (rule) {
           widget.onAddRule(rule);
-          Navigator.pop(ctx);
+          Sint.pop();
         },
       ),
     );
@@ -135,11 +135,11 @@ class _PermissionManagerWidgetState extends State<PermissionManagerWidget> {
   void _showEditRuleDialog(int index, PermissionRuleDisplay rule) {
     showDialog(
       context: context,
-      builder: (ctx) => _RuleEditorDialog(
+      builder: (_) => _RuleEditorDialog(
         existingRule: rule,
         onSave: (updated) {
           widget.onEditRule(index, updated);
-          Navigator.pop(ctx);
+          Sint.pop();
         },
       ),
     );
@@ -600,7 +600,7 @@ class _RuleEditorDialogState extends State<_RuleEditorDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Sint.pop(),
           child: Text(NeomageTranslationConstants.cancel.tr),
         ),
         ElevatedButton(

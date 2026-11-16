@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 // ── Enums ──────────────────────────────────────────────────────────────────
 
@@ -150,6 +151,10 @@ class RemoteSettingsConfig {
 /// Manages remote settings: fetching, caching, local overrides, and
 /// change notification.
 class RemoteSettingsService {
+  static const int maxResponseBytes = 2 * 1024 * 1024;
+  static const int maxRemoteKeys = 1000;
+  static const Duration requestTimeout = Duration(seconds: 15);
+
   final RemoteSettingsConfig config;
 
   /// In-memory cache of remote settings keyed by setting key.
@@ -182,52 +187,112 @@ class RemoteSettingsService {
       return Map.unmodifiable(_remote);
     }
 
+    final endpointUri = Uri.tryParse(config.endpoint.trim());
+    if (!NeomageNetworkGuard.isSafeEndpointUri(endpointUri)) {
+      if (config.fallbackToLocal) return _loadFromCache();
+      throw const RemoteSettingsException('Unsafe remote settings endpoint');
+    }
+
     try {
-      _httpClient ??= HttpClient();
-      final request = await _httpClient!.getUrl(Uri.parse(config.endpoint));
-      final response = await request.close();
+      _httpClient ??= HttpClient()..connectionTimeout = requestTimeout;
+      final request = await _httpClient!
+          .getUrl(endpointUri!)
+          .timeout(requestTimeout);
+      request.followRedirects = false;
+      final response = await request.close().timeout(requestTimeout);
 
       if (response.statusCode != 200) {
-        if (config.fallbackToLocal) return _loadFromCache();
+        await response.drain<void>();
+        if (config.fallbackToLocal) return await _loadFromCache();
         throw RemoteSettingsException(
           'Fetch failed with status ${response.statusCode}',
         );
       }
 
-      final body = await response.transform(utf8.decoder).join();
-      final decoded = json.decode(body) as Map<String, dynamic>;
+      final buffer = BytesBuilder(copy: false);
+      await for (final chunk in response.timeout(requestTimeout)) {
+        if (buffer.length + chunk.length > maxResponseBytes) {
+          throw const RemoteSettingsException(
+            'Remote settings payload exceeds 2 MiB',
+          );
+        }
+        buffer.add(chunk);
+      }
+      final body = utf8.decode(buffer.takeBytes(), allowMalformed: true);
+      final decoded = json.decode(body);
+      if (decoded is! Map<String, dynamic>) {
+        if (config.fallbackToLocal) return await _loadFromCache();
+        throw const RemoteSettingsException('Invalid settings JSON object');
+      }
       _applyPayload(decoded);
       await _saveToCache();
       _changesController.add(Map.unmodifiable(_remote));
       return Map.unmodifiable(_remote);
     } on SocketException {
-      if (config.fallbackToLocal) return _loadFromCache();
+      if (config.fallbackToLocal) return await _loadFromCache();
       rethrow;
+    } on TimeoutException {
+      if (config.fallbackToLocal) return await _loadFromCache();
+      throw const RemoteSettingsException('Remote settings request timed out');
     }
+  }
+
+  static const Set<String> _forbiddenKeys = <String>{
+    '__proto__',
+    'constructor',
+    'prototype',
+  };
+
+  static bool isValidSettingKey(String key) {
+    final trimmed = key.trim();
+    if (trimmed.isEmpty || trimmed.length > 256) return false;
+    if (_forbiddenKeys.contains(trimmed)) return false;
+    if (RegExp(r'[\x00-\x1F\x7F]').hasMatch(trimmed)) return false;
+    return true;
   }
 
   // ── Getters ───────────────────────────────────────────────────────────
 
   /// Get a typed setting value.  Returns `null` if not found.
+  ///
+  /// Non-overridable managed settings (`overridable == false`) always win over
+  /// any local override.
   T? get<T>(String key) {
-    // Local override takes precedence.
+    final remote = _remote[key];
+    if (remote != null && !remote.overridable) {
+      final rv = remote.value;
+      return rv is T ? rv : null;
+    }
+    // Local override takes precedence only when remote allows overrides.
     if (_overrides.containsKey(key)) {
       final v = _overrides[key];
       return v is T ? v : null;
     }
-    final remote = _remote[key];
     if (remote == null) return null;
     final v = remote.value;
     return v is T ? v : null;
   }
 
-  /// Whether [key] has a local override.
-  bool isOverridden(String key) => _overrides.containsKey(key);
+  /// Whether [key] has an active local override.
+  bool isOverridden(String key) {
+    final remote = _remote[key];
+    if (remote != null && !remote.overridable) return false;
+    return _overrides.containsKey(key);
+  }
 
   /// Get the effective value with full source information.
   SettingValue getEffective(String key) {
     final remote = _remote[key];
     final localVal = _overrides[key];
+
+    if (remote != null && !remote.overridable) {
+      return SettingValue(
+        value: remote.value,
+        source: SettingValueSource.remote,
+        remoteValue: remote.value,
+        localOverride: localVal,
+      );
+    }
 
     if (localVal != null) {
       return SettingValue(
@@ -255,8 +320,17 @@ class RemoteSettingsService {
   // ── Overrides ─────────────────────────────────────────────────────────
 
   /// Set a local override for [key].  The override takes precedence over the
-  /// remote value until removed.
+  /// remote value until removed, unless the remote setting is non-overridable.
   void setLocalOverride(String key, dynamic value) {
+    if (!isValidSettingKey(key)) {
+      throw ArgumentError.value(key, 'key', 'Invalid or forbidden setting key');
+    }
+    final remote = _remote[key];
+    if (remote != null && !remote.overridable) {
+      throw StateError(
+        'Cannot override non-overridable managed setting "$key"',
+      );
+    }
     _overrides[key] = value;
   }
 
@@ -282,11 +356,23 @@ class RemoteSettingsService {
 
   // ── Cache ─────────────────────────────────────────────────────────────
 
+  bool _isSafeCacheDir() {
+    final dir = config.cacheDir;
+    if (dir.trim().isEmpty ||
+        dir.contains('\x00') ||
+        dir.startsWith('//') ||
+        dir.startsWith(r'\\')) {
+      return false;
+    }
+    return !NeomageNetworkGuard.isProtectedSystemOrCredentialPath(dir);
+  }
+
   /// Clear the in-memory and on-disk cache.
   Future<void> clearCache() async {
     _remote.clear();
+    if (!_isSafeCacheDir()) return;
     final file = File(_cachePath);
-    if (await file.exists()) {
+    if (await file.exists() && !await FileSystemEntity.isLink(_cachePath)) {
       await file.delete();
     }
   }
@@ -296,7 +382,10 @@ class RemoteSettingsService {
   /// Merge a map of settings into the local config (e.g. from a push
   /// notification).
   void applySettings(Map<String, RemoteSetting> settings) {
-    _remote.addAll(settings);
+    for (final entry in settings.entries) {
+      if (!isValidSettingKey(entry.key)) continue;
+      _remote[entry.key] = entry.value;
+    }
     _changesController.add(Map.unmodifiable(_remote));
   }
 
@@ -308,11 +397,13 @@ class RemoteSettingsService {
     return allKeys.map((key) {
       final remote = _remote[key];
       final local = _overrides[key];
+      final effectiveOverride =
+          local != null && remote != null && remote.overridable;
       return RemoteVsLocal(
         key: key,
         remoteValue: remote?.value,
         localValue: local,
-        isOverridden: local != null && remote != null,
+        isOverridden: effectiveOverride,
         isRemoteOnly: remote != null && local == null,
         isLocalOnly: remote == null && local != null,
       );
@@ -349,7 +440,8 @@ class RemoteSettingsService {
     final expiry = now.add(config.refreshInterval);
 
     _remote.clear();
-    for (final entry in payload.entries) {
+    for (final entry in payload.entries.take(maxRemoteKeys)) {
+      if (!isValidSettingKey(entry.key)) continue;
       final value = entry.value;
       final overridable = value is Map && value['overridable'] == false
           ? false
@@ -370,9 +462,12 @@ class RemoteSettingsService {
   }
 
   Future<void> _saveToCache() async {
+    if (!_isSafeCacheDir()) return;
     try {
       final dir = Directory(config.cacheDir);
+      if (await FileSystemEntity.isLink(dir.path)) return;
       if (!await dir.exists()) await dir.create(recursive: true);
+      if (await FileSystemEntity.isLink(_cachePath)) return;
 
       final data = {for (final e in _remote.entries) e.key: e.value.toJson()};
       await File(_cachePath).writeAsString(json.encode(data));
@@ -382,17 +477,25 @@ class RemoteSettingsService {
   }
 
   Future<Map<String, RemoteSetting>> _loadFromCache() async {
+    if (!_isSafeCacheDir()) return {};
     try {
       final file = File(_cachePath);
-      if (!await file.exists()) return {};
+      if (!await file.exists() || await FileSystemEntity.isLink(file.path)) {
+        return {};
+      }
+      if (await file.length() > maxResponseBytes) return {};
 
       final raw = await file.readAsString();
-      final decoded = json.decode(raw) as Map<String, dynamic>;
+      final decoded = json.decode(raw);
+      if (decoded is! Map<String, dynamic>) return {};
       _remote.clear();
-      for (final entry in decoded.entries) {
-        _remote[entry.key] = RemoteSetting.fromJson(
-          entry.value as Map<String, dynamic>,
-        );
+      for (final entry in decoded.entries.take(maxRemoteKeys)) {
+        if (!isValidSettingKey(entry.key)) continue;
+        if (entry.value is Map) {
+          _remote[entry.key] = RemoteSetting.fromJson(
+            Map<String, dynamic>.from(entry.value as Map),
+          );
+        }
       }
       return Map.unmodifiable(_remote);
     } catch (_) {

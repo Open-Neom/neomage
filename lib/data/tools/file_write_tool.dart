@@ -3,6 +3,7 @@ import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
+import '../../utils/security/neomage_network_guard.dart';
 import 'tool.dart';
 
 /// Input parameters for the FileWriteTool.
@@ -23,6 +24,8 @@ class FileWriteInput {
     final errors = <String>[];
     if (filePath.isEmpty) {
       errors.add('Missing required parameter: file_path');
+    } else if (filePath.contains('\x00')) {
+      errors.add('Invalid NUL byte in file_path');
     } else if (!p.isAbsolute(filePath)) {
       errors.add('file_path must be an absolute path, got: $filePath');
     }
@@ -54,21 +57,6 @@ class FileWriteOutput {
     if (backupPath != null) 'backupPath': backupPath,
   };
 }
-
-/// Paths that should not be written to for safety.
-const _protectedPaths = <String>[
-  '/etc',
-  '/usr',
-  '/bin',
-  '/sbin',
-  '/boot',
-  '/dev',
-  '/proc',
-  '/sys',
-  '/var/run',
-  '/System',
-  '/Library/System',
-];
 
 /// Write file contents — full port of neomage/src/tools/FileWriteTool.
 ///
@@ -186,14 +174,18 @@ class FileWriteTool extends Tool with FileWriteToolMixin {
       );
     }
 
-    // Check protected paths
+    // Check protected paths on raw normalized path AND symlink-resolved path
     final protectedCheck = _checkProtectedPath(filePath);
     if (protectedCheck != null) {
       return ToolResult.error(protectedCheck);
     }
 
-    // Resolve symlinks for the target path
+    // Resolve symlinks for the target path AND existing ancestor directories
     final resolvedPath = await _resolveSymlink(filePath);
+    final resolvedProtectedCheck = _checkProtectedPath(resolvedPath);
+    if (resolvedProtectedCheck != null) {
+      return ToolResult.error(resolvedProtectedCheck);
+    }
 
     final file = File(resolvedPath);
     final isNewFile = !await file.exists();
@@ -282,15 +274,10 @@ class FileWriteTool extends Tool with FileWriteToolMixin {
     }
   }
 
-  /// Check if a path is in a protected system directory.
+  /// Check if a path is in a protected system or credential directory.
   String? _checkProtectedPath(String filePath) {
     final normalized = p.normalize(filePath);
-    for (final protected in _protectedPaths) {
-      if (normalized.startsWith(protected) || normalized == protected) {
-        return 'Cannot write to protected system path: $protected';
-      }
-    }
-    return null;
+    return NeomageNetworkGuard.checkProtectedFilesystemPath(normalized);
   }
 
   /// Check if a directory is writable.
@@ -305,15 +292,30 @@ class FileWriteTool extends Tool with FileWriteToolMixin {
     }
   }
 
-  /// Resolve a symlink to its target path.
+  /// Resolve a symlink (and any symlinked ancestor directory) to its real
+  /// filesystem path, even when leaf segments do not exist yet.
   Future<String> _resolveSymlink(String filePath) async {
+    final normalized = p.normalize(filePath);
     try {
-      final link = Link(filePath);
-      if (await link.exists()) {
-        return await link.resolveSymbolicLinks();
+      if (await FileSystemEntity.type(normalized) !=
+          FileSystemEntityType.notFound) {
+        return await File(normalized).resolveSymbolicLinks();
+      }
+      // Walk up until an existing ancestor is found, resolve its symlinks,
+      // and re-attach the non-existent tail segments.
+      var current = normalized;
+      final tail = <String>[];
+      while (current != p.dirname(current)) {
+        if (await Directory(current).exists() ||
+            await FileSystemEntity.isLink(current)) {
+          final realAncestor = await Directory(current).resolveSymbolicLinks();
+          return p.normalize(p.joinAll([realAncestor, ...tail.reversed]));
+        }
+        tail.add(p.basename(current));
+        current = p.dirname(current);
       }
     } catch (_) {}
-    return filePath;
+    return normalized;
   }
 
   /// Create a backup of an existing file.

@@ -8,6 +8,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 /// Available feature gates that can be toggled per plan or organization.
 enum FeatureGate {
@@ -268,29 +269,57 @@ class FeatureGateService {
     }
   }
 
+  static const int _maxGateResponseBytes = 2 * 1024 * 1024; // 2 MiB
+
   /// Loads gate configuration from a remote [endpoint] via HTTP GET.
   ///
   /// Expects a JSON response matching [FeatureGateConfig.fromJson] format.
   Future<FeatureGateConfig> loadFromRemote(String endpoint) async {
-    final client = HttpClient();
+    final uri = Uri.tryParse(endpoint.trim());
+    if (uri == null ||
+        !NeomageNetworkGuard.isSafeEndpointUri(
+          uri,
+          allowLoopbackHttp: true,
+          allowPrivateLanHttp: false,
+        )) {
+      throw ArgumentError('Rejected unsafe feature-gate endpoint: $endpoint');
+    }
+
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 10);
     try {
-      final request = await client.getUrl(Uri.parse(endpoint));
+      final request = await client.getUrl(uri);
+      request.followRedirects = false;
+      request.maxRedirects = 0;
       if (_organizationId != null) {
-        request.headers.set('X-Organization-Id', _organizationId!);
+        request.headers.set(
+          'X-Organization-Id',
+          NeomageNetworkGuard.sanitizeHeaderValue(_organizationId!),
+        );
       }
-      final response = await request.close();
+      final response = await request.close().timeout(
+        const Duration(seconds: 15),
+      );
       if (response.statusCode != 200) {
         throw HttpException(
           'Failed to load feature gates: HTTP ${response.statusCode}',
+          uri: uri,
         );
       }
-      final body = await response.transform(utf8.decoder).join();
+      final bodyBytes = BytesBuilder(copy: false);
+      await for (final chunk in response) {
+        if (bodyBytes.length + chunk.length > _maxGateResponseBytes) {
+          throw StateError('Feature gate response exceeded 2 MiB limit');
+        }
+        bodyBytes.add(chunk);
+      }
+      final body = utf8.decode(bodyBytes.takeBytes(), allowMalformed: true);
       final json = jsonDecode(body) as Map<String, dynamic>;
       final config = FeatureGateConfig.fromJson(json);
       _applyConfig(config);
       return config;
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 
@@ -298,11 +327,22 @@ class FeatureGateService {
   ///
   /// Returns the loaded config, or evaluates a fresh one if no file exists.
   Future<FeatureGateConfig> loadFromLocal() async {
-    if (_configPath == null) {
+    if (_configPath == null ||
+        _configPath.isEmpty ||
+        _configPath.contains('\x00') ||
+        _configPath.startsWith('//') ||
+        _configPath.startsWith(r'\\')) {
+      return evaluateForPlan(_plan);
+    }
+    if (await FileSystemEntity.isLink(_configPath)) {
       return evaluateForPlan(_plan);
     }
     final file = File(_configPath);
     if (!await file.exists()) {
+      return evaluateForPlan(_plan);
+    }
+    final stat = await file.stat();
+    if (stat.size > _maxGateResponseBytes) {
       return evaluateForPlan(_plan);
     }
     final content = await file.readAsString();
@@ -314,7 +354,19 @@ class FeatureGateService {
 
   /// Persists the current gate overrides to the local config file.
   Future<void> saveToLocal() async {
-    if (_configPath == null) return;
+    if (_configPath == null ||
+        _configPath.isEmpty ||
+        _configPath.contains('\x00') ||
+        _configPath.startsWith('//') ||
+        _configPath.startsWith(r'\\')) {
+      return;
+    }
+    if (await FileSystemEntity.isLink(_configPath)) {
+      throw FileSystemException(
+        'Refusing to write feature gates through symbolic link',
+        _configPath,
+      );
+    }
     final config = FeatureGateConfig(
       gates: {for (final gate in FeatureGate.values) gate: isEnabled(gate)},
       organizationId: _organizationId,

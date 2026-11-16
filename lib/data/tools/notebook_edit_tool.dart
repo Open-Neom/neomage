@@ -6,6 +6,7 @@ import 'package:neomage/core/platform/neomage_io.dart';
 
 import 'package:path/path.dart' as p;
 
+import '../../utils/security/neomage_network_guard.dart';
 import 'tool.dart';
 
 // ─── Input ───────────────────────────────────────────────────────────────────
@@ -57,6 +58,8 @@ class NotebookEditInput {
 
     if (notebookPath.isEmpty) {
       errors.add('Missing required parameter: notebook_path');
+    } else if (notebookPath.contains('\x00')) {
+      errors.add('Invalid NUL byte in notebook_path');
     } else if (!p.isAbsolute(notebookPath)) {
       errors.add('notebook_path must be an absolute path');
     } else if (!notebookPath.endsWith('.ipynb')) {
@@ -229,7 +232,29 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
     if (!validation.isValid) return ToolResult.error(validation.error!);
 
     final parsed = NotebookEditInput.fromMap(input);
-    final file = File(parsed.notebookPath);
+    final rawProtected = NeomageNetworkGuard.checkProtectedFilesystemPath(
+      p.normalize(parsed.notebookPath),
+    );
+    if (rawProtected != null) {
+      return ToolResult.error(rawProtected);
+    }
+
+    var resolvedPath = p.normalize(parsed.notebookPath);
+    try {
+      if (await FileSystemEntity.type(resolvedPath) !=
+          FileSystemEntityType.notFound) {
+        resolvedPath = await File(resolvedPath).resolveSymbolicLinks();
+      }
+    } catch (_) {}
+
+    final resolvedProtected = NeomageNetworkGuard.checkProtectedFilesystemPath(
+      p.normalize(resolvedPath),
+    );
+    if (resolvedProtected != null) {
+      return ToolResult.error(resolvedProtected);
+    }
+
+    final file = File(resolvedPath);
 
     // Check existence.
     if (!await file.exists()) {
@@ -284,10 +309,20 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
         return ToolResult.error(result.message);
       }
 
-      // Write updated notebook, preserving metadata and kernel info.
+      // Write updated notebook atomically, preserving metadata and kernel info.
       notebook['cells'] = cells;
       final encoder = const JsonEncoder.withIndent(' ');
-      await file.writeAsString(encoder.convert(notebook));
+      final serialized = encoder.convert(notebook);
+      final tmpFile = File(
+        '${file.path}.tmp.${DateTime.now().microsecondsSinceEpoch}',
+      );
+      try {
+        await tmpFile.writeAsString(serialized, flush: true);
+        await tmpFile.rename(file.path);
+      } catch (_) {
+        if (await tmpFile.exists()) await tmpFile.delete();
+        rethrow;
+      }
 
       return ToolResult.success(
         result.toString(),

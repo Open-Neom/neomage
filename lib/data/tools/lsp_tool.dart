@@ -5,6 +5,8 @@
 
 import 'dart:async';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+import 'package:path/path.dart' as p;
 
 import 'tool.dart';
 
@@ -18,6 +20,12 @@ const String lspToolDescription =
 
 /// Maximum file size accepted for LSP analysis (10 MB).
 const int maxLspFileSizeBytes = 10000000;
+
+/// Maximum recursion depth for hierarchical LSP symbols.
+const int maxLspSymbolDepth = 32;
+
+/// Default LSP RPC timeout.
+const Duration defaultLspRequestTimeout = Duration(seconds: 30);
 
 // ─── LSP Operations ──────────────────────────────────────────────────────────
 
@@ -209,23 +217,29 @@ class LspDocumentSymbol {
     this.children = const [],
   });
 
-  factory LspDocumentSymbol.fromJson(Map<String, dynamic> json) =>
-      LspDocumentSymbol(
-        name: json['name'] as String,
-        kind: json['kind'] as int,
-        detail: json['detail'] as String?,
-        range: LspRange.fromJson(json['range'] as Map<String, dynamic>),
-        selectionRange: LspRange.fromJson(
-          json['selectionRange'] as Map<String, dynamic>,
-        ),
-        children:
-            (json['children'] as List<dynamic>?)
-                ?.map(
-                  (e) => LspDocumentSymbol.fromJson(e as Map<String, dynamic>),
-                )
-                .toList() ??
-            const [],
-      );
+  factory LspDocumentSymbol.fromJson(
+    Map<String, dynamic> json, {
+    int depth = 0,
+  }) => LspDocumentSymbol(
+    name: json['name'] as String,
+    kind: json['kind'] as int,
+    detail: json['detail'] as String?,
+    range: LspRange.fromJson(json['range'] as Map<String, dynamic>),
+    selectionRange: LspRange.fromJson(
+      json['selectionRange'] as Map<String, dynamic>,
+    ),
+    children: depth >= maxLspSymbolDepth
+        ? const []
+        : (json['children'] as List<dynamic>?)
+                  ?.map(
+                    (e) => LspDocumentSymbol.fromJson(
+                      e as Map<String, dynamic>,
+                      depth: depth + 1,
+                    ),
+                  )
+                  .toList() ??
+              const [],
+  );
 }
 
 /// LSP SymbolInformation (flat).
@@ -559,8 +573,10 @@ List<String> _formatDocumentSymbolNode(
   line += ' - Line ${symbol.range.start.line + 1}';
   lines.add(line);
 
-  for (final child in symbol.children) {
-    lines.addAll(_formatDocumentSymbolNode(child, indent: indent + 1));
+  if (indent < maxLspSymbolDepth) {
+    for (final child in symbol.children) {
+      lines.addAll(_formatDocumentSymbolNode(child, indent: indent + 1));
+    }
   }
   return lines;
 }
@@ -796,14 +812,40 @@ class LspTool extends Tool with ReadOnlyToolMixin {
 
   /// Expand a file path, resolving ~ and relative paths.
   String _expandPath(String filePath) {
-    if (filePath.startsWith('~/')) {
+    if (filePath == '~' || filePath.startsWith('~/')) {
       final home =
           Platform.environment['HOME'] ??
           Platform.environment['USERPROFILE'] ??
           '';
-      return '$home${filePath.substring(1)}';
+      return p.join(
+        home,
+        filePath.substring(filePath.startsWith('~/') ? 2 : 1),
+      );
+    }
+    if (!p.isAbsolute(filePath)) {
+      return p.join(Directory.current.path, filePath);
     }
     return filePath;
+  }
+
+  String? _validateLspPathSecurity(String rawPath) {
+    if (rawPath.contains('\x00')) {
+      return 'Invalid NUL byte in filePath';
+    }
+    if (rawPath.startsWith(r'\\') || rawPath.startsWith('//')) {
+      return 'UNC network paths are blocked to prevent NTLM credential leaks';
+    }
+    final absolutePath = _expandPath(rawPath);
+    if (absolutePath.startsWith(r'\\') || absolutePath.startsWith('//')) {
+      return 'UNC network paths are blocked to prevent NTLM credential leaks';
+    }
+    final protectedReason = NeomageNetworkGuard.checkProtectedFilesystemPath(
+      p.normalize(absolutePath),
+    );
+    if (protectedReason != null) {
+      return protectedReason;
+    }
+    return null;
   }
 
   @override
@@ -820,14 +862,14 @@ class LspTool extends Tool with ReadOnlyToolMixin {
       return const ValidationResult.invalid('filePath is required');
     }
 
-    final absolutePath = _expandPath(filePath);
-
-    // SECURITY: Skip filesystem checks for UNC paths.
-    if (absolutePath.startsWith('\\\\') || absolutePath.startsWith('//')) {
-      return const ValidationResult.valid();
+    final secError = _validateLspPathSecurity(filePath);
+    if (secError != null) {
+      return ValidationResult.invalid(secError);
     }
 
-    // Check file exists.
+    final absolutePath = _expandPath(filePath);
+
+    // Check file exists and verify resolved symlink target is not protected.
     final file = File(absolutePath);
     if (!file.existsSync()) {
       return ValidationResult.invalid('File does not exist: $filePath');
@@ -836,6 +878,16 @@ class LspTool extends Tool with ReadOnlyToolMixin {
     if (!file.statSync().type.toString().contains('file')) {
       return ValidationResult.invalid('Path is not a file: $filePath');
     }
+
+    try {
+      final resolved = file.resolveSymbolicLinksSync();
+      final resolvedReason = NeomageNetworkGuard.checkProtectedFilesystemPath(
+        p.normalize(resolved),
+      );
+      if (resolvedReason != null) {
+        return ValidationResult.invalid(resolvedReason);
+      }
+    } catch (_) {}
 
     // Validate line/character are positive integers.
     final line = input['line'];
@@ -855,6 +907,24 @@ class LspTool extends Tool with ReadOnlyToolMixin {
 
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
+    final opStr = input['operation'] as String?;
+    if (opStr == null || !isValidLspOperation(opStr)) {
+      return ToolResult.error('Invalid operation: $opStr');
+    }
+    final rawFilePath = input['filePath'] as String?;
+    if (rawFilePath == null || rawFilePath.isEmpty) {
+      return ToolResult.error('filePath is required');
+    }
+    final secError = _validateLspPathSecurity(rawFilePath);
+    if (secError != null) {
+      return ToolResult.error(secError);
+    }
+    final rawLine = input['line'];
+    final rawChar = input['character'];
+    if (rawLine is! int || rawLine < 1 || rawChar is! int || rawChar < 1) {
+      return ToolResult.error('line and character must be positive integers');
+    }
+
     final parsed = LspToolInput.fromJson(input);
     final absolutePath = _expandPath(parsed.filePath);
 
@@ -871,14 +941,25 @@ class LspTool extends Tool with ReadOnlyToolMixin {
       );
     }
 
-    if (manager.initStatus == LspInitStatus.pending) {
-      await manager.waitForInitialization();
-    }
-
     try {
-      // Ensure file is open.
+      if (manager.initStatus == LspInitStatus.pending) {
+        await manager.waitForInitialization().timeout(defaultLspRequestTimeout);
+      }
+
+      // Ensure file is open (after checking symlink target safety).
       if (!manager.isFileOpen(absolutePath)) {
         final file = File(absolutePath);
+        try {
+          final resolved = await file.resolveSymbolicLinks();
+          final resolvedReason =
+              NeomageNetworkGuard.checkProtectedFilesystemPath(
+                p.normalize(resolved),
+              );
+          if (resolvedReason != null) {
+            return ToolResult.error(resolvedReason);
+          }
+        } catch (_) {}
+
         final stat = await file.stat();
         if (stat.size > maxLspFileSizeBytes) {
           final sizeMb = (stat.size / 1000000).ceil();
@@ -893,7 +974,9 @@ class LspTool extends Tool with ReadOnlyToolMixin {
           );
         }
         final content = await file.readAsString();
-        await manager.openFile(absolutePath, content);
+        await manager
+            .openFile(absolutePath, content)
+            .timeout(defaultLspRequestTimeout);
       }
 
       // Build params.
@@ -903,7 +986,9 @@ class LspTool extends Tool with ReadOnlyToolMixin {
       final params = _buildParams(parsed.operation, uri, position);
 
       // Send request.
-      var result = await manager.sendRequest(absolutePath, method, params);
+      var result = await manager
+          .sendRequest(absolutePath, method, params)
+          .timeout(defaultLspRequestTimeout);
 
       if (result == null) {
         final ext = absolutePath.split('.').last;
@@ -937,9 +1022,9 @@ class LspTool extends Tool with ReadOnlyToolMixin {
             ? 'callHierarchy/incomingCalls'
             : 'callHierarchy/outgoingCalls';
 
-        result = await manager.sendRequest(absolutePath, callMethod, {
-          'item': result[0],
-        });
+        result = await manager
+            .sendRequest(absolutePath, callMethod, {'item': result[0]})
+            .timeout(defaultLspRequestTimeout);
       }
 
       // Format result string.

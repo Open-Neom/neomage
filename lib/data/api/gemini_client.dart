@@ -2,14 +2,35 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:sint_sentinel/sint_sentinel.dart';
+import 'package:sint_sentinel/sint_sentinel_core.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../domain/models/message.dart';
 import '../../domain/models/tool_definition.dart';
+import '../../utils/security/neomage_network_guard.dart';
 import 'api_provider.dart';
 
 const _uuid = Uuid();
+const int _maxErrorBodyBytes = 512 * 1024;
+const int _maxResponseBytes = 16 * 1024 * 1024;
+const int _maxSseLineChars = 4 * 1024 * 1024;
+const Duration _requestTimeout = Duration(seconds: 120);
+final RegExp _safeModelNameRegex = RegExp(r'^[A-Za-z0-9._\-]{1,128}$');
+
+Future<String> _readBoundedUtf8(Stream<List<int>> stream, int maxBytes) async {
+  final chunks = <int>[];
+  await for (final chunk in stream) {
+    final remaining = maxBytes - chunks.length;
+    if (remaining <= 0) break;
+    if (chunk.length <= remaining) {
+      chunks.addAll(chunk);
+    } else {
+      chunks.addAll(chunk.sublist(0, remaining));
+      break;
+    }
+  }
+  return utf8.decode(chunks, allowMalformed: true);
+}
 
 /// Native Google Gemini API client with SSE streaming support.
 ///
@@ -126,6 +147,50 @@ class GeminiClient extends ApiProvider {
   ///
   /// These are translated into the app's [StreamEvent] types so the rest of
   /// the codebase can consume them identically to Anthropic or OpenAI streams.
+  Uri _resolveGeminiEndpoint(String action, {bool sse = false}) {
+    final base = config.baseUrl.replaceFirst(RegExp(r'/+$'), '');
+    final baseUri = Uri.tryParse(base);
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      baseUri,
+      allowLoopbackInsecure: false,
+      secureSchemes: const <String>{'https'},
+      insecureSchemes: const <String>{},
+    )) {
+      throw ArgumentError('Blocked unsafe Gemini baseUrl: $base');
+    }
+    final model = config.model.trim();
+    if (!_safeModelNameRegex.hasMatch(model)) {
+      throw ArgumentError('Blocked unsafe Gemini model identifier');
+    }
+    final raw = '$base/models/$model:$action${sse ? '?alt=sse' : ''}';
+    final uri = Uri.tryParse(raw);
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      uri,
+      allowLoopbackInsecure: false,
+      secureSchemes: const <String>{'https'},
+      insecureSchemes: const <String>{},
+    )) {
+      throw ArgumentError('Blocked unsafe Gemini endpoint URI');
+    }
+    return uri!;
+  }
+
+  Map<String, String> _buildSafeHeaders() {
+    final cleanKey = NeomageNetworkGuard.sanitizeHeaderValue(
+      config.apiKey ?? '',
+    );
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      if (cleanKey.isNotEmpty) 'x-goog-api-key': cleanKey,
+    };
+    for (final entry in config.extraHeaders.entries) {
+      final k = entry.key.trim();
+      if (!NeomageNetworkGuard.isValidHeaderName(k)) continue;
+      headers[k] = NeomageNetworkGuard.sanitizeHeaderValue(entry.value);
+    }
+    return headers;
+  }
+
   @override
   Stream<StreamEvent> createMessageStream({
     required List<Message> messages,
@@ -133,6 +198,14 @@ class GeminiClient extends ApiProvider {
     List<ToolDefinition> tools = const [],
     int? maxTokens,
   }) async* {
+    final Uri uri;
+    try {
+      uri = _resolveGeminiEndpoint('streamGenerateContent', sse: true);
+    } catch (e) {
+      yield ErrorEvent(message: e.toString(), type: 'config_error');
+      return;
+    }
+
     final body = _buildRequestBody(
       messages: messages,
       systemPrompt: systemPrompt,
@@ -140,138 +213,149 @@ class GeminiClient extends ApiProvider {
       maxTokens: maxTokens,
     );
 
-    final url = '${config.baseUrl}/models/${config.model}'
-        ':streamGenerateContent?alt=sse&key=${config.apiKey}';
-
-    final request = http.Request('POST', Uri.parse(url));
-    request.headers.addAll({
-      'Content-Type': 'application/json',
-      ...config.extraHeaders,
-    });
+    final request = http.Request('POST', uri)..followRedirects = false;
+    request.headers.addAll(_buildSafeHeaders());
     request.body = jsonEncode(body);
 
-    _log.d('Gemini stream request to ${config.model}');
+    _log.d(
+      'Gemini stream request to ${config.model} '
+      '(key=${NeomageNetworkGuard.maskApiKey(config.apiKey)})',
+    );
 
     final client = http.Client();
-    http.StreamedResponse response;
     try {
-      response = await client.send(request);
-    } catch (e) {
-      client.close();
-      _log.e('Gemini connection error', error: e);
-      yield ErrorEvent(message: 'Gemini connection error: $e', type: 'network_error');
-      return;
-    }
-
-    if (response.statusCode != 200) {
-      final errorBody = await response.stream.bytesToString();
-      client.close();
-      _log.e('Gemini API error ${response.statusCode}: $errorBody');
-      yield ErrorEvent(
-        message: 'Gemini API error ${response.statusCode}: $errorBody',
-        type: 'api_error',
-      );
-      return;
-    }
-
-    // Emit synthetic message-start event.
-    final messageId = 'msg_${_uuid.v4()}';
-    yield MessageStartEvent(messageId: messageId, model: config.model);
-
-    var blockIndex = 0;
-    var hasStartedText = false;
-
-    await for (final event in _parseGeminiSSE(response.stream)) {
-      final candidates = event['candidates'] as List?;
-      if (candidates == null || candidates.isEmpty) {
-        // Check for top-level errors.
-        final error = event['error'] as Map<String, dynamic>?;
-        if (error != null) {
-          yield ErrorEvent(
-            message: error['message'] as String? ?? 'Unknown Gemini error',
-            type: 'api_error',
-          );
-        }
-        continue;
+      http.StreamedResponse response;
+      try {
+        response = await SintSentinel.guard(
+          () => client.send(request).timeout(_requestTimeout),
+          tag: 'GeminiClient.createMessageStream',
+        );
+      } catch (e) {
+        final safeErr = NeomageNetworkGuard.redactTransportError(e.toString());
+        _log.e('Gemini connection error: $safeErr');
+        yield ErrorEvent(
+          message: 'Gemini connection error: $safeErr',
+          type: 'network_error',
+        );
+        return;
       }
 
-      final candidate = candidates[0] as Map<String, dynamic>;
-      final content = candidate['content'] as Map<String, dynamic>?;
-      final parts = content?['parts'] as List?;
+      if (response.statusCode != 200) {
+        final rawErr = await _readBoundedUtf8(
+          response.stream,
+          _maxErrorBodyBytes,
+        );
+        final safeErr = NeomageNetworkGuard.sanitizeApiErrorBody(rawErr);
+        _log.e('Gemini API error ${response.statusCode}: $safeErr');
+        yield ErrorEvent(
+          message: 'Gemini API error ${response.statusCode}: $safeErr',
+          type: 'api_error',
+        );
+        return;
+      }
 
-      if (parts != null) {
-        for (final part in parts) {
-          final partMap = part as Map<String, dynamic>;
+      // Emit synthetic message-start event.
+      final messageId = 'msg_${_uuid.v4()}';
+      yield MessageStartEvent(messageId: messageId, model: config.model);
 
-          // Handle text content.
-          final text = partMap['text'] as String?;
-          if (text != null && text.isNotEmpty) {
-            if (!hasStartedText) {
+      var blockIndex = 0;
+      var hasStartedText = false;
+
+      await for (final event in _parseGeminiSSE(response.stream)) {
+        final candidates = event['candidates'] as List?;
+        if (candidates == null || candidates.isEmpty) {
+          // Check for top-level errors.
+          final error = event['error'];
+          if (error is Map<String, dynamic>) {
+            final safeMsg = NeomageNetworkGuard.redactTransportError(
+              error['message']?.toString() ?? 'Unknown Gemini error',
+            );
+            yield ErrorEvent(message: safeMsg, type: 'api_error');
+          }
+          continue;
+        }
+
+        final firstCandidate = candidates[0];
+        if (firstCandidate is! Map<String, dynamic>) continue;
+        final content = firstCandidate['content'] as Map<String, dynamic>?;
+        final parts = content?['parts'] as List?;
+
+        if (parts != null) {
+          for (final part in parts) {
+            if (part is! Map<String, dynamic>) continue;
+
+            // Handle text content.
+            final text = part['text'] as String?;
+            if (text != null && text.isNotEmpty) {
+              if (!hasStartedText) {
+                yield ContentBlockStartEvent(
+                  index: blockIndex,
+                  block: const TextBlock(''),
+                );
+                hasStartedText = true;
+              }
+              yield ContentBlockDeltaEvent(index: blockIndex, text: text);
+            }
+
+            // Handle function calls (tool use).
+            final functionCall = part['functionCall'];
+            if (functionCall is Map<String, dynamic>) {
+              if (hasStartedText) {
+                yield ContentBlockStopEvent(index: blockIndex);
+                blockIndex++;
+                hasStartedText = false;
+              }
+
+              final name = functionCall['name'] as String? ?? '';
+              final rawArgs = functionCall['args'];
+              final args = rawArgs is Map<String, dynamic>
+                  ? rawArgs
+                  : <String, dynamic>{};
+              final toolId = 'call_${_uuid.v4()}';
+
               yield ContentBlockStartEvent(
                 index: blockIndex,
-                block: const TextBlock(''),
+                block: ToolUseBlock(id: toolId, name: name, input: args),
               );
-              hasStartedText = true;
-            }
-            yield ContentBlockDeltaEvent(index: blockIndex, text: text);
-          }
-
-          // Handle function calls (tool use).
-          final functionCall = partMap['functionCall'] as Map<String, dynamic>?;
-          if (functionCall != null) {
-            if (hasStartedText) {
+              // Emit the full arguments as a delta for consistency.
+              yield ContentBlockDeltaEvent(
+                index: blockIndex,
+                text: jsonEncode(args),
+              );
               yield ContentBlockStopEvent(index: blockIndex);
               blockIndex++;
-              hasStartedText = false;
             }
-
-            final name = functionCall['name'] as String? ?? '';
-            final args =
-                (functionCall['args'] as Map<String, dynamic>?) ?? {};
-            final toolId = 'call_${_uuid.v4()}';
-
-            yield ContentBlockStartEvent(
-              index: blockIndex,
-              block: ToolUseBlock(id: toolId, name: name, input: args),
-            );
-            // Emit the full arguments as a delta for consistency.
-            yield ContentBlockDeltaEvent(
-              index: blockIndex,
-              text: jsonEncode(args),
-            );
-            yield ContentBlockStopEvent(index: blockIndex);
-            blockIndex++;
           }
         }
-      }
 
-      // Check for finish reason.
-      final finishReason = candidate['finishReason'] as String?;
-      if (finishReason != null) {
-        if (hasStartedText) {
-          yield ContentBlockStopEvent(index: blockIndex);
-          hasStartedText = false;
+        // Check for finish reason.
+        final finishReason = firstCandidate['finishReason'] as String?;
+        if (finishReason != null) {
+          if (hasStartedText) {
+            yield ContentBlockStopEvent(index: blockIndex);
+            hasStartedText = false;
+          }
+
+          final stopReason = _parseFinishReason(finishReason);
+          final usageMetadata = event['usageMetadata'] as Map<String, dynamic>?;
+
+          yield MessageDeltaEvent(
+            stopReason: stopReason,
+            usage: usageMetadata != null
+                ? TokenUsage(
+                    inputTokens:
+                        usageMetadata['promptTokenCount'] as int? ?? 0,
+                    outputTokens:
+                        usageMetadata['candidatesTokenCount'] as int? ?? 0,
+                  )
+                : null,
+          );
+          yield const MessageStopEvent();
         }
-
-        final stopReason = _parseFinishReason(finishReason);
-        final usageMetadata = event['usageMetadata'] as Map<String, dynamic>?;
-
-        yield MessageDeltaEvent(
-          stopReason: stopReason,
-          usage: usageMetadata != null
-              ? TokenUsage(
-                  inputTokens:
-                      usageMetadata['promptTokenCount'] as int? ?? 0,
-                  outputTokens:
-                      usageMetadata['candidatesTokenCount'] as int? ?? 0,
-                )
-              : null,
-        );
-        yield const MessageStopEvent();
       }
+    } finally {
+      client.close();
     }
-
-    client.close();
   }
 
   // ── Non-streaming ──
@@ -284,6 +368,7 @@ class GeminiClient extends ApiProvider {
     List<ToolDefinition> tools = const [],
     int? maxTokens,
   }) async {
+    final uri = _resolveGeminiEndpoint('generateContent');
     final body = _buildRequestBody(
       messages: messages,
       systemPrompt: systemPrompt,
@@ -291,28 +376,43 @@ class GeminiClient extends ApiProvider {
       maxTokens: maxTokens,
     );
 
-    final url = '${config.baseUrl}/models/${config.model}'
-        ':generateContent?key=${config.apiKey}';
-
-    _log.d('Gemini non-streaming request to ${config.model}');
-
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {
-        'Content-Type': 'application/json',
-        ...config.extraHeaders,
-      },
-      body: jsonEncode(body),
+    _log.d(
+      'Gemini non-streaming request to ${config.model} '
+      '(key=${NeomageNetworkGuard.maskApiKey(config.apiKey)})',
     );
 
-    if (response.statusCode != 200) {
-      _log.e('Gemini API error ${response.statusCode}: ${response.body}');
-      throw Exception(
-        'Gemini API error ${response.statusCode}: ${response.body}',
-      );
-    }
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', uri)..followRedirects = false;
+      request.headers.addAll(_buildSafeHeaders());
+      request.body = jsonEncode(body);
 
-    return _parseResponse(jsonDecode(response.body) as Map<String, dynamic>);
+      final streamed = await SintSentinel.guard(
+        () => client.send(request).timeout(_requestTimeout),
+        tag: 'GeminiClient.createMessage',
+      );
+      if (streamed.statusCode != 200) {
+        final rawErr = await _readBoundedUtf8(
+          streamed.stream,
+          _maxErrorBodyBytes,
+        );
+        final safeErr = NeomageNetworkGuard.sanitizeApiErrorBody(rawErr);
+        _log.e('Gemini API error ${streamed.statusCode}: $safeErr');
+        throw Exception('Gemini API error ${streamed.statusCode}: $safeErr');
+      }
+
+      final respText = await _readBoundedUtf8(
+        streamed.stream,
+        _maxResponseBytes,
+      );
+      final decoded = jsonDecode(respText);
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Unexpected non-object Gemini response');
+      }
+      return _parseResponse(decoded);
+    } finally {
+      client.close();
+    }
   }
 
   // ── Response parsing ──
@@ -328,25 +428,35 @@ class GeminiClient extends ApiProvider {
       );
     }
 
-    final candidate = candidates[0] as Map<String, dynamic>;
-    final content = candidate['content'] as Map<String, dynamic>?;
+    final firstCandidate = candidates[0];
+    if (firstCandidate is! Map<String, dynamic>) {
+      return Message(
+        role: MessageRole.assistant,
+        content: [const TextBlock('No response from Gemini.')],
+        stopReason: StopReason.endTurn,
+      );
+    }
+    final content = firstCandidate['content'] as Map<String, dynamic>?;
     final parts = content?['parts'] as List? ?? [];
     final blocks = <ContentBlock>[];
 
     for (final part in parts) {
-      final partMap = part as Map<String, dynamic>;
-      final text = partMap['text'] as String?;
+      if (part is! Map<String, dynamic>) continue;
+      final text = part['text'] as String?;
       if (text != null) {
         blocks.add(TextBlock(text));
       }
 
-      final functionCall = partMap['functionCall'] as Map<String, dynamic>?;
-      if (functionCall != null) {
-        blocks.add(ToolUseBlock(
-          id: 'call_${_uuid.v4()}',
-          name: functionCall['name'] as String? ?? '',
-          input: (functionCall['args'] as Map<String, dynamic>?) ?? {},
-        ));
+      final functionCall = part['functionCall'];
+      if (functionCall is Map<String, dynamic>) {
+        final rawArgs = functionCall['args'];
+        blocks.add(
+          ToolUseBlock(
+            id: 'call_${_uuid.v4()}',
+            name: functionCall['name'] as String? ?? '',
+            input: rawArgs is Map<String, dynamic> ? rawArgs : const {},
+          ),
+        );
       }
     }
 
@@ -354,7 +464,7 @@ class GeminiClient extends ApiProvider {
       blocks.add(const TextBlock(''));
     }
 
-    final finishReason = candidate['finishReason'] as String?;
+    final finishReason = firstCandidate['finishReason'] as String?;
     final usageMetadata = json['usageMetadata'] as Map<String, dynamic>?;
 
     return Message(
@@ -364,8 +474,7 @@ class GeminiClient extends ApiProvider {
       usage: usageMetadata != null
           ? TokenUsage(
               inputTokens: usageMetadata['promptTokenCount'] as int? ?? 0,
-              outputTokens:
-                  usageMetadata['candidatesTokenCount'] as int? ?? 0,
+              outputTokens: usageMetadata['candidatesTokenCount'] as int? ?? 0,
             )
           : null,
     );
@@ -381,15 +490,22 @@ class GeminiClient extends ApiProvider {
     http.ByteStream byteStream,
   ) async* {
     await for (final line in byteStream
-        .transform(utf8.decoder)
+        .transform(const Utf8Decoder(allowMalformed: true))
         .transform(const LineSplitter())) {
+      if (line.length > _maxSseLineChars) {
+        _log.w('Dropped oversized Gemini SSE line (> $_maxSseLineChars chars)');
+        continue;
+      }
       if (line.startsWith('data: ')) {
         final data = line.substring(6).trim();
         if (data.isEmpty || data == '[DONE]') continue;
         try {
-          yield jsonDecode(data) as Map<String, dynamic>;
+          final decoded = jsonDecode(data);
+          if (decoded is Map<String, dynamic>) {
+            yield decoded;
+          }
         } catch (e) {
-          _log.w('Failed to parse Gemini SSE data', error: e);
+          _log.w('Failed to parse Gemini SSE data');
         }
       }
     }

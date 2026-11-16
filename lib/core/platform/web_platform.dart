@@ -3,8 +3,12 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 import 'platform_interface.dart';
+import 'web_socket_adapter_stub.dart'
+    if (dart.library.js_interop) 'web_socket_adapter_web.dart'
+    as ws_adapter;
 
 /// Web implementation of [PlatformService].
 ///
@@ -14,14 +18,89 @@ import 'platform_interface.dart';
 ///
 /// This file must never import `dart:io`.
 class WebPlatformService implements PlatformService {
+  static const int maxJsonResponseBytes = 16 * 1024 * 1024; // 16 MiB
+  static const int maxBinaryResponseBytes = 64 * 1024 * 1024; // 64 MiB
+  static const Duration _defaultRequestTimeout = Duration(seconds: 30);
+
   final String _baseUrl;
+  final String _wsBaseUrl;
   final http.Client _client;
 
   WebPlatformService({
     String baseUrl = 'http://localhost:3219',
     http.Client? client,
-  }) : _baseUrl = baseUrl,
+  }) : _baseUrl = _normalizeValidBaseUrl(baseUrl),
+       _wsBaseUrl = _deriveWsBaseUrl(_normalizeValidBaseUrl(baseUrl)),
        _client = client ?? http.Client();
+
+  /// Validates and normalizes the backend REST server base URL, allowing
+  /// `https://` or loopback/RFC1918 LAN `http://` while rejecting cloud IMDS,
+  /// userinfo, query/fragment, `/..`, and `%5c`.
+  static Uri? validateBackendBaseUri(String rawBaseUrl) {
+    var trimmed = rawBaseUrl.trim();
+    if (trimmed.isEmpty ||
+        trimmed.contains(r'\') ||
+        trimmed.toLowerCase().contains('%5c') ||
+        trimmed.contains('/..') ||
+        trimmed.toLowerCase().contains('%2e%2e')) {
+      return null;
+    }
+    while (trimmed.endsWith('/')) {
+      trimmed = trimmed.substring(0, trimmed.length - 1);
+    }
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || uri.hasQuery || uri.hasFragment) return null;
+    if (uri.pathSegments.contains('..')) return null;
+    final ok = NeomageNetworkGuard.isSafeEndpointUri(
+      uri,
+      allowLoopbackInsecure: true,
+      allowPrivateLanHttp: true,
+      allowPublicInsecure: false,
+      secureSchemes: const <String>{'https'},
+      insecureSchemes: const <String>{'http'},
+    );
+    return ok ? uri : null;
+  }
+
+  static String _normalizeValidBaseUrl(String rawBaseUrl) {
+    final uri = validateBackendBaseUri(rawBaseUrl);
+    if (uri == null) {
+      throw ArgumentError.value(
+        rawBaseUrl,
+        'baseUrl',
+        'Rejected unsafe WebPlatformService backend baseUrl',
+      );
+    }
+    var normalized = uri.toString();
+    while (normalized.endsWith('/')) {
+      normalized = normalized.substring(0, normalized.length - 1);
+    }
+    return normalized;
+  }
+
+  static String _deriveWsBaseUrl(String normalizedBaseUrl) {
+    final uri = Uri.parse(normalizedBaseUrl);
+    final wsScheme = uri.scheme.toLowerCase() == 'https' ? 'wss' : 'ws';
+    var wsUrl = uri.replace(scheme: wsScheme).toString();
+    while (wsUrl.endsWith('/')) {
+      wsUrl = wsUrl.substring(0, wsUrl.length - 1);
+    }
+    return wsUrl;
+  }
+
+  static void _assertSafePath(String path) {
+    if (path.isEmpty ||
+        path.contains('\x00') ||
+        path.startsWith('//') ||
+        path.startsWith(r'\\')) {
+      throw ArgumentError('Rejected unsafe filesystem path');
+    }
+    if (NeomageNetworkGuard.isProtectedSystemOrCredentialPath(path)) {
+      throw PlatformException(
+        'Access to protected system or credential path is denied',
+      );
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -30,34 +109,81 @@ class WebPlatformService implements PlatformService {
   Uri _uri(String path, [Map<String, String>? queryParams]) =>
       Uri.parse('$_baseUrl$path').replace(queryParameters: queryParams);
 
+  Future<(int statusCode, Uint8List bytes)> _sendBounded(
+    String method,
+    Uri uri, {
+    Map<String, String>? headers,
+    Object? body,
+    int maxBytes = maxJsonResponseBytes,
+    Duration timeout = _defaultRequestTimeout,
+  }) async {
+    final request = http.Request(method, uri)..followRedirects = false;
+    headers?.forEach((k, v) {
+      if (NeomageNetworkGuard.isValidHeaderName(k)) {
+        request.headers[k] = NeomageNetworkGuard.sanitizeHeaderValue(v);
+      }
+    });
+    if (body != null) {
+      if (body is String) {
+        request.body = body;
+      } else if (body is List<int>) {
+        request.bodyBytes = body;
+      }
+    }
+    final streamed = await _client.send(request).timeout(timeout);
+    final code = streamed.statusCode;
+    if (code >= 300 && code < 400) {
+      await streamed.stream.drain<void>().catchError((_) {});
+      throw PlatformException('HTTP redirect ($code) rejected on backend call');
+    }
+    final contentLength = streamed.contentLength;
+    if (contentLength != null && contentLength > maxBytes) {
+      await streamed.stream.drain<void>().catchError((_) {});
+      throw PlatformException('Backend response exceeded $maxBytes bytes');
+    }
+    final builder = BytesBuilder(copy: false);
+    await for (final chunk in streamed.stream.timeout(timeout)) {
+      if (builder.length + chunk.length > maxBytes) {
+        throw PlatformException('Backend response exceeded $maxBytes bytes');
+      }
+      builder.add(chunk);
+    }
+    return (code, builder.takeBytes());
+  }
+
   Future<Map<String, dynamic>> _getJson(
     String path, [
     Map<String, String>? query,
   ]) async {
-    final response = await _client.get(_uri(path, query));
-    if (response.statusCode != 200) {
+    final (statusCode, bytes) = await _sendBounded('GET', _uri(path, query));
+    final bodyText = utf8.decode(bytes, allowMalformed: true);
+    if (statusCode != 200) {
       throw PlatformException(
-        'GET $path failed: ${response.statusCode} ${response.body}',
+        'GET $path failed: $statusCode '
+        '${NeomageNetworkGuard.sanitizeApiErrorBody(bodyText)}',
       );
     }
-    return jsonDecode(response.body) as Map<String, dynamic>;
+    return jsonDecode(bodyText) as Map<String, dynamic>;
   }
 
   Future<Map<String, dynamic>> _postJson(
     String path,
     Map<String, dynamic> body,
   ) async {
-    final response = await _client.post(
+    final (statusCode, bytes) = await _sendBounded(
+      'POST',
       _uri(path),
-      headers: {'Content-Type': 'application/json'},
+      headers: const {'Content-Type': 'application/json'},
       body: jsonEncode(body),
     );
-    if (response.statusCode != 200) {
+    final bodyText = utf8.decode(bytes, allowMalformed: true);
+    if (statusCode != 200) {
       throw PlatformException(
-        'POST $path failed: ${response.statusCode} ${response.body}',
+        'POST $path failed: $statusCode '
+        '${NeomageNetworkGuard.sanitizeApiErrorBody(bodyText)}',
       );
     }
-    return jsonDecode(response.body) as Map<String, dynamic>;
+    return jsonDecode(bodyText) as Map<String, dynamic>;
   }
 
   // ---------------------------------------------------------------------------
@@ -66,44 +192,52 @@ class WebPlatformService implements PlatformService {
 
   @override
   Future<String> readFile(String path) async {
+    _assertSafePath(path);
     final json = await _getJson('/api/fs/read', {'path': path});
     return json['content'] as String;
   }
 
   @override
   Future<Uint8List> readFileBytes(String path) async {
-    final response = await _client.get(
+    _assertSafePath(path);
+    final (statusCode, bytes) = await _sendBounded(
+      'GET',
       _uri('/api/fs/read-bytes', {'path': path}),
+      maxBytes: maxBinaryResponseBytes,
     );
-    if (response.statusCode != 200) {
+    if (statusCode != 200) {
       throw PlatformException(
-        'GET /api/fs/read-bytes failed: ${response.statusCode}',
+        'GET /api/fs/read-bytes failed: $statusCode',
       );
     }
-    return response.bodyBytes;
+    return bytes;
   }
 
   @override
   Future<void> writeFile(String path, String content) async {
+    _assertSafePath(path);
     await _postJson('/api/fs/write', {'path': path, 'content': content});
   }
 
   @override
   Future<void> writeFileBytes(String path, Uint8List bytes) async {
-    final response = await _client.post(
+    _assertSafePath(path);
+    final (statusCode, _) = await _sendBounded(
+      'POST',
       _uri('/api/fs/write-bytes', {'path': path}),
-      headers: {'Content-Type': 'application/octet-stream'},
+      headers: const {'Content-Type': 'application/octet-stream'},
       body: bytes,
     );
-    if (response.statusCode != 200) {
+    if (statusCode != 200) {
       throw PlatformException(
-        'POST /api/fs/write-bytes failed: ${response.statusCode}',
+        'POST /api/fs/write-bytes failed: $statusCode',
       );
     }
   }
 
   @override
   Future<void> appendFile(String path, String content) async {
+    _assertSafePath(path);
     await _postJson('/api/fs/append', {'path': path, 'content': content});
   }
 
@@ -113,6 +247,12 @@ class WebPlatformService implements PlatformService {
 
   @override
   Future<bool> fileExists(String path) async {
+    if (path.isEmpty ||
+        path.contains('\x00') ||
+        path.startsWith('//') ||
+        path.startsWith(r'\\')) {
+      return false;
+    }
     final json = await _getJson('/api/fs/exists', {
       'path': path,
       'type': 'file',
@@ -122,6 +262,12 @@ class WebPlatformService implements PlatformService {
 
   @override
   Future<bool> directoryExists(String path) async {
+    if (path.isEmpty ||
+        path.contains('\x00') ||
+        path.startsWith('//') ||
+        path.startsWith(r'\\')) {
+      return false;
+    }
     final json = await _getJson('/api/fs/exists', {
       'path': path,
       'type': 'directory',
@@ -131,6 +277,7 @@ class WebPlatformService implements PlatformService {
 
   @override
   Future<PlatformFileStat> statFile(String path) async {
+    _assertSafePath(path);
     final json = await _getJson('/api/fs/stat', {'path': path});
     return PlatformFileStat.fromJson(json);
   }
@@ -140,6 +287,7 @@ class WebPlatformService implements PlatformService {
     String path, {
     bool recursive = false,
   }) async {
+    _assertSafePath(path);
     final json = await _getJson('/api/fs/list', {
       'path': path,
       'recursive': recursive.toString(),
@@ -153,16 +301,19 @@ class WebPlatformService implements PlatformService {
 
   @override
   Future<void> createDirectory(String path, {bool recursive = true}) async {
+    _assertSafePath(path);
     await _postJson('/api/fs/mkdir', {'path': path, 'recursive': recursive});
   }
 
   @override
   Future<void> deleteFile(String path) async {
+    _assertSafePath(path);
     await _postJson('/api/fs/delete', {'path': path, 'type': 'file'});
   }
 
   @override
   Future<void> deleteDirectory(String path, {bool recursive = false}) async {
+    _assertSafePath(path);
     await _postJson('/api/fs/delete', {
       'path': path,
       'type': 'directory',
@@ -172,6 +323,8 @@ class WebPlatformService implements PlatformService {
 
   @override
   Future<void> copyFile(String source, String destination) async {
+    _assertSafePath(source);
+    _assertSafePath(destination);
     await _postJson('/api/fs/copy', {
       'source': source,
       'destination': destination,
@@ -180,6 +333,8 @@ class WebPlatformService implements PlatformService {
 
   @override
   Future<void> moveFile(String source, String destination) async {
+    _assertSafePath(source);
+    _assertSafePath(destination);
     await _postJson('/api/fs/move', {
       'source': source,
       'destination': destination,
@@ -255,11 +410,11 @@ class WebPlatformService implements PlatformService {
 
   @override
   Stream<FileChangeEvent> watchDirectory(String path, {bool recursive = true}) {
+    _assertSafePath(path);
     // File watching on web is done via a WebSocket on the server.
     final controller = StreamController<FileChangeEvent>();
-    final wsUrl = _baseUrl.replaceFirst('http', 'ws');
     final uri = Uri.parse(
-      '$wsUrl/api/fs/watch?path=${Uri.encodeComponent(path)}'
+      '$_wsBaseUrl/api/fs/watch?path=${Uri.encodeComponent(path)}'
       '&recursive=$recursive',
     );
 
@@ -272,7 +427,7 @@ class WebPlatformService implements PlatformService {
     StreamController<FileChangeEvent> controller,
   ) async {
     try {
-      final ws = await connectWebSocket(uri);
+      final ws = await _WebSocketImpl.connect(uri);
       ws.stream.listen(
         (data) {
           if (data is String) {
@@ -293,6 +448,24 @@ class WebPlatformService implements PlatformService {
   // Process execution
   // ---------------------------------------------------------------------------
 
+  static void _validateProcessArgs(
+    String executable,
+    List<String> arguments,
+    String? workingDirectory,
+  ) {
+    if (executable.isEmpty ||
+        executable.contains('\x00') ||
+        arguments.any((a) => a.contains('\x00'))) {
+      throw ArgumentError('Process executable/arguments contain NUL bytes');
+    }
+    if (workingDirectory != null &&
+        (workingDirectory.contains('\x00') ||
+            workingDirectory.startsWith('//') ||
+            workingDirectory.startsWith(r'\\'))) {
+      throw ArgumentError('Rejected unsafe workingDirectory');
+    }
+  }
+
   @override
   Future<ProcessOutput> runProcess(
     String executable,
@@ -302,11 +475,15 @@ class WebPlatformService implements PlatformService {
     Duration? timeout,
     bool runInShell = false,
   }) async {
+    _validateProcessArgs(executable, arguments, workingDirectory);
+    final cleanEnv = environment != null
+        ? NeomageNetworkGuard.sanitizeSubprocessEnv(const <String, String>{}, environment)
+        : null;
     final json = await _postJson('/api/process/run', {
       'executable': executable,
       'arguments': arguments,
       'workingDirectory': ?workingDirectory,
-      'environment': ?environment,
+      'environment': ?cleanEnv,
       if (timeout != null) 'timeoutMs': timeout.inMilliseconds,
       'runInShell': runInShell,
     });
@@ -321,22 +498,25 @@ class WebPlatformService implements PlatformService {
     Map<String, String>? environment,
     bool runInShell = false,
   }) async {
+    _validateProcessArgs(executable, arguments, workingDirectory);
+    final cleanEnv = environment != null
+        ? NeomageNetworkGuard.sanitizeSubprocessEnv(const <String, String>{}, environment)
+        : null;
     // Start the process on the server and get a process ID back.
     final json = await _postJson('/api/process/start', {
       'executable': executable,
       'arguments': arguments,
       'workingDirectory': ?workingDirectory,
-      'environment': ?environment,
+      'environment': ?cleanEnv,
       'runInShell': runInShell,
     });
 
     final pid = json['pid'] as int;
-    final wsUrl = _baseUrl.replaceFirst('http', 'ws');
 
     return _WebRunningProcess(
       pid: pid,
       baseUrl: _baseUrl,
-      wsUrl: wsUrl,
+      wsUrl: _wsBaseUrl,
       client: _client,
     );
   }
@@ -383,11 +563,27 @@ class WebPlatformService implements PlatformService {
     Object? body,
     Duration? timeout,
   }) async {
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      url,
+      allowLoopbackHttp: true,
+      allowPrivateLanHttp: true,
+    )) {
+      throw ArgumentError('Rejected unsafe HTTP endpoint URI: $url');
+    }
+    Map<String, String>? safeHeaders;
+    if (headers != null) {
+      safeHeaders = <String, String>{};
+      headers.forEach((k, v) {
+        if (NeomageNetworkGuard.isValidHeaderName(k)) {
+          safeHeaders![k] = NeomageNetworkGuard.sanitizeHeaderValue(v);
+        }
+      });
+    }
     // Proxy through the server to avoid CORS issues.
     final json = await _postJson('/api/http/request', {
       'method': method,
       'url': url.toString(),
-      'headers': ?headers,
+      'headers': ?safeHeaders,
       if (body != null)
         'body': body is String
             ? body
@@ -411,12 +607,15 @@ class WebPlatformService implements PlatformService {
 
   @override
   Future<PlatformWebSocket> connectWebSocket(Uri url) async {
-    // Use the browser's native WebSocket via dart:html / web interop.
-    // On web, package:web or dart:html provides WebSocket.
-    // For simplicity we use the server as a WS proxy.
-    final wsUrl = _baseUrl.replaceFirst('http', 'ws');
+    if (!NeomageNetworkGuard.isSafeWebSocketEndpointUri(
+      url,
+      allowLoopbackWs: true,
+      allowPrivateLanWs: true,
+    )) {
+      throw ArgumentError('Rejected unsafe WebSocket URI: $url');
+    }
     final proxyUri = Uri.parse(
-      '$wsUrl/api/ws/proxy?url=${Uri.encodeComponent(url.toString())}',
+      '$_wsBaseUrl/api/ws/proxy?url=${Uri.encodeComponent(url.toString())}',
     );
 
     return _WebSocketImpl.connect(proxyUri);
@@ -541,50 +740,32 @@ class _WebRunningProcess implements RunningProcess {
 /// Minimal browser-compatible WebSocket wrapper.
 ///
 /// On the web target we rely on `dart:html` (or `package:web`).  We use a
-/// conditional import stub pattern: this class is only instantiated on web,
-/// so the actual implementation goes through the browser's `WebSocket` API
-/// via `dart:html`.
-///
-/// For testing and simplicity this uses `package:http` — in production you
-/// would replace this with `dart:html` WebSocket or `package:web_socket_channel`.
+/// Browser-compatible [PlatformWebSocket] backed by `package:web` `WebSocket`
+/// on Web/Wasm and `web_socket_channel` when imported in VM tests.
 class _WebSocketImpl implements PlatformWebSocket {
-  final StreamController<dynamic> _controller;
-  // ignore: unused_field
-  final dynamic _nativeSocket;
+  final ws_adapter.BrowserWebSocketAdapter _delegate;
 
-  _WebSocketImpl._(this._controller, this._nativeSocket);
+  _WebSocketImpl._(this._delegate);
 
-  /// Connect to [url] using a browser-compatible WebSocket.
+  /// Connect to [url] using a real browser `WebSocket` adapter.
   static Future<_WebSocketImpl> connect(Uri url) async {
-    // This is a simplified implementation.  In a real web build you would
-    // use `package:web_socket_channel/html.dart` or `dart:html`.  The
-    // server.dart backend provides the WebSocket endpoint.
-    final controller = StreamController<dynamic>.broadcast();
-
-    // We simulate the connection — the actual browser WS would be:
-    //   final ws = html.WebSocket(url.toString());
-    //   ws.onMessage.listen((e) => controller.add(e.data));
-    //   ws.onClose.listen((_) => controller.close());
-
-    // For now we return a placeholder that the web build will replace
-    // with the real browser WebSocket via conditional import.
-    final impl = _WebSocketImpl._(controller, null);
-    return impl;
+    final delegate = await ws_adapter.BrowserWebSocketAdapter.connect(url);
+    return _WebSocketImpl._(delegate);
   }
 
   @override
-  Stream<dynamic> get stream => _controller.stream;
+  Stream<dynamic> get stream => _delegate.stream;
 
   @override
   void add(dynamic data) {
-    // In production: _nativeSocket.send(data);
+    _delegate.add(data);
   }
 
   @override
   Future<void> close([int? code, String? reason]) async {
-    _controller.close();
+    await _delegate.close(code, reason);
   }
 
   @override
-  int? get closeCode => null;
+  int? get closeCode => _delegate.closeCode;
 }

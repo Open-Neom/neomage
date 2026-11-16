@@ -1,6 +1,8 @@
 // ToolSearch tool — port of neomage/src/tools/ToolSearchTool.
 // Finds deferred tools by name or keyword search.
 
+import 'dart:convert';
+
 import 'tool.dart';
 import 'tool_registry.dart';
 
@@ -53,10 +55,16 @@ class ToolSearchTool extends Tool {
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
     final query = input['query'] as String?;
-    final maxResults = (input['max_results'] as num?)?.toInt() ?? 5;
+    final maxResults = ((input['max_results'] as num?)?.toInt() ?? 5).clamp(
+      1,
+      50,
+    );
 
     if (query == null || query.isEmpty) {
       return ToolResult.error('Missing required parameter: query');
+    }
+    if (query.contains('\x00') || query.length > 1024) {
+      return ToolResult.error('Invalid query parameter');
     }
 
     final deferredTools = registry.all
@@ -221,36 +229,12 @@ class ToolSearchTool extends Tool {
   }
 
   String _formatToolDefinition(Tool tool) {
-    return '<function>{"name": "${tool.name}", '
-        '"description": "${_escapeJson(tool.description)}", '
-        '"parameters": ${_mapToJson(tool.inputSchema)}}'
-        '</function>';
-  }
-
-  String _escapeJson(String s) =>
-      s.replaceAll('"', r'\"').replaceAll('\n', r'\n');
-
-  String _mapToJson(Map<String, dynamic> map) {
-    // Simple JSON serialization for schema
-    final entries = map.entries.map((e) {
-      final value = e.value;
-      if (value is String) return '"${e.key}": "${_escapeJson(value)}"';
-      if (value is bool) return '"${e.key}": $value';
-      if (value is num) return '"${e.key}": $value';
-      if (value is Map) return '"${e.key}": ${_mapToJson(value.cast())}';
-      if (value is List) return '"${e.key}": ${_listToJson(value)}';
-      return '"${e.key}": null';
-    });
-    return '{${entries.join(", ")}}';
-  }
-
-  String _listToJson(List list) {
-    final items = list.map((v) {
-      if (v is String) return '"${_escapeJson(v)}"';
-      if (v is Map) return _mapToJson(v.cast());
-      return '$v';
-    });
-    return '[${items.join(", ")}]';
+    final encoded = jsonEncode(<String, dynamic>{
+      'name': tool.name,
+      'description': tool.description,
+      'parameters': tool.inputSchema,
+    }).replaceAll('</', r'<\/');
+    return '<function>$encoded</function>';
   }
 
   static final _nullTool = _NullTool();

@@ -178,12 +178,12 @@ class OllamaSetupScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Sint.pop(),
             child: Text(NeomageTranslationConstants.cancel.tr),
           ),
           FilledButton(
             onPressed: () {
-              Navigator.pop(ctx);
+              Sint.pop();
               ctrl.deleteModel(model.name);
             },
             style: FilledButton.styleFrom(
@@ -559,12 +559,12 @@ class _OllamaBody extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Sint.pop(),
             child: Text(NeomageTranslationConstants.cancel.tr),
           ),
           FilledButton(
             onPressed: () {
-              Navigator.pop(ctx);
+              Sint.pop();
               ctrl.deleteModel(model.name);
             },
             style: FilledButton.styleFrom(
@@ -667,7 +667,10 @@ class _StatusCard extends StatelessWidget {
           if (action != null)
             FilledButton(
               onPressed: status == OllamaStatus.notRunning
-                  ? () => launchUrl(Uri.parse('https://ollama.com/download'))
+                  ? () => launchUrl(
+                      Uri.parse('https://ollama.com/download'),
+                      mode: LaunchMode.externalApplication,
+                    )
                   : onRetry,
               child: Text(action),
             ),

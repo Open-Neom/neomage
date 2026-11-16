@@ -7,6 +7,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
@@ -60,18 +61,28 @@ class OAuthTokenExchangeResponse {
     this.organization,
   });
 
-  factory OAuthTokenExchangeResponse.fromJson(Map<String, dynamic> json) {
+  factory OAuthTokenExchangeResponse.fromJson(
+    Map<String, dynamic> json, {
+    String? fallbackRefreshToken,
+  }) {
+    final rawExpires = json['expires_in'];
+    final expiresIn = (rawExpires is num && rawExpires.isFinite)
+        ? rawExpires.toInt().clamp(1, 31536000)
+        : 3600;
     return OAuthTokenExchangeResponse(
       accessToken: json['access_token'] as String,
-      refreshToken: json['refresh_token'] as String,
-      expiresIn: json['expires_in'] as int,
+      refreshToken:
+          (json['refresh_token'] as String?) ?? fallbackRefreshToken ?? '',
+      expiresIn: expiresIn,
       scope: json['scope'] as String?,
-      account: json['account'] != null
-          ? OAuthTokenAccount.fromJson(json['account'] as Map<String, dynamic>)
+      account: json['account'] is Map
+          ? OAuthTokenAccount.fromJson(
+              Map<String, dynamic>.from(json['account'] as Map),
+            )
           : null,
-      organization: json['organization'] != null
+      organization: json['organization'] is Map
           ? OAuthTokenOrganization.fromJson(
-              json['organization'] as Map<String, dynamic>,
+              Map<String, dynamic>.from(json['organization'] as Map),
             )
           : null,
     );
@@ -417,6 +428,31 @@ String buildAuthUrl({
   return uri.replace(queryParameters: params).toString();
 }
 
+const int _maxOAuthResponseBytes = 512 * 1024;
+
+Future<String> _readBoundedOAuthBody(HttpClientResponse response) async {
+  final buffer = BytesBuilder(copy: false);
+  await for (final chunk in response.timeout(const Duration(seconds: 15))) {
+    if (buffer.length + chunk.length > _maxOAuthResponseBytes) {
+      throw const FormatException('OAuth HTTP response exceeds 512 KiB');
+    }
+    buffer.add(chunk);
+  }
+  return utf8.decode(buffer.takeBytes(), allowMalformed: true);
+}
+
+Uri _requireSafeOAuthUri(String rawUrl, String fieldName) {
+  final uri = Uri.tryParse(rawUrl.trim());
+  if (!NeomageNetworkGuard.isSafeEndpointUri(uri)) {
+    throw ArgumentError.value(
+      NeomageNetworkGuard.redactUrlCredentials(rawUrl),
+      fieldName,
+      'Unsafe OAuth endpoint URL',
+    );
+  }
+  return uri!;
+}
+
 /// Exchange authorization code for tokens.
 Future<OAuthTokenExchangeResponse> exchangeCodeForTokens({
   required String authorizationCode,
@@ -428,6 +464,7 @@ Future<OAuthTokenExchangeResponse> exchangeCodeForTokens({
   HttpClient? httpClient,
 }) async {
   final config = getOauthConfig();
+  final tokenUri = _requireSafeOAuthUri(config.tokenUrl, 'tokenUrl');
   final body = <String, dynamic>{
     'grant_type': 'authorization_code',
     'code': authorizationCode,
@@ -443,18 +480,22 @@ Future<OAuthTokenExchangeResponse> exchangeCodeForTokens({
 
   final client = httpClient ?? HttpClient();
   try {
-    final request = await client.postUrl(Uri.parse(config.tokenUrl));
+    final request = await client
+        .postUrl(tokenUri)
+        .timeout(const Duration(seconds: 15));
+    request.followRedirects = false;
     request.headers.contentType = ContentType.json;
     request.write(jsonEncode(body));
     final response = await request.close().timeout(const Duration(seconds: 15));
 
-    final responseBody = await response.transform(utf8.decoder).join();
+    final responseBody = await _readBoundedOAuthBody(response);
 
     if (response.statusCode != 200) {
+      final safeErr = NeomageNetworkGuard.sanitizeOAuthErrorBody(responseBody);
       throw Exception(
         response.statusCode == 401
             ? 'Authentication failed: Invalid authorization code'
-            : 'Token exchange failed (${response.statusCode}): $responseBody',
+            : 'Token exchange failed (${response.statusCode}): $safeErr',
       );
     }
 
@@ -473,6 +514,7 @@ Future<OAuthTokens> refreshOAuthToken({
   HttpClient? httpClient,
 }) async {
   final config = getOauthConfig();
+  final tokenUri = _requireSafeOAuthUri(config.tokenUrl, 'tokenUrl');
   final body = {
     'grant_type': 'refresh_token',
     'refresh_token': refreshToken,
@@ -486,19 +528,24 @@ Future<OAuthTokens> refreshOAuthToken({
 
   final client = httpClient ?? HttpClient();
   try {
-    final request = await client.postUrl(Uri.parse(config.tokenUrl));
+    final request = await client
+        .postUrl(tokenUri)
+        .timeout(const Duration(seconds: 15));
+    request.followRedirects = false;
     request.headers.contentType = ContentType.json;
     request.write(jsonEncode(body));
     final response = await request.close().timeout(const Duration(seconds: 15));
 
-    final responseBody = await response.transform(utf8.decoder).join();
+    final responseBody = await _readBoundedOAuthBody(response);
 
     if (response.statusCode != 200) {
-      throw Exception('Token refresh failed: $responseBody');
+      final safeErr = NeomageNetworkGuard.sanitizeOAuthErrorBody(responseBody);
+      throw Exception('Token refresh failed (${response.statusCode}): $safeErr');
     }
 
     final data = OAuthTokenExchangeResponse.fromJson(
       jsonDecode(responseBody) as Map<String, dynamic>,
+      fallbackRefreshToken: refreshToken,
     );
 
     final expiresAt =
@@ -531,13 +578,21 @@ Future<OAuthProfileResponse?> fetchOAuthProfile({
   final config = getOauthConfig();
   final client = httpClient ?? HttpClient();
   try {
-    final request = await client.getUrl(Uri.parse(config.profileUrl));
-    request.headers.set('Authorization', 'Bearer $accessToken');
+    final profileUri = _requireSafeOAuthUri(config.profileUrl, 'profileUrl');
+    final cleanToken = NeomageNetworkGuard.sanitizeHeaderValue(accessToken);
+    final request = await client
+        .getUrl(profileUri)
+        .timeout(const Duration(seconds: 15));
+    request.followRedirects = false;
+    request.headers.set('Authorization', 'Bearer $cleanToken');
     final response = await request.close().timeout(const Duration(seconds: 15));
 
-    if (response.statusCode != 200) return null;
+    if (response.statusCode != 200) {
+      await response.drain<void>();
+      return null;
+    }
 
-    final responseBody = await response.transform(utf8.decoder).join();
+    final responseBody = await _readBoundedOAuthBody(response);
     return OAuthProfileResponse.fromJson(
       jsonDecode(responseBody) as Map<String, dynamic>,
     );
@@ -613,17 +668,23 @@ Future<UserRolesResponse> fetchUserRoles({
   HttpClient? httpClient,
 }) async {
   final config = getOauthConfig();
+  final rolesUri = _requireSafeOAuthUri(config.rolesUrl, 'rolesUrl');
+  final cleanToken = NeomageNetworkGuard.sanitizeHeaderValue(accessToken);
   final client = httpClient ?? HttpClient();
   try {
-    final request = await client.getUrl(Uri.parse(config.rolesUrl));
-    request.headers.set('Authorization', 'Bearer $accessToken');
+    final request = await client
+        .getUrl(rolesUri)
+        .timeout(const Duration(seconds: 15));
+    request.followRedirects = false;
+    request.headers.set('Authorization', 'Bearer $cleanToken');
     final response = await request.close().timeout(const Duration(seconds: 15));
 
     if (response.statusCode != 200) {
+      await response.drain<void>();
       throw Exception('Failed to fetch user roles: ${response.statusCode}');
     }
 
-    final responseBody = await response.transform(utf8.decoder).join();
+    final responseBody = await _readBoundedOAuthBody(response);
     return UserRolesResponse.fromJson(
       jsonDecode(responseBody) as Map<String, dynamic>,
     );
@@ -638,16 +699,27 @@ Future<String?> createApiKey({
   HttpClient? httpClient,
 }) async {
   final config = getOauthConfig();
+  final apiKeyUri = _requireSafeOAuthUri(config.apiKeyUrl, 'apiKeyUrl');
+  final cleanToken = NeomageNetworkGuard.sanitizeHeaderValue(accessToken);
   final client = httpClient ?? HttpClient();
   try {
-    final request = await client.postUrl(Uri.parse(config.apiKeyUrl));
-    request.headers.set('Authorization', 'Bearer $accessToken');
+    final request = await client
+        .postUrl(apiKeyUri)
+        .timeout(const Duration(seconds: 15));
+    request.followRedirects = false;
+    request.headers.set('Authorization', 'Bearer $cleanToken');
     request.headers.contentLength = 0;
     final response = await request.close().timeout(const Duration(seconds: 15));
 
-    final responseBody = await response.transform(utf8.decoder).join();
-    final data = jsonDecode(responseBody) as Map<String, dynamic>;
-    return data['raw_key'] as String?;
+    if (response.statusCode != 200) {
+      await response.drain<void>();
+      return null;
+    }
+
+    final responseBody = await _readBoundedOAuthBody(response);
+    final decoded = jsonDecode(responseBody);
+    if (decoded is! Map<String, dynamic>) return null;
+    return decoded['raw_key'] as String?;
   } finally {
     if (httpClient == null) client.close();
   }
@@ -719,7 +791,7 @@ class AuthCodeListener {
       return;
     }
 
-    if (state != _expectedState) {
+    if (!NeomageNetworkGuard.constantTimeEquals(state, _expectedState)) {
       request.response.statusCode = HttpStatus.badRequest;
       request.response.write('Invalid state parameter');
       request.response.close();
@@ -737,12 +809,19 @@ class AuthCodeListener {
     if (_pendingResponse == null) return;
 
     final config = getOauthConfig();
-    final successUrl = shouldUseNeomageAIAuth(scopes)
+    final rawSuccessUrl = shouldUseNeomageAIAuth(scopes)
         ? config.neomageAiSuccessUrl
         : config.consoleSuccessUrl;
+    final cleanUrl = NeomageNetworkGuard.sanitizeHeaderValue(rawSuccessUrl);
+    final parsed = Uri.tryParse(cleanUrl);
 
-    _pendingResponse!.statusCode = HttpStatus.movedTemporarily;
-    _pendingResponse!.headers.set('Location', successUrl);
+    if (NeomageNetworkGuard.isSafeEndpointUri(parsed)) {
+      _pendingResponse!.statusCode = HttpStatus.movedTemporarily;
+      _pendingResponse!.headers.set('Location', cleanUrl);
+    } else {
+      _pendingResponse!.statusCode = HttpStatus.ok;
+      _pendingResponse!.write('Authentication complete. You may close this tab.');
+    }
     _pendingResponse!.close();
     _pendingResponse = null;
   }
@@ -752,8 +831,17 @@ class AuthCodeListener {
     if (_pendingResponse == null) return;
 
     final config = getOauthConfig();
-    _pendingResponse!.statusCode = HttpStatus.movedTemporarily;
-    _pendingResponse!.headers.set('Location', config.neomageAiSuccessUrl);
+    final cleanUrl = NeomageNetworkGuard.sanitizeHeaderValue(
+      config.neomageAiSuccessUrl,
+    );
+    final parsed = Uri.tryParse(cleanUrl);
+    if (NeomageNetworkGuard.isSafeEndpointUri(parsed)) {
+      _pendingResponse!.statusCode = HttpStatus.movedTemporarily;
+      _pendingResponse!.headers.set('Location', cleanUrl);
+    } else {
+      _pendingResponse!.statusCode = HttpStatus.badRequest;
+      _pendingResponse!.write('Authentication failed.');
+    }
     _pendingResponse!.close();
     _pendingResponse = null;
   }

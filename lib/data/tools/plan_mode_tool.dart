@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import '../../domain/models/permissions.dart';
 import 'tool.dart';
 
 // ─── Input ───────────────────────────────────────────────────────────────────
@@ -67,6 +68,9 @@ class PlanModeState {
   String? exitPlanMode(String summary) {
     final plan = _currentPlan;
     if (_currentPlan != null) {
+      if (_planHistory.length >= 100) {
+        _planHistory.removeAt(0);
+      }
       _planHistory.add(summary);
     }
     _isInPlanMode = false;
@@ -184,7 +188,9 @@ class EnterPlanModeTool extends Tool with ReadOnlyToolMixin {
 /// Exit plan mode and optionally provide a plan to execute.
 ///
 /// Re-enables all tools and switches back to normal execution mode.
-class ExitPlanModeTool extends Tool with ReadOnlyToolMixin {
+/// Requires user approval (`AskDecision`) so an agent in plan mode cannot
+/// unilaterally re-enable mutating/shell tools without user consent.
+class ExitPlanModeTool extends Tool {
   final PlanModeState _state;
 
   /// Callback invoked when plan mode is exited.
@@ -194,6 +200,39 @@ class ExitPlanModeTool extends Tool with ReadOnlyToolMixin {
 
   @override
   String get name => 'ExitPlanMode';
+
+  @override
+  bool get isReadOnly => false;
+
+  @override
+  bool get requiresUserInteraction => true;
+
+  @override
+  Future<PermissionDecision> checkPermissions(
+    Map<String, dynamic> input,
+    ToolPermissionContext permContext,
+  ) async {
+    for (final rules in permContext.rulesBySource.values) {
+      for (final rule in rules) {
+        if (rule.behavior == PermissionBehavior.deny &&
+            rule.value.toolName == name) {
+          return DenyDecision(
+            PermissionDenyDecision(
+              reason: 'Blocked by permission rule for $name',
+            ),
+          );
+        }
+      }
+    }
+    if (permContext.mode == PermissionMode.bypassPermissions) {
+      return const AllowDecision(PermissionAllowDecision());
+    }
+    return const AskDecision(
+      PermissionAskDecision(
+        message: 'Approve plan summary and exit plan mode?',
+      ),
+    );
+  }
 
   @override
   String get description =>

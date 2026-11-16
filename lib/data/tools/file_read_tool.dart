@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
@@ -33,8 +34,21 @@ class FileReadInput {
     final errors = <String>[];
     if (filePath.isEmpty) {
       errors.add('Missing required parameter: file_path');
+    } else if (filePath.contains('\x00')) {
+      errors.add('Invalid NUL byte in file_path');
+    } else if (filePath.startsWith('//') || filePath.startsWith(r'\\')) {
+      errors.add('UNC network paths are not permitted in file_path');
     } else if (!p.isAbsolute(filePath)) {
       errors.add('file_path must be an absolute path, got: $filePath');
+    } else {
+      final protectedReason = NeomageNetworkGuard.checkProtectedFilesystemPath(
+        filePath,
+      );
+      if (protectedReason != null) {
+        errors.add(
+          protectedReason.replaceFirst('Cannot modify ', 'Cannot read '),
+        );
+      }
     }
     if (offset != null && offset! < 1) {
       errors.add('offset must be >= 1 (1-based line number)');
@@ -121,6 +135,12 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
 
   /// Maximum output size before truncation (chars).
   static const int maxOutputChars = 500000;
+
+  /// Maximum text file size read into memory at once (50 MiB).
+  static const int maxTextFileBytes = 50 * 1024 * 1024;
+
+  /// Maximum notebook file size read into memory at once (20 MiB).
+  static const int maxNotebookFileBytes = 20 * 1024 * 1024;
 
   @override
   String get name => 'Read';
@@ -224,8 +244,15 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
       return ToolResult.error(errors.first);
     }
 
-    // Resolve symlinks
+    // Resolve symlinks and re-verify target against protected system/credential trees
     final resolvedPath = await _resolveSymlinks(parsed.filePath);
+    final resolvedProtectedReason =
+        NeomageNetworkGuard.checkProtectedFilesystemPath(resolvedPath);
+    if (resolvedProtectedReason != null) {
+      return ToolResult.error(
+        resolvedProtectedReason.replaceFirst('Cannot modify ', 'Cannot read '),
+      );
+    }
 
     // Check existence
     final fileType = await FileSystemEntity.type(resolvedPath);
@@ -265,11 +292,24 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
     final ext = p.extension(parsed.filePath).toLowerCase();
 
     if (ext == '.ipynb') {
+      if (fileSize > maxNotebookFileBytes) {
+        return ToolResult.error(
+          'Notebook too large to read in memory: ${_formatFileSize(fileSize)} '
+          '(max ${_formatFileSize(maxNotebookFileBytes)})',
+        );
+      }
       return _handleNotebook(file, fileSize, modified);
     }
 
     if (ext == '.pdf') {
       return _handlePdf(file, parsed, fileSize, modified);
+    }
+
+    if (fileSize > maxTextFileBytes) {
+      return ToolResult.error(
+        'Text file too large to load into memory: ${_formatFileSize(fileSize)} '
+        '(max ${_formatFileSize(maxTextFileBytes)}).',
+      );
     }
 
     // Read as text
@@ -279,9 +319,9 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
   /// Resolve symlinks to their actual path.
   Future<String> _resolveSymlinks(String filePath) async {
     try {
-      final link = Link(filePath);
-      if (await link.exists()) {
-        return await link.resolveSymbolicLinks();
+      if (await FileSystemEntity.type(filePath) !=
+          FileSystemEntityType.notFound) {
+        return await File(filePath).resolveSymbolicLinks();
       }
     } catch (_) {
       // Not a symlink or can't resolve, use original
@@ -434,35 +474,59 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
     );
   }
 
+  /// Pure-Dart JS/Wasm-safe image header dimension decoder (`image/png`,
+  /// `image/gif`, `image/bmp` including negative top-down BMP heights).
+  static (int, int)? parseImageDimensions(Uint8List data, String format) {
+    if (format == 'image/png' && data.length >= 24) {
+      final width =
+          (data[16] * 0x1000000) +
+          (data[17] << 16) +
+          (data[18] << 8) +
+          data[19];
+      final height =
+          (data[20] * 0x1000000) +
+          (data[21] << 16) +
+          (data[22] << 8) +
+          data[23];
+      if (width <= 0 || height <= 0) return null;
+      return (width, height);
+    }
+
+    if (format == 'image/gif' && data.length >= 10) {
+      final width = data[6] | (data[7] << 8);
+      final height = data[8] | (data[9] << 8);
+      if (width <= 0 || height <= 0) return null;
+      return (width, height);
+    }
+
+    if (format == 'image/bmp' && data.length >= 26) {
+      final rawW =
+          data[18] +
+          (data[19] << 8) +
+          (data[20] << 16) +
+          (data[21] * 0x1000000);
+      final rawH =
+          data[22] +
+          (data[23] << 8) +
+          (data[24] << 16) +
+          (data[25] * 0x1000000);
+      final signedW = rawW >= 0x80000000 ? rawW - 0x100000000 : rawW;
+      final signedH = rawH >= 0x80000000 ? rawH - 0x100000000 : rawH;
+      final width = signedW.abs();
+      final height = signedH.abs();
+      if (width <= 0 || height <= 0) return null;
+      return (width, height);
+    }
+    return null;
+  }
+
   /// Try to extract image dimensions from file header.
   Future<(int, int)?> _getImageDimensions(File file, String format) async {
     try {
       final bytes = await file
           .openRead(0, 32)
           .fold<List<int>>([], (prev, chunk) => prev..addAll(chunk));
-      final data = Uint8List.fromList(bytes);
-
-      if (format == 'image/png' && data.length >= 24) {
-        final width =
-            (data[16] << 24) | (data[17] << 16) | (data[18] << 8) | data[19];
-        final height =
-            (data[20] << 24) | (data[21] << 16) | (data[22] << 8) | data[23];
-        return (width, height);
-      }
-
-      if (format == 'image/gif' && data.length >= 10) {
-        final width = data[6] | (data[7] << 8);
-        final height = data[8] | (data[9] << 8);
-        return (width, height);
-      }
-
-      if (format == 'image/bmp' && data.length >= 26) {
-        final width =
-            data[18] | (data[19] << 8) | (data[20] << 16) | (data[21] << 24);
-        final height =
-            data[22] | (data[23] << 8) | (data[24] << 16) | (data[25] << 24);
-        return (width, height.abs());
-      }
+      return parseImageDimensions(Uint8List.fromList(bytes), format);
     } catch (_) {
       // Dimension extraction is best-effort
     }
@@ -488,9 +552,15 @@ class FileReadTool extends Tool with ReadOnlyToolMixin {
           args.addAll(['-f', '${parsed.$1}', '-l', '${parsed.$2}']);
         }
       }
-      args.addAll([file.path, '-']);
+      args.addAll(['--', file.path, '-']);
 
-      final result = await Process.run('pdftotext', args);
+      final result = await Process.run(
+        'pdftotext',
+        args,
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+        includeParentEnvironment: false,
+        runInShell: false,
+      ).timeout(const Duration(seconds: 15));
       if (result.exitCode == 0) {
         final text = (result.stdout as String).trim();
         if (text.isNotEmpty) {

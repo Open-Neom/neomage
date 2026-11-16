@@ -8,7 +8,7 @@
 
 import 'dart:async';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 import '../../tools/tool.dart';
 import '../command.dart';

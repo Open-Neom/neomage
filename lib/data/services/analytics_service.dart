@@ -12,7 +12,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Marker types — Dart doesn't have TS's `never`, so we use typedefs

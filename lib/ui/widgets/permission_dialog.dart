@@ -137,7 +137,7 @@ class _PermissionDialogWidgetState extends State<_PermissionDialogWidget> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(
+          onPressed: () => Sint.pop(
             PermissionDialogResult(
               allowed: false,
               rememberForSession: _rememberSession,
@@ -147,7 +147,7 @@ class _PermissionDialogWidgetState extends State<_PermissionDialogWidget> {
           child: Text(NeomageTranslationConstants.deny.tr),
         ),
         FilledButton(
-          onPressed: () => Navigator.of(context).pop(
+          onPressed: () => Sint.pop(
             PermissionDialogResult(
               allowed: true,
               rememberForSession: _rememberSession,

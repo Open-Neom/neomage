@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/native_installer/native_installer_guard.dart';
 import 'dart:math';
 
 import 'package:path/path.dart' as p;
@@ -770,14 +771,19 @@ String _getLockPath({String? dir}) {
 
 Future<SchedulerLock?> _readLock({String? dir}) async {
   final path = _getLockPath(dir: dir);
-  final file = File(path);
-  String raw;
-  try {
-    raw = await file.readAsString();
-  } catch (_) {
+  if (path.contains('\x00') ||
+      path.startsWith('//') ||
+      path.startsWith(r'\\')) {
     return null;
   }
   try {
+    if (await FileSystemEntity.isLink(path)) return null;
+    final file = File(path);
+    final stat = await file.stat();
+    if (stat.type != FileSystemEntityType.file || stat.size > 16384) {
+      return null;
+    }
+    final raw = await file.readAsString();
     final parsed = jsonDecode(raw);
     if (parsed is! Map<String, dynamic>) return null;
     return SchedulerLock.fromJson(parsed);
@@ -786,49 +792,59 @@ Future<SchedulerLock?> _readLock({String? dir}) async {
   }
 }
 
-/// Try to create the lock file exclusively (atomic test-and-set).
+/// Try to create the lock file exclusively using atomic `O_EXCL`
+/// (`File.create(exclusive: true)`) while rejecting symlinks.
 Future<bool> _tryCreateExclusive(SchedulerLock lock, {String? dir}) async {
   final path = _getLockPath(dir: dir);
+  if (path.contains('\x00') ||
+      path.startsWith('//') ||
+      path.startsWith(r'\\')) {
+    return false;
+  }
+  if (await FileSystemEntity.isLink(path)) return false;
+
+  final parentPath = p.dirname(path);
+  if (await FileSystemEntity.isLink(parentPath)) return false;
+
   final file = File(path);
   final body = jsonEncode(lock.toJson());
-  try {
-    // O_EXCL equivalent: create only if it doesn't exist.
-    if (file.existsSync()) return false;
+
+  Future<bool> createAndWrite() async {
+    await file.create(exclusive: true);
     await file.writeAsString(body, flush: true);
     return true;
+  }
+
+  try {
+    return await createAndWrite();
   } on FileSystemException catch (e) {
-    if (e.osError?.errorCode == 17) return false; // EEXIST
-    if (e.osError?.errorCode == 2) {
-      // ENOENT: .neomage/ doesn't exist yet.
-      await Directory(p.dirname(path)).create(recursive: true);
+    final code = e.osError?.errorCode;
+    final msg = e.message.toLowerCase();
+    if (code == 17 || msg.contains('exists')) return false; // EEXIST
+    if (code == 2 || msg.contains('no such file')) {
+      await Directory(parentPath).create(recursive: true);
+      if (await FileSystemEntity.isLink(parentPath)) return false;
       try {
-        if (file.existsSync()) return false;
-        await file.writeAsString(body, flush: true);
-        return true;
+        return await createAndWrite();
       } on FileSystemException catch (retryErr) {
-        if (retryErr.osError?.errorCode == 17) return false;
+        final retryCode = retryErr.osError?.errorCode;
+        final retryMsg = retryErr.message.toLowerCase();
+        if (retryCode == 17 || retryMsg.contains('exists')) return false;
         rethrow;
       }
     }
-    rethrow;
+    return false;
   }
 }
 
-/// Check if a process with the given PID is running.
-bool _isProcessRunning(int pid) {
-  try {
-    // On Unix, sending signal 0 checks if process exists without killing it.
-    return Process.killPid(pid, ProcessSignal.sigusr1) || true;
-  } catch (_) {
-    // If we can't send the signal, process is likely not running.
-    // Use a try-catch around a more reliable method.
-    try {
-      final result = Process.runSync('kill', ['-0', pid.toString()]);
-      return result.exitCode == 0;
-    } catch (_) {
-      return false;
-    }
-  }
+/// Check if a process with the given PID is running WITHOUT sending fatal
+/// `SIGUSR1` (which terminates live processes on POSIX!).
+bool _isProcessRunning(int targetPid) => checkProcessRunningSafe(targetPid);
+
+String _sanitizeLockIdentity(String raw) {
+  final cleaned = raw.replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '').trim();
+  if (cleaned.isEmpty) return 'unknown';
+  return cleaned.length <= 256 ? cleaned : cleaned.substring(0, 256);
 }
 
 /// Try to acquire the scheduler lock for the current session.
@@ -843,7 +859,9 @@ Future<bool> tryAcquireSchedulerLock({
   String? sessionId,
 }) async {
   final dir = opts?.dir;
-  final identity = opts?.lockIdentity ?? sessionId ?? 'unknown';
+  final identity = _sanitizeLockIdentity(
+    opts?.lockIdentity ?? sessionId ?? 'unknown',
+  );
   final lock = SchedulerLock(
     sessionId: identity,
     pid: pid,
@@ -860,9 +878,10 @@ Future<bool> tryAcquireSchedulerLock({
   // Already ours (idempotent).
   if (existing?.sessionId == identity) {
     if (existing!.pid != pid) {
-      await File(
-        _getLockPath(dir: dir),
-      ).writeAsString(jsonEncode(lock.toJson()));
+      final lockPath = _getLockPath(dir: dir);
+      if (!await FileSystemEntity.isLink(lockPath)) {
+        await File(lockPath).writeAsString(jsonEncode(lock.toJson()));
+      }
     }
     return true;
   }
@@ -875,9 +894,13 @@ Future<bool> tryAcquireSchedulerLock({
     return false;
   }
 
-  // Stale -- unlink and retry once.
+  // Stale -- unlink (never following symlinks) and retry once.
+  final lockPath = _getLockPath(dir: dir);
+  if (await FileSystemEntity.isLink(lockPath)) {
+    return false;
+  }
   try {
-    await File(_getLockPath(dir: dir)).delete();
+    await File(lockPath).delete();
   } catch (_) {}
   if (await _tryCreateExclusive(lock, dir: dir)) {
     _lastBlockedBy = null;
@@ -894,11 +917,16 @@ Future<void> releaseSchedulerLock({
 }) async {
   _lastBlockedBy = null;
   final dir = opts?.dir;
-  final identity = opts?.lockIdentity ?? sessionId ?? 'unknown';
+  final identity = _sanitizeLockIdentity(
+    opts?.lockIdentity ?? sessionId ?? 'unknown',
+  );
   final existing = await _readLock(dir: dir);
   if (existing == null || existing.sessionId != identity) return;
   try {
-    await File(_getLockPath(dir: dir)).delete();
+    final lockPath = _getLockPath(dir: dir);
+    if (!await FileSystemEntity.isLink(lockPath)) {
+      await File(lockPath).delete();
+    }
   } catch (_) {
     // Already gone.
   }

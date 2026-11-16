@@ -9,10 +9,11 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -187,25 +188,6 @@ class CompressedImageResult {
     required this.base64,
     required this.mediaType,
     required this.originalSize,
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Clipboard commands
-// ---------------------------------------------------------------------------
-
-/// Platform-specific clipboard commands.
-class _ClipboardCommands {
-  final String checkImage;
-  final String saveImage;
-  final String getPath;
-  final String deleteFile;
-
-  const _ClipboardCommands({
-    required this.checkImage,
-    required this.saveImage,
-    required this.getPath,
-    required this.deleteFile,
   });
 }
 
@@ -713,13 +695,20 @@ class ImageUtils extends SintController {
     }
   }
 
-  /// Read uint32 big-endian from buffer at offset.
-  static int _readUint32BE(Uint8List buffer, int offset) {
-    return (buffer[offset] << 24) |
-        (buffer[offset + 1] << 16) |
-        (buffer[offset + 2] << 8) |
-        buffer[offset + 3];
+  /// Read unsigned uint32 big-endian from buffer at offset (JS/Web-safe: avoids
+  /// signed 32-bit `<< 24` overflow when `buffer[offset] >= 0x80`).
+  static int readUint32BE(Uint8List buffer, int offset) {
+    if (offset < 0 || offset + 4 > buffer.length) {
+      throw RangeError.range(offset, 0, buffer.length - 4, 'offset');
+    }
+    return buffer[offset] * 0x1000000 +
+        ((buffer[offset + 1] << 16) |
+            (buffer[offset + 2] << 8) |
+            buffer[offset + 3]);
   }
+
+  static int _readUint32BE(Uint8List buffer, int offset) =>
+      readUint32BE(buffer, offset);
 
   /// Resizes an image content block if needed.
   Future<ImageBlockWithDimensions> maybeResizeAndDownsampleImageBlock(
@@ -878,75 +867,149 @@ class ImageUtils extends SintController {
   // Clipboard operations
   // ---------------------------------------------------------------------------
 
-  _ClipboardCommands _getClipboardCommands() {
-    final tmpDir = Platform.environment['MAGE_TMPDIR'] ?? '/tmp';
-    final screenshotPath = '$tmpDir/neomage_cli_latest_screenshot.png';
+  static const int _maxImageFileReadBytes = 32 * 1024 * 1024; // 32 MiB
 
-    if (Platform.isMacOS) {
-      return _ClipboardCommands(
-        checkImage: "osascript -e 'the clipboard as \u00abclass PNGf\u00bb'",
-        saveImage:
-            "osascript -e 'set png_data to (the clipboard as \u00abclass PNGf\u00bb)' "
-            "-e 'set fp to open for access POSIX file \"$screenshotPath\" with write permission' "
-            "-e 'write png_data to fp' -e 'close access fp'",
-        getPath:
-            "osascript -e 'get POSIX path of (the clipboard as \u00abclass furl\u00bb)'",
-        deleteFile: 'rm -f "$screenshotPath"',
-      );
-    } else if (Platform.isLinux) {
-      return _ClipboardCommands(
-        checkImage:
-            'xclip -selection clipboard -t TARGETS -o 2>/dev/null | grep -E "image/(png|jpeg|jpg|gif|webp|bmp)"',
-        saveImage:
-            'xclip -selection clipboard -t image/png -o > "$screenshotPath" 2>/dev/null',
-        getPath:
-            'xclip -selection clipboard -t text/plain -o 2>/dev/null || wl-paste 2>/dev/null',
-        deleteFile: 'rm -f "$screenshotPath"',
-      );
+  static String _sanitizeStoreSegment(String raw, String fallback) {
+    final sanitized = raw
+        .trim()
+        .replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_')
+        .replaceAll('..', '_');
+    if (sanitized.isEmpty || sanitized == '.' || sanitized == '_') {
+      return fallback;
     }
-    return _ClipboardCommands(
-      checkImage: '',
-      saveImage: '',
-      getPath: '',
-      deleteFile: '',
-    );
+    return sanitized.length > 128 ? sanitized.substring(0, 128) : sanitized;
+  }
+
+  static Future<Uint8List?> _readSafeLocalImageBytes(String rawPath) async {
+    if (rawPath.isEmpty ||
+        rawPath.contains('\x00') ||
+        rawPath.startsWith('//') ||
+        rawPath.startsWith(r'\\') ||
+        NeomageNetworkGuard.isProtectedSystemOrCredentialPath(rawPath)) {
+      return null;
+    }
+    if (await FileSystemEntity.isLink(rawPath)) return null;
+    final file = File(rawPath);
+    if (!await file.exists()) return null;
+    try {
+      final resolved = await file.resolveSymbolicLinks();
+      if (NeomageNetworkGuard.isProtectedSystemOrCredentialPath(resolved)) {
+        return null;
+      }
+      final stat = await file.stat();
+      if (stat.type != FileSystemEntityType.file ||
+          stat.size <= 0 ||
+          stat.size > _maxImageFileReadBytes) {
+        return null;
+      }
+      return await file.readAsBytes();
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Check if clipboard contains an image without retrieving it.
   Future<bool> hasImageInClipboard() async {
-    if (!Platform.isMacOS) return false;
     try {
-      final commands = _getClipboardCommands();
-      final result = await Process.run('bash', ['-c', commands.checkImage]);
-      return result.exitCode == 0;
-    } catch (_) {
-      return false;
-    }
+      final env = NeomageNetworkGuard.sanitizeSubprocessEnv();
+      if (Platform.isMacOS) {
+        final result = await Process.run(
+          'osascript',
+          ['-e', 'the clipboard as \u00abclass PNGf\u00bb'],
+          environment: env,
+          includeParentEnvironment: false,
+          runInShell: false,
+        ).timeout(const Duration(seconds: 5));
+        return result.exitCode == 0;
+      } else if (Platform.isLinux) {
+        final result = await Process.run(
+          'xclip',
+          ['-selection', 'clipboard', '-t', 'TARGETS', '-o'],
+          environment: env,
+          includeParentEnvironment: false,
+          runInShell: false,
+        ).timeout(const Duration(seconds: 5));
+        if (result.exitCode != 0) return false;
+        final targets = result.stdout.toString();
+        return RegExp(
+          r'image/(png|jpeg|jpg|gif|webp|bmp)',
+        ).hasMatch(targets);
+      }
+    } catch (_) {}
+    return false;
   }
 
-  /// Get image data from the clipboard.
+  /// Get image data from the clipboard using an isolated temp directory and
+  /// parameterized `osascript` `on run argv` (zero shell/AppleScript injection).
   Future<ImageWithDimensions?> getImageFromClipboard() async {
-    final commands = _getClipboardCommands();
-    final tmpDir = Platform.environment['MAGE_TMPDIR'] ?? '/tmp';
-    final screenshotPath = '$tmpDir/neomage_cli_latest_screenshot.png';
-
+    Directory? tempDir;
     try {
-      // Check for image
-      final checkResult = await Process.run('bash', [
-        '-c',
-        commands.checkImage,
-      ]);
-      if (checkResult.exitCode != 0) return null;
+      if (!await hasImageInClipboard()) return null;
 
-      // Save image
-      final saveResult = await Process.run('bash', ['-c', commands.saveImage]);
-      if (saveResult.exitCode != 0) return null;
+      tempDir = await Directory.systemTemp.createTemp('neomage_clip_');
+      final screenshotPath = '${tempDir.path}/clipboard.png';
+      final env = NeomageNetworkGuard.sanitizeSubprocessEnv();
 
-      // Read image
-      var imageBuffer = await File(screenshotPath).readAsBytes();
-      final buffer = Uint8List.fromList(imageBuffer);
+      if (Platform.isMacOS) {
+        const script = '''
+on run argv
+  set outPath to item 1 of argv
+  set png_data to (the clipboard as \u00abclass PNGf\u00bb)
+  set fp to open for access POSIX file outPath with write permission
+  try
+    set eof fp to 0
+    write png_data to fp
+    close access fp
+  on error errMsg
+    try
+      close access fp
+    end try
+    error errMsg
+  end try
+end run
+''';
+        final saveResult = await Process.run(
+          'osascript',
+          ['-e', script, '--', screenshotPath],
+          environment: env,
+          includeParentEnvironment: false,
+          runInShell: false,
+        ).timeout(const Duration(seconds: 10));
+        if (saveResult.exitCode != 0) return null;
+      } else if (Platform.isLinux) {
+        final proc = await Process.start(
+          'xclip',
+          ['-selection', 'clipboard', '-t', 'image/png', '-o'],
+          environment: env,
+          includeParentEnvironment: false,
+          runInShell: false,
+        );
+        final outBytes = BytesBuilder(copy: false);
+        var overflow = false;
+        await for (final chunk in proc.stdout) {
+          if (outBytes.length + chunk.length > _maxImageFileReadBytes) {
+            overflow = true;
+            proc.kill();
+            break;
+          }
+          outBytes.add(chunk);
+        }
+        final code = await proc.exitCode.timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            proc.kill();
+            return -1;
+          },
+        );
+        if (overflow || code != 0) return null;
+        await File(screenshotPath).writeAsBytes(outBytes.takeBytes());
+      } else {
+        return null;
+      }
 
-      // Resize if needed
+      final buffer = await _readSafeLocalImageBytes(screenshotPath);
+      if (buffer == null || buffer.isEmpty) return null;
+
       final resized = await maybeResizeAndDownsampleImageBuffer(
         buffer,
         buffer.length,
@@ -955,9 +1018,6 @@ class ImageUtils extends SintController {
       final base64Image = base64Encode(resized.buffer);
       final mediaType = detectImageFormatFromBase64(base64Image);
 
-      // Cleanup (fire-and-forget)
-      unawaited(Process.run('bash', ['-c', commands.deleteFile]));
-
       return ImageWithDimensions(
         base64: base64Image,
         mediaType: mediaType.value,
@@ -965,18 +1025,52 @@ class ImageUtils extends SintController {
       );
     } catch (_) {
       return null;
+    } finally {
+      if (tempDir != null) {
+        try {
+          if (await tempDir.exists()) {
+            await tempDir.delete(recursive: true);
+          }
+        } catch (_) {}
+      }
     }
   }
 
-  /// Try to get an image file path from the clipboard.
+  /// Try to get an image file path from the clipboard without shell invocation.
   Future<String?> getImagePathFromClipboard() async {
-    final commands = _getClipboardCommands();
     try {
-      final result = await Process.run('bash', ['-c', commands.getPath]);
-      if (result.exitCode != 0 || (result.stdout as String).isEmpty) {
-        return null;
+      final env = NeomageNetworkGuard.sanitizeSubprocessEnv();
+      ProcessResult? result;
+      if (Platform.isMacOS) {
+        result = await Process.run(
+          'osascript',
+          ['-e', 'get POSIX path of (the clipboard as \u00abclass furl\u00bb)'],
+          environment: env,
+          includeParentEnvironment: false,
+          runInShell: false,
+        ).timeout(const Duration(seconds: 5));
+      } else if (Platform.isLinux) {
+        result = await Process.run(
+          'xclip',
+          ['-selection', 'clipboard', '-t', 'text/plain', '-o'],
+          environment: env,
+          includeParentEnvironment: false,
+          runInShell: false,
+        ).timeout(const Duration(seconds: 5));
+        if (result.exitCode != 0) {
+          result = await Process.run(
+            'wl-paste',
+            ['--no-newline'],
+            environment: env,
+            includeParentEnvironment: false,
+            runInShell: false,
+          ).timeout(const Duration(seconds: 5));
+        }
       }
-      return (result.stdout as String).trim();
+      if (result == null || result.exitCode != 0) return null;
+      final out = result.stdout.toString().trim();
+      if (out.isEmpty || out.length > 4096 || out.contains('\x00')) return null;
+      return out;
     } catch (e) {
       _logError(e);
       return null;
@@ -992,13 +1086,14 @@ class ImageUtils extends SintController {
 
     Uint8List? imageBuffer;
     try {
-      if (cleanedPath.startsWith('/')) {
-        imageBuffer = await File(cleanedPath).readAsBytes();
-      } else {
+      if (cleanedPath.startsWith('/') && !cleanedPath.startsWith('//')) {
+        imageBuffer = await _readSafeLocalImageBytes(cleanedPath);
+      } else if (!cleanedPath.startsWith('//') &&
+          !cleanedPath.startsWith(r'\\')) {
         final clipboardPath = await getImagePathFromClipboard();
         if (clipboardPath != null &&
             cleanedPath == clipboardPath.split('/').last) {
-          imageBuffer = await File(clipboardPath).readAsBytes();
+          imageBuffer = await _readSafeLocalImageBytes(clipboardPath);
         }
       }
     } catch (e) {
@@ -1033,12 +1128,16 @@ class ImageUtils extends SintController {
   // ---------------------------------------------------------------------------
 
   String _getSessionImageStoreDir() {
-    return '${_getImageStoreDir()}/${_getSessionId()}';
+    final safeSession = _sanitizeStoreSegment(_getSessionId(), 'default');
+    return '${_getImageStoreDir()}/$safeSession';
   }
 
   String _getImagePath(int imageId, String mediaType) {
-    final extension = mediaType.split('/').last;
-    return '${_getSessionImageStoreDir()}/$imageId.$extension';
+    final rawExt = mediaType.split('/').last.toLowerCase();
+    final safeExt = const {'png', 'jpeg', 'jpg', 'gif', 'webp'}.contains(rawExt)
+        ? rawExt
+        : 'png';
+    return '${_getSessionImageStoreDir()}/$imageId.$safeExt';
   }
 
   /// Cache the image path immediately (fast, no file I/O).
@@ -1065,8 +1164,10 @@ class ImageUtils extends SintController {
 
     try {
       final dir = _getSessionImageStoreDir();
+      if (await FileSystemEntity.isLink(dir)) return null;
       await Directory(dir).create(recursive: true);
       final imagePath = _getImagePath(id, mediaType);
+      if (await FileSystemEntity.isLink(imagePath)) return null;
       await File(imagePath).writeAsBytes(base64Decode(content));
       _evictOldestIfAtCap();
       _storedImagePaths[id] = imagePath;
@@ -1117,14 +1218,15 @@ class ImageUtils extends SintController {
   /// Clean up old image cache directories from previous sessions.
   Future<void> cleanupOldImageCaches() async {
     final baseDir = _getImageStoreDir();
-    final currentSessionId = _getSessionId();
+    final currentSessionId = _sanitizeStoreSegment(_getSessionId(), 'default');
 
     try {
       final dir = Directory(baseDir);
       if (!await dir.exists()) return;
 
-      await for (final sessionDir in dir.list()) {
+      await for (final sessionDir in dir.list(followLinks: false)) {
         if (sessionDir is! Directory) continue;
+        if (await FileSystemEntity.isLink(sessionDir.path)) continue;
         if (sessionDir.path.split('/').last == currentSessionId) continue;
 
         try {
@@ -1135,7 +1237,7 @@ class ImageUtils extends SintController {
 
       // Remove base dir if empty
       try {
-        final remaining = await dir.list().toList();
+        final remaining = await dir.list(followLinks: false).toList();
         if (remaining.isEmpty) await dir.delete();
       } catch (_) {}
     } catch (_) {}

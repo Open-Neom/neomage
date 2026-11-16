@@ -6,6 +6,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -46,10 +47,46 @@ class DiagnosticLogEntry {
   };
 }
 
+/// Validates whether [rawPath] is safe for diagnostic log appends (blocks
+/// empty, NUL, UNC, `..` traversal, protected system/credential trees, and symlinks).
+bool isSafeDiagnosticLogFilePath(String? rawPath) {
+  if (rawPath == null) return false;
+  final trimmed = rawPath.trim();
+  if (trimmed.isEmpty ||
+      trimmed.length > 1024 ||
+      trimmed.contains('\x00') ||
+      trimmed.startsWith('-') ||
+      trimmed.startsWith('//') ||
+      trimmed.startsWith(r'\\')) {
+    return false;
+  }
+  final segments = trimmed.split(RegExp(r'[/\\]'));
+  if (segments.contains('..')) return false;
+  if (NeomageNetworkGuard.isProtectedSystemOrCredentialPath(trimmed)) {
+    return false;
+  }
+  try {
+    if (FileSystemEntity.isLinkSync(trimmed)) return false;
+    final parentDir = p.dirname(trimmed);
+    if (parentDir.isNotEmpty && Directory(parentDir).existsSync()) {
+      final resolvedParent = Directory(parentDir).resolveSymbolicLinksSync();
+      if (NeomageNetworkGuard.isProtectedSystemOrCredentialPath(
+        resolvedParent,
+      )) {
+        return false;
+      }
+    }
+  } catch (_) {
+    return false;
+  }
+  return true;
+}
+
 /// Returns the diagnostic log file path from the environment, or `null` if
-/// diagnostics logging is not configured.
+/// diagnostics logging is not configured or points to an unsafe path.
 String? _getDiagnosticLogFile() {
-  return Platform.environment['MAGE_DIAGNOSTICS_FILE'];
+  final raw = Platform.environment['MAGE_DIAGNOSTICS_FILE'];
+  return isSafeDiagnosticLogFilePath(raw) ? raw!.trim() : null;
 }
 
 /// Logs diagnostic information to a logfile. This information is sent via
@@ -894,7 +931,13 @@ Future<InstallationType> getCurrentInstallationType({
 
   // Try to get the npm global prefix.
   try {
-    final result = await Process.run('npm', ['config', 'get', 'prefix']);
+    final result = await Process.run(
+      'npm',
+      ['config', 'get', 'prefix'],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     if (result.exitCode == 0) {
       final globalPrefix = (result.stdout as String).trim();
       if (globalPrefix.isNotEmpty && invokedPath.startsWith(globalPrefix)) {
@@ -925,7 +968,13 @@ Future<String> getInstallationPath({bool Function()? isInBundledMode}) async {
 
     // Check which neomage.
     try {
-      final result = await Process.run('which', ['neomage']);
+      final result = await Process.run(
+        'which',
+        ['neomage'],
+        runInShell: false,
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+        includeParentEnvironment: false,
+      ).timeout(const Duration(seconds: 5));
       if (result.exitCode == 0) {
         final path = (result.stdout as String).trim();
         if (path.isNotEmpty) return path;
@@ -972,12 +1021,13 @@ Future<List<DetectedInstallation>> detectMultipleInstallations({
 
   // Check for global npm installation.
   try {
-    final npmResult = await Process.run('npm', [
-      '-g',
-      'config',
-      'get',
-      'prefix',
-    ]);
+    final npmResult = await Process.run(
+      'npm',
+      ['-g', 'config', 'get', 'prefix'],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     if (npmResult.exitCode == 0) {
       final npmPrefix = (npmResult.stdout as String).trim();
       if (npmPrefix.isNotEmpty) {

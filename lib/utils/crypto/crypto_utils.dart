@@ -4,117 +4,36 @@
 /// simple XOR encryption, and platform keychain access.
 library;
 
+import 'dart:async';
 import 'dart:convert';
-import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' as dart_crypto;
+import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+import 'package:path/path.dart' as p;
+
 // ---------------------------------------------------------------------------
-// Hashing (using dart:convert and manual implementations for no-dependency)
+// Hashing (pure-Dart cryptographic implementation — zero shell spawning)
 // ---------------------------------------------------------------------------
 
-/// Compute SHA-256 hash of [text].
-///
-/// Uses the `shasum` command on macOS/Linux for simplicity without
-/// requiring a crypto package.
-Future<String> sha256(String text) async {
-  final result = await Process.run(
-    'shasum',
-    ['-a', '256'],
-    stdoutEncoding: utf8,
-    stderrEncoding: utf8,
-    environment: Platform.environment,
-  );
-  // Fallback: use openssl
-  if (result.exitCode != 0) {
-    return _hashViaOpenssl('sha256', text);
-  }
-  // Use printf + shasum via shell
-  final proc = await Process.run('sh', [
-    '-c',
-    'printf "%s" \${1} | shasum -a 256',
-    '--',
-    text,
-  ], stdoutEncoding: utf8);
-  if (proc.exitCode == 0) {
-    return (proc.stdout as String).split(' ').first.trim();
-  }
-  return _hashViaOpenssl('sha256', text);
-}
+/// Compute SHA-256 hash of [text] using pure-Dart `package:crypto`.
+Future<String> sha256(String text) async => sha256Sync(text);
 
-/// Compute SHA-256 synchronously using Process.runSync.
-String sha256Sync(String text) {
-  final result = Process.runSync('sh', [
-    '-c',
-    'printf "%s" "\$1" | shasum -a 256',
-    '--',
-    text,
-  ], stdoutEncoding: utf8);
-  if (result.exitCode == 0) {
-    return (result.stdout as String).split(' ').first.trim();
-  }
-  // Fallback to openssl
-  final r2 = Process.runSync('sh', [
-    '-c',
-    'printf "%s" "\$1" | openssl dgst -sha256 -hex',
-    '--',
-    text,
-  ], stdoutEncoding: utf8);
-  final output = (r2.stdout as String).trim();
-  // openssl may prefix with "(stdin)= "
-  final idx = output.indexOf('= ');
-  return idx >= 0 ? output.substring(idx + 2).trim() : output;
-}
+/// Compute SHA-256 synchronously using pure-Dart `package:crypto`.
+String sha256Sync(String text) =>
+    dart_crypto.sha256.convert(utf8.encode(text)).toString();
 
-/// Compute MD5 hash of [text].
-Future<String> md5(String text) async {
-  // Try md5sum first (Linux), then md5 (macOS)
-  for (final cmd in ['md5sum', 'md5']) {
-    try {
-      final proc = await Process.run('sh', [
-        '-c',
-        'printf "%s" "\$1" | $cmd',
-        '--',
-        text,
-      ], stdoutEncoding: utf8);
-      if (proc.exitCode == 0) {
-        final out = (proc.stdout as String).trim();
-        if (cmd == 'md5sum') return out.split(' ').first;
-        // macOS md5 outputs "MD5 (...) = <hash>" or just the hash
-        final eqIdx = out.indexOf('= ');
-        return eqIdx >= 0
-            ? out.substring(eqIdx + 2).trim()
-            : out.split(' ').last;
-      }
-    } catch (_) {}
-  }
-  return _hashViaOpenssl('md5', text);
-}
+/// Compute MD5 hash of [text] using pure-Dart `package:crypto`.
+Future<String> md5(String text) async =>
+    dart_crypto.md5.convert(utf8.encode(text)).toString();
 
-/// Compute HMAC-SHA256 of [text] with [key].
+/// Compute HMAC-SHA256 of [text] with [key] using pure-Dart `package:crypto`
+/// (never exposing [key] on OS process command lines).
 Future<String> hmacSha256(String key, String text) async {
-  final proc = await Process.run('sh', [
-    '-c',
-    'printf "%s" "\$1" | openssl dgst -sha256 -hmac "\$2" -hex',
-    '--',
-    text,
-    key,
-  ], stdoutEncoding: utf8);
-  final output = (proc.stdout as String).trim();
-  final idx = output.indexOf('= ');
-  return idx >= 0 ? output.substring(idx + 2).trim() : output;
-}
-
-Future<String> _hashViaOpenssl(String algo, String text) async {
-  final proc = await Process.run('sh', [
-    '-c',
-    'printf "%s" "\$1" | openssl dgst -$algo -hex',
-    '--',
-    text,
-  ], stdoutEncoding: utf8);
-  final output = (proc.stdout as String).trim();
-  final idx = output.indexOf('= ');
-  return idx >= 0 ? output.substring(idx + 2).trim() : output;
+  final hmac = dart_crypto.Hmac(dart_crypto.sha256, utf8.encode(key));
+  return hmac.convert(utf8.encode(text)).toString();
 }
 
 // ---------------------------------------------------------------------------
@@ -199,81 +118,76 @@ String generateToken(int length) {
 // File / directory hashing
 // ---------------------------------------------------------------------------
 
-/// Compute SHA-256 hash of a file at [path].
-Future<String> hashFile(String path) async {
-  final proc = await Process.run('shasum', [
-    '-a',
-    '256',
-    path,
-  ], stdoutEncoding: utf8);
-  if (proc.exitCode == 0) {
-    return (proc.stdout as String).split(' ').first.trim();
+void _validateHashTargetPath(String path) {
+  if (path.isEmpty || path.contains('\x00')) {
+    throw ArgumentError('Invalid path: empty or contains NUL byte');
   }
-  // Fallback
-  final proc2 = await Process.run('openssl', [
-    'dgst',
-    '-sha256',
-    '-hex',
+  if (path.startsWith('//') || path.startsWith(r'\\')) {
+    throw ArgumentError('Invalid path: UNC network paths are disallowed');
+  }
+  final protectedReason = NeomageNetworkGuard.checkProtectedFilesystemPath(
     path,
-  ], stdoutEncoding: utf8);
-  final output = (proc2.stdout as String).trim();
-  final idx = output.indexOf('= ');
-  return idx >= 0 ? output.substring(idx + 2).trim() : output;
+  );
+  if (protectedReason != null) {
+    throw FileSystemException(protectedReason, path);
+  }
 }
 
-/// Compute a combined SHA-256 hash of all files in a directory at [path].
+/// Compute SHA-256 hash of a file at [path] using pure-Dart streaming.
+Future<String> hashFile(String path) async {
+  _validateHashTargetPath(path);
+  if (await FileSystemEntity.isLink(path)) {
+    throw FileSystemException('Refusing to hash symbolic link', path);
+  }
+  final file = File(path);
+  final digest = await dart_crypto.sha256.bind(file.openRead()).first;
+  return digest.toString();
+}
+
+/// Compute a combined SHA-256 hash of all regular files in a directory at
+/// [path] without following symbolic links or spawning external shells.
 ///
-/// Files are sorted by path for deterministic output.
+/// Files are sorted by relative path for deterministic output.
 Future<String> hashDirectory(String path) async {
-  // Find all files, sort, hash each, then hash the combined hashes
-  final findResult = await Process.run('find', [
-    path,
-    '-type',
-    'f',
-  ], stdoutEncoding: utf8);
-  if (findResult.exitCode != 0) {
-    throw ProcessException(
-      'find',
-      [path],
-      'Failed to list directory',
-      findResult.exitCode,
-    );
+  _validateHashTargetPath(path);
+  if (await FileSystemEntity.isLink(path)) {
+    throw FileSystemException('Refusing to hash symbolic link directory', path);
+  }
+  final dir = Directory(path);
+  if (!await dir.exists()) {
+    throw FileSystemException('Directory does not exist', path);
   }
 
-  final files =
-      (findResult.stdout as String)
-          .split('\n')
-          .where((f) => f.isNotEmpty)
-          .toList()
-        ..sort();
+  final files = <String>[];
+  await for (final entity in dir.list(recursive: true, followLinks: false)) {
+    if (entity is File) {
+      files.add(entity.path);
+    }
+    if (files.length > 50000) {
+      throw StateError('Directory contains more than 50,000 files');
+    }
+  }
+  files.sort();
 
   final hashes = <String>[];
   for (final file in files) {
-    hashes.add(await hashFile(file));
+    final rel = p.relative(file, from: path).replaceAll('\\', '/');
+    final fileDigest = await hashFile(file);
+    hashes.add('$rel:$fileDigest\n');
   }
 
-  // Hash the concatenated hashes
-  final combined = hashes.join();
-  return sha256Sync(combined).isNotEmpty
-      ? sha256Sync(combined)
-      : (await sha256(combined));
+  return sha256Sync(hashes.join());
 }
 
 // ---------------------------------------------------------------------------
 // Comparison
 // ---------------------------------------------------------------------------
 
-/// Constant-time string comparison to prevent timing attacks.
+/// Constant-time string comparison over UTF-8 bytes without length-leak
+/// early return.
 bool constantTimeEquals(String a, String b) {
-  final aBytes = utf8.encode(a);
-  final bBytes = utf8.encode(b);
-  if (aBytes.length != bBytes.length) return false;
-
-  var result = 0;
-  for (var i = 0; i < aBytes.length; i++) {
-    result |= aBytes[i] ^ bBytes[i];
-  }
-  return result == 0;
+  if (a.isEmpty && b.isEmpty) return true;
+  return NeomageNetworkGuard.constantTimeEquals(a, b);
 }
 
 // ---------------------------------------------------------------------------
@@ -343,72 +257,120 @@ class SecureStorage {
 
   const SecureStorage({this.serviceName = 'neomage'});
 
+  static final RegExp _controlChars = RegExp(r'[\x00-\x1F\x7F]');
+
+  /// Validates keychain `serviceName` and `key` to prevent option injection
+  /// (`-a` / `--label`) and NUL/control-byte corruption.
+  static void validateKeychainIdentifier(String value, {String label = 'key'}) {
+    if (value.isEmpty || value.length > 256) {
+      throw ArgumentError('Invalid $label length');
+    }
+    if (value.startsWith('-')) {
+      throw ArgumentError('Invalid $label: must not start with "-"');
+    }
+    if (_controlChars.hasMatch(value)) {
+      throw ArgumentError('Invalid $label: contains control characters');
+    }
+  }
+
+  void _validateServiceAndKey(String key) {
+    validateKeychainIdentifier(serviceName, label: 'serviceName');
+    validateKeychainIdentifier(key, label: 'key');
+  }
+
   /// Store a value in the system keychain.
   Future<bool> write(String key, String value) async {
+    _validateServiceAndKey(key);
+    if (value.contains('\x00') || value.length > 65536) {
+      throw ArgumentError('Invalid secret value');
+    }
+    final cleanEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(
+      Platform.environment,
+    );
+
     if (Platform.isMacOS) {
-      final result = await Process.run('security', [
-        'add-generic-password',
-        '-a', key,
-        '-s', serviceName,
-        '-w', value,
-        '-U', // Update if exists
-      ]);
+      final result = await Process.run(
+        'security',
+        [
+          'add-generic-password',
+          '-a',
+          key,
+          '-s',
+          serviceName,
+          '-w',
+          value,
+          '-U',
+        ],
+        environment: cleanEnv,
+      ).timeout(const Duration(seconds: 15));
       return result.exitCode == 0;
     } else if (Platform.isLinux) {
-      final result = await Process.run('secret-tool', [
-        'store',
-        '--label',
-        '$serviceName:$key',
-        'service',
-        serviceName,
-        'account',
-        key,
-      ], environment: Platform.environment);
-      // secret-tool reads the secret from stdin
-      if (result.exitCode != 0) {
-        // Try with stdin
-        final proc = await Process.start('secret-tool', [
+      final proc = await Process.start(
+        'secret-tool',
+        [
           'store',
-          '--label',
-          '$serviceName:$key',
+          '--label=$serviceName:$key',
+          '--',
           'service',
           serviceName,
           'account',
           key,
-        ]);
-        proc.stdin.writeln(value);
-        await proc.stdin.close();
-        final code = await proc.exitCode;
-        return code == 0;
-      }
-      return true;
+        ],
+        environment: cleanEnv,
+      );
+      proc.stdin.write(value);
+      await proc.stdin.close();
+      final code = await proc.exitCode.timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          proc.kill();
+          return -1;
+        },
+      );
+      return code == 0;
     }
     throw UnsupportedError('SecureStorage is not supported on this platform');
   }
 
   /// Read a value from the system keychain.
   Future<String?> read(String key) async {
+    _validateServiceAndKey(key);
+    final cleanEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(
+      Platform.environment,
+    );
+
     if (Platform.isMacOS) {
-      final result = await Process.run('security', [
-        'find-generic-password',
-        '-a',
-        key,
-        '-s',
-        serviceName,
-        '-w',
-      ], stdoutEncoding: utf8);
+      final result = await Process.run(
+        'security',
+        [
+          'find-generic-password',
+          '-a',
+          key,
+          '-s',
+          serviceName,
+          '-w',
+        ],
+        stdoutEncoding: utf8,
+        environment: cleanEnv,
+      ).timeout(const Duration(seconds: 15));
       if (result.exitCode == 0) {
         return (result.stdout as String).trim();
       }
       return null;
     } else if (Platform.isLinux) {
-      final result = await Process.run('secret-tool', [
-        'lookup',
-        'service',
-        serviceName,
-        'account',
-        key,
-      ], stdoutEncoding: utf8);
+      final result = await Process.run(
+        'secret-tool',
+        [
+          'lookup',
+          '--',
+          'service',
+          serviceName,
+          'account',
+          key,
+        ],
+        stdoutEncoding: utf8,
+        environment: cleanEnv,
+      ).timeout(const Duration(seconds: 15));
       if (result.exitCode == 0) {
         return (result.stdout as String).trim();
       }
@@ -419,23 +381,37 @@ class SecureStorage {
 
   /// Delete a value from the system keychain.
   Future<bool> delete(String key) async {
+    _validateServiceAndKey(key);
+    final cleanEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(
+      Platform.environment,
+    );
+
     if (Platform.isMacOS) {
-      final result = await Process.run('security', [
-        'delete-generic-password',
-        '-a',
-        key,
-        '-s',
-        serviceName,
-      ]);
+      final result = await Process.run(
+        'security',
+        [
+          'delete-generic-password',
+          '-a',
+          key,
+          '-s',
+          serviceName,
+        ],
+        environment: cleanEnv,
+      ).timeout(const Duration(seconds: 15));
       return result.exitCode == 0;
     } else if (Platform.isLinux) {
-      final result = await Process.run('secret-tool', [
-        'clear',
-        'service',
-        serviceName,
-        'account',
-        key,
-      ]);
+      final result = await Process.run(
+        'secret-tool',
+        [
+          'clear',
+          '--',
+          'service',
+          serviceName,
+          'account',
+          key,
+        ],
+        environment: cleanEnv,
+      ).timeout(const Duration(seconds: 15));
       return result.exitCode == 0;
     }
     throw UnsupportedError('SecureStorage is not supported on this platform');

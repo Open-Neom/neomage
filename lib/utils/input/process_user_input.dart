@@ -2,6 +2,7 @@
 // Input parsing, @-mentions, file references, command detection, context extraction.
 
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 // ---------------------------------------------------------------------------
 // Segment types
@@ -479,14 +480,26 @@ Future<List<MentionSuggestion>> getCompletions(
   final prefix = _baseName(resolved).toLowerCase();
 
   try {
+    if (parentDir.startsWith('//') ||
+        parentDir.startsWith(r'\\') ||
+        NeomageNetworkGuard.isProtectedSystemOrCredentialPath(parentDir)) {
+      return [];
+    }
     final dir = Directory(parentDir);
-    if (await dir.exists()) {
-      await for (final entity in dir.list(followLinks: true)) {
+    if (await dir.exists() && !await FileSystemEntity.isLink(parentDir)) {
+      var scanned = 0;
+      await for (final entity in dir.list(followLinks: false)) {
+        if (++scanned > 2000) break;
         final name = _baseName(entity.path);
         if (name.startsWith('.') && !partial.contains('/.')) {
           continue; // skip hidden
         }
         if (prefix.isNotEmpty && !name.toLowerCase().startsWith(prefix)) {
+          continue;
+        }
+        if (NeomageNetworkGuard.isProtectedSystemOrCredentialPath(
+          entity.path,
+        )) {
           continue;
         }
 
@@ -538,27 +551,37 @@ Future<List<MentionSuggestion>> _getGitRefs(
   String partial,
   String workingDirectory,
 ) async {
+  if (workingDirectory.startsWith('//') ||
+      workingDirectory.startsWith(r'\\') ||
+      workingDirectory.contains('\x00') ||
+      NeomageNetworkGuard.isProtectedSystemOrCredentialPath(workingDirectory)) {
+    return [];
+  }
   final suggestions = <MentionSuggestion>[];
   try {
-    String command;
+    List<String> gitArgs;
     MentionType mentionType;
     switch (refType) {
       case 'branch':
-        command = 'git branch --list --format=%(refname:short)';
+        gitArgs = const ['branch', '--list', '--format=%(refname:short)'];
         mentionType = MentionType.gitBranch;
       case 'tag':
-        command = 'git tag --list';
+        gitArgs = const ['tag', '--list'];
         mentionType = MentionType.gitTag;
       case 'commit':
-        command = 'git log --oneline -20 --format=%h';
+        gitArgs = const ['log', '--oneline', '-20', '--format=%h'];
         mentionType = MentionType.gitBranch; // reuse for commits
       default:
         return [];
     }
-    final result = await Process.run('bash', [
-      '-c',
-      command,
-    ], workingDirectory: workingDirectory);
+    final result = await Process.run(
+      'git',
+      gitArgs,
+      workingDirectory: workingDirectory,
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     if (result.exitCode == 0) {
       final output = (result.stdout as String).trim();
       for (final line in output.split('\n')) {
@@ -1192,6 +1215,13 @@ List<String> checkInputSafety(String input) {
   if (RegExp(r'[\x00-\x08\x0e-\x1f]').hasMatch(input)) {
     warnings.add(
       'Input contains control characters that may indicate binary data.',
+    );
+  }
+
+  // Check for Unicode BiDi Trojan Source override characters.
+  if (RegExp(r'[\u061C\u202A-\u202E\u2066-\u2069]').hasMatch(input)) {
+    warnings.add(
+      'Input contains Unicode bidirectional override characters (Trojan Source risk).',
     );
   }
 

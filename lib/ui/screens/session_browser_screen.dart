@@ -72,11 +72,11 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
+            onPressed: () => Sint.pop(false),
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
+            onPressed: () => Sint.pop(true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
           ),
@@ -225,11 +225,11 @@ class _SessionBrowserScreenState extends State<SessionBrowserScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
+                onPressed: () => Sint.pop(false),
                 child: const Text('Cancel'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(ctx, true),
+                onPressed: () => Sint.pop(true),
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
                 child: const Text('Delete'),
               ),

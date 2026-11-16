@@ -1,6 +1,8 @@
 // WebSearchTool — port of neomage/src/tools/WebSearchTool/.
 // Performs web searches via API, returns structured results with links.
 
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+
 import '../api/api_provider.dart';
 
 /// Web search input.
@@ -72,22 +74,25 @@ class WebSearchOutput {
     this.searchCount = 1,
   });
 
-  /// Format for display.
+  /// Format for display with Markdown/URL/ChatML injection neutralization.
   String format() {
+    final safeQuery = _sanitizeSearchText(query).replaceAll('\n', ' ').trim();
     final buf = StringBuffer()
-      ..writeln('Web search results for query: "$query"\n');
+      ..writeln('Web search results for query: "$safeQuery"\n');
 
     for (final result in results) {
       if (result is String) {
-        buf.writeln(result);
+        buf.writeln(_sanitizeSearchText(result));
       } else if (result is SearchResult) {
-        buf.writeln('- [${result.title}](${result.url})');
+        buf.writeln(_formatSearchResultLine(result));
         if (result.snippet != null) {
-          buf.writeln('  ${result.snippet}');
+          buf.writeln(
+            '  ${_sanitizeSearchText(result.snippet!).replaceAll('\n', ' ')}',
+          );
         }
       } else if (result is List<SearchResult>) {
         for (final r in result) {
-          buf.writeln('- [${r.title}](${r.url})');
+          buf.writeln(_formatSearchResultLine(r));
         }
       }
     }
@@ -102,19 +107,96 @@ class WebSearchOutput {
   }
 }
 
+final RegExp _searchControlChars = RegExp(
+  r'[\x00-\x1F\x7F-\x9F\u061C\u200B-\u200F\u2028\u2029\u202A-\u202E\u2060\u2066-\u2069\uFEFF]',
+);
+
+final RegExp _searchChatTokens = RegExp(
+  r'<\|channel>\s*thought\b[\s\S]*?<channel\|>|<\|channel>\s*thought\b[\s\S]*$|<\|(?:im_start|im_end|endoftext|eot_id|start_header_id|end_header_id|/?turn)\|>|<\|channel>|<channel\|>|<(?:start|end)_of_turn>',
+  caseSensitive: false,
+);
+
+String _sanitizeSearchText(String raw) =>
+    raw.replaceAll(_searchChatTokens, '').replaceAll(_searchControlChars, ' ');
+
+String _sanitizeMarkdownTitle(String rawTitle) {
+  final stripped = _sanitizeSearchText(rawTitle).trim();
+  if (stripped.isEmpty) return 'Untitled';
+  return stripped
+      .replaceAll(r'\', r'\\')
+      .replaceAll('[', r'\[')
+      .replaceAll(']', r'\]');
+}
+
+String? _sanitizeSearchUrl(String rawUrl) {
+  if (_searchControlChars.hasMatch(rawUrl)) return null;
+  final trimmed = rawUrl.trim();
+  if (trimmed.isEmpty ||
+      trimmed.contains(r'\') ||
+      trimmed.toLowerCase().contains('%5c')) {
+    return null;
+  }
+  final uri = Uri.tryParse(trimmed);
+  if (uri == null ||
+      !uri.hasScheme ||
+      uri.host.isEmpty ||
+      uri.userInfo.isNotEmpty) {
+    return null;
+  }
+  final scheme = uri.scheme.toLowerCase();
+  if (scheme != 'http' && scheme != 'https') return null;
+  if (NeomageNetworkGuard.isPrivateOrReservedHost(
+    uri.host,
+    allowLoopback: false,
+  )) {
+    return null;
+  }
+  return uri
+      .toString()
+      .replaceAll('(', '%28')
+      .replaceAll(')', '%29')
+      .replaceAll(' ', '%20');
+}
+
+String _formatSearchResultLine(SearchResult result) {
+  final safeTitle = _sanitizeMarkdownTitle(result.title);
+  final safeUrl = _sanitizeSearchUrl(result.url);
+  if (safeUrl == null) {
+    return '- $safeTitle';
+  }
+  return '- [$safeTitle]($safeUrl)';
+}
+
 /// Maximum result output length.
 const maxSearchOutputLength = 100000;
+
+/// Maximum search query length.
+const maxSearchQueryLength = 2000;
 
 /// Maximum searches per query.
 const maxSearchesPerQuery = 8;
 
 /// Validate web search input.
 String? validateSearchInput(WebSearchInput input) {
-  if (input.query.length < 2) {
+  if (input.query.contains('\x00')) {
+    return 'Search query must not contain NUL bytes';
+  }
+  if (input.query.trim().length < 2) {
     return 'Search query must be at least 2 characters';
+  }
+  if (input.query.length > maxSearchQueryLength) {
+    return 'Search query must not exceed $maxSearchQueryLength characters';
   }
   if (input.allowedDomains != null && input.blockedDomains != null) {
     return 'Cannot specify both allowed_domains and blocked_domains';
+  }
+  for (final d in <String>[
+    ...?input.allowedDomains,
+    ...?input.blockedDomains,
+  ]) {
+    if (d.trim().isEmpty || _searchControlChars.hasMatch(d) || d.contains(' ')) {
+      return 'Invalid domain filter: $d';
+    }
   }
   return null;
 }

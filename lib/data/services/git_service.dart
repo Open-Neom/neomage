@@ -5,6 +5,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+import 'package:path/path.dart' as p;
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -230,11 +232,158 @@ class GitException implements Exception {
 /// If not provided the service falls back to the [defaultWorkDir] given at
 /// construction time (or the current directory).
 class GitService {
+  /// Maximum git subprocess output (`16 MiB`) per stream.
+  static const int maxGitOutputBytes = 16 * 1024 * 1024;
+
+  /// Default timeout for git subprocess commands.
+  static const Duration defaultGitTimeout = Duration(seconds: 60);
+
   final String? defaultWorkDir;
   final String _gitBinary;
 
   GitService({this.defaultWorkDir, String gitBinary = 'git'})
     : _gitBinary = gitBinary;
+
+  /// Validates a git ref, branch, remote, tag, or commit identifier against
+  /// leading-hyphen option injection (`--upload-pack=...`), control characters,
+  /// and whitespace.
+  static void validateGitRefOrName(
+    String value, {
+    String label = 'ref',
+    bool disallowRangeDots = false,
+  }) {
+    if (value.isEmpty || value.length > 256) {
+      throw ArgumentError.value(value, label, 'Invalid git $label length');
+    }
+    if (value.startsWith('-')) {
+      throw ArgumentError.value(
+        value,
+        label,
+        'Git $label must not start with "-"',
+      );
+    }
+    if (RegExp(r'[\x00-\x1F\x7F\s]').hasMatch(value)) {
+      throw ArgumentError.value(
+        value,
+        label,
+        'Git $label contains control or whitespace characters',
+      );
+    }
+    if (disallowRangeDots &&
+        (value.contains('..') ||
+            value.contains('@{') ||
+            value.contains(r'\') ||
+            value.contains(':'))) {
+      throw ArgumentError.value(value, label, 'Unsafe git $label format');
+    }
+  }
+
+  /// Validates a git remote URL, blocking `ext::` / `fd::` remote helpers,
+  /// `file://` local clones, leading `-`, and private/loopback/IMDS SSRF hosts.
+  static void validateRemoteUrl(String url) {
+    if (url.isEmpty || url.length > 2048 || url.startsWith('-')) {
+      throw ArgumentError.value(url, 'url', 'Invalid git remote URL');
+    }
+    if (RegExp(r'[\x00-\x20\x7F]').hasMatch(url)) {
+      throw ArgumentError.value(
+        url,
+        'url',
+        'Git remote URL contains whitespace or control characters',
+      );
+    }
+    final lower = url.toLowerCase();
+    if (lower.startsWith('ext::') ||
+        lower.startsWith('fd::') ||
+        lower.startsWith('file:')) {
+      throw ArgumentError.value(
+        url,
+        'url',
+        'Disallowed git remote transport protocol',
+      );
+    }
+    if (url.contains('://')) {
+      final uri = Uri.tryParse(url);
+      if (uri == null || uri.host.isEmpty) {
+        throw ArgumentError.value(url, 'url', 'Malformed git remote URI');
+      }
+      final scheme = uri.scheme.toLowerCase();
+      if (scheme == 'https' || scheme == 'http') {
+        if (!NeomageNetworkGuard.isSafeEndpointUri(
+          uri,
+          allowLoopbackInsecure: false,
+          secureSchemes: const <String>{'https'},
+          insecureSchemes: const <String>{},
+        )) {
+          throw ArgumentError.value(
+            url,
+            'url',
+            'Unsafe HTTP(S) git remote endpoint',
+          );
+        }
+        return;
+      }
+      if (scheme == 'ssh' || scheme == 'git') {
+        if (NeomageNetworkGuard.isPrivateOrReservedHost(uri.host)) {
+          throw ArgumentError.value(
+            url,
+            'url',
+            'Private or loopback git remote host rejected',
+          );
+        }
+        return;
+      }
+      throw ArgumentError.value(
+        url,
+        'url',
+        'Unsupported git remote URI scheme: $scheme',
+      );
+    }
+
+    // SCP-like SSH syntax: git@github.com:owner/repo.git
+    final scpMatch = RegExp(
+      r'^[A-Za-z0-9._-]+@([A-Za-z0-9.-]+):[A-Za-z0-9._/-]+$',
+    ).firstMatch(url);
+    if (scpMatch == null) {
+      throw ArgumentError.value(url, 'url', 'Unsupported git remote syntax');
+    }
+    final host = scpMatch.group(1)!;
+    if (NeomageNetworkGuard.isPrivateOrReservedHost(host)) {
+      throw ArgumentError.value(
+        url,
+        'url',
+        'Private or loopback SCP git remote host rejected',
+      );
+    }
+  }
+
+  static void _assertSafeFilterValue(String? value, String label) {
+    if (value == null) return;
+    if (value.contains('\x00') ||
+        value.contains('\r') ||
+        value.contains('\n') ||
+        value.length > 512) {
+      throw ArgumentError.value(value, label, 'Unsafe git filter value');
+    }
+  }
+
+  static void _assertSafePathArg(String path, [String label = 'path']) {
+    if (path.isEmpty ||
+        path.contains('\x00') ||
+        path.startsWith('//') ||
+        path.startsWith(r'\\')) {
+      throw ArgumentError.value(path, label, 'Unsafe git path argument');
+    }
+  }
+
+  static void _assertSafeWorkDir(String? workDir) {
+    if (workDir == null) return;
+    if (workDir.isEmpty ||
+        workDir.contains('\x00') ||
+        workDir.startsWith('//') ||
+        workDir.startsWith(r'\\')) {
+      throw ArgumentError.value(workDir, 'workDir', 'Unsafe working directory');
+    }
+  }
 
   // -------------------------------------------------------------------------
   // Status
@@ -329,11 +478,18 @@ class GitService {
       '--format=%H%n%h%n%an%n%ae%n%aI%n%P%n%s%n---END---',
     ];
 
+    _assertSafeFilterValue(since, 'since');
+    _assertSafeFilterValue(until, 'until');
+    _assertSafeFilterValue(author, 'author');
+    if (maxCount != null && maxCount <= 0) {
+      throw RangeError.value(maxCount, 'maxCount', 'Must be positive');
+    }
     if (maxCount != null) args.add('--max-count=$maxCount');
     if (since != null) args.add('--since=$since');
     if (until != null) args.add('--until=$until');
     if (author != null) args.add('--author=$author');
     if (path != null) {
+      _assertSafePathArg(path);
       args.add('--');
       args.add(path);
     }
@@ -380,9 +536,16 @@ class GitService {
     final args = <String>['diff'];
 
     if (staged) args.add('--cached');
-    if (commit1 != null) args.add(commit1);
-    if (commit2 != null) args.add(commit2);
+    if (commit1 != null) {
+      validateGitRefOrName(commit1, label: 'commit1');
+      args.add(commit1);
+    }
+    if (commit2 != null) {
+      validateGitRefOrName(commit2, label: 'commit2');
+      args.add(commit2);
+    }
     if (path != null) {
+      _assertSafePathArg(path);
       args.add('--');
       args.add(path);
     }
@@ -401,8 +564,13 @@ class GitService {
     String? rev,
     String? workDir,
   }) async {
+    _assertSafePathArg(filePath, 'filePath');
     final args = <String>['blame', '--porcelain'];
-    if (rev != null) args.add(rev);
+    if (rev != null) {
+      validateGitRefOrName(rev, label: 'rev');
+      args.add(rev);
+    }
+    args.add('--');
     args.add(filePath);
 
     final result = await _runGit(args, workDir: workDir ?? defaultWorkDir);
@@ -513,6 +681,7 @@ class GitService {
     bool force = false,
     String? workDir,
   }) async {
+    validateGitRefOrName(ref, label: 'ref', disallowRangeDots: create);
     final args = <String>['checkout'];
     if (create) args.add('-b');
     if (force) args.add('-f');
@@ -569,6 +738,9 @@ class GitService {
 
   /// Pops a stash entry.
   Future<void> stashPop({int? index, String? workDir}) async {
+    if (index != null && index < 0) {
+      throw RangeError.value(index, 'index', 'Must be non-negative');
+    }
     final args = <String>['stash', 'pop'];
     if (index != null) args.add('stash@{$index}');
     await _runGit(args, workDir: workDir ?? defaultWorkDir);
@@ -613,7 +785,10 @@ class GitService {
   /// Stages files.
   Future<void> add(List<String> paths, {String? workDir}) async {
     if (paths.isEmpty) return;
-    await _runGit(['add', ...paths], workDir: workDir ?? defaultWorkDir);
+    for (final path in paths) {
+      _assertSafePathArg(path);
+    }
+    await _runGit(['add', '--', ...paths], workDir: workDir ?? defaultWorkDir);
   }
 
   /// Resets files or the branch pointer.
@@ -633,6 +808,9 @@ class GitService {
       args.add('--mixed');
     }
     if (paths.isNotEmpty) {
+      for (final path in paths) {
+        _assertSafePathArg(path);
+      }
       args.add('--');
       args.addAll(paths);
     }
@@ -651,7 +829,10 @@ class GitService {
   }) async {
     final args = <String>['fetch'];
     if (prune) args.add('--prune');
-    if (remote != null) args.add(remote);
+    if (remote != null) {
+      validateGitRefOrName(remote, label: 'remote', disallowRangeDots: true);
+      args.add(remote);
+    }
     await _runGit(args, workDir: workDir ?? defaultWorkDir);
   }
 
@@ -673,8 +854,14 @@ class GitService {
     final args = <String>['push'];
     if (force) args.add('--force');
     if (setUpstream) args.add('--set-upstream');
-    if (remote != null) args.add(remote);
-    if (branch != null) args.add(branch);
+    if (remote != null) {
+      validateGitRefOrName(remote, label: 'remote', disallowRangeDots: true);
+      args.add(remote);
+    }
+    if (branch != null) {
+      validateGitRefOrName(branch, label: 'branch');
+      args.add(branch);
+    }
     await _runGit(args, workDir: workDir ?? defaultWorkDir);
   }
 
@@ -689,6 +876,7 @@ class GitService {
     bool squash = false,
     String? workDir,
   }) async {
+    validateGitRefOrName(branch, label: 'branch');
     final args = <String>['merge'];
     if (noFf) args.add('--no-ff');
     if (squash) args.add('--squash');
@@ -702,6 +890,7 @@ class GitService {
     bool interactive = false,
     String? workDir,
   }) async {
+    validateGitRefOrName(onto, label: 'onto');
     final args = <String>['rebase'];
     if (interactive) args.add('--interactive');
     args.add(onto);
@@ -719,11 +908,16 @@ class GitService {
     bool annotated = false,
     String? workDir,
   }) async {
+    validateGitRefOrName(name, label: 'tag', disallowRangeDots: true);
+    if (message != null && message.contains('\x00')) {
+      throw ArgumentError.value(message, 'message', 'Tag message contains NUL');
+    }
     final args = <String>['tag'];
     if (annotated || message != null) {
       args.add('-a');
       args.addAll(['-m', message ?? name]);
     }
+    args.add('--');
     args.add(name);
     await _runGit(args, workDir: workDir ?? defaultWorkDir);
   }
@@ -782,9 +976,12 @@ class GitService {
 
   /// Adds a remote.
   Future<void> remoteAdd(String name, String url, {String? workDir}) async {
+    validateGitRefOrName(name, label: 'remote', disallowRangeDots: true);
+    validateRemoteUrl(url);
     await _runGit([
       'remote',
       'add',
+      '--',
       name,
       url,
     ], workDir: workDir ?? defaultWorkDir);
@@ -792,9 +989,11 @@ class GitService {
 
   /// Removes a remote.
   Future<void> remoteRemove(String name, {String? workDir}) async {
+    validateGitRefOrName(name, label: 'remote', disallowRangeDots: true);
     await _runGit([
       'remote',
       'remove',
+      '--',
       name,
     ], workDir: workDir ?? defaultWorkDir);
   }
@@ -806,10 +1005,11 @@ class GitService {
   /// Returns `true` if [path] is inside a git repository.
   Future<bool> isGitRepo(String path) async {
     try {
-      final result = await Process.run(_gitBinary, [
+      _assertSafeWorkDir(path);
+      final result = await _runGitUnchecked([
         'rev-parse',
         '--is-inside-work-tree',
-      ], workingDirectory: path);
+      ], workDir: path);
       return result.exitCode == 0 && (result.stdout as String).trim() == 'true';
     } catch (_) {
       return false;
@@ -819,10 +1019,11 @@ class GitService {
   /// Returns the root of the git repository containing [path], or `null`.
   Future<String?> getRepoRoot(String path) async {
     try {
-      final result = await Process.run(_gitBinary, [
+      _assertSafeWorkDir(path);
+      final result = await _runGitUnchecked([
         'rev-parse',
         '--show-toplevel',
-      ], workingDirectory: path);
+      ], workDir: path);
       if (result.exitCode != 0) return null;
       return (result.stdout as String).trim();
     } catch (_) {
@@ -836,6 +1037,7 @@ class GitService {
 
   /// Cherry-picks a commit onto the current branch.
   Future<void> cherryPick(String commit, {String? workDir}) async {
+    validateGitRefOrName(commit, label: 'commit');
     await _runGit(['cherry-pick', commit], workDir: workDir ?? defaultWorkDir);
   }
 
@@ -845,6 +1047,7 @@ class GitService {
 
   /// Returns per-author commit counts.
   Future<List<AuthorStats>> shortlog({String? since, String? workDir}) async {
+    _assertSafeFilterValue(since, 'since');
     final args = <String>['shortlog', '-sne', 'HEAD'];
     if (since != null) args.insert(2, '--since=$since');
 
@@ -873,17 +1076,97 @@ class GitService {
   // Internals
   // -------------------------------------------------------------------------
 
+  Future<ProcessResult> _runGitUnchecked(
+    List<String> args, {
+    String? workDir,
+  }) async {
+    _assertSafeWorkDir(workDir);
+    if (_gitBinary.isEmpty || _gitBinary.contains('\x00')) {
+      throw ArgumentError.value(_gitBinary, 'gitBinary', 'Invalid git binary');
+    }
+    for (final arg in args) {
+      if (arg.contains('\x00')) {
+        throw ArgumentError('Git argument contains NUL byte');
+      }
+    }
+    final process = await Process.start(
+      _gitBinary,
+      <String>['-c', 'protocol.ext.allow=never', ...args],
+      workingDirectory: workDir,
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+        null,
+        const <String, String>{'GIT_TERMINAL_PROMPT': '0'},
+      ),
+      includeParentEnvironment: false,
+    );
+
+    final stdoutChunks = <int>[];
+    final stderrChunks = <int>[];
+    var stdoutOverflow = false;
+    var stderrOverflow = false;
+
+    final stdoutSub = process.stdout.listen((chunk) {
+      if (stdoutChunks.length < maxGitOutputBytes) {
+        final remaining = maxGitOutputBytes - stdoutChunks.length;
+        if (chunk.length <= remaining) {
+          stdoutChunks.addAll(chunk);
+        } else {
+          stdoutChunks.addAll(chunk.sublist(0, remaining));
+          stdoutOverflow = true;
+        }
+      } else {
+        stdoutOverflow = true;
+      }
+    });
+
+    final stderrSub = process.stderr.listen((chunk) {
+      if (stderrChunks.length < maxGitOutputBytes) {
+        final remaining = maxGitOutputBytes - stderrChunks.length;
+        if (chunk.length <= remaining) {
+          stderrChunks.addAll(chunk);
+        } else {
+          stderrChunks.addAll(chunk.sublist(0, remaining));
+          stderrOverflow = true;
+        }
+      } else {
+        stderrOverflow = true;
+      }
+    });
+
+    int exitCode;
+    try {
+      exitCode = await process.exitCode.timeout(
+        defaultGitTimeout,
+        onTimeout: () {
+          process.kill(ProcessSignal.sigterm);
+          throw TimeoutException(
+            'git ${args.firstOrNull ?? ''} timed out',
+            defaultGitTimeout,
+          );
+        },
+      );
+    } finally {
+      await stdoutSub.cancel();
+      await stderrSub.cancel();
+    }
+
+    var stdoutStr = utf8.decode(stdoutChunks, allowMalformed: true);
+    var stderrStr = utf8.decode(stderrChunks, allowMalformed: true);
+    if (stdoutOverflow) {
+      stdoutStr += '\n[... git stdout truncated at $maxGitOutputBytes bytes]';
+    }
+    if (stderrOverflow) {
+      stderrStr += '\n[... git stderr truncated at $maxGitOutputBytes bytes]';
+    }
+    return ProcessResult(process.pid, exitCode, stdoutStr, stderrStr);
+  }
+
   /// Runs a git command and returns the [ProcessResult].
   ///
   /// Throws [GitException] on non-zero exit codes.
   Future<ProcessResult> _runGit(List<String> args, {String? workDir}) async {
-    final result = await Process.run(
-      _gitBinary,
-      args,
-      workingDirectory: workDir,
-      stdoutEncoding: utf8,
-      stderrEncoding: utf8,
-    );
+    final result = await _runGitUnchecked(args, workDir: workDir);
 
     if (result.exitCode != 0) {
       throw GitException(
@@ -924,17 +1207,16 @@ class GitService {
   /// Finds the .git directory for the given working directory.
   Future<String?> _findGitDir(String workDir) async {
     try {
-      final result = await Process.run(
-        _gitBinary,
-        ['rev-parse', '--git-dir'],
-        workingDirectory: workDir,
-        stdoutEncoding: utf8,
-      );
+      final result = await _runGitUnchecked([
+        'rev-parse',
+        '--git-dir',
+      ], workDir: workDir);
       if (result.exitCode != 0) return null;
       final gitDir = (result.stdout as String).trim();
+      if (gitDir.isEmpty) return null;
       // May be relative; resolve against workDir.
-      if (gitDir.startsWith('/')) return gitDir;
-      return '$workDir/$gitDir';
+      if (p.isAbsolute(gitDir)) return gitDir;
+      return p.join(workDir, gitDir);
     } catch (_) {
       return null;
     }

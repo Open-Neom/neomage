@@ -13,7 +13,7 @@ import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ---------------------------------------------------------------------------
 // Constants

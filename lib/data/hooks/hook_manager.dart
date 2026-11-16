@@ -5,6 +5,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
 
+import '../../utils/security/neomage_network_guard.dart';
+
 /// Hook event types.
 enum HookEvent {
   preToolUse,
@@ -124,6 +126,20 @@ class HookResult {
 
 /// Hook manager — registers and executes hooks.
 class HookManager {
+  static const int _maxExecutedOnceIds = 1024;
+  static const int _maxHookInputBytes = 256 * 1024;
+  static const Set<String> _allowedShells = <String>{
+    'bash',
+    'sh',
+    'zsh',
+    '/bin/bash',
+    '/bin/sh',
+    '/bin/zsh',
+    'cmd.exe',
+    'powershell',
+    'pwsh',
+  };
+
   final Map<HookEvent, List<HookMatcher>> _hooks = {};
   final List<String> _executedOnceIds = [];
 
@@ -179,7 +195,12 @@ class HookManager {
 
         // Execute
         final result = await _executeHook(hook, input);
-        if (hook.once) _executedOnceIds.add(hookId);
+        if (hook.once) {
+          if (_executedOnceIds.length >= _maxExecutedOnceIds) {
+            _executedOnceIds.removeAt(0);
+          }
+          _executedOnceIds.add(hookId);
+        }
 
         if (!result.shouldContinue) return result;
       }
@@ -198,7 +219,8 @@ class HookManager {
     HookCommand hook,
     Map<String, dynamic> input,
   ) async {
-    final timeout = Duration(seconds: hook.timeoutSeconds ?? 30);
+    final clampedSeconds = (hook.timeoutSeconds ?? 30).clamp(1, 300);
+    final timeout = Duration(seconds: clampedSeconds);
 
     try {
       return await switch (hook) {
@@ -208,7 +230,10 @@ class HookManager {
         FunctionHook() => _executeFunction(hook, input, timeout),
       };
     } catch (e) {
-      return HookResult(output: 'Hook error: $e');
+      return HookResult(
+        output:
+            'Hook error: ${NeomageNetworkGuard.redactTransportError(e.toString())}',
+      );
     }
   }
 
@@ -217,8 +242,18 @@ class HookManager {
     Map<String, dynamic> input,
     Duration timeout,
   ) async {
-    final shell = hook.shell ?? 'bash';
-    final env = <String, String>{'HOOK_INPUT': jsonEncode(input)};
+    final shell = (hook.shell ?? 'bash').trim();
+    if (!_allowedShells.contains(shell)) {
+      return HookResult.block('Unsupported or unsafe hook shell: $shell');
+    }
+    if (hook.command.contains('\x00') || hook.command.trim().isEmpty) {
+      return HookResult.block('Invalid hook command');
+    }
+    final encodedInput = jsonEncode(input);
+    if (encodedInput.length > _maxHookInputBytes) {
+      return HookResult.block('Hook input exceeds maximum allowed size');
+    }
+    final env = <String, String>{'HOOK_INPUT': encodedInput};
 
     final result = await Process.run(shell, [
       '-c',
@@ -245,7 +280,15 @@ class HookManager {
     Map<String, dynamic> input,
     Duration timeout,
   ) async {
-    // Placeholder — would use http package
+    final uri = Uri.tryParse(hook.url.trim());
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      uri,
+      allowLoopbackInsecure: true,
+      secureSchemes: const <String>{'https'},
+      insecureSchemes: const <String>{'http'},
+    )) {
+      return HookResult.block('Blocked unsafe HTTP hook URL');
+    }
     return const HookResult();
   }
 

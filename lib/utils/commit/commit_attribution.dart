@@ -10,7 +10,8 @@ library;
 import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
-import 'package:sint/sint.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+import 'package:sint/rx.dart';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -901,20 +902,46 @@ class CommitAttributionManager extends SintController {
   // Git diff size
   // -------------------------------------------------------------------------
 
+  Future<ProcessResult?> _runGitAttribution(
+    List<String> args,
+    String cwd,
+  ) async {
+    if (cwd.isEmpty ||
+        cwd.contains('\x00') ||
+        cwd.startsWith('//') ||
+        cwd.startsWith(r'\\')) {
+      return null;
+    }
+    return Process.run(
+      gitExe,
+      args,
+      workingDirectory: cwd,
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+        null,
+        const <String, String>{'GIT_TERMINAL_PROMPT': '0'},
+      ),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 15));
+  }
+
   /// Get the size of changes for a file from git diff.
   Future<int> getGitDiffSize(String filePath) async {
+    if (filePath.contains('\x00')) return 0;
     final cwd = getAttributionRepoRoot();
 
     try {
-      final result = await Process.run(gitExe, [
+      final result = await _runGitAttribution([
         'diff',
         '--cached',
         '--stat',
         '--',
         filePath,
-      ], workingDirectory: cwd);
+      ], cwd);
 
-      if (result.exitCode != 0 || (result.stdout as String).isEmpty) {
+      if (result == null ||
+          result.exitCode != 0 ||
+          (result.stdout as String).isEmpty) {
         return 0;
       }
 
@@ -946,18 +973,21 @@ class CommitAttributionManager extends SintController {
 
   /// Check if a file was deleted in the staged changes.
   Future<bool> isFileDeleted(String filePath) async {
+    if (filePath.contains('\x00')) return false;
     final cwd = getAttributionRepoRoot();
 
     try {
-      final result = await Process.run(gitExe, [
+      final result = await _runGitAttribution([
         'diff',
         '--cached',
         '--name-status',
         '--',
         filePath,
-      ], workingDirectory: cwd);
+      ], cwd);
 
-      if (result.exitCode == 0 && (result.stdout as String).isNotEmpty) {
+      if (result != null &&
+          result.exitCode == 0 &&
+          (result.stdout as String).isNotEmpty) {
         return (result.stdout as String).trim().startsWith('D\t');
       }
     } catch (_) {
@@ -976,13 +1006,15 @@ class CommitAttributionManager extends SintController {
     final cwd = getAttributionRepoRoot();
 
     try {
-      final result = await Process.run(gitExe, [
+      final result = await _runGitAttribution([
         'diff',
         '--cached',
         '--name-only',
-      ], workingDirectory: cwd);
+      ], cwd);
 
-      if (result.exitCode == 0 && (result.stdout as String).isNotEmpty) {
+      if (result != null &&
+          result.exitCode == 0 &&
+          (result.stdout as String).isNotEmpty) {
         return (result.stdout as String)
             .split('\n')
             .where((l) => l.isNotEmpty)

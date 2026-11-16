@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../../domain/models/message.dart';
+import '../../utils/security/neomage_network_guard.dart';
 import '../engine/query_engine.dart';
 
 /// Remote session status.
@@ -97,6 +98,8 @@ class CompletionEvent extends RemoteSessionEvent {
 
 /// Remote session — headless AI session driven by API calls.
 class RemoteSession {
+  static const int maxPendingPermissions = 64;
+
   final String id;
   final QueryEngine _engine;
   final StreamController<RemoteSessionEvent> _events =
@@ -108,12 +111,16 @@ class RemoteSession {
   DateTime? _startedAt;
   int _totalTokens = 0;
   int _toolCalls = 0;
+  bool _disposed = false;
 
   RemoteSession({required this.id, required QueryEngine engine})
     : _engine = engine;
 
   /// Event stream for real-time updates.
   Stream<RemoteSessionEvent> get events => _events.stream;
+
+  /// Whether this session has been disposed.
+  bool get isDisposed => _disposed;
 
   /// Current status.
   RemoteSessionStatus get status => _status;
@@ -131,8 +138,17 @@ class RemoteSession {
   /// Total tool calls made.
   int get toolCalls => _toolCalls;
 
+  void _emit(RemoteSessionEvent event) {
+    if (!_disposed && !_events.isClosed) {
+      _events.add(event);
+    }
+  }
+
   /// Submit a user message and process the response.
   Future<Message> submit(String prompt) async {
+    if (_disposed) {
+      throw StateError('Session has been disposed');
+    }
     if (_status == RemoteSessionStatus.processing) {
       throw StateError('Session is already processing a request');
     }
@@ -153,7 +169,7 @@ class RemoteSession {
       _totalTokens += _estimateTokens(response);
       _setStatus(RemoteSessionStatus.idle);
 
-      _events.add(
+      _emit(
         CompletionEvent(
           totalTokens: _totalTokens,
           toolCalls: _toolCalls,
@@ -164,7 +180,7 @@ class RemoteSession {
       return response;
     } catch (e) {
       _setStatus(RemoteSessionStatus.error);
-      _events.add(ErrorEvent(e.toString()));
+      _emit(ErrorEvent(NeomageNetworkGuard.redactTransportError(e.toString())));
       rethrow;
     }
   }
@@ -211,20 +227,24 @@ class RemoteSession {
 
   /// Dispose resources.
   void dispose() {
+    if (_disposed) return;
     cancel();
-    _events.close();
+    _disposed = true;
+    if (!_events.isClosed) {
+      _events.close();
+    }
   }
 
   // ── Private ──
 
   void _setStatus(RemoteSessionStatus newStatus) {
     _status = newStatus;
-    _events.add(StatusChangedEvent(newStatus));
+    _emit(StatusChangedEvent(newStatus));
   }
 
   void _addMessage(Message message) {
     _messages.add(message);
-    _events.add(MessageAddedEvent(message));
+    _emit(MessageAddedEvent(message));
   }
 
   Future<bool> _handlePermissionRequest(
@@ -232,6 +252,10 @@ class RemoteSession {
     Map<String, dynamic> input,
     Object? explanation,
   ) async {
+    if (_disposed) return false;
+    if (_pendingPermissions.length >= maxPendingPermissions) {
+      return false;
+    }
     _toolCalls++;
     final request = RemotePermissionRequest(
       id: 'perm_${_toolCalls}_${DateTime.now().millisecondsSinceEpoch}',
@@ -241,7 +265,7 @@ class RemoteSession {
 
     _pendingPermissions.add(request);
     _setStatus(RemoteSessionStatus.waitingPermission);
-    _events.add(PermissionRequestEvent(request));
+    _emit(PermissionRequestEvent(request));
 
     return request.response;
   }
@@ -266,6 +290,8 @@ class RemoteSession {
 
 /// Remote session manager — creates and tracks multiple sessions.
 class RemoteSessionManager {
+  static const int maxActiveSessions = 128;
+
   final Map<String, RemoteSession> _sessions = {};
   final QueryEngine Function() _engineFactory;
 
@@ -275,6 +301,14 @@ class RemoteSessionManager {
   /// Create a new session.
   RemoteSession createSession({String? id}) {
     final sessionId = id ?? 'session_${DateTime.now().millisecondsSinceEpoch}';
+    if (!NeomageNetworkGuard.isSafeIdentifier(sessionId)) {
+      throw ArgumentError('Unsafe remote session identifier');
+    }
+    _sessions.remove(sessionId)?.dispose();
+    while (_sessions.length >= maxActiveSessions) {
+      final evictKey = _sessions.keys.first;
+      _sessions.remove(evictKey)?.dispose();
+    }
     final session = RemoteSession(id: sessionId, engine: _engineFactory());
     _sessions[sessionId] = session;
     return session;

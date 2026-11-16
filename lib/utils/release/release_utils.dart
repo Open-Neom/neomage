@@ -11,9 +11,10 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'dart:math';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ===========================================================================
 // Semver (ported from semver.ts)
@@ -251,6 +252,8 @@ class ReleaseNotesController extends SintController {
     changelogFetched.value = false;
   }
 
+  static const int _maxChangelogBytes = 2 * 1024 * 1024; // 2 MiB
+
   /// Fetch the changelog from GitHub and store it in cache file.
   /// This runs in the background and does not block the UI.
   Future<void> fetchAndStoreChangelog() async {
@@ -261,16 +264,43 @@ class ReleaseNotesController extends SintController {
       String? content;
       if (_httpGet != null) {
         content = await _httpGet(_rawChangelogUrl);
+        if (content != null && content.length > _maxChangelogBytes) {
+          return;
+        }
       } else {
-        final client = HttpClient();
+        final uri = Uri.parse(_rawChangelogUrl);
+        if (!NeomageNetworkGuard.isSafeEndpointUri(
+          uri,
+          allowLoopbackHttp: false,
+          allowPrivateLanHttp: false,
+        )) {
+          return;
+        }
+        final client = HttpClient()
+          ..connectionTimeout = const Duration(seconds: 10);
         try {
-          final request = await client.getUrl(Uri.parse(_rawChangelogUrl));
-          final response = await request.close();
+          final request = await client.getUrl(uri);
+          request.followRedirects = false;
+          request.maxRedirects = 0;
+          final response = await request.close().timeout(
+            const Duration(seconds: 15),
+          );
           if (response.statusCode == 200) {
-            content = await response.transform(utf8.decoder).join();
+            final bytes = BytesBuilder(copy: false);
+            var overflow = false;
+            await for (final chunk in response) {
+              if (bytes.length + chunk.length > _maxChangelogBytes) {
+                overflow = true;
+                break;
+              }
+              bytes.add(chunk);
+            }
+            if (!overflow) {
+              content = utf8.decode(bytes.takeBytes(), allowMalformed: true);
+            }
           }
         } finally {
-          client.close();
+          client.close(force: true);
         }
       }
 
@@ -283,9 +313,11 @@ class ReleaseNotesController extends SintController {
       final cacheDir = Directory(
         cachePath.substring(0, cachePath.lastIndexOf('/')),
       );
+      if (FileSystemEntity.isLinkSync(cacheDir.path)) return;
       if (!cacheDir.existsSync()) {
         cacheDir.createSync(recursive: true);
       }
+      if (FileSystemEntity.isLinkSync(cachePath)) return;
 
       await File(cachePath).writeAsString(content);
       changelogCache.value = content;
@@ -299,7 +331,18 @@ class ReleaseNotesController extends SintController {
     if (changelogCache.value.isNotEmpty) return changelogCache.value;
 
     try {
-      final content = await File(_changelogCachePath).readAsString();
+      final cachePath = _changelogCachePath;
+      if (await FileSystemEntity.isLink(cachePath)) {
+        changelogCache.value = '';
+        return '';
+      }
+      final file = File(cachePath);
+      final stat = await file.stat();
+      if (stat.size > _maxChangelogBytes) {
+        changelogCache.value = '';
+        return '';
+      }
+      final content = await file.readAsString();
       changelogCache.value = content;
       return content;
     } catch (_) {
@@ -605,10 +648,43 @@ class AutoUpdaterController extends SintController {
     return shouldSkip;
   }
 
-  /// Attempts to acquire a lock for auto-updater.
+  static final RegExp _validNpmPackageRegex = RegExp(
+    r'^(?:@[a-z0-9-~][a-z0-9-._~]*/)?[a-z0-9-~][a-z0-9-._~]*$',
+  );
+  static final RegExp _validVersionSpecRegex = RegExp(
+    r'^[A-Za-z0-9._+-]{1,64}$',
+  );
+
+  bool _tryCreateExclusiveLockSync(String lockPath) {
+    try {
+      if (FileSystemEntity.isLinkSync(configHomeDir) ||
+          FileSystemEntity.isLinkSync(lockPath)) {
+        return false;
+      }
+      final parent = Directory(configHomeDir);
+      if (!parent.existsSync()) {
+        parent.createSync(recursive: true);
+      }
+      final lockFile = File(lockPath);
+      lockFile.createSync(exclusive: true);
+      lockFile.writeAsStringSync('$pid', flush: true);
+      return true;
+    } on FileSystemException {
+      return false;
+    }
+  }
+
+  /// Attempts to acquire a lock for auto-updater using atomic `O_EXCL` creation.
   /// Returns true if lock was acquired, false if another process holds it.
   Future<bool> acquireLock() async {
     final lockPath = lockFilePath;
+    if (FileSystemEntity.isLinkSync(lockPath)) {
+      return false;
+    }
+
+    if (_tryCreateExclusiveLockSync(lockPath)) {
+      return true;
+    }
 
     try {
       final lockFile = File(lockPath);
@@ -618,43 +694,31 @@ class AutoUpdaterController extends SintController {
         if (age < _lockTimeout) {
           return false;
         }
-        // Lock is stale -- re-verify and remove
+        // Lock is stale -- remove and retry atomic O_EXCL once
         try {
-          final recheck = File(lockPath).statSync();
-          final recheckAge = DateTime.now().difference(recheck.modified);
-          if (recheckAge < _lockTimeout) {
-            return false;
-          }
+          if (FileSystemEntity.isLinkSync(lockPath)) return false;
           lockFile.deleteSync();
         } on FileSystemException {
           return false;
         }
       }
-    } on FileSystemException catch (e) {
-      // File doesn't exist -- proceed to create
-      if (e.osError?.errorCode != 2) {
-        // Not ENOENT
-        return false;
-      }
-    }
-
-    // Create lock file
-    try {
-      final lockFile = File(lockPath);
-      lockFile.writeAsStringSync('$pid', mode: FileMode.writeOnly);
-      return true;
     } on FileSystemException {
       return false;
     }
+
+    return _tryCreateExclusiveLockSync(lockPath);
   }
 
   /// Releases the update lock if it is held by this process.
   Future<void> releaseLock() async {
     final lockPath = lockFilePath;
     try {
+      if (FileSystemEntity.isLinkSync(lockPath)) return;
       final lockFile = File(lockPath);
       if (!lockFile.existsSync()) return;
-      final lockData = lockFile.readAsStringSync();
+      final stat = lockFile.statSync();
+      if (stat.size > 256) return;
+      final lockData = lockFile.readAsStringSync().trim();
       if (lockData == '$pid') {
         lockFile.deleteSync();
       }
@@ -778,6 +842,15 @@ class AutoUpdaterController extends SintController {
   Future<AutoUpdateInstallStatus> installGlobalPackage({
     String? specificVersion,
   }) async {
+    if (!_validNpmPackageRegex.hasMatch(packageUrl)) {
+      return AutoUpdateInstallStatus.installFailed;
+    }
+    if (specificVersion != null &&
+        (!_validVersionSpecRegex.hasMatch(specificVersion) ||
+            specificVersion.startsWith('-'))) {
+      return AutoUpdateInstallStatus.installFailed;
+    }
+
     if (!await acquireLock()) {
       return AutoUpdateInstallStatus.inProgress;
     }
@@ -796,6 +869,8 @@ class AutoUpdaterController extends SintController {
       final result = await _runCommand(packageManager, [
         'install',
         '-g',
+        '--ignore-scripts',
+        '--',
         packageSpec,
       ]);
 
@@ -810,7 +885,7 @@ class AutoUpdaterController extends SintController {
     }
   }
 
-  /// Run a shell command.
+  /// Run a command directly with sanitized environment and timeout.
   Future<ProcessResult> _runCommand(
     String executable,
     List<String> arguments,
@@ -826,7 +901,9 @@ class AutoUpdaterController extends SintController {
       executable,
       arguments,
       workingDirectory: Platform.environment['HOME'],
-    );
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(minutes: 2));
   }
 }
 

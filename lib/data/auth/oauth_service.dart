@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart' show sha256;
 import 'package:http/http.dart' as http;
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 /// OAuth configuration for Anthropic endpoints.
 class OAuthConfig {
@@ -102,11 +103,22 @@ class Pkce {
 
 /// OAuth client for Anthropic authorization flows.
 class OAuthClient {
+  static const int maxTokenResponseBytes = 512 * 1024;
+  static const Duration requestTimeout = Duration(seconds: 15);
+
   final OAuthConfig config;
   final http.Client _httpClient;
 
   OAuthClient({required this.config, http.Client? httpClient})
     : _httpClient = httpClient ?? http.Client();
+
+  Uri _validatedEndpoint(String rawUrl, String fieldName) {
+    final uri = Uri.tryParse(rawUrl.trim());
+    if (!NeomageNetworkGuard.isSafeEndpointUri(uri)) {
+      throw OAuthException('Unsafe OAuth $fieldName endpoint');
+    }
+    return uri!;
+  }
 
   /// Build the authorization URL for browser redirect.
   Uri buildAuthUrl({
@@ -116,7 +128,8 @@ class OAuthClient {
     String? orgUuid,
     String? loginHint,
   }) {
-    return Uri.parse(config.authorizeUrl).replace(
+    final authUri = _validatedEndpoint(config.authorizeUrl, 'authorizeUrl');
+    return authUri.replace(
       queryParameters: {
         'response_type': 'code',
         'client_id': config.clientId,
@@ -138,22 +151,30 @@ class OAuthClient {
     required String state,
     String? redirectUri,
   }) async {
-    final response = await _httpClient.post(
-      Uri.parse(config.tokenUrl),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: {
-        'grant_type': 'authorization_code',
-        'code': code,
-        'redirect_uri': redirectUri ?? config.redirectUrl,
-        'client_id': config.clientId,
-        'code_verifier': codeVerifier,
-        'state': state,
-      },
-    );
+    final tokenUri = _validatedEndpoint(config.tokenUrl, 'tokenUrl');
+    final response = await _httpClient
+        .post(
+          tokenUri,
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: {
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': redirectUri ?? config.redirectUrl,
+            'client_id': config.clientId,
+            'code_verifier': codeVerifier,
+            'state': state,
+          },
+        )
+        .timeout(requestTimeout);
+
+    if (response.bodyBytes.length > maxTokenResponseBytes) {
+      throw const OAuthException('Token response exceeds 512 KiB');
+    }
 
     if (response.statusCode != 200) {
+      final safeErr = NeomageNetworkGuard.sanitizeOAuthErrorBody(response.body);
       throw OAuthException(
-        'Token exchange failed (${response.statusCode}): ${response.body}',
+        'Token exchange failed (${response.statusCode}): $safeErr',
       );
     }
 
@@ -165,40 +186,70 @@ class OAuthClient {
     required String refreshToken,
     List<String>? scopes,
   }) async {
-    final response = await _httpClient.post(
-      Uri.parse(config.tokenUrl),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: {
-        'grant_type': 'refresh_token',
-        'refresh_token': refreshToken,
-        'client_id': config.clientId,
-        'scope': (scopes ?? config.scopes).join(' '),
-      },
-    );
+    final tokenUri = _validatedEndpoint(config.tokenUrl, 'tokenUrl');
+    final response = await _httpClient
+        .post(
+          tokenUri,
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: {
+            'grant_type': 'refresh_token',
+            'refresh_token': refreshToken,
+            'client_id': config.clientId,
+            'scope': (scopes ?? config.scopes).join(' '),
+          },
+        )
+        .timeout(requestTimeout);
+
+    if (response.bodyBytes.length > maxTokenResponseBytes) {
+      throw const OAuthException('Token refresh response exceeds 512 KiB');
+    }
 
     if (response.statusCode != 200) {
+      final safeErr = NeomageNetworkGuard.sanitizeOAuthErrorBody(response.body);
       throw OAuthException(
-        'Token refresh failed (${response.statusCode}): ${response.body}',
+        'Token refresh failed (${response.statusCode}): $safeErr',
       );
     }
 
-    return _parseTokenResponse(response.body);
+    return _parseTokenResponse(
+      response.body,
+      fallbackRefreshToken: refreshToken,
+    );
   }
 
-  OAuthTokens _parseTokenResponse(String body) {
-    final json = jsonDecode(body) as Map<String, dynamic>;
+  OAuthTokens _parseTokenResponse(
+    String body, {
+    String? fallbackRefreshToken,
+  }) {
+    final decoded = jsonDecode(body);
+    if (decoded is! Map<String, dynamic>) {
+      throw const OAuthException('Malformed token JSON payload');
+    }
 
-    final expiresIn = json['expires_in'] as int? ?? 3600;
+    final accessToken = decoded['access_token'] as String?;
+    final resolvedRefreshToken =
+        (decoded['refresh_token'] as String?) ?? fallbackRefreshToken;
+    if (accessToken == null ||
+        accessToken.isEmpty ||
+        resolvedRefreshToken == null ||
+        resolvedRefreshToken.isEmpty) {
+      throw const OAuthException('Missing access_token or refresh_token');
+    }
+
+    final rawExpires = decoded['expires_in'];
+    final expiresIn = (rawExpires is num && rawExpires.isFinite)
+        ? rawExpires.toInt().clamp(1, 31536000)
+        : 3600;
     final expiresAt = DateTime.now().add(Duration(seconds: expiresIn));
-    final scopeStr = json['scope'] as String? ?? '';
+    final scopeStr = decoded['scope'] as String? ?? '';
 
     return OAuthTokens(
-      accessToken: json['access_token'] as String,
-      refreshToken: json['refresh_token'] as String,
+      accessToken: accessToken,
+      refreshToken: resolvedRefreshToken,
       expiresAt: expiresAt,
       scopes: scopeStr.split(' ').where((s) => s.isNotEmpty).toList(),
-      subscriptionType: json['subscription_type'] as String?,
-      rateLimitTier: json['rate_limit_tier'] as String?,
+      subscriptionType: decoded['subscription_type'] as String?,
+      rateLimitTier: decoded['rate_limit_tier'] as String?,
     );
   }
 

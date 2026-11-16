@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'dart:math' as math;
 
 // ---------------------------------------------------------------------------
@@ -550,6 +551,27 @@ class SearchService {
   // Ripgrep integration
   // -------------------------------------------------------------------------
 
+  static const int _maxRipgrepOutputBytes = 16 * 1024 * 1024;
+
+  /// Filters unsafe ripgrep flags (such as `--pre` / `--pre-glob` RCE).
+  static List<String> sanitizeRipgrepArgs(List<String> args) {
+    final safe = <String>[];
+    for (var i = 0; i < args.length; i++) {
+      final arg = args[i];
+      if (arg.contains('\x00')) continue;
+      final lower = arg.toLowerCase();
+      if (lower == '--pre' || lower == '--pre-glob') {
+        i++; // skip value argument too
+        continue;
+      }
+      if (lower.startsWith('--pre=') || lower.startsWith('--pre-glob=')) {
+        continue;
+      }
+      safe.add(arg);
+    }
+    return safe;
+  }
+
   /// Run `rg` (ripgrep) with [pattern] and additional [args], parsing output
   /// into [SearchMatch] objects.
   ///
@@ -561,23 +583,62 @@ class SearchService {
   }) async {
     final sw = Stopwatch()..start();
     final dir = directory ?? projectRoot;
+    if (pattern.contains('\x00') ||
+        dir.contains('\x00') ||
+        dir.startsWith('//') ||
+        dir.startsWith(r'\\') ||
+        NeomageNetworkGuard.isProtectedSystemOrCredentialPath(dir)) {
+      throw ArgumentError('Unsafe ripgrep search directory or pattern');
+    }
 
     try {
-      final result = await Process.run('rg', [
-        '--json',
-        '--line-number',
-        ...args,
-        pattern,
-        dir,
-      ]);
+      final safeArgs = sanitizeRipgrepArgs(args);
+      final proc = await Process.start(
+        'rg',
+        [
+          '--json',
+          '--line-number',
+          ...safeArgs,
+          '-e',
+          pattern,
+          '--',
+          dir,
+        ],
+        runInShell: false,
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+        includeParentEnvironment: false,
+      );
+      final stdoutBuf = BytesBuilder(copy: false);
+      final stderrBuf = BytesBuilder(copy: false);
+      final outFuture = proc.stdout.forEach((chunk) {
+        if (stdoutBuf.length + chunk.length <= _maxRipgrepOutputBytes) {
+          stdoutBuf.add(chunk);
+        } else {
+          proc.kill(ProcessSignal.sigkill);
+        }
+      });
+      final errFuture = proc.stderr.forEach((chunk) {
+        if (stderrBuf.length + chunk.length <= 262144) {
+          stderrBuf.add(chunk);
+        }
+      });
+      final exitCode = await proc.exitCode.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          proc.kill(ProcessSignal.sigkill);
+          return -1;
+        },
+      );
+      await outFuture;
+      await errFuture;
 
-      if (result.exitCode != 0 && result.exitCode != 1) {
+      if (exitCode != 0 && exitCode != 1) {
         // Exit code 1 = no matches; other codes are errors.
         throw ProcessException(
           'rg',
-          args,
-          result.stderr.toString(),
-          result.exitCode,
+          safeArgs,
+          utf8.decode(stderrBuf.takeBytes(), allowMalformed: true),
+          exitCode,
         );
       }
 
@@ -585,7 +646,9 @@ class SearchService {
       var filesSearched = 0;
       final seenFiles = <String>{};
 
-      for (final line in LineSplitter.split(result.stdout.toString())) {
+      for (final line in LineSplitter.split(
+        utf8.decode(stdoutBuf.takeBytes(), allowMalformed: true),
+      )) {
         if (line.isEmpty) continue;
         try {
           final json = jsonDecode(line) as Map<String, dynamic>;

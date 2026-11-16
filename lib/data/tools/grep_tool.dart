@@ -9,8 +9,11 @@
 // Supports head_limit / offset pagination, glob filtering, type filtering,
 // multiline mode, case-insensitive search, and VCS directory exclusion.
 
-import 'package:neomage/core/platform/neomage_io.dart';
+import 'dart:async';
+import 'dart:convert';
 
+import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'package:path/path.dart' as p;
 
 import 'tool.dart';
@@ -19,6 +22,17 @@ import 'tool.dart';
 
 /// Tool name matching the TS original.
 const String grepToolName = 'Grep';
+
+/// Maximum regex pattern length to bound CLI arg / ReDoS pressure.
+const int maxGrepPatternLength = 4096;
+
+/// Maximum ripgrep stdout capture (16 MiB) to prevent OOM.
+const int maxRipgrepStdoutBytes = 16 * 1024 * 1024;
+
+/// Default ripgrep execution timeout (30 seconds).
+const int defaultRipgrepTimeoutMs = 30000;
+
+final RegExp _safeRipgrepTypePattern = RegExp(r'^[A-Za-z0-9_+.\-]{1,64}$');
 
 /// Version control directories excluded from searches automatically
 /// to avoid noise from VCS metadata.
@@ -201,34 +215,32 @@ List<String> buildRipgrepArgs({
   // Context flags: -C/context takes precedence over -B/-A
   if (outputMode == 'content') {
     if (context != null) {
-      args.addAll(['-C', context.toString()]);
+      args.addAll(['-C', context.clamp(0, 100).toString()]);
     } else if (contextC != null) {
-      args.addAll(['-C', contextC.toString()]);
+      args.addAll(['-C', contextC.clamp(0, 100).toString()]);
     } else {
       if (contextBefore != null) {
-        args.addAll(['-B', contextBefore.toString()]);
+        args.addAll(['-B', contextBefore.clamp(0, 100).toString()]);
       }
       if (contextAfter != null) {
-        args.addAll(['-A', contextAfter.toString()]);
+        args.addAll(['-A', contextAfter.clamp(0, 100).toString()]);
       }
     }
   }
 
-  // If pattern starts with dash, use -e flag to prevent ripgrep from
-  // interpreting it as a command-line option
-  if (pattern.startsWith('-')) {
-    args.addAll(['-e', pattern]);
-  } else {
-    args.add(pattern);
-  }
+  // Always pass -e so patterns starting with `-` or flag-like tokens can
+  // never be misinterpreted as ripgrep CLI options.
+  args.addAll(['-e', pattern]);
 
-  // Type filter
-  if (type != null && type.isNotEmpty) {
+  // Type filter (strictly validated identifier)
+  if (type != null &&
+      type.isNotEmpty &&
+      _safeRipgrepTypePattern.hasMatch(type)) {
     args.addAll(['--type', type]);
   }
 
   // Glob patterns
-  if (glob != null && glob.isNotEmpty) {
+  if (glob != null && glob.isNotEmpty && !glob.contains('\x00')) {
     final globPatterns = parseGlobPatterns(glob);
     for (final gp in globPatterns) {
       args.addAll(['--glob', gp]);
@@ -422,33 +434,86 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
     return path != null ? '$pattern in $path' : pattern;
   }
 
-  @override
-  ValidationResult validateInput(Map<String, dynamic> input) {
+  String? _validateSecurityParams(Map<String, dynamic> input) {
     final pattern = input['pattern'] as String?;
     if (pattern == null || pattern.isEmpty) {
-      return const ValidationResult.invalid(
-        'Missing required parameter: pattern',
-      );
+      return 'Missing required parameter: pattern';
+    }
+    if (pattern.contains('\x00')) {
+      return 'Invalid NUL byte in pattern';
+    }
+    if (pattern.length > maxGrepPatternLength) {
+      return 'Pattern exceeds maximum length ($maxGrepPatternLength chars)';
     }
 
-    // If path is provided, validate it exists
+    final glob = input['glob'] as String?;
+    if (glob != null && (glob.contains('\x00') || glob.length > 1024)) {
+      return 'Invalid glob parameter';
+    }
+
+    final type = input['type'] as String?;
+    if (type != null &&
+        type.isNotEmpty &&
+        !_safeRipgrepTypePattern.hasMatch(type)) {
+      return 'Invalid file type filter: $type';
+    }
+
+    final rawPath = input['path'] as String?;
+    if (rawPath != null && rawPath.isNotEmpty) {
+      if (rawPath.contains('\x00')) {
+        return 'Invalid NUL byte in path';
+      }
+      if (rawPath.startsWith(r'\\') || rawPath.startsWith('//')) {
+        return 'UNC network paths are blocked to prevent NTLM credential leaks';
+      }
+      final absolutePath = expandPath(rawPath);
+      if (absolutePath.startsWith(r'\\') || absolutePath.startsWith('//')) {
+        return 'UNC network paths are blocked to prevent NTLM credential leaks';
+      }
+      final protectedReason = NeomageNetworkGuard.checkProtectedFilesystemPath(
+        p.normalize(absolutePath),
+      );
+      if (protectedReason != null) {
+        return protectedReason;
+      }
+    }
+
+    return null;
+  }
+
+  @override
+  ValidationResult validateInput(Map<String, dynamic> input) {
+    final secError = _validateSecurityParams(input);
+    if (secError != null) {
+      return ValidationResult.invalid(secError);
+    }
+
+    // If path is provided, validate it exists and does not symlink into
+    // protected system/credential directories.
     final path = input['path'] as String?;
     if (path != null && path.isNotEmpty) {
       final absolutePath = expandPath(path);
-
-      // SECURITY: Skip filesystem operations for UNC paths to prevent
-      // NTLM credential leaks.
-      if (absolutePath.startsWith('\\\\') || absolutePath.startsWith('//')) {
-        return const ValidationResult.valid();
-      }
-
-      final entity = FileSystemEntity.typeSync(absolutePath);
+      final entity = FileSystemEntity.typeSync(
+        absolutePath,
+        followLinks: false,
+      );
       if (entity == FileSystemEntityType.notFound) {
         return ValidationResult.invalid(
           'Path does not exist: $path. '
           'Current working directory is ${Directory.current.path}.',
         );
       }
+      try {
+        final resolved = entity == FileSystemEntityType.directory
+            ? Directory(absolutePath).resolveSymbolicLinksSync()
+            : File(absolutePath).resolveSymbolicLinksSync();
+        final resolvedReason = NeomageNetworkGuard.checkProtectedFilesystemPath(
+          p.normalize(resolved),
+        );
+        if (resolvedReason != null) {
+          return ValidationResult.invalid(resolvedReason);
+        }
+      } catch (_) {}
     }
 
     return const ValidationResult.valid();
@@ -456,11 +521,12 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
 
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
-    final pattern = input['pattern'] as String?;
-    if (pattern == null || pattern.isEmpty) {
-      return ToolResult.error('Missing required parameter: pattern');
+    final secError = _validateSecurityParams(input);
+    if (secError != null) {
+      return ToolResult.error(secError);
     }
 
+    final pattern = input['pattern'] as String;
     final searchPath = input['path'] as String?;
     final glob = input['glob'] as String?;
     final type = input['type'] as String?;
@@ -472,12 +538,19 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
     final showLineNumbers = input['-n'] as bool? ?? true;
     final caseInsensitive = input['-i'] as bool? ?? false;
     final headLimit = _toInt(input['head_limit']);
-    final offset = _toInt(input['offset']) ?? 0;
+    final offset = (_toInt(input['offset']) ?? 0).clamp(0, 1000000);
     final multiline = input['multiline'] as bool? ?? false;
 
     final absolutePath = searchPath != null && searchPath.isNotEmpty
         ? expandPath(searchPath)
         : Directory.current.path;
+
+    final protectedReason = NeomageNetworkGuard.checkProtectedFilesystemPath(
+      p.normalize(absolutePath),
+    );
+    if (protectedReason != null) {
+      return ToolResult.error(protectedReason);
+    }
 
     try {
       // Build ripgrep arguments
@@ -690,37 +763,92 @@ class GrepTool extends Tool with ReadOnlyToolMixin {
 
   // ── Ripgrep execution ────────────────────────────────────────────────
 
-  /// Run ripgrep with the given arguments in the specified directory.
-  /// Returns a list of result lines (file paths, content lines, or
-  /// count lines depending on the flags).
+  /// Run ripgrep with the given arguments in the specified path.
+  /// Supports both directory and single-file targets, enforces a 30s timeout
+  /// and 16 MiB stdout cap, and sanitizes the subprocess environment.
   Future<List<String>> _runRipgrep(
     List<String> args,
-    String workingDirectory,
+    String targetPath,
   ) async {
-    // Try to find ripgrep binary
     final rgPath = await _findRipgrep();
+    final isFileTarget = FileSystemEntity.isFileSync(targetPath);
+    final workDir = isFileTarget ? p.dirname(targetPath) : targetPath;
+    final effectiveArgs = isFileTarget
+        ? <String>[...args, '--', targetPath]
+        : args;
 
-    final result = await Process.run(
+    final proc = await Process.start(
       rgPath,
-      args,
-      workingDirectory: workingDirectory,
+      effectiveArgs,
+      workingDirectory: workDir,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+        Platform.environment,
+      ),
+      includeParentEnvironment: false,
     );
 
-    // ripgrep exit codes:
-    // 0 = matches found
-    // 1 = no matches found (not an error)
-    // 2 = error
-    if (result.exitCode == 2) {
-      final stderr = result.stderr as String;
-      if (stderr.isNotEmpty) {
-        throw Exception('ripgrep error: $stderr');
+    final stdoutBytes = <int>[];
+    final stderrBytes = <int>[];
+    var timedOut = false;
+
+    final timer = Timer(
+      const Duration(milliseconds: defaultRipgrepTimeoutMs),
+      () {
+        timedOut = true;
+        proc.kill(ProcessSignal.sigterm);
+        Timer(const Duration(seconds: 2), () {
+          proc.kill(ProcessSignal.sigkill);
+        });
+      },
+    );
+
+    try {
+      final stdoutSub = proc.stdout.listen((chunk) {
+        final remaining = maxRipgrepStdoutBytes - stdoutBytes.length;
+        if (remaining <= 0) return;
+        if (chunk.length <= remaining) {
+          stdoutBytes.addAll(chunk);
+        } else {
+          stdoutBytes.addAll(chunk.sublist(0, remaining));
+        }
+      });
+      final stderrSub = proc.stderr.listen((chunk) {
+        final remaining = 65536 - stderrBytes.length;
+        if (remaining <= 0) return;
+        if (chunk.length <= remaining) {
+          stderrBytes.addAll(chunk);
+        } else {
+          stderrBytes.addAll(chunk.sublist(0, remaining));
+        }
+      });
+
+      final exitCode = await proc.exitCode;
+      await stdoutSub.cancel();
+      await stderrSub.cancel();
+
+      if (timedOut) {
+        throw const RipgrepTimeoutException(defaultRipgrepTimeoutMs);
       }
+
+      // ripgrep exit codes:
+      // 0 = matches found
+      // 1 = no matches found (not an error)
+      // 2 = error
+      if (exitCode == 2) {
+        final stderr = utf8.decode(stderrBytes, allowMalformed: true).trim();
+        if (stderr.isNotEmpty) {
+          throw Exception('ripgrep error: $stderr');
+        }
+      }
+
+      if (stdoutBytes.isEmpty) return const [];
+      final stdout = utf8.decode(stdoutBytes, allowMalformed: true);
+      if (stdout.isEmpty) return const [];
+
+      return stdout.split('\n').where((line) => line.isNotEmpty).toList();
+    } finally {
+      timer.cancel();
     }
-
-    final stdout = result.stdout as String;
-    if (stdout.isEmpty) return const [];
-
-    return stdout.split('\n').where((line) => line.isNotEmpty).toList();
   }
 
   /// Find ripgrep binary path, preferring 'rg' on PATH.

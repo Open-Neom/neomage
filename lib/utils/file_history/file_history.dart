@@ -9,7 +9,9 @@ library;
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
 
-import 'package:sint/sint.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+import 'package:path/path.dart' as p;
+import 'package:sint/rx.dart';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -224,11 +226,61 @@ class FileHistoryManager extends SintController {
   // Path helpers
   // -------------------------------------------------------------------------
 
+  /// Validates that [name] is a canonical `<16-hex>@v<version>` backup entry.
+  static bool isSafeBackupFileName(String name) {
+    return RegExp(r'^[0-9a-fA-F]{16}@v\d{1,9}$').hasMatch(name);
+  }
+
+  /// Validates that [sid] is a safe single-segment session identifier.
+  static bool isSafeSessionId(String sid) {
+    if (sid.isEmpty || sid == '.' || sid == '..' || sid.contains('..')) {
+      return false;
+    }
+    return RegExp(r'^[A-Za-z0-9_.-]{1,128}$').hasMatch(sid);
+  }
+
+  static void _assertSafeTrackedTargetPath(String filePath) {
+    if (filePath.isEmpty ||
+        filePath.contains('\x00') ||
+        filePath.startsWith('//') ||
+        filePath.startsWith(r'\\') ||
+        NeomageNetworkGuard.isProtectedSystemOrCredentialPath(filePath)) {
+      throw FileSystemException(
+        'Unsafe or protected file history target path',
+        filePath,
+      );
+    }
+  }
+
   String _resolveBackupPath(String backupFileName, [String? sid]) {
-    return '$configHomeDir/file-history/${sid ?? sessionId}/$backupFileName';
+    if (configHomeDir.isEmpty ||
+        configHomeDir.contains('\x00') ||
+        configHomeDir.startsWith('//') ||
+        configHomeDir.startsWith(r'\\') ||
+        NeomageNetworkGuard.isProtectedSystemOrCredentialPath(configHomeDir)) {
+      throw FileSystemException(
+        'Unsafe configHomeDir for FileHistoryManager',
+        configHomeDir,
+      );
+    }
+    final effectiveSid = sid ?? sessionId;
+    if (!isSafeSessionId(effectiveSid)) {
+      throw ArgumentError.value(effectiveSid, 'sessionId', 'Unsafe session ID');
+    }
+    if (!isSafeBackupFileName(backupFileName)) {
+      throw ArgumentError.value(
+        backupFileName,
+        'backupFileName',
+        'Unsafe backup file name',
+      );
+    }
+    return p.join(configHomeDir, 'file-history', effectiveSid, backupFileName);
   }
 
   String _getBackupFileName(String filePath, int version) {
+    if (version < 0) {
+      throw RangeError.value(version, 'version', 'Must be non-negative');
+    }
     final hash = _sha256Hex(filePath).substring(0, 16);
     return '$hash@v$version';
   }
@@ -236,15 +288,27 @@ class FileHistoryManager extends SintController {
   /// Use the relative path as the key to reduce session storage space.
   String _maybeShortenFilePath(String filePath) {
     if (!_isAbsolute(filePath)) return filePath;
-    if (filePath.startsWith(_originalCwd)) {
+    if (_isWithinBase(filePath, _originalCwd)) {
       return _relativePath(filePath, _originalCwd);
     }
     return filePath;
   }
 
   String _maybeExpandFilePath(String filePath) {
+    if (filePath.contains('\x00') ||
+        filePath.startsWith('//') ||
+        filePath.startsWith(r'\\')) {
+      throw FileSystemException('Unsafe tracked path', filePath);
+    }
     if (_isAbsolute(filePath)) return filePath;
-    return '$_originalCwd/$filePath';
+    final segments = p.split(filePath);
+    if (segments.contains('..')) {
+      throw FileSystemException(
+        'Relative tracked path must not traverse outside workspace',
+        filePath,
+      );
+    }
+    return p.join(_originalCwd, filePath);
   }
 
   // -------------------------------------------------------------------------
@@ -560,6 +624,10 @@ class FileHistoryManager extends SintController {
         if (backupFileName == null) {
           // File did not exist at target version — delete if present.
           try {
+            _assertSafeTrackedTargetPath(filePath);
+            if (await FileSystemEntity.isLink(filePath)) {
+              continue;
+            }
             await File(filePath).delete();
             filesChanged.add(filePath);
           } on FileSystemException {
@@ -688,8 +756,21 @@ class FileHistoryManager extends SintController {
 
   /// Creates a backup of the file at [filePath].
   Future<FileHistoryBackup> _createBackup(String filePath, int version) async {
+    _assertSafeTrackedTargetPath(filePath);
+    if (await FileSystemEntity.isLink(filePath)) {
+      throw FileSystemException(
+        'Refusing to create file history backup of symlink',
+        filePath,
+      );
+    }
     final backupFileName = _getBackupFileName(filePath, version);
     final backupPath = _resolveBackupPath(backupFileName);
+    if (await FileSystemEntity.isLink(backupPath)) {
+      throw FileSystemException(
+        'Refusing to write backup through symlink',
+        backupPath,
+      );
+    }
 
     // Stat first: if the source is missing, record a null backup.
     FileStat srcStats;
@@ -714,9 +795,7 @@ class FileHistoryManager extends SintController {
     try {
       await File(filePath).copy(backupPath);
     } on FileSystemException {
-      await Directory(
-        backupPath.substring(0, backupPath.lastIndexOf('/')),
-      ).create(recursive: true);
+      await Directory(p.dirname(backupPath)).create(recursive: true);
       await File(filePath).copy(backupPath);
     }
 
@@ -733,7 +812,20 @@ class FileHistoryManager extends SintController {
 
   /// Restores a file from its backup path.
   Future<void> _restoreBackup(String filePath, String backupFileName) async {
+    _assertSafeTrackedTargetPath(filePath);
+    if (await FileSystemEntity.isLink(filePath)) {
+      throw FileSystemException(
+        'Refusing to restore backup over symlink target',
+        filePath,
+      );
+    }
     final backupPath = _resolveBackupPath(backupFileName);
+    if (await FileSystemEntity.isLink(backupPath)) {
+      throw FileSystemException(
+        'Refusing to restore from symlinked backup file',
+        backupPath,
+      );
+    }
 
     // Check backup exists.
     final backupFile = File(backupPath);
@@ -743,9 +835,7 @@ class FileHistoryManager extends SintController {
     try {
       await backupFile.copy(filePath);
     } on FileSystemException {
-      await Directory(
-        filePath.substring(0, filePath.lastIndexOf('/')),
-      ).create(recursive: true);
+      await Directory(p.dirname(filePath)).create(recursive: true);
       await backupFile.copy(filePath);
     }
   }
@@ -810,14 +900,22 @@ class FileHistoryManager extends SintController {
     if (!fileHistoryEnabled()) return;
     if (fileHistorySnapshots.isEmpty || previousSessionId == null) return;
     if (previousSessionId == sessionId) return;
+    if (!isSafeSessionId(previousSessionId) || !isSafeSessionId(sessionId)) {
+      return;
+    }
 
     try {
-      final newBackupDir = Directory('$configHomeDir/file-history/$sessionId');
+      final newBackupDir = Directory(
+        p.join(configHomeDir, 'file-history', sessionId),
+      );
+      if (await FileSystemEntity.isLink(newBackupDir.path)) return;
       await newBackupDir.create(recursive: true);
 
       for (final snapshot in fileHistorySnapshots) {
         final backupEntries = snapshot.trackedFileBackups.values.where(
-          (b) => b.backupFileName != null,
+          (b) =>
+              b.backupFileName != null &&
+              isSafeBackupFileName(b.backupFileName!),
         );
 
         for (final backup in backupEntries) {
@@ -825,18 +923,16 @@ class FileHistoryManager extends SintController {
             backup.backupFileName!,
             previousSessionId,
           );
-          final newBackupPath = '${newBackupDir.path}/${backup.backupFileName}';
+          final newBackupPath = p.join(newBackupDir.path, backup.backupFileName);
 
           try {
-            // Try hard link first.
-            await Link(newBackupPath).create(oldBackupPath);
-          } catch (_) {
-            try {
-              // Fallback to copy.
-              await File(oldBackupPath).copy(newBackupPath);
-            } catch (_) {
-              // Skip on error.
+            if (await FileSystemEntity.isLink(oldBackupPath) ||
+                await FileSystemEntity.isLink(newBackupPath)) {
+              continue;
             }
+            await File(oldBackupPath).copy(newBackupPath);
+          } catch (_) {
+            // Skip on error.
           }
         }
       }
@@ -851,31 +947,45 @@ class FileHistoryManager extends SintController {
 
   static Future<String?> _readFileOrNull(String path) async {
     try {
+      if (await FileSystemEntity.isLink(path)) return null;
       return await File(path).readAsString();
     } catch (_) {
       return null;
     }
   }
 
-  static bool _isAbsolute(String path) => path.startsWith('/');
+  static bool _isAbsolute(String path) => p.isAbsolute(path);
+
+  static bool _isWithinBase(String fullPath, String base) {
+    var cleanBase = base;
+    while (cleanBase.length > 1 &&
+        (cleanBase.endsWith('/') || cleanBase.endsWith(r'\'))) {
+      cleanBase = cleanBase.substring(0, cleanBase.length - 1);
+    }
+    if (fullPath == cleanBase) return true;
+    return fullPath.startsWith('$cleanBase/') ||
+        fullPath.startsWith('$cleanBase\\');
+  }
 
   static String _relativePath(String fullPath, String base) {
-    if (fullPath.startsWith(base)) {
-      var rel = fullPath.substring(base.length);
-      if (rel.startsWith('/')) rel = rel.substring(1);
+    if (_isWithinBase(fullPath, base)) {
+      var cleanBase = base;
+      while (cleanBase.length > 1 &&
+          (cleanBase.endsWith('/') || cleanBase.endsWith(r'\'))) {
+        cleanBase = cleanBase.substring(0, cleanBase.length - 1);
+      }
+      if (fullPath == cleanBase) return '';
+      var rel = fullPath.substring(cleanBase.length);
+      if (rel.startsWith('/') || rel.startsWith(r'\')) {
+        rel = rel.substring(1);
+      }
       return rel;
     }
     return fullPath;
   }
 
   static String _sha256Hex(String input) {
-    // Simple hash for file path -> backup name mapping.
-    // In production, use dart:crypto or crypto package.
-    var hash = 0;
-    for (var i = 0; i < input.length; i++) {
-      hash = ((hash << 5) - hash + input.codeUnitAt(i)) & 0xFFFFFFFF;
-    }
-    return hash.toRadixString(16).padLeft(16, '0');
+    return NeomageNetworkGuard.sha256Hex(input);
   }
 
   void _maybeDumpStateForDebug(FileHistoryState s) {

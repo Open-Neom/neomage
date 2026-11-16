@@ -1,10 +1,10 @@
-import 'dart:io' show Platform;
-
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:sint_sentinel/sint_sentinel.dart';
+import 'package:neomage/core/platform/neomage_io.dart' show Platform;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sint_sentinel/sint_sentinel_core.dart';
 
 import '../../utils/crypto/crypto_utils.dart';
+import '../../utils/security/neomage_network_guard.dart';
 import '../api/api_provider.dart';
 
 /// Auth service — manages API keys and provider configuration.
@@ -73,9 +73,13 @@ class AuthService {
   }
 
   Future<void> _writeKey(String key, String value) async {
+    final sanitized = NeomageNetworkGuard.sanitizeHeaderValue(value);
+    if (sanitized.isEmpty) {
+      throw ArgumentError('API key must not be empty');
+    }
     if (_secureStorageSupported) {
       try {
-        if (await _secure.write(key, value)) {
+        if (await _secure.write(key, sanitized)) {
           // Remove any legacy plaintext copy.
           final box = await _openBox();
           if (box.containsKey(key)) await box.delete(key);
@@ -87,7 +91,7 @@ class AuthService {
     }
 
     final box = await _openBox();
-    await box.put(key, value);
+    await box.put(key, sanitized);
   }
 
   Future<void> _deleteKey(String key) async {
@@ -144,18 +148,54 @@ class AuthService {
 
   // ── Provider Configuration ──
 
+  static bool _isSafeBaseUrl(String candidate) {
+    final uri = Uri.tryParse(candidate.trim());
+    return NeomageNetworkGuard.isSafeEndpointUri(
+      uri,
+      allowLoopbackInsecure: true,
+      secureSchemes: const <String>{'https'},
+      insecureSchemes: const <String>{'http'},
+    );
+  }
+
+  static String _resolveSafeBaseUrl(String? candidate, ApiProviderType type) {
+    if (candidate == null || candidate.trim().isEmpty) {
+      return defaultBaseUrl(type);
+    }
+    final trimmed = candidate.trim();
+    if (_isSafeBaseUrl(trimmed)) return trimmed;
+    SintSentinel.logger.w(
+      'Rejected unsafe custom baseUrl for ${type.name}; falling back to default',
+    );
+    return defaultBaseUrl(type);
+  }
+
   Future<void> saveProviderConfig({
     required ApiProviderType type,
     required String model,
     String? baseUrl,
   }) async {
+    final cleanModel = NeomageNetworkGuard.sanitizeHeaderValue(
+      model,
+      maxChars: 256,
+    );
+    if (cleanModel.isEmpty) {
+      throw ArgumentError('Model identifier must not be empty');
+    }
+    if (baseUrl != null && baseUrl.trim().isNotEmpty) {
+      if (!_isSafeBaseUrl(baseUrl)) {
+        throw ArgumentError('Unsafe provider baseUrl');
+      }
+    }
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_providerTypeKey, type.name);
-    await prefs.setString(_modelKey, model);
-    if (baseUrl != null) {
-      await prefs.setString(_baseUrlKey, baseUrl);
+    await prefs.setString(_modelKey, cleanModel);
+    if (baseUrl != null && baseUrl.trim().isNotEmpty) {
+      await prefs.setString(_baseUrlKey, baseUrl.trim());
     }
-    SintSentinel.logger.i('Saved provider config: ${type.name}, model: $model');
+    SintSentinel.logger.i(
+      'Saved provider config: ${type.name}, model: $cleanModel',
+    );
   }
 
   Future<ApiConfig?> loadApiConfig() async {
@@ -202,7 +242,7 @@ class AuthService {
         return ApiConfig.openai(
           apiKey: apiKey,
           model: model,
-          baseUrl: baseUrl ?? 'https://api.openai.com/v1',
+          baseUrl: _resolveSafeBaseUrl(baseUrl, ApiProviderType.openai),
         );
 
       case ApiProviderType.deepseek:
@@ -213,7 +253,7 @@ class AuthService {
       case ApiProviderType.ollama:
         return ApiConfig.ollama(
           model: model,
-          baseUrl: baseUrl ?? 'http://localhost:11434/v1',
+          baseUrl: _resolveSafeBaseUrl(baseUrl, ApiProviderType.ollama),
         );
 
       case ApiProviderType.custom:
@@ -222,7 +262,7 @@ class AuthService {
         final apiKey = await getApiKeyForProvider(type);
         return ApiConfig(
           type: type,
-          baseUrl: baseUrl ?? 'https://api.openai.com/v1',
+          baseUrl: _resolveSafeBaseUrl(baseUrl, type),
           apiKey: apiKey,
           model: model,
         );

@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 // ─── Types ───
 
@@ -226,11 +227,12 @@ class RemoteClient {
     try {
       final headers = <String, dynamic>{};
       if (_authToken != null) {
+        final cleanToken = NeomageNetworkGuard.sanitizeHeaderValue(_authToken);
         switch (_authMethod) {
           case RemoteAuthMethod.token:
-            headers['Authorization'] = 'Bearer $_authToken';
+            headers['Authorization'] = 'Bearer $cleanToken';
           case RemoteAuthMethod.apiKey:
-            headers['X-Api-Key'] = _authToken;
+            headers['X-Api-Key'] = cleanToken;
           default:
             break;
         }
@@ -259,7 +261,11 @@ class RemoteClient {
 
       // Listen for messages.
       _socket!.listen(
-        (data) => _handleMessage(data as String),
+        (data) {
+          if (data is String && data.length <= RemoteServer.maxFrameChars) {
+            _handleMessage(data);
+          }
+        },
         onDone: () => _handleDisconnect('Connection closed'),
         onError: (e) => _handleDisconnect('Connection error: $e'),
       );
@@ -459,9 +465,14 @@ class RemoteClient {
 
 /// HTTP/WebSocket server for hosting remote sessions.
 class RemoteServer {
+  static const int maxFrameChars = 2 * 1024 * 1024;
+  static const int maxRelayBodyBytes = 2 * 1024 * 1024;
+
   final int port;
   final String? host;
   final String? authToken;
+  final List<String> allowedOrigins;
+  final int maxClients;
   HttpServer? _server;
   final Map<String, WebSocket> _clients = {};
   final StreamController<RemoteEvent> _eventController =
@@ -469,13 +480,22 @@ class RemoteServer {
   final Map<String, RemoteSessionInfo> _sessions = {};
   int _clientCounter = 0;
 
-  RemoteServer({this.port = 3100, this.host, this.authToken});
+  RemoteServer({
+    this.port = 3100,
+    this.host,
+    this.authToken,
+    this.allowedOrigins = const [],
+    this.maxClients = 32,
+  });
 
   /// Event stream.
   Stream<RemoteEvent> get events => _eventController.stream;
 
   /// Connected client count.
   int get clientCount => _clients.length;
+
+  /// Bound TCP port once running (useful when `port == 0`).
+  int? get boundPort => _server?.port;
 
   /// Active sessions.
   List<RemoteSessionInfo> get sessions => _sessions.values.toList();
@@ -527,16 +547,31 @@ class RemoteServer {
   // ─── Internal ───
 
   Future<void> _handleRequest(HttpRequest request) async {
-    // CORS headers.
-    request.response.headers.add('Access-Control-Allow-Origin', '*');
-    request.response.headers.add(
-      'Access-Control-Allow-Methods',
-      'GET, POST, OPTIONS',
-    );
-    request.response.headers.add(
-      'Access-Control-Allow-Headers',
-      'Authorization, Content-Type, X-Api-Key',
-    );
+    // Reject cross-site browser Origin headers (CSWSH & local CORS defense).
+    final origin = request.headers.value('Origin');
+    if (!NeomageNetworkGuard.isAllowedLocalServerOrigin(
+      origin,
+      allowedOrigins: allowedOrigins,
+    )) {
+      request.response.statusCode = HttpStatus.forbidden;
+      request.response.write('Cross-origin request blocked');
+      await request.response.close();
+      return;
+    }
+
+    if (origin != null) {
+      request.response.headers
+        ..set(
+          'Access-Control-Allow-Origin',
+          NeomageNetworkGuard.sanitizeHeaderValue(origin),
+        )
+        ..set('Vary', 'Origin')
+        ..set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        ..set(
+          'Access-Control-Allow-Headers',
+          'Authorization, Content-Type, X-Api-Key',
+        );
+    }
 
     if (request.method == 'OPTIONS') {
       request.response.statusCode = 204;
@@ -544,11 +579,17 @@ class RemoteServer {
       return;
     }
 
-    // Auth check.
-    if (authToken != null) {
+    // Constant-time auth check.
+    if (authToken != null && authToken!.isNotEmpty) {
+      final cleanExpected = NeomageNetworkGuard.sanitizeHeaderValue(authToken!);
       final auth = request.headers.value('Authorization');
       final apiKey = request.headers.value('X-Api-Key');
-      if (auth != 'Bearer $authToken' && apiKey != authToken) {
+      final queryToken = request.uri.queryParameters['token'];
+      final authorized =
+          NeomageNetworkGuard.constantTimeEquals(auth, 'Bearer $cleanExpected') ||
+          NeomageNetworkGuard.constantTimeEquals(apiKey, cleanExpected) ||
+          NeomageNetworkGuard.constantTimeEquals(queryToken, cleanExpected);
+      if (!authorized) {
         request.response.statusCode = 401;
         request.response.write('Unauthorized');
         await request.response.close();
@@ -580,26 +621,27 @@ class RemoteServer {
         await request.response.close();
 
       case '/ws':
-        // WebSocket upgrade.
-        if (WebSocketTransformer.isUpgradeRequest(request)) {
-          final socket = await WebSocketTransformer.upgrade(request);
-          _handleWebSocket(socket, request);
-        } else {
+      case '/':
+        // WebSocket upgrade (restricted to explicit WS endpoints + maxClients).
+        if (!WebSocketTransformer.isUpgradeRequest(request)) {
           request.response.statusCode = 400;
           request.response.write('Expected WebSocket upgrade');
           await request.response.close();
+          return;
         }
+        if (_clients.length >= maxClients) {
+          request.response.statusCode = HttpStatus.serviceUnavailable;
+          request.response.write('Too many active connections');
+          await request.response.close();
+          return;
+        }
+        final socket = await WebSocketTransformer.upgrade(request);
+        _handleWebSocket(socket, request);
 
       default:
-        // Try WebSocket upgrade on any path.
-        if (WebSocketTransformer.isUpgradeRequest(request)) {
-          final socket = await WebSocketTransformer.upgrade(request);
-          _handleWebSocket(socket, request);
-        } else {
-          request.response.statusCode = 404;
-          request.response.write('Not found');
-          await request.response.close();
-        }
+        request.response.statusCode = 404;
+        request.response.write('Not found');
+        await request.response.close();
     }
   }
 
@@ -641,8 +683,12 @@ class RemoteServer {
     socket.listen(
       (data) {
         try {
+          if (data is! String || data.length > maxFrameChars) {
+            socket.close(WebSocketStatus.messageTooBig, 'Invalid or oversized frame');
+            return;
+          }
           final message = RemoteMessage.fromJson(
-            jsonDecode(data as String) as Map<String, dynamic>,
+            jsonDecode(data) as Map<String, dynamic>,
           );
 
           // Handle ping.
@@ -718,9 +764,25 @@ class SessionRelay {
     required String displayName,
     Map<String, dynamic>? capabilities,
   }) async {
+    final relayUri = Uri.tryParse(relayUrl.trim());
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      relayUri,
+      secureSchemes: const <String>{'wss'},
+      insecureSchemes: const <String>{'ws'},
+    )) {
+      throw ArgumentError.value(
+        NeomageNetworkGuard.redactUrlCredentials(relayUrl),
+        'relayUrl',
+        'Unsafe relay WebSocket URL',
+      );
+    }
+    final cleanToken = relayToken != null
+        ? NeomageNetworkGuard.sanitizeHeaderValue(relayToken!)
+        : null;
+
     _socket = await WebSocket.connect(
-      relayUrl,
-      headers: {if (relayToken != null) 'Authorization': 'Bearer $relayToken'},
+      relayUri!.toString(),
+      headers: {if (cleanToken != null) 'Authorization': 'Bearer $cleanToken'},
     );
 
     final registrationId = 'host_${DateTime.now().millisecondsSinceEpoch}';
@@ -742,8 +804,11 @@ class SessionRelay {
     _socket!.listen(
       (data) {
         try {
+          if (data is! String || data.length > RemoteServer.maxFrameChars) {
+            return;
+          }
           final message = RemoteMessage.fromJson(
-            jsonDecode(data as String) as Map<String, dynamic>,
+            jsonDecode(data) as Map<String, dynamic>,
           );
           _eventController.add(RemoteMessageReceived(message));
         } catch (_) {}
@@ -765,16 +830,54 @@ class SessionRelay {
 
   /// List available hosts on the relay.
   Future<List<Map<String, dynamic>>> listHosts() async {
+    final relayUri = Uri.tryParse(relayUrl.trim());
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      relayUri,
+      secureSchemes: const <String>{'wss', 'https'},
+      insecureSchemes: const <String>{'ws', 'http'},
+    )) {
+      throw ArgumentError.value(
+        NeomageNetworkGuard.redactUrlCredentials(relayUrl),
+        'relayUrl',
+        'Unsafe relay URL',
+      );
+    }
+    final httpScheme =
+        (relayUri!.scheme == 'wss' || relayUri.scheme == 'https')
+        ? 'https'
+        : 'http';
+    final uri = relayUri.replace(scheme: httpScheme, path: '/api/hosts');
+
     final client = HttpClient();
     try {
-      final uri = Uri.parse(relayUrl.replaceFirst('ws', 'http'));
-      final request = await client.getUrl(uri.replace(path: '/api/hosts'));
+      final request = await client
+          .getUrl(uri)
+          .timeout(const Duration(seconds: 15));
+      request.followRedirects = false;
       if (relayToken != null) {
-        request.headers.set('Authorization', 'Bearer $relayToken');
+        final cleanToken = NeomageNetworkGuard.sanitizeHeaderValue(relayToken!);
+        request.headers.set('Authorization', 'Bearer $cleanToken');
       }
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
-      return (jsonDecode(body) as List<dynamic>).cast<Map<String, dynamic>>();
+      final response = await request.close().timeout(
+        const Duration(seconds: 15),
+      );
+      if (response.statusCode != 200) {
+        await response.drain<void>();
+        return const <Map<String, dynamic>>[];
+      }
+      final buffer = BytesBuilder(copy: false);
+      await for (final chunk in response.timeout(const Duration(seconds: 15))) {
+        if (buffer.length + chunk.length > RemoteServer.maxRelayBodyBytes) {
+          throw const FormatException('Relay host list exceeds 2 MiB');
+        }
+        buffer.add(chunk);
+      }
+      final decoded = jsonDecode(utf8.decode(buffer.takeBytes()));
+      if (decoded is! List) return const <Map<String, dynamic>>[];
+      return decoded
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .toList();
     } finally {
       client.close();
     }
@@ -798,47 +901,68 @@ class SessionRelay {
 
 /// Discovers remote sessions on the local network.
 class RemoteDiscovery {
+  static const int maxScanResponseBytes = 256 * 1024;
+  static const int maxScannedPorts = 32;
+
   /// Scan for remote sessions on common ports.
   static Future<List<RemoteSessionInfo>> scan({
     String subnet = '127.0.0.1',
     List<int> ports = const [3100, 3101, 3102, 3103, 3104],
     Duration timeout = const Duration(seconds: 2),
   }) async {
+    final cleanSubnet = subnet.trim();
+    if (!NeomageNetworkGuard.isSafeLanDiscoveryHost(cleanSubnet)) {
+      return const <RemoteSessionInfo>[];
+    }
     final results = <RemoteSessionInfo>[];
+    final validPorts = ports
+        .where((p) => p >= 1 && p <= 65535)
+        .take(maxScannedPorts);
 
-    for (final port in ports) {
+    for (final port in validPorts) {
+      final client = HttpClient();
       try {
-        final client = HttpClient();
         client.connectionTimeout = timeout;
 
-        final request = await client.getUrl(
-          Uri.parse('http://$subnet:$port/api/status'),
-        );
-        final response = await request.close();
+        final request = await client
+            .getUrl(Uri.parse('http://$cleanSubnet:$port/api/status'))
+            .timeout(timeout);
+        request.followRedirects = false;
+        final response = await request.close().timeout(timeout);
 
         if (response.statusCode == 200) {
-          final body = await response.transform(utf8.decoder).join();
-          final json = jsonDecode(body) as Map<String, dynamic>;
-
-          results.add(
-            RemoteSessionInfo(
-              sessionId: 'discovered_${subnet}_$port',
-              hostId: subnet,
-              displayName: json['displayName'] as String? ?? '$subnet:$port',
-              state: RemoteSessionState.connected,
-              connectionType: RemoteConnectionType.direct,
-              connectedAt: DateTime.now(),
-              remoteAddress: subnet,
-              remotePort: port,
-              model: json['model'] as String?,
-              metadata: json,
-            ),
-          );
+          final buffer = BytesBuilder(copy: false);
+          await for (final chunk in response.timeout(timeout)) {
+            if (buffer.length + chunk.length > maxScanResponseBytes) {
+              throw const FormatException('Discovery response too large');
+            }
+            buffer.add(chunk);
+          }
+          final decoded = jsonDecode(utf8.decode(buffer.takeBytes()));
+          if (decoded is Map<String, dynamic>) {
+            results.add(
+              RemoteSessionInfo(
+                sessionId: 'discovered_${cleanSubnet}_$port',
+                hostId: cleanSubnet,
+                displayName:
+                    decoded['displayName'] as String? ?? '$cleanSubnet:$port',
+                state: RemoteSessionState.connected,
+                connectionType: RemoteConnectionType.direct,
+                connectedAt: DateTime.now(),
+                remoteAddress: cleanSubnet,
+                remotePort: port,
+                model: decoded['model'] as String?,
+                metadata: decoded,
+              ),
+            );
+          }
+        } else {
+          await response.drain<void>();
         }
-
-        client.close();
       } catch (_) {
         // Host/port not available.
+      } finally {
+        client.close(force: true);
       }
     }
 
@@ -853,11 +977,16 @@ class RemoteDiscovery {
     bool secure = false,
   }) {
     final scheme = secure ? 'wss' : 'ws';
-    final url = '$scheme://$host:$port/ws';
-    if (token != null) {
-      return '$url?token=$token';
-    }
-    return url;
+    final uri = Uri(
+      scheme: scheme,
+      host: host.trim(),
+      port: port,
+      path: '/ws',
+      queryParameters: (token != null && token.isNotEmpty)
+          ? <String, String>{'token': token}
+          : null,
+    );
+    return uri.toString();
   }
 
   /// Parse a connection URL.

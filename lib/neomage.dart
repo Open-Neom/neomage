@@ -30,6 +30,7 @@ export 'domain/models/text_input_types.dart'
     hide VimMode, PromptInputMode, QueuePriority, QueuedCommand, isValidImagePaste;
 
 // Domain — Services
+export 'domain/services/local_ai_service.dart';
 export 'domain/services/queued_compaction_service.dart';
 export 'domain/services/message_normalizer_service.dart';
 
@@ -266,6 +267,7 @@ export 'data/platform/remote_bridge.dart';
 export 'data/platform/native_bridge.dart';
 
 // Data — Skills (extended)
+export 'data/skills/skill_catalog_source.dart';
 export 'data/skills/skill_registry.dart' hide SkillSource, SkillDefinition;
 
 // Data — Testing (moved to test/ — not exported for pub.dev)

@@ -12,11 +12,13 @@ library;
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
+import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/native_installer/native_installer_guard.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'package:path/path.dart' as p;
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -245,17 +247,23 @@ bool _isNoisyName(String name) {
   return namePatternBlocklist.any((re) => re.hasMatch(name));
 }
 
-/// Core sanitization: length cap + trim + dedupe + sort.
+final RegExp _appNameControlChars = RegExp(r'[\x00-\x1F\x7F]');
+
+/// Core sanitization: control-char strip + length cap + trim + dedupe + sort.
 List<String> _sanitizeCore(List<String> raw, bool applyCharFilter) {
   final seen = <String>{};
-  final result = raw.map((name) => name.trim()).where((trimmed) {
-    if (trimmed.isEmpty) return false;
-    if (trimmed.length > appNameMaxLen) return false;
-    if (applyCharFilter && !appNameAllowed.hasMatch(trimmed)) return false;
-    if (seen.contains(trimmed)) return false;
-    seen.add(trimmed);
-    return true;
-  }).toList()..sort((a, b) => a.compareTo(b));
+  final result = raw
+      .map((name) => name.replaceAll(_appNameControlChars, ' ').trim())
+      .where((trimmed) {
+        if (trimmed.isEmpty) return false;
+        if (trimmed.length > appNameMaxLen) return false;
+        if (applyCharFilter && !appNameAllowed.hasMatch(trimmed)) return false;
+        if (seen.contains(trimmed)) return false;
+        seen.add(trimmed);
+        return true;
+      })
+      .toList()
+    ..sort((a, b) => a.compareTo(b));
   return result;
 }
 
@@ -358,7 +366,8 @@ class CheckResultBlocked extends CheckResult {
   CheckResultBlocked({required this.by});
 }
 
-/// Manages computer use session locking.
+/// Manages computer use session locking with atomic O_EXCL creation and
+/// symlink-clobber protection.
 class ComputerUseLockManager {
   final String _configHomeDir;
   final String _sessionId;
@@ -368,12 +377,40 @@ class ComputerUseLockManager {
     required String configHomeDir,
     required String sessionId,
   }) : _configHomeDir = configHomeDir,
-       _sessionId = sessionId;
+       _sessionId = sessionId {
+    if (!NeomageNetworkGuard.isSafeIdentifier(sessionId)) {
+      throw ArgumentError.value(
+        sessionId,
+        'sessionId',
+        'Invalid computer-use session identifier',
+      );
+    }
+    if (configHomeDir.trim().isEmpty ||
+        configHomeDir.contains('\x00') ||
+        configHomeDir.startsWith(r'\\') ||
+        configHomeDir.startsWith('//')) {
+      throw ArgumentError.value(
+        configHomeDir,
+        'configHomeDir',
+        'Invalid computer-use lock directory',
+      );
+    }
+  }
 
   String get _lockPath => p.join(_configHomeDir, lockFilename);
 
+  Future<void> _ensureNotSymlink() async {
+    if (await FileSystemEntity.isLink(_lockPath)) {
+      throw FileSystemException(
+        'Refusing to operate on symbolic link computer-use lock file',
+        _lockPath,
+      );
+    }
+  }
+
   /// Read the current lock file.
   Future<ComputerUseLock?> _readLock() async {
+    await _ensureNotSymlink();
     try {
       final raw = await File(_lockPath).readAsString();
       return ComputerUseLock.fromJson(jsonDecode(raw));
@@ -382,41 +419,32 @@ class ComputerUseLockManager {
     }
   }
 
-  /// Check if a process is still running.
-  bool _isProcessRunning(int pid) {
-    try {
-      final result = Process.runSync('kill', ['-0', '$pid']);
-      return result.exitCode == 0;
-    } catch (_) {
+  /// Check if a process is still running (cross-platform, no fatal signals).
+  bool _isProcessRunning(int targetPid) => checkProcessRunningSafe(targetPid);
+
+  /// Atomically create the lock file with O_EXCL semantics via
+  /// `File.create(exclusive: true)` — never truncates an existing lock!
+  Future<bool> _tryCreateExclusive(ComputerUseLock lock) async {
+    await _ensureNotSymlink();
+    final existingType = await FileSystemEntity.type(
+      _lockPath,
+      followLinks: false,
+    );
+    if (existingType != FileSystemEntityType.notFound) {
       return false;
     }
-  }
-
-  /// Atomically create the lock file with O_EXCL semantics.
-  Future<bool> _tryCreateExclusive(ComputerUseLock lock) async {
     try {
-      final file = File(_lockPath);
-      final raf = await file.open(mode: FileMode.writeOnly);
-      // If file already exists, this doesn't give us EXCL semantics in pure Dart.
-      // We emulate O_EXCL by checking existence first + atomic write.
-      if (await File(_lockPath).exists()) {
-        await raf.close();
-        return false;
-      }
-      await raf.writeString(jsonEncode(lock.toJson()));
-      await raf.flush();
-      await raf.close();
+      final file = await File(_lockPath).create(exclusive: true);
+      await file.writeAsString(jsonEncode(lock.toJson()), flush: true);
       return true;
-    } on FileSystemException catch (e) {
-      if (e.osError?.errorCode == 17 /* EEXIST */ ) return false;
-      rethrow;
-    } catch (_) {
+    } on FileSystemException {
       return false;
     }
   }
 
   /// Check lock state without acquiring.
   Future<CheckResult> checkComputerUseLock() async {
+    await _ensureNotSymlink();
     final existing = await _readLock();
     if (existing == null) return CheckResultFree();
     if (existing.sessionId == _sessionId) return CheckResultHeldBySelf();
@@ -428,6 +456,7 @@ class ComputerUseLockManager {
       'Recovering stale computer-use lock from session ${existing.sessionId} (PID ${existing.pid})',
     );
     try {
+      await _ensureNotSymlink();
       await File(_lockPath).delete();
     } catch (_) {}
     return CheckResultFree();
@@ -438,6 +467,7 @@ class ComputerUseLockManager {
 
   /// Try to acquire the computer-use lock for the current session.
   Future<AcquireResult> tryAcquireComputerUseLock() async {
+    await _ensureNotSymlink();
     final lock = ComputerUseLock(
       sessionId: _sessionId,
       pid: pid,
@@ -457,6 +487,7 @@ class ComputerUseLockManager {
     // Corrupt/unparseable — treat as stale
     if (existing == null) {
       try {
+        await _ensureNotSymlink();
         await File(_lockPath).delete();
       } catch (_) {}
       if (await _tryCreateExclusive(lock)) {
@@ -482,6 +513,7 @@ class ComputerUseLockManager {
       'Recovering stale computer-use lock from session ${existing.sessionId} (PID ${existing.pid})',
     );
     try {
+      await _ensureNotSymlink();
       await File(_lockPath).delete();
     } catch (_) {}
     if (await _tryCreateExclusive(lock)) {
@@ -497,9 +529,11 @@ class ComputerUseLockManager {
     _unregisterCleanup?.call();
     _unregisterCleanup = null;
 
+    await _ensureNotSymlink();
     final existing = await _readLock();
     if (existing == null || existing.sessionId != _sessionId) return false;
     try {
+      await _ensureNotSymlink();
       await File(_lockPath).delete();
       _logDebug('Released computer-use lock');
       return true;
@@ -672,13 +706,35 @@ class CliComputerExecutor extends ComputerExecutor {
 
   // ── Display ─────────────────────────────────────────────────────────
 
+  static const int maxClipboardChars = 1024 * 1024;
+  static final RegExp validBundleIdPattern = RegExp(
+    r'^[A-Za-z0-9][A-Za-z0-9._\-]{1,254}$',
+  );
+
+  /// Validates a macOS bundle identifier (`com.example.App`) and rejects CLI
+  /// option injection (`-a`, `--args`), path traversal, and control chars.
+  static void validateBundleId(String bundleId) {
+    if (!validBundleIdPattern.hasMatch(bundleId) || bundleId.contains('..')) {
+      throw ArgumentError.value(
+        bundleId,
+        'bundleId',
+        'Invalid macOS bundle identifier',
+      );
+    }
+  }
+
   @override
   Future<DisplayGeometry> getDisplaySize([int? displayId]) async {
     // Get display size via native module or system_profiler
     try {
-      final result = await Process.run('system_profiler', [
-        'SPDisplaysDataType',
-      ]);
+      await Process.run(
+        'system_profiler',
+        ['SPDisplaysDataType'],
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+          Platform.environment,
+        ),
+        includeParentEnvironment: false,
+      ).timeout(const Duration(seconds: 5));
       // Parse display info — simplified for port
       return const DisplayGeometry(width: 1920, height: 1080, scaleFactor: 2.0);
     } catch (_) {
@@ -707,7 +763,7 @@ class CliComputerExecutor extends ComputerExecutor {
     bool? doHide,
   }) async {
     final d = await getDisplaySize(preferredDisplayId);
-    final targetDims = _computeTargetDims(d.width, d.height, d.scaleFactor);
+    _computeTargetDims(d.width, d.height, d.scaleFactor);
     // Would call Swift native module for actual capture
     return const ResolvePrepareCaptureResult();
   }
@@ -720,13 +776,18 @@ class CliComputerExecutor extends ComputerExecutor {
     final d = await getDisplaySize(displayId);
     final targetDims = _computeTargetDims(d.width, d.height, d.scaleFactor);
 
-    // Use screencapture command as fallback
-    final tempFile = p.join(
-      Directory.systemTemp.path,
-      'screenshot_${DateTime.now().millisecondsSinceEpoch}.jpg',
-    );
+    // Use isolated unpredictable temp directory (prevents symlink TOCTOU in /tmp)
+    final tempDir = await Directory.systemTemp.createTemp('neomage_cu_');
+    final tempFile = p.join(tempDir.path, 'capture.jpg');
     try {
-      await Process.run('screencapture', ['-x', '-t', 'jpg', tempFile]);
+      await Process.run(
+        'screencapture',
+        ['-x', '-t', 'jpg', tempFile],
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+          Platform.environment,
+        ),
+        includeParentEnvironment: false,
+      ).timeout(const Duration(seconds: 15));
       final bytes = await File(tempFile).readAsBytes();
       final b64 = base64Encode(bytes);
       return ScreenshotResult(
@@ -736,7 +797,7 @@ class CliComputerExecutor extends ComputerExecutor {
       );
     } finally {
       try {
-        await File(tempFile).delete();
+        await tempDir.delete(recursive: true);
       } catch (_) {}
     }
   }
@@ -764,7 +825,7 @@ class CliComputerExecutor extends ComputerExecutor {
   @override
   Future<void> key(String keySequence, [int? repeat]) async {
     final parts = keySequence.split('+').where((p) => p.isNotEmpty).toList();
-    final n = repeat ?? 1;
+    final n = (repeat ?? 1).clamp(1, 100);
 
     for (int i = 0; i < n; i++) {
       if (i > 0) await Future.delayed(const Duration(milliseconds: 8));
@@ -775,11 +836,12 @@ class CliComputerExecutor extends ComputerExecutor {
 
   @override
   Future<void> holdKey(List<String> keyNames, int durationMs) async {
+    final clampedMs = durationMs.clamp(0, 10000);
     // Press all keys, wait, release in reverse
     for (final k in keyNames) {
       _logDebug('holdKey press: $k');
     }
-    await Future.delayed(Duration(milliseconds: durationMs));
+    await Future.delayed(Duration(milliseconds: clampedMs));
     for (final k in keyNames.reversed) {
       _logDebug('holdKey release: $k');
     }
@@ -797,28 +859,59 @@ class CliComputerExecutor extends ComputerExecutor {
 
   @override
   Future<String> readClipboard() async {
-    final result = await Process.run('pbpaste', []);
+    final result = await Process.run(
+      'pbpaste',
+      [],
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+        Platform.environment,
+      ),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     if (result.exitCode != 0) {
       throw Exception('pbpaste exited with code ${result.exitCode}');
     }
-    return result.stdout as String;
+    final out = result.stdout as String;
+    if (out.length > maxClipboardChars) {
+      return out.substring(0, maxClipboardChars);
+    }
+    return out;
   }
 
   @override
   Future<void> writeClipboard(String text) async {
-    final result = await Process.run(
+    if (text.length > maxClipboardChars) {
+      throw ArgumentError.value(
+        text.length,
+        'text.length',
+        'Clipboard text exceeds $maxClipboardChars chars',
+      );
+    }
+    final proc = await Process.start(
       'pbcopy',
       [],
-      environment: {},
-      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+        Platform.environment,
+      ),
+      includeParentEnvironment: false,
     );
-    // pbcopy reads from stdin
-    final proc = await Process.start('pbcopy', []);
-    proc.stdin.write(text);
-    await proc.stdin.close();
-    final exitCode = await proc.exitCode;
-    if (exitCode != 0) {
-      throw Exception('pbcopy exited with code $exitCode');
+    var timedOut = false;
+    final timer = Timer(const Duration(seconds: 5), () {
+      timedOut = true;
+      proc.kill(ProcessSignal.sigterm);
+      Timer(const Duration(seconds: 1), () => proc.kill(ProcessSignal.sigkill));
+    });
+    try {
+      proc.stdin.write(text);
+      await proc.stdin.close();
+      final exitCode = await proc.exitCode;
+      if (timedOut) {
+        throw TimeoutException('pbcopy timed out after 5s');
+      }
+      if (exitCode != 0) {
+        throw Exception('pbcopy exited with code $exitCode');
+      }
+    } finally {
+      timer.cancel();
     }
   }
 
@@ -1002,7 +1095,15 @@ class CliComputerExecutor extends ComputerExecutor {
 
   @override
   Future<void> openApp(String bundleId) async {
-    await Process.run('open', ['-b', bundleId]);
+    validateBundleId(bundleId);
+    await Process.run(
+      'open',
+      ['-b', bundleId],
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+        Platform.environment,
+      ),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 10));
   }
 }
 

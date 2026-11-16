@@ -8,6 +8,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 /// Server lifecycle status.
 enum ServerStatus { stopped, starting, running, stopping, error }
@@ -123,15 +124,25 @@ class DirectServer {
   /// Per-client rate limiting state.
   final Map<String, _RateLimit> _rateLimits = {};
 
+  /// Active WebSocket clients.
+  final Set<WebSocket> _wsClients = <WebSocket>{};
+
   /// Maximum requests per client per minute.
   static const int _rateWindowRequests = 60;
   static const Duration _rateWindow = Duration(minutes: 1);
+  static const int maxJsonBodyBytes = 2 * 1024 * 1024;
+  static const int maxWsFrameChars = 2 * 1024 * 1024;
+  static const int maxSessions = 500;
+  static const int maxRateLimitEntries = 4096;
 
   final StreamController<RequestLog> _requestController =
       StreamController.broadcast();
 
   /// The current server status.
   ServerStatus get status => _status;
+
+  /// Bound TCP port once running (useful when `config.port == 0`).
+  int? get boundPort => _httpServer?.port;
 
   /// Stream of request log entries for monitoring.
   Stream<RequestLog> get onRequest => _requestController.stream;
@@ -232,6 +243,10 @@ class DirectServer {
   Future<void> stop() async {
     if (_status != ServerStatus.running) return;
     _status = ServerStatus.stopping;
+    for (final ws in _wsClients.toList()) {
+      await ws.close();
+    }
+    _wsClients.clear();
     await _httpServer?.close();
     _httpServer = null;
     _sessions.clear();
@@ -252,6 +267,26 @@ class DirectServer {
   Future<void> _handleRequest(HttpRequest request) async {
     final stopwatch = Stopwatch()..start();
     final clientIp = request.connectionInfo?.remoteAddress.address;
+
+    // Browser Origin / CSWSH / CORS enforcement: never allow default '*'
+    // to admit cross-site browser origins against a local server.
+    final origin = request.headers.value('origin');
+    if (origin != null &&
+        !NeomageNetworkGuard.isAllowedLocalServerOrigin(
+          origin,
+          allowedOrigins: _config?.corsOrigins ?? const <String>[],
+        )) {
+      await _sendJson(request, HttpStatus.forbidden, {
+        'error': 'Cross-origin browser request blocked.',
+      });
+      _logRequest(
+        request,
+        HttpStatus.forbidden,
+        stopwatch.elapsed,
+        clientIp,
+      );
+      return;
+    }
 
     // CORS preflight.
     if (_handleCors(request)) {
@@ -319,9 +354,9 @@ class DirectServer {
           'error': 'Not found: $method $path',
         });
       }
-    } catch (e) {
+    } catch (_) {
       await _sendJson(request, HttpStatus.internalServerError, {
-        'error': e.toString(),
+        'error': 'Internal server error.',
       });
     }
 
@@ -369,6 +404,12 @@ class DirectServer {
   }
 
   Future<void> _handleCreateSession(HttpRequest request) async {
+    if (_sessions.length >= maxSessions) {
+      await _sendJson(request, HttpStatus.serviceUnavailable, {
+        'error': 'Maximum active sessions reached.',
+      });
+      return;
+    }
     final id = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
     _sessions[id] = {'createdAt': DateTime.now().toIso8601String()};
     await _sendJson(request, HttpStatus.created, {'sessionId': id});
@@ -416,11 +457,43 @@ class DirectServer {
   }
 
   Future<void> _handleWebSocket(HttpRequest request) async {
+    final maxConns = _config?.maxConnections ?? 100;
+    if (_wsClients.length >= maxConns) {
+      await _sendJson(request, HttpStatus.serviceUnavailable, {
+        'error': 'Maximum concurrent WebSocket connections reached.',
+      });
+      return;
+    }
+    if (!WebSocketTransformer.isUpgradeRequest(request)) {
+      await _sendJson(request, HttpStatus.badRequest, {
+        'error': 'Expected WebSocket upgrade.',
+      });
+      return;
+    }
     final socket = await WebSocketTransformer.upgrade(request);
-    socket.listen((data) {
-      // Echo for now; real implementation pipes to chat engine.
-      socket.add(data);
-    }, onDone: () => socket.close());
+    _wsClients.add(socket);
+    socket.listen(
+      (data) {
+        if (data is String && data.length > maxWsFrameChars) {
+          socket.close(WebSocketStatus.messageTooBig, 'Frame too large');
+          return;
+        }
+        if (data is List<int> && data.length > maxWsFrameChars) {
+          socket.close(WebSocketStatus.messageTooBig, 'Frame too large');
+          return;
+        }
+        // Echo for now; real implementation pipes to chat engine.
+        socket.add(data);
+      },
+      onDone: () {
+        _wsClients.remove(socket);
+        socket.close();
+      },
+      onError: (_) {
+        _wsClients.remove(socket);
+        socket.close();
+      },
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -429,21 +502,29 @@ class DirectServer {
 
   /// Applies CORS headers. Returns `true` if CORS headers were set.
   bool _handleCors(HttpRequest request) {
-    final origins = _config?.corsOrigins ?? [];
+    final origins = _config?.corsOrigins ?? const <String>[];
     if (origins.isEmpty) return false;
-    final origin = request.headers.value('origin') ?? '*';
-    final allowed = origins.contains('*') || origins.contains(origin);
+    final origin = request.headers.value('origin');
+    if (origin == null) return false;
+
+    final allowed = NeomageNetworkGuard.isAllowedLocalServerOrigin(
+      origin,
+      allowedOrigins: origins,
+    );
     if (!allowed) return false;
 
+    final safeOrigin = NeomageNetworkGuard.sanitizeHeaderValue(origin);
     request.response.headers
-      ..set('Access-Control-Allow-Origin', origin)
+      ..set('Access-Control-Allow-Origin', safeOrigin)
+      ..set('Vary', 'Origin')
       ..set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
       ..set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
       ..set('Access-Control-Max-Age', '86400');
     return true;
   }
 
-  /// Validates the bearer token if one is configured.
+  /// Validates the bearer token if one is configured using constant-time
+  /// byte comparison.
   bool _checkAuth(HttpRequest request) {
     final token = _config?.authToken;
     if (token == null || token.isEmpty) return true;
@@ -452,12 +533,25 @@ class DirectServer {
 
     final authHeader = request.headers.value('authorization');
     if (authHeader == null) return false;
-    return authHeader == 'Bearer $token';
+    final cleanToken = NeomageNetworkGuard.sanitizeHeaderValue(token);
+    return NeomageNetworkGuard.constantTimeEquals(
+      authHeader,
+      'Bearer $cleanToken',
+    );
   }
 
   /// Returns `false` if the client has exceeded the rate limit.
   bool _checkRateLimit(String clientIp) {
     final now = DateTime.now();
+    if (_rateLimits.length >= maxRateLimitEntries &&
+        !_rateLimits.containsKey(clientIp)) {
+      _rateLimits.removeWhere(
+        (_, entry) => now.difference(entry.windowStart) > _rateWindow,
+      );
+      if (_rateLimits.length >= maxRateLimitEntries) {
+        _rateLimits.remove(_rateLimits.keys.first);
+      }
+    }
     final limit = _rateLimits.putIfAbsent(clientIp, _RateLimit.new);
     if (now.difference(limit.windowStart) > _rateWindow) {
       limit.count = 0;
@@ -473,9 +567,16 @@ class DirectServer {
 
   Future<Map<String, dynamic>?> _readJsonBody(HttpRequest request) async {
     try {
-      final raw = await utf8.decoder.bind(request).join();
-      if (raw.isEmpty) return null;
-      return jsonDecode(raw) as Map<String, dynamic>;
+      final buffer = BytesBuilder(copy: false);
+      await for (final chunk in request) {
+        if (buffer.length + chunk.length > maxJsonBodyBytes) {
+          return null;
+        }
+        buffer.add(chunk);
+      }
+      if (buffer.isEmpty) return null;
+      final decoded = jsonDecode(utf8.decode(buffer.takeBytes()));
+      return decoded is Map<String, dynamic> ? decoded : null;
     } catch (_) {
       return null;
     }

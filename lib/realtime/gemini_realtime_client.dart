@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../utils/security/neomage_network_guard.dart';
 import 'gemini_realtime_event.dart';
 
 /// Client for the Gemini Live (BidiGenerateContent) WebSocket API.
@@ -42,6 +43,10 @@ class GeminiRealtimeClient {
 
   /// Default model id for low-latency voice. Override per session.
   static const String defaultModel = 'models/gemini-2.5-flash-lite';
+
+  static const int maxIncomingFrameBytes = 16 * 1024 * 1024;
+  static const int maxAudioChunkBytes = 4 * 1024 * 1024;
+  static const int maxTextTurnChars = 256 * 1024;
 
   final String apiKey;
   final String model;
@@ -85,19 +90,53 @@ class GeminiRealtimeClient {
   /// Whether [close] has run (or the server closed first).
   bool get isClosed => _closed;
 
+  void _emit(GeminiRealtimeEvent event) {
+    if (!_closed && !_events.isClosed) {
+      _events.add(event);
+    }
+  }
+
   /// Opens the WebSocket and sends the setup envelope. Returns once
   /// the channel is open — [GeminiSetupComplete] arrives later on
   /// [events] after the server acks.
   Future<void> connect() async {
+    if (_closed) {
+      throw StateError('GeminiRealtimeClient.connect: client is closed');
+    }
     if (_channel != null) return;
-    final uri = Uri.parse('$endpoint?key=$apiKey');
+
+    final cleanKey = apiKey.trim();
+    if (cleanKey.isEmpty || RegExp(r'[\r\n\x00]').hasMatch(cleanKey)) {
+      throw ArgumentError('GeminiRealtimeClient.connect: invalid API key');
+    }
+
+    final baseUri = Uri.tryParse(endpoint.trim());
+    if (!NeomageNetworkGuard.isSafeWebSocketEndpointUri(
+      baseUri,
+      allowLoopbackInsecure: true,
+    )) {
+      throw ArgumentError(
+        'GeminiRealtimeClient.connect: blocked unsafe endpoint '
+        '${NeomageNetworkGuard.redactUrlCredentials(endpoint)}',
+      );
+    }
+
+    final uri = baseUri!.replace(
+      queryParameters: <String, String>{
+        ...baseUri.queryParameters,
+        'key': cleanKey,
+      },
+    );
     final channel = (connector ?? WebSocketChannel.connect)(uri);
     _channel = channel;
     _sub = channel.stream.listen(
       _onMessage,
       onError: (Object error, StackTrace st) {
-        _events.add(
-          GeminiRealtimeError(error.toString(), code: 'transport'),
+        _emit(
+          GeminiRealtimeError(
+            NeomageNetworkGuard.redactTransportError(error.toString()),
+            code: 'transport',
+          ),
         );
       },
       onDone: () {
@@ -125,8 +164,13 @@ class GeminiRealtimeClient {
   /// (1280–3200 samples). Throws if called before [connect].
   Future<void> sendAudio(Uint8List pcm16) async {
     final ch = _channel;
-    if (ch == null) {
+    if (ch == null || _closed) {
       throw StateError('GeminiRealtimeClient.sendAudio: not connected');
+    }
+    if (pcm16.length > maxAudioChunkBytes) {
+      throw ArgumentError(
+        'GeminiRealtimeClient.sendAudio: chunk exceeds $maxAudioChunkBytes bytes',
+      );
     }
     _send({
       'realtime_input': {
@@ -143,8 +187,13 @@ class GeminiRealtimeClient {
   /// Sends a text turn (e.g. when the user types instead of speaking).
   Future<void> sendText(String text) async {
     final ch = _channel;
-    if (ch == null) {
+    if (ch == null || _closed) {
       throw StateError('GeminiRealtimeClient.sendText: not connected');
+    }
+    if (text.length > maxTextTurnChars) {
+      throw ArgumentError(
+        'GeminiRealtimeClient.sendText: text exceeds $maxTextTurnChars chars',
+      );
     }
     _send({
       'client_content': {
@@ -192,22 +241,44 @@ class GeminiRealtimeClient {
   }
 
   void _onMessage(dynamic raw) {
+    if (_closed || _events.isClosed) return;
     Map<String, Object?>? json;
     try {
       if (raw is String) {
+        if (raw.length > maxIncomingFrameBytes) {
+          _emit(
+            const GeminiRealtimeError(
+              'Incoming WebSocket frame exceeded size limit',
+              code: 'frame_too_large',
+            ),
+          );
+          return;
+        }
         final decoded = jsonDecode(raw);
         if (decoded is Map) {
           json = decoded.map((k, v) => MapEntry(k.toString(), v));
         }
       } else if (raw is List<int>) {
+        if (raw.length > maxIncomingFrameBytes) {
+          _emit(
+            const GeminiRealtimeError(
+              'Incoming WebSocket binary frame exceeded size limit',
+              code: 'frame_too_large',
+            ),
+          );
+          return;
+        }
         final decoded = jsonDecode(utf8.decode(raw, allowMalformed: true));
         if (decoded is Map) {
           json = decoded.map((k, v) => MapEntry(k.toString(), v));
         }
       }
     } catch (e) {
-      _events.add(
-        GeminiRealtimeError('Bad JSON from server: $e', code: 'parse'),
+      _emit(
+        GeminiRealtimeError(
+          'Bad JSON from server: ${NeomageNetworkGuard.redactTransportError(e.toString())}',
+          code: 'parse',
+        ),
       );
       return;
     }
@@ -222,7 +293,7 @@ class GeminiRealtimeClient {
   void _dispatch(Map<String, Object?> json) {
     if (json.containsKey('setupComplete')) {
       _setupComplete = true;
-      _events.add(const GeminiSetupComplete());
+      _emit(const GeminiSetupComplete());
       return;
     }
     final serverContent = json['serverContent'];
@@ -236,14 +307,19 @@ class GeminiRealtimeClient {
     if (error is Map) {
       final msg = error['message']?.toString() ?? 'unknown error';
       final code = error['code']?.toString();
-      _events.add(GeminiRealtimeError(msg, code: code));
+      _emit(
+        GeminiRealtimeError(
+          NeomageNetworkGuard.redactTransportError(msg),
+          code: code,
+        ),
+      );
       return;
     }
   }
 
   void _handleServerContent(Map<String, Object?> sc) {
     if (sc['interrupted'] == true) {
-      _events.add(const GeminiInterrupted());
+      _emit(const GeminiInterrupted());
     }
     final modelTurn = sc['modelTurn'];
     if (modelTurn is Map) {
@@ -253,18 +329,20 @@ class GeminiRealtimeClient {
           if (part is! Map) continue;
           final text = part['text'];
           if (text is String && text.isNotEmpty) {
-            _events.add(GeminiTextDelta(text));
+            _emit(GeminiTextDelta(text));
           }
           final inline = part['inlineData'];
           if (inline is Map) {
             final mimeType = inline['mimeType']?.toString() ?? '';
             final data = inline['data'];
-            if (mimeType.startsWith('audio/pcm') && data is String) {
+            if (mimeType.startsWith('audio/pcm') &&
+                data is String &&
+                data.length <= maxIncomingFrameBytes) {
               try {
-                _events.add(GeminiAudioOut(base64Decode(data)));
+                _emit(GeminiAudioOut(base64Decode(data)));
               } catch (e) {
-                _events.add(GeminiRealtimeError(
-                  'Bad audio base64: $e',
+                _emit(GeminiRealtimeError(
+                  'Bad audio base64: ${NeomageNetworkGuard.redactTransportError(e.toString())}',
                   code: 'audio',
                 ));
               }
@@ -274,7 +352,7 @@ class GeminiRealtimeClient {
       }
     }
     if (sc['turnComplete'] == true) {
-      _events.add(const GeminiTurnComplete());
+      _emit(const GeminiTurnComplete());
     }
   }
 

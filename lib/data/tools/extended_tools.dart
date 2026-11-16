@@ -5,11 +5,113 @@
 //   AgentTool, SendMessage, TaskOutput, TodoWrite, ToolSearch, WebFetch,
 //   WebSearch.
 
+import 'dart:async';
 import 'dart:convert';
-import 'package:neomage/core/platform/neomage_io.dart';
+import 'dart:math';
 
+import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+import 'package:path/path.dart' as p;
+
+import '../../domain/models/permissions.dart';
 import '../../domain/models/tool_definition.dart';
 import 'tool.dart';
+
+final Random _extendedToolsRandom = Random.secure();
+
+String? _validateSafePathInput(String rawPath) {
+  if (rawPath.contains('\x00')) {
+    return 'Invalid NUL byte in file path';
+  }
+  if (rawPath.startsWith(r'\\') || rawPath.startsWith('//')) {
+    return 'UNC network paths are blocked to prevent NTLM credential leaks';
+  }
+  final normalized = p.normalize(rawPath);
+  return NeomageNetworkGuard.checkProtectedFilesystemPath(normalized);
+}
+
+Future<String?> _resolveExistingAncestorOrSelf(String targetPath) async {
+  var current = p.normalize(
+    p.isAbsolute(targetPath)
+        ? targetPath
+        : p.join(Directory.current.path, targetPath),
+  );
+  for (var i = 0; i < 64; i++) {
+    final type = await FileSystemEntity.type(current, followLinks: false);
+    if (type != FileSystemEntityType.notFound) {
+      try {
+        return type == FileSystemEntityType.directory
+            ? await Directory(current).resolveSymbolicLinks()
+            : await File(current).resolveSymbolicLinks();
+      } catch (_) {
+        return current;
+      }
+    }
+    final parent = p.dirname(current);
+    if (parent == current) break;
+    current = parent;
+  }
+  return null;
+}
+
+Future<String?> _validateSafeFileTarget(
+  String filePath, {
+  required int maxBytes,
+  bool mustExist = true,
+  bool rejectSymlinks = false,
+}) async {
+  final basicError = _validateSafePathInput(filePath);
+  if (basicError != null) return basicError;
+
+  if (rejectSymlinks && await FileSystemEntity.isLink(filePath)) {
+    return 'Symbolic links are not permitted: $filePath';
+  }
+
+  final resolvedAncestor = await _resolveExistingAncestorOrSelf(filePath);
+  if (resolvedAncestor != null) {
+    final resolvedError = NeomageNetworkGuard.checkProtectedFilesystemPath(
+      p.normalize(resolvedAncestor),
+    );
+    if (resolvedError != null) return resolvedError;
+  }
+
+  final file = File(filePath);
+  final exists = await file.exists();
+  if (mustExist && !exists) {
+    return 'File not found: $filePath';
+  }
+  if (exists) {
+    try {
+      final resolvedLeaf = await file.resolveSymbolicLinks();
+      final leafError = NeomageNetworkGuard.checkProtectedFilesystemPath(
+        p.normalize(resolvedLeaf),
+      );
+      if (leafError != null) return leafError;
+    } catch (_) {}
+
+    final stat = await file.stat();
+    if (stat.size > maxBytes) {
+      return 'File exceeds maximum allowed size ($maxBytes bytes)';
+    }
+  }
+  return null;
+}
+
+Future<void> _writeStringAtomic(File file, String content) async {
+  final nonce = _extendedToolsRandom.nextInt(1 << 30).toRadixString(16);
+  final tempFile = File('${file.path}.tmp.$nonce');
+  try {
+    await tempFile.writeAsString(content, flush: true);
+    await tempFile.rename(file.path);
+  } catch (_) {
+    try {
+      if (await tempFile.exists()) {
+        await tempFile.delete();
+      }
+    } catch (_) {}
+    rethrow;
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // NotebookEditTool — edit Jupyter notebooks (.ipynb)
@@ -117,6 +219,10 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
     if (path == null || path.isEmpty) {
       return const ValidationResult.invalid('notebook_path is required');
     }
+    final pathErr = _validateSafePathInput(path);
+    if (pathErr != null) {
+      return ValidationResult.invalid(pathErr);
+    }
     if (!path.endsWith('.ipynb')) {
       return const ValidationResult.invalid('File must be a .ipynb notebook');
     }
@@ -128,6 +234,17 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
     }
     if ((cmd == 'add' || cmd == 'edit') && input['content'] == null) {
       return ValidationResult.invalid('content is required for $cmd');
+    }
+    final content = input['content'] as String?;
+    if (content != null) {
+      if (content.contains('\x00')) {
+        return const ValidationResult.invalid('Invalid NUL byte in content');
+      }
+      if (content.length > 2 * 1024 * 1024) {
+        return const ValidationResult.invalid(
+          'Cell content exceeds maximum size (2 MiB)',
+        );
+      }
     }
     if (cmd == 'move' && input['target_index'] == null) {
       return const ValidationResult.invalid(
@@ -143,11 +260,15 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
     if (!validation.isValid) return ToolResult.error(validation.error!);
 
     final parsed = NotebookEditInput.fromJson(input);
-    final file = File(parsed.notebookPath);
-
-    if (!await file.exists()) {
-      return ToolResult.error('Notebook not found: ${parsed.notebookPath}');
+    final safeErr = await _validateSafeFileTarget(
+      parsed.notebookPath,
+      maxBytes: 50 * 1024 * 1024,
+      mustExist: true,
+    );
+    if (safeErr != null) {
+      return ToolResult.error(safeErr);
     }
+    final file = File(parsed.notebookPath);
 
     try {
       final raw = await file.readAsString();
@@ -193,7 +314,7 @@ class NotebookEditTool extends Tool with FileWriteToolMixin {
 
       notebook['cells'] = cells;
       final encoder = const JsonEncoder.withIndent(' ');
-      await file.writeAsString(encoder.convert(notebook));
+      await _writeStringAtomic(file, encoder.convert(notebook));
 
       final out = NotebookEditOutput(
         success: true,
@@ -258,7 +379,37 @@ class ExitPlanModeTool extends Tool {
       'of the plan that was developed during planning.';
 
   @override
-  bool get isReadOnly => true;
+  bool get isReadOnly => false;
+
+  @override
+  bool get requiresUserInteraction => true;
+
+  @override
+  Future<PermissionDecision> checkPermissions(
+    Map<String, dynamic> input,
+    ToolPermissionContext permContext,
+  ) async {
+    for (final rules in permContext.rulesBySource.values) {
+      for (final rule in rules) {
+        if (rule.behavior == PermissionBehavior.deny &&
+            rule.value.toolName == name) {
+          return const DenyDecision(
+            PermissionDenyDecision(
+              reason: 'ExitPlanMode blocked by deny rule',
+            ),
+          );
+        }
+      }
+    }
+    if (permContext.mode == PermissionMode.bypassPermissions) {
+      return const AllowDecision(PermissionAllowDecision());
+    }
+    return const AskDecision(
+      PermissionAskDecision(
+        message: 'Approve proposed plan and exit Plan Mode?',
+      ),
+    );
+  }
 
   @override
   Map<String, dynamic> get inputSchema => {
@@ -278,11 +429,18 @@ class ExitPlanModeTool extends Tool {
     if (summary == null || summary.trim().isEmpty) {
       return const ValidationResult.invalid('plan_summary is required');
     }
+    if (summary.contains('\x00') || summary.length > 100000) {
+      return const ValidationResult.invalid('invalid plan_summary');
+    }
     return const ValidationResult.valid();
   }
 
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
+    final validation = validateInput(input);
+    if (!validation.isValid) {
+      return ToolResult.error(validation.error ?? 'Invalid ExitPlanMode input');
+    }
     final parsed = ExitPlanModeInput.fromJson(input);
     final out = ExitPlanModeOutput(success: true, plan: parsed.planSummary);
     return ToolResult.success(
@@ -369,46 +527,123 @@ class PowerShellTool extends Tool with ShellToolMixin {
     'required': ['command'],
   };
 
+  static const int _maxPowerShellOutputBytes = 4 * 1024 * 1024;
+  static final List<RegExp> _dangerousPowerShellPatterns = <RegExp>[
+    RegExp(
+      r'(?:^|\s)-(?:e|ec|enc|encodedcommand)\b',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'\b(?:DownloadString|DownloadFile|Net\.WebClient|Start-BitsTransfer)\b',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'\b(?:iwr|irm|Invoke-WebRequest|Invoke-RestMethod)\b.*\|\s*(?:iex|Invoke-Expression)\b',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'\b(?:Set-MpPreference|Add-MpPreference|Format-Volume|Clear-Disk|Stop-Computer|Restart-Computer|ConvertFrom-SecureString)\b',
+      caseSensitive: false,
+    ),
+    RegExp(r'\bRemove-Item\b[^\r\n]*-Recurse\b', caseSensitive: false),
+    RegExp(r'\bHKLM:', caseSensitive: false),
+  ];
+
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
     final cmd = input['command'] as String?;
     if (cmd == null || cmd.trim().isEmpty) {
       return const ValidationResult.invalid('command is required');
     }
+    if (cmd.contains('\x00')) {
+      return const ValidationResult.invalid('Invalid NUL byte in command');
+    }
+    for (final pattern in _dangerousPowerShellPatterns) {
+      if (pattern.hasMatch(cmd)) {
+        return const ValidationResult.invalid(
+          'Blocked dangerous PowerShell pattern',
+        );
+      }
+    }
     return const ValidationResult.valid();
   }
 
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
+    final validation = validateInput(input);
+    if (!validation.isValid) {
+      return ToolResult.error(validation.error ?? 'Invalid PowerShell input');
+    }
     final parsed = PowerShellInput.fromJson(input);
-    final timeout = parsed.timeoutMs != null
-        ? Duration(milliseconds: parsed.timeoutMs!)
-        : defaultTimeout;
+    final timeoutMs = (parsed.timeoutMs ?? defaultTimeout.inMilliseconds).clamp(
+      1000,
+      600000,
+    );
+    final timeout = Duration(milliseconds: timeoutMs);
 
     final sw = Stopwatch()..start();
     try {
-      final result = await Process.run('powershell', [
-        '-NoProfile',
-        '-NonInteractive',
-        '-Command',
-        parsed.command,
-      ]).timeout(timeout);
-      sw.stop();
-
-      final out = PowerShellOutput(
-        stdout: (result.stdout as String).trim(),
-        stderr: (result.stderr as String).trim(),
-        exitCode: result.exitCode,
-        durationMs: sw.elapsedMilliseconds,
+      final proc = await Process.start(
+        'powershell',
+        ['-NoProfile', '-NonInteractive', '-Command', parsed.command],
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+          Platform.environment,
+        ),
+        includeParentEnvironment: false,
       );
 
-      return result.exitCode != 0
-          ? ToolResult(content: out.toString(), isError: true)
-          : ToolResult.success(out.toString());
+      final stdoutBytes = <int>[];
+      final stderrBytes = <int>[];
+      var timedOut = false;
+
+      final timer = Timer(timeout, () {
+        timedOut = true;
+        proc.kill(ProcessSignal.sigterm);
+        Timer(const Duration(seconds: 2), () {
+          proc.kill(ProcessSignal.sigkill);
+        });
+      });
+
+      try {
+        final stdoutSub = proc.stdout.listen((chunk) {
+          final rem = _maxPowerShellOutputBytes - stdoutBytes.length;
+          if (rem <= 0) return;
+          stdoutBytes.addAll(chunk.length <= rem ? chunk : chunk.sublist(0, rem));
+        });
+        final stderrSub = proc.stderr.listen((chunk) {
+          final rem = _maxPowerShellOutputBytes - stderrBytes.length;
+          if (rem <= 0) return;
+          stderrBytes.addAll(chunk.length <= rem ? chunk : chunk.sublist(0, rem));
+        });
+
+        final exitCode = await proc.exitCode;
+        await stdoutSub.cancel();
+        await stderrSub.cancel();
+        sw.stop();
+
+        if (timedOut) {
+          return ToolResult.error(
+            'Command timed out after ${timeout.inSeconds}s',
+          );
+        }
+
+        final out = PowerShellOutput(
+          stdout: utf8.decode(stdoutBytes, allowMalformed: true).trim(),
+          stderr: utf8.decode(stderrBytes, allowMalformed: true).trim(),
+          exitCode: exitCode,
+          durationMs: sw.elapsedMilliseconds,
+        );
+
+        return exitCode != 0
+            ? ToolResult(content: out.toString(), isError: true)
+            : ToolResult.success(out.toString());
+      } finally {
+        timer.cancel();
+      }
     } on ProcessException catch (e) {
       return ToolResult.error('PowerShell error: ${e.message}');
     } catch (e) {
-      return ToolResult.error('Command timed out after ${timeout.inSeconds}s');
+      return ToolResult.error('PowerShell execution failed: $e');
     }
   }
 }
@@ -728,13 +963,25 @@ class LspTool extends Tool with ReadOnlyToolMixin {
         'action must be diagnostics, hover, definition, references, or completions',
       );
     }
-    if (input['file_path'] == null) {
+    final filePath = input['file_path'] as String?;
+    if (filePath == null || filePath.trim().isEmpty) {
       return const ValidationResult.invalid('file_path is required');
     }
+    final pathErr = _validateSafePathInput(filePath);
+    if (pathErr != null) {
+      return ValidationResult.invalid(pathErr);
+    }
     if (_positionActions.contains(action)) {
-      if (input['line'] == null || input['column'] == null) {
+      final line = input['line'];
+      final column = input['column'];
+      if (line is! int || column is! int) {
         return ValidationResult.invalid(
           'line and column are required for $action',
+        );
+      }
+      if (line < 1 || column < 1) {
+        return const ValidationResult.invalid(
+          'line and column must be >= 1',
         );
       }
     }
@@ -848,6 +1095,94 @@ class ConfigTool extends Tool {
     'required': ['action'],
   };
 
+  static const Set<String> _prototypePollutionSegments = <String>{
+    '__proto__',
+    'constructor',
+    'prototype',
+  };
+
+  static const Set<String> _restrictedConfigRootKeys = <String>{
+    'permissions',
+    'security',
+    'sandbox',
+    'hooks',
+    'allowUnsandboxedCommands',
+  };
+
+  String? _checkConfigKeyMutationSafety(
+    String action,
+    String? key,
+    dynamic value,
+  ) {
+    if (key == null) return null;
+    if (key.contains('\x00') || key.length > 512) {
+      return 'Invalid configuration key';
+    }
+    final segments = key.split('.');
+    for (final seg in segments) {
+      if (seg.isEmpty || _prototypePollutionSegments.contains(seg)) {
+        return 'Forbidden configuration key segment: $seg';
+      }
+    }
+    if (action == 'set' || action == 'reset') {
+      final root = segments.first;
+      if (_restrictedConfigRootKeys.contains(root)) {
+        if (action == 'set' &&
+            key == 'permissions.defaultMode' &&
+            (value == 'plan' || value == 'default')) {
+          return null;
+        }
+        return 'Cannot mutate security-sensitive setting "$key" via Config tool';
+      }
+    }
+    return null;
+  }
+
+  @override
+  Future<PermissionDecision> checkPermissions(
+    Map<String, dynamic> input,
+    ToolPermissionContext permContext,
+  ) async {
+    for (final rules in permContext.rulesBySource.values) {
+      for (final rule in rules) {
+        if (rule.behavior == PermissionBehavior.deny &&
+            rule.value.toolName == name) {
+          return const DenyDecision(
+            PermissionDenyDecision(
+              reason: 'Config tool blocked by deny rule',
+            ),
+          );
+        }
+      }
+    }
+    final action = input['action'] as String?;
+    final key = input['key'] as String?;
+    final secErr = _checkConfigKeyMutationSafety(
+      action ?? '',
+      key,
+      input['value'],
+    );
+    if (secErr != null) {
+      return DenyDecision(PermissionDenyDecision(reason: secErr));
+    }
+    if (action == 'get' || action == 'list') {
+      return const AllowDecision(PermissionAllowDecision());
+    }
+    if (permContext.mode == PermissionMode.plan) {
+      return const DenyDecision(
+        PermissionDenyDecision(reason: 'Config writes blocked in Plan Mode'),
+      );
+    }
+    if (permContext.mode == PermissionMode.bypassPermissions) {
+      return const AllowDecision(PermissionAllowDecision());
+    }
+    return AskDecision(
+      PermissionAskDecision(
+        message: 'Modify configuration key "${key ?? ''}"?',
+      ),
+    );
+  }
+
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
     final action = input['action'] as String?;
@@ -862,6 +1197,25 @@ class ConfigTool extends Tool {
     }
     if (action == 'set' && input['value'] == null) {
       return const ValidationResult.invalid('value is required for set');
+    }
+    final key = input['key'] as String?;
+    final secErr = _checkConfigKeyMutationSafety(action, key, input['value']);
+    if (secErr != null) {
+      return ValidationResult.invalid(secErr);
+    }
+    if (action == 'set') {
+      try {
+        final encoded = jsonEncode(input['value']);
+        if (encoded.contains('\x00') || encoded.length > 65536) {
+          return const ValidationResult.invalid(
+            'Configuration value exceeds maximum size (64 KiB)',
+          );
+        }
+      } catch (_) {
+        return const ValidationResult.invalid(
+          'Configuration value must be JSON-serializable',
+        );
+      }
     }
     return const ValidationResult.valid();
   }
@@ -974,6 +1328,35 @@ class MemoryTool extends Tool with FileWriteToolMixin {
     'required': ['action'],
   };
 
+  static const int _maxMemoryFileBytes = 2 * 1024 * 1024;
+
+  String? _resolveSafeMemoryPath(String rawPath) {
+    final trimmed = rawPath.trim();
+    if (trimmed.isEmpty ||
+        trimmed.contains('\x00') ||
+        trimmed.startsWith('/') ||
+        trimmed.startsWith(r'\') ||
+        RegExp(r'^[a-zA-Z]:').hasMatch(trimmed)) {
+      return null;
+    }
+    final normalizedSlashes = trimmed.replaceAll(r'\', '/');
+    final segments = normalizedSlashes.split('/');
+    if (segments.any((s) => s.isEmpty || s == '.' || s == '..')) {
+      return null;
+    }
+    if (!normalizedSlashes.toLowerCase().endsWith('.md')) {
+      return null;
+    }
+    final root = p.posix.normalize(
+      Directory.current.path.replaceAll(r'\', '/'),
+    );
+    final candidate = p.posix.normalize(p.posix.join(root, normalizedSlashes));
+    if (NeomageNetworkGuard.checkProtectedFilesystemPath(candidate) != null) {
+      return null;
+    }
+    return candidate;
+  }
+
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
     final action = input['action'] as String?;
@@ -983,13 +1366,42 @@ class MemoryTool extends Tool with FileWriteToolMixin {
         'action must be read, write, append, or list',
       );
     }
-    if (action != 'list' && (input['path'] == null)) {
-      return ValidationResult.invalid('path is required for $action');
+    if (action != 'list') {
+      final rawPath = input['path'] as String?;
+      if (rawPath == null || rawPath.trim().isEmpty) {
+        return ValidationResult.invalid('path is required for $action');
+      }
+      if (_resolveSafeMemoryPath(rawPath) == null) {
+        return const ValidationResult.invalid(
+          'Memory path must be a relative .md file inside the project directory',
+        );
+      }
     }
-    if ((action == 'write' || action == 'append') && input['content'] == null) {
-      return ValidationResult.invalid('content is required for $action');
+    if (action == 'write' || action == 'append') {
+      final content = input['content'] as String?;
+      if (content == null) {
+        return ValidationResult.invalid('content is required for $action');
+      }
+      if (content.contains('\x00') || content.length > _maxMemoryFileBytes) {
+        return const ValidationResult.invalid(
+          'Memory content exceeds maximum size (2 MiB) or contains NUL bytes',
+        );
+      }
     }
     return const ValidationResult.valid();
+  }
+
+  Future<bool> _hasSymlinkInChain(String targetPath, String rootPath) async {
+    var cur = p.normalize(targetPath);
+    final normalizedRoot = p.normalize(rootPath);
+    for (var i = 0; i < 64; i++) {
+      if (await FileSystemEntity.isLink(cur)) return true;
+      if (cur == normalizedRoot) break;
+      final parent = p.dirname(cur);
+      if (parent == cur) break;
+      cur = parent;
+    }
+    return false;
   }
 
   @override
@@ -998,30 +1410,87 @@ class MemoryTool extends Tool with FileWriteToolMixin {
     if (!validation.isValid) return ToolResult.error(validation.error!);
 
     final parsed = MemoryToolInput.fromJson(input);
+    final root = p.normalize(Directory.current.path);
 
     switch (parsed.action) {
       case 'read':
-        final file = File(parsed.path!);
-        if (!await file.exists()) {
-          return ToolResult.error('Memory file not found: ${parsed.path}');
+        final safePath = _resolveSafeMemoryPath(parsed.path!);
+        if (safePath == null) {
+          return ToolResult.error('Unsafe memory file path: ${parsed.path}');
         }
-        final content = await file.readAsString();
+        if (await _hasSymlinkInChain(safePath, root)) {
+          return ToolResult.error(
+            'Symbolic links are not permitted for memory files',
+          );
+        }
+        final safeErr = await _validateSafeFileTarget(
+          safePath,
+          maxBytes: _maxMemoryFileBytes,
+          mustExist: true,
+          rejectSymlinks: true,
+        );
+        if (safeErr != null) {
+          return ToolResult.error(safeErr);
+        }
+        final content = await File(safePath).readAsString();
         return ToolResult.success(content);
 
       case 'write':
-        final file = File(parsed.path!);
+        final safePath = _resolveSafeMemoryPath(parsed.path!);
+        if (safePath == null) {
+          return ToolResult.error('Unsafe memory file path: ${parsed.path}');
+        }
+        if (await _hasSymlinkInChain(safePath, root)) {
+          return ToolResult.error(
+            'Symbolic links are not permitted for memory files',
+          );
+        }
+        final safeErr = await _validateSafeFileTarget(
+          safePath,
+          maxBytes: _maxMemoryFileBytes,
+          mustExist: false,
+          rejectSymlinks: true,
+        );
+        if (safeErr != null) {
+          return ToolResult.error(safeErr);
+        }
+        final file = File(safePath);
         await file.parent.create(recursive: true);
-        await file.writeAsString(parsed.content!);
+        await _writeStringAtomic(file, parsed.content!);
         return ToolResult.success('Memory written to ${parsed.path}');
 
       case 'append':
-        final file = File(parsed.path!);
+        final safePath = _resolveSafeMemoryPath(parsed.path!);
+        if (safePath == null) {
+          return ToolResult.error('Unsafe memory file path: ${parsed.path}');
+        }
+        if (await _hasSymlinkInChain(safePath, root)) {
+          return ToolResult.error(
+            'Symbolic links are not permitted for memory files',
+          );
+        }
+        final safeErr = await _validateSafeFileTarget(
+          safePath,
+          maxBytes: _maxMemoryFileBytes,
+          mustExist: false,
+          rejectSymlinks: true,
+        );
+        if (safeErr != null) {
+          return ToolResult.error(safeErr);
+        }
+        final file = File(safePath);
         await file.parent.create(recursive: true);
-        await file.writeAsString(parsed.content!, mode: FileMode.append);
+        final existing = await file.exists() ? await file.readAsString() : '';
+        if (existing.length + parsed.content!.length > _maxMemoryFileBytes) {
+          return ToolResult.error(
+            'Appended memory file would exceed maximum size (2 MiB)',
+          );
+        }
+        await _writeStringAtomic(file, '$existing${parsed.content!}');
         return ToolResult.success('Appended to ${parsed.path}');
 
       case 'list':
-        // List NEOMAGE.md files in common locations.
+        // List NEOMAGE.md files in common locations without following symlinks.
         final candidates = [
           'NEOMAGE.md',
           '.neomage/NEOMAGE.md',
@@ -1029,11 +1498,11 @@ class MemoryTool extends Tool with FileWriteToolMixin {
         ];
         final found = <String>[];
         for (final c in candidates) {
-          final entity = FileSystemEntity.typeSync(c);
+          final entity = FileSystemEntity.typeSync(c, followLinks: false);
           if (entity == FileSystemEntityType.file) {
             found.add(c);
           } else if (entity == FileSystemEntityType.directory) {
-            await for (final f in Directory(c).list()) {
+            await for (final f in Directory(c).list(followLinks: false)) {
               if (f is File && f.path.endsWith('.md')) {
                 found.add(f.path);
               }
@@ -1115,12 +1584,22 @@ class DiffApplyTool extends Tool with FileWriteToolMixin {
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
-    if (input['file_path'] == null || (input['file_path'] as String).isEmpty) {
+    final filePath = input['file_path'] as String?;
+    if (filePath == null || filePath.isEmpty) {
       return const ValidationResult.invalid('file_path is required');
     }
-    if (input['diff_content'] == null ||
-        (input['diff_content'] as String).isEmpty) {
+    final pathErr = _validateSafePathInput(filePath);
+    if (pathErr != null) {
+      return ValidationResult.invalid(pathErr);
+    }
+    final diffContent = input['diff_content'] as String?;
+    if (diffContent == null || diffContent.isEmpty) {
       return const ValidationResult.invalid('diff_content is required');
+    }
+    if (diffContent.contains('\x00') || diffContent.length > 5 * 1024 * 1024) {
+      return const ValidationResult.invalid(
+        'diff_content exceeds maximum size (5 MiB) or contains NUL bytes',
+      );
     }
     return const ValidationResult.valid();
   }
@@ -1131,17 +1610,22 @@ class DiffApplyTool extends Tool with FileWriteToolMixin {
     if (!validation.isValid) return ToolResult.error(validation.error!);
 
     final parsed = DiffApplyInput.fromJson(input);
-    final file = File(parsed.filePath);
-
-    if (!await file.exists()) {
-      return ToolResult.error('File not found: ${parsed.filePath}');
+    final safeErr = await _validateSafeFileTarget(
+      parsed.filePath,
+      maxBytes: 20 * 1024 * 1024,
+      mustExist: true,
+    );
+    if (safeErr != null) {
+      return ToolResult.error(safeErr);
     }
+    final file = File(parsed.filePath);
 
     try {
       final originalLines = await file.readAsLines();
       final patchedLines = _applyUnifiedDiff(originalLines, parsed.diffContent);
       final newContent = patchedLines.join('\n');
-      await file.writeAsString(
+      await _writeStringAtomic(
+        file,
         newContent.endsWith('\n') ? newContent : '$newContent\n',
       );
 
@@ -1166,22 +1650,25 @@ class DiffApplyTool extends Tool with FileWriteToolMixin {
     var offset = 0;
 
     for (final hunk in hunks) {
-      final startLine = hunk.originalStart - 1 + offset;
-      var pos = startLine;
+      final baseStart = max(1, hunk.originalStart) - 1 + offset;
+      var pos = baseStart.clamp(0, result.length);
 
       for (final line in hunk.lines) {
         if (line.startsWith('-')) {
-          if (pos < result.length) {
+          if (pos >= 0 && pos < result.length) {
             result.removeAt(pos);
             offset--;
           }
         } else if (line.startsWith('+')) {
-          result.insert(pos, line.substring(1));
-          pos++;
+          final insertAt = pos.clamp(0, result.length);
+          result.insert(insertAt, line.substring(1));
+          pos = insertAt + 1;
           offset++;
         } else {
           // context line
-          pos++;
+          if (pos < result.length) {
+            pos++;
+          }
         }
       }
     }
@@ -1323,16 +1810,28 @@ class MultiEditTool extends Tool with FileWriteToolMixin {
 
   @override
   ValidationResult validateInput(Map<String, dynamic> input) {
-    if (input['file_path'] == null) {
+    final filePath = input['file_path'] as String?;
+    if (filePath == null || filePath.isEmpty) {
       return const ValidationResult.invalid('file_path is required');
+    }
+    final pathErr = _validateSafePathInput(filePath);
+    if (pathErr != null) {
+      return ValidationResult.invalid(pathErr);
     }
     final edits = input['edits'];
     if (edits == null || edits is! List || edits.isEmpty) {
       return const ValidationResult.invalid('edits must be a non-empty array');
     }
+    if (edits.length > 200) {
+      return const ValidationResult.invalid(
+        'edits exceeds maximum count (200)',
+      );
+    }
     for (var i = 0; i < edits.length; i++) {
-      final e = edits[i] as Map<String, dynamic>;
-      if (e['old_text'] == null || e['new_text'] == null) {
+      final e = edits[i];
+      if (e is! Map ||
+          e['old_text'] is! String ||
+          e['new_text'] is! String) {
         return ValidationResult.invalid('Edit $i missing old_text or new_text');
       }
     }
@@ -1345,11 +1844,15 @@ class MultiEditTool extends Tool with FileWriteToolMixin {
     if (!validation.isValid) return ToolResult.error(validation.error!);
 
     final parsed = MultiEditInput.fromJson(input);
-    final file = File(parsed.filePath);
-
-    if (!await file.exists()) {
-      return ToolResult.error('File not found: ${parsed.filePath}');
+    final safeErr = await _validateSafeFileTarget(
+      parsed.filePath,
+      maxBytes: 20 * 1024 * 1024,
+      mustExist: true,
+    );
+    if (safeErr != null) {
+      return ToolResult.error(safeErr);
     }
+    final file = File(parsed.filePath);
 
     try {
       var content = await file.readAsString();
@@ -1369,6 +1872,11 @@ class MultiEditTool extends Tool with FileWriteToolMixin {
       var applied = 0;
       for (final edit in parsed.edits) {
         content = content.replaceFirst(edit.oldText, edit.newText);
+        if (content.length > 20 * 1024 * 1024) {
+          return ToolResult.error(
+            'Edited file exceeds maximum allowed size (20 MiB)',
+          );
+        }
         applied++;
       }
 
@@ -1376,7 +1884,7 @@ class MultiEditTool extends Tool with FileWriteToolMixin {
         return ToolResult.success('No changes made (all edits were no-ops)');
       }
 
-      await file.writeAsString(content);
+      await _writeStringAtomic(file, content);
       final out = MultiEditOutput(
         success: true,
         editsApplied: applied,
@@ -1608,8 +2116,55 @@ class ScreenshotTool extends Tool with ReadOnlyToolMixin {
   };
 
   @override
+  ValidationResult validateInput(Map<String, dynamic> input) {
+    final url = input['url'] as String?;
+    if (url != null && url.isNotEmpty) {
+      final uri = Uri.tryParse(url.trim());
+      if (!NeomageNetworkGuard.isSafeEndpointUri(
+        uri,
+        allowLoopbackInsecure: true,
+        allowPublicInsecure: false,
+        secureSchemes: const <String>{'https'},
+        insecureSchemes: const <String>{'http'},
+      )) {
+        return const ValidationResult.invalid(
+          'Screenshot URL blocked by SSRF/scheme security policy',
+        );
+      }
+    }
+    final selector = input['selector'] as String?;
+    if (selector != null &&
+        (selector.contains('\x00') || selector.length > 1024)) {
+      return const ValidationResult.invalid('Invalid CSS selector');
+    }
+    final vw = input['viewport_width'] as int?;
+    final vh = input['viewport_height'] as int?;
+    if (vw != null && (vw < 64 || vw > 4096)) {
+      return const ValidationResult.invalid(
+        'viewport_width must be between 64 and 4096',
+      );
+    }
+    if (vh != null && (vh < 64 || vh > 4096)) {
+      return const ValidationResult.invalid(
+        'viewport_height must be between 64 and 4096',
+      );
+    }
+    return const ValidationResult.valid();
+  }
+
+  @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
-    final parsed = ScreenshotInput.fromJson(input);
+    final validation = validateInput(input);
+    if (!validation.isValid) {
+      return ToolResult.error(validation.error ?? 'Invalid Screenshot input');
+    }
+    final rawParsed = ScreenshotInput.fromJson(input);
+    final parsed = ScreenshotInput(
+      url: rawParsed.url,
+      selector: rawParsed.selector,
+      viewportWidth: rawParsed.viewportWidth.clamp(64, 4096),
+      viewportHeight: rawParsed.viewportHeight.clamp(64, 4096),
+    );
     if (capturer != null) return capturer!(parsed);
 
     return ToolResult.error(
@@ -1871,6 +2426,24 @@ class ValidateTool extends Tool with ReadOnlyToolMixin {
         'Either file_path or content is required',
       );
     }
+    final filePath = input['file_path'] as String?;
+    if (filePath != null) {
+      if (filePath.trim().isEmpty) {
+        return const ValidationResult.invalid('file_path must not be empty');
+      }
+      final pathErr = _validateSafePathInput(filePath);
+      if (pathErr != null) {
+        return ValidationResult.invalid(pathErr);
+      }
+    }
+    final inlineContent = input['content'] as String?;
+    if (inlineContent != null &&
+        (inlineContent.contains('\x00') ||
+            inlineContent.length > 10 * 1024 * 1024)) {
+      return const ValidationResult.invalid(
+        'Inline content exceeds maximum size (10 MiB) or contains NUL bytes',
+      );
+    }
     return const ValidationResult.valid();
   }
 
@@ -1885,11 +2458,15 @@ class ValidateTool extends Tool with ReadOnlyToolMixin {
     if (parsed.content != null) {
       content = parsed.content!;
     } else {
-      final file = File(parsed.filePath!);
-      if (!await file.exists()) {
-        return ToolResult.error('File not found: ${parsed.filePath}');
+      final safeErr = await _validateSafeFileTarget(
+        parsed.filePath!,
+        maxBytes: 10 * 1024 * 1024,
+        mustExist: true,
+      );
+      if (safeErr != null) {
+        return ToolResult.error(safeErr);
       }
-      content = await file.readAsString();
+      content = await File(parsed.filePath!).readAsString();
     }
 
     switch (parsed.validatorType) {
@@ -1981,7 +2558,23 @@ class ValidateTool extends Tool with ReadOnlyToolMixin {
     );
   }
 
+  static final RegExp _xmlDoctypeOrEntityPattern = RegExp(
+    r'<!\s*(?:DOCTYPE|ENTITY)\b',
+    caseSensitive: false,
+  );
+
   ToolResult _validateXml(String content) {
+    if (_xmlDoctypeOrEntityPattern.hasMatch(content)) {
+      return ToolResult.success(
+        const ValidateOutput(
+          valid: false,
+          errors: [
+            'XML DOCTYPE and ENTITY declarations are disallowed '
+                '(XXE / Billion Laughs protection)',
+          ],
+        ).toString(),
+      );
+    }
     final errors = <String>[];
     final tagStack = <String>[];
     final tagPattern = RegExp(r'<(/?)(\w[\w\-.]*)([^>]*?)(/?)>');

@@ -14,6 +14,7 @@ import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 
+import '../../utils/security/neomage_network_guard.dart';
 import 'tool.dart';
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -26,8 +27,8 @@ const String fileUnexpectedlyModifiedError =
     'File has been modified since it was last read. Read it again before '
     'writing to it.';
 
-/// Max file size for editing (1 GiB).
-const int maxEditFileSize = 1024 * 1024 * 1024;
+/// Max file size for editing (50 MiB).
+const int maxEditFileSize = 50 * 1024 * 1024;
 
 /// Max snippet size for diff attachment display (8KB).
 const int diffSnippetMaxBytes = 8192;
@@ -326,7 +327,7 @@ NormalizedEditInput normalizeFileEditInput(
 
   try {
     final file = File(filePath);
-    if (!file.existsSync()) {
+    if (!file.existsSync() || file.lengthSync() > 10 * 1024 * 1024) {
       return NormalizedEditInput(filePath: filePath, edits: edits);
     }
     final fileContent = file.readAsStringSync();
@@ -450,7 +451,10 @@ bool areFileEditsInputsEquivalent(
   // Semantic comparison (requires file read)
   var fileContent = '';
   try {
-    fileContent = File(filePath1).readAsStringSync();
+    final file = File(filePath1);
+    if (file.existsSync() && file.lengthSync() <= 10 * 1024 * 1024) {
+      fileContent = file.readAsStringSync();
+    }
   } catch (_) {}
 
   return areFileEditsEquivalent(edits1, edits2, fileContent);
@@ -534,6 +538,8 @@ class FileEditInput {
     final errors = <String>[];
     if (filePath.isEmpty) {
       errors.add('Missing required parameter: file_path');
+    } else if (filePath.contains('\x00')) {
+      errors.add('Invalid NUL byte in file_path');
     } else if (!p.isAbsolute(filePath)) {
       errors.add('file_path must be an absolute path, got: $filePath');
     }
@@ -609,6 +615,14 @@ class FileReadMetadata {
 FileReadMetadata readFileForEdit(String absoluteFilePath) {
   try {
     final file = File(absoluteFilePath);
+    if (!file.existsSync() || file.lengthSync() > maxEditFileSize) {
+      return const FileReadMetadata(
+        content: '',
+        fileExists: false,
+        encoding: 'utf-8',
+        lineEndings: LineEndingType.lf,
+      );
+    }
     final bytes = file.readAsBytesSync();
     // Detect encoding from BOM
     String encoding = 'utf-8';
@@ -669,19 +683,27 @@ void writeTextContent(
     finalContent = content.replaceAll('\n', '\r');
   }
 
-  final file = File(absoluteFilePath);
-  if (encoding == 'utf16le') {
-    final codes = finalContent.codeUnits;
-    final bytes = Uint8List(2 + codes.length * 2);
-    bytes[0] = 0xFF;
-    bytes[1] = 0xFE;
-    for (var i = 0; i < codes.length; i++) {
-      bytes[2 + i * 2] = codes[i] & 0xFF;
-      bytes[2 + i * 2 + 1] = (codes[i] >> 8) & 0xFF;
+  final tmpFile = File(
+    '$absoluteFilePath.tmp.${DateTime.now().microsecondsSinceEpoch}',
+  );
+  try {
+    if (encoding == 'utf16le') {
+      final codes = finalContent.codeUnits;
+      final bytes = Uint8List(2 + codes.length * 2);
+      bytes[0] = 0xFF;
+      bytes[1] = 0xFE;
+      for (var i = 0; i < codes.length; i++) {
+        bytes[2 + i * 2] = codes[i] & 0xFF;
+        bytes[2 + i * 2 + 1] = (codes[i] >> 8) & 0xFF;
+      }
+      tmpFile.writeAsBytesSync(bytes, flush: true);
+    } else {
+      tmpFile.writeAsStringSync(finalContent, encoding: utf8, flush: true);
     }
-    file.writeAsBytesSync(bytes);
-  } else {
-    file.writeAsStringSync(finalContent, encoding: utf8);
+    tmpFile.renameSync(absoluteFilePath);
+  } catch (_) {
+    if (tmpFile.existsSync()) tmpFile.deleteSync();
+    rethrow;
   }
 }
 
@@ -835,6 +857,22 @@ class FileEditTool extends Tool with FileWriteToolMixin {
       return ToolResult.error('UNC paths are not supported for editing');
     }
 
+    // SECURITY: Check protected system/credential paths on raw & symlink-resolved target
+    final rawProtected = NeomageNetworkGuard.checkProtectedFilesystemPath(
+      p.normalize(absoluteFilePath),
+    );
+    if (rawProtected != null) {
+      return ToolResult.error(rawProtected);
+    }
+
+    final resolvedTargetPath = _resolveTargetAndAncestorsSync(absoluteFilePath);
+    final resolvedProtected = NeomageNetworkGuard.checkProtectedFilesystemPath(
+      p.normalize(resolvedTargetPath),
+    );
+    if (resolvedProtected != null) {
+      return ToolResult.error(resolvedProtected);
+    }
+
     // Check file size
     try {
       final stat = File(absoluteFilePath).statSync();
@@ -849,17 +887,17 @@ class FileEditTool extends Tool with FileWriteToolMixin {
     }
 
     // Read file
-    final meta = readFileForEdit(absoluteFilePath);
+    final meta = readFileForEdit(resolvedTargetPath);
 
     // File does not exist
     if (!meta.fileExists) {
       if (oldString.isEmpty) {
         // Empty old_string on nonexistent file means new file creation
         try {
-          final dir = Directory(p.dirname(absoluteFilePath));
+          final dir = Directory(p.dirname(resolvedTargetPath));
           if (!dir.existsSync()) dir.createSync(recursive: true);
           writeTextContent(
-            absoluteFilePath,
+            resolvedTargetPath,
             newString,
             'utf-8',
             LineEndingType.lf,
@@ -887,7 +925,7 @@ class FileEditTool extends Tool with FileWriteToolMixin {
       // Empty file with empty old_string is valid
       try {
         writeTextContent(
-          absoluteFilePath,
+          resolvedTargetPath,
           newString,
           meta.encoding,
           meta.lineEndings,
@@ -901,7 +939,7 @@ class FileEditTool extends Tool with FileWriteToolMixin {
     }
 
     // Reject .ipynb files
-    if (absoluteFilePath.endsWith('.ipynb')) {
+    if (resolvedTargetPath.endsWith('.ipynb')) {
       return ToolResult.error(
         'File is a Jupyter Notebook. Use the NotebookEdit tool to edit this file.',
       );
@@ -941,12 +979,12 @@ class FileEditTool extends Tool with FileWriteToolMixin {
           : meta.content.replaceFirst(actualOldString, actualNewString);
 
       // Ensure parent directory exists
-      final dir = Directory(p.dirname(absoluteFilePath));
+      final dir = Directory(p.dirname(resolvedTargetPath));
       if (!dir.existsSync()) dir.createSync(recursive: true);
 
       // Write to disk
       writeTextContent(
-        absoluteFilePath,
+        resolvedTargetPath,
         updatedFile,
         meta.encoding,
         meta.lineEndings,
@@ -1079,5 +1117,28 @@ class FileEditTool extends Tool with FileWriteToolMixin {
     }
     if (!p.isAbsolute(path)) return p.join(Directory.current.path, path);
     return path;
+  }
+
+  /// Resolve symlinks on target and existing ancestors synchronously.
+  String _resolveTargetAndAncestorsSync(String filePath) {
+    final normalized = p.normalize(filePath);
+    try {
+      if (FileSystemEntity.typeSync(normalized) !=
+          FileSystemEntityType.notFound) {
+        return File(normalized).resolveSymbolicLinksSync();
+      }
+      var current = normalized;
+      final tail = <String>[];
+      while (current != p.dirname(current)) {
+        if (Directory(current).existsSync() ||
+            FileSystemEntity.isLinkSync(current)) {
+          final realAncestor = Directory(current).resolveSymbolicLinksSync();
+          return p.normalize(p.joinAll([realAncestor, ...tail.reversed]));
+        }
+        tail.add(p.basename(current));
+        current = p.dirname(current);
+      }
+    } catch (_) {}
+    return normalized;
   }
 }

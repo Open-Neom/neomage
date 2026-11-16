@@ -1126,7 +1126,7 @@ class _ModelSelectorDialogState extends State<_ModelSelectorDialog> {
                             ? null
                             : () {
                                 widget.onSelect(model);
-                                Navigator.of(context).pop();
+                                Sint.pop();
                               },
                       ),
                     ),
@@ -1394,7 +1394,7 @@ class _ApiKeyRequestDialogState extends State<_ApiKeyRequestDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(null),
+          onPressed: () => Sint.pop(null),
           child: Text(NeomageTranslationConstants.cancel.tr),
         ),
         FilledButton(
@@ -1409,7 +1409,7 @@ class _ApiKeyRequestDialogState extends State<_ApiKeyRequestDialog> {
   void _submit() {
     final key = _keyController.text.trim();
     if (key.isNotEmpty && _testPassed) {
-      Navigator.of(context).pop(key);
+      Sint.pop(key);
     }
   }
 }
@@ -1714,7 +1714,7 @@ class _McpServersPanelState extends State<_McpServersPanel> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
+              onPressed: () => Sint.pop(),
               child: const Text('Cancel'),
             ),
             FilledButton(
@@ -1735,7 +1735,7 @@ class _McpServersPanelState extends State<_McpServersPanel> {
                     ),
                   );
                 });
-                Navigator.of(ctx).pop();
+                Sint.pop();
               },
               child: const Text('Add'),
             ),

@@ -26,6 +26,15 @@ const String teamLeadName = 'team-lead';
 /// Maximum result size before disk persistence.
 const int sendMessageMaxResultSizeChars = 100000;
 
+/// Maximum plain-text message payload size (64 KiB).
+const int maxSendMessageChars = 65536;
+
+/// Maximum recipients tracked in in-memory mailbox.
+const int maxMailboxRecipients = 256;
+
+/// Maximum queued messages per recipient before oldest eviction.
+const int maxMessagesPerRecipient = 256;
+
 // ── Structured message types ───────────────────────────────────────────
 
 /// Discriminated union of structured message types.
@@ -464,10 +473,24 @@ class SendMessageTool extends Tool {
       );
     }
 
+    if (to.contains('\x00') || to.length > 256) {
+      return const ValidationResult.invalid('invalid recipient address');
+    }
+
     final message = input['message'];
 
     // Plain text message validation
     if (message is String) {
+      if (message.contains('\x00')) {
+        return const ValidationResult.invalid(
+          'message must not contain NUL bytes',
+        );
+      }
+      if (message.length > maxSendMessageChars) {
+        return const ValidationResult.invalid(
+          'message exceeds maximum length ($maxSendMessageChars chars)',
+        );
+      }
       // Bridge cross-session: structured messages not allowed
       if (addr.scheme == 'bridge') {
         // Structured messages cannot be sent cross-session
@@ -482,6 +505,11 @@ class SendMessageTool extends Tool {
       if (summary == null || summary.trim().isEmpty) {
         return const ValidationResult.invalid(
           'summary is required when message is a string',
+        );
+      }
+      if (summary.length > 512) {
+        return const ValidationResult.invalid(
+          'summary exceeds maximum length (512 chars)',
         );
       }
       return const ValidationResult.valid();
@@ -536,7 +564,12 @@ class SendMessageTool extends Tool {
 
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
-    final to = input['to'] as String? ?? '';
+    final validation = validateInput(input);
+    if (!validation.isValid) {
+      return ToolResult.error(validation.error ?? 'Invalid SendMessage input');
+    }
+
+    final to = input['to'] as String;
     final summary = input['summary'] as String?;
     final message = input['message'];
 
@@ -549,8 +582,12 @@ class SendMessageTool extends Tool {
     }
 
     // Handle structured messages
-    if (message is Map<String, dynamic>) {
-      return _handleStructuredMessage(to, message, summary);
+    if (message is Map) {
+      return _handleStructuredMessage(
+        to,
+        Map<String, dynamic>.from(message),
+        summary,
+      );
     }
 
     return ToolResult.error('Invalid message format');
@@ -914,9 +951,19 @@ class SendMessageTool extends Tool {
 
   // ── Mailbox ──────────────────────────────────────────────────────────
 
-  /// Write a message to a recipient's mailbox (in-memory queue).
+  /// Write a message to a recipient's mailbox (in-memory queue) with bounded
+  /// recipient count and per-recipient FIFO eviction.
   void _writeToMailbox(String recipientName, _QueuedMessage message) {
-    _pendingMessages.putIfAbsent(recipientName, () => []).add(message);
+    if (!_pendingMessages.containsKey(recipientName) &&
+        _pendingMessages.length >= maxMailboxRecipients) {
+      final oldestKey = _pendingMessages.keys.first;
+      _pendingMessages.remove(oldestKey);
+    }
+    final queue = _pendingMessages.putIfAbsent(recipientName, () => []);
+    if (queue.length >= maxMessagesPerRecipient) {
+      queue.removeAt(0);
+    }
+    queue.add(message);
   }
 
   /// Retrieve and clear pending messages for an agent.

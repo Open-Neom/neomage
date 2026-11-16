@@ -1058,20 +1058,18 @@ class _MemoryHeaderTile extends StatelessWidget {
             onPressed: () async {
               final confirmed = await showDialog<bool>(
                 context: dialogContext,
-                builder: (confirmContext) => AlertDialog(
+                builder: (_) => AlertDialog(
                   title: const Text('Delete memory file?'),
                   content: Text(
                     'This will permanently delete "${header.filename}".',
                   ),
                   actions: [
                     TextButton(
-                      onPressed: () =>
-                          Navigator.of(confirmContext).pop(false),
+                      onPressed: () => Sint.pop(false),
                       child: const Text('Cancel'),
                     ),
                     TextButton(
-                      onPressed: () =>
-                          Navigator.of(confirmContext).pop(true),
+                      onPressed: () => Sint.pop(true),
                       style: TextButton.styleFrom(
                         foregroundColor: theme.colorScheme.error,
                       ),
@@ -1084,7 +1082,7 @@ class _MemoryHeaderTile extends StatelessWidget {
               if (confirmed == true) {
                 await controller.deleteMemoryFileByName(header.filename);
                 if (dialogContext.mounted) {
-                  Navigator.of(dialogContext).pop();
+                  Sint.pop();
                 }
               }
             },
@@ -1094,7 +1092,7 @@ class _MemoryHeaderTile extends StatelessWidget {
             child: const Text('Delete'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
+            onPressed: () => Sint.pop(),
             child: const Text('Close'),
           ),
         ],

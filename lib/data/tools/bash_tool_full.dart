@@ -4,6 +4,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+import 'package:path/path.dart' as p;
 
 /// Bash tool input.
 class BashToolInput {
@@ -445,83 +447,313 @@ const _safeGitSubcommands = {
   'worktree', // only 'worktree list'
 };
 
-/// Safe commands in read-only mode.
+/// Safe commands in read-only mode (commands that cannot execute arbitrary
+/// subprograms or write files without explicit flags checked below).
 const _readOnlySafeCommands = {
   // File inspection
   'cat', 'head', 'tail', 'less', 'more', 'wc', 'stat', 'file',
   'strings', 'xxd', 'hexdump', 'od', 'readlink', 'realpath',
   // Search
   'grep', 'rg', 'ag', 'ack', 'find', 'fd', 'locate', 'which',
-  'whereis', 'type', 'command',
+  'whereis', 'type',
   // List
   'ls', 'tree', 'du', 'df', 'lsof',
-  // Text processing (no file writing)
-  'jq', 'yq', 'awk', 'cut', 'sort', 'uniq', 'tr', 'tee',
-  'sed', // only without -i flag
+  // Text processing (no file writing — 'tee' intentionally excluded!)
+  'jq', 'yq', 'awk', 'cut', 'sort', 'uniq', 'tr',
+  'sed', // only without -i / --in-place flag
   'column', 'paste', 'comm', 'diff', 'cmp',
-  // System info
+  // System info ('env' and 'command' excluded — they execute arbitrary binaries)
   'uname', 'hostname', 'whoami', 'id', 'groups', 'date',
   'uptime', 'free', 'ps', 'top', 'htop', 'lscpu', 'nproc',
-  'env', 'printenv', 'echo', 'printf', 'true', 'false',
-  // Package info (read-only)
-  'npm', 'yarn', 'pnpm', // only list/info subcommands
-  'pip', 'pip3', // only list/show/freeze
-  'gem', // only list/info
-  'cargo', // only check/clippy
-  // Docker (read-only)
-  'docker', // only inspect/images/ps/logs
-  // GitHub CLI (read-only)
-  'gh', // only view/list/comment
+  'printenv', 'echo', 'printf', 'true', 'false',
+  // Package / tool CLIs (strict subcommand allowlists enforced below)
+  'npm', 'yarn', 'pnpm',
+  'pip', 'pip3',
+  'gem',
+  'cargo',
+  'docker',
+  'gh',
+};
+
+const _readOnlyNodeSubcommands = {
+  'list',
+  'ls',
+  'info',
+  'view',
+  'show',
+  'why',
+  'outdated',
+  '--version',
+  '-v',
+};
+
+const _readOnlyPipSubcommands = {
+  'list',
+  'show',
+  'freeze',
+  'check',
+  '--version',
+  '-V',
+};
+
+const _readOnlyGemSubcommands = {
+  'list',
+  'info',
+  'specification',
+  'environment',
+  '--version',
+  '-v',
+};
+
+/// Note: `cargo check` / `cargo clippy` are intentionally excluded from
+/// read-only mode because `build.rs` executes arbitrary host code.
+const _readOnlyCargoSubcommands = {
+  '--version',
+  '-V',
+  'metadata',
+  'tree',
+  'pkgid',
+  'verify-project',
+};
+
+const _readOnlyDockerSubcommands = {
+  'ps',
+  'images',
+  'inspect',
+  'logs',
+  'version',
+  'info',
+  'stats',
+};
+
+const _readOnlyGhResources = {'pr', 'issue', 'repo', 'run', 'release', 'status'};
+const _readOnlyGhActions = {'view', 'list', 'status', 'diff', 'checks'};
+
+const _findDangerousFlags = {
+  '-delete',
+  '-exec',
+  '-execdir',
+  '-ok',
+  '-okdir',
+  '-fprint',
+  '-fprint0',
+  '-fprintf',
+  '-fls',
 };
 
 /// Check if a command is safe in read-only mode.
 ({bool isSafe, String? reason}) isReadOnlyCommand(String command) {
-  final segments = command.split(RegExp(r'\s*[|;&]\s*'));
+  if (command.trim().isEmpty) {
+    return (isSafe: false, reason: 'Empty command');
+  }
+  if (command.contains('\x00') ||
+      command.contains('\n') ||
+      command.contains('\r')) {
+    return (
+      isSafe: false,
+      reason: 'Multiline or NUL-containing commands are not allowed in read-only mode',
+    );
+  }
+  if (command.contains('`') ||
+      command.contains(r'$(') ||
+      command.contains('<(') ||
+      command.contains('>(')) {
+    return (
+      isSafe: false,
+      reason: 'Command/process substitution is not allowed in read-only mode',
+    );
+  }
+
+  final segments = command.split(RegExp(r'\s*(?:\|\||&&|[|;&])\s*'));
 
   for (final seg in segments) {
-    final parts = seg.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty) continue;
+    final trimmedSeg = seg.trim();
+    if (trimmedSeg.isEmpty) continue;
 
-    final base = parts.first;
-
-    // Strip env var prefixes (FOO=bar command)
-    var cmd = base;
-    if (cmd.contains('=')) {
-      final remaining = parts.sublist(1);
-      if (remaining.isEmpty) continue;
-      cmd = remaining.first;
+    // Check output/read-write redirection before splitting args.
+    if (trimmedSeg.contains('>') || trimmedSeg.contains('>>')) {
+      return (
+        isSafe: false,
+        reason: 'Output redirection is not allowed in read-only mode',
+      );
     }
 
-    if (!_readOnlySafeCommands.contains(cmd) &&
-        !_safeGitSubcommands.contains(cmd)) {
-      // Check git subcommand
-      if (cmd == 'git' && parts.length > 1) {
-        final subCmd = parts[1];
-        if (!_safeGitSubcommands.contains(subCmd)) {
-          return (
-            isSafe: false,
-            reason: 'git $subCmd is not allowed in read-only mode',
-          );
-        }
-      } else {
-        return (isSafe: false, reason: '$cmd is not allowed in read-only mode');
+    final rawParts = trimmedSeg.split(RegExp(r'\s+'));
+    // Strip leading VAR=val assignments.
+    var cmdIdx = 0;
+    while (cmdIdx < rawParts.length &&
+        RegExp(r'^[A-Za-z_][A-Za-z0-9_]*=').hasMatch(rawParts[cmdIdx])) {
+      cmdIdx++;
+    }
+    if (cmdIdx >= rawParts.length) continue;
+
+    final parts = rawParts.sublist(cmdIdx);
+    final cmd = parts.first;
+
+    if (cmd == 'git') {
+      if (parts.length < 2) {
+        return (isSafe: false, reason: 'Bare git command not allowed in read-only mode');
       }
+      final subCmd = parts[1];
+      if (!_safeGitSubcommands.contains(subCmd)) {
+        return (
+          isSafe: false,
+          reason: 'git $subCmd is not allowed in read-only mode',
+        );
+      }
+      final subArgs = parts.sublist(2);
+      if (subCmd == 'stash' &&
+          (subArgs.isEmpty ||
+              (subArgs.first != 'list' && subArgs.first != 'show'))) {
+        return (
+          isSafe: false,
+          reason: 'Only git stash list/show are allowed in read-only mode',
+        );
+      }
+      if (subCmd == 'config' &&
+          !subArgs.any(
+            (a) =>
+                a == '--get' ||
+                a == '--get-all' ||
+                a == '--get-regexp' ||
+                a == '--list' ||
+                a == '-l',
+          )) {
+        return (
+          isSafe: false,
+          reason: 'git config requires --get or --list in read-only mode',
+        );
+      }
+      if (subCmd == 'worktree' &&
+          (subArgs.isEmpty || subArgs.first != 'list')) {
+        return (
+          isSafe: false,
+          reason: 'Only git worktree list is allowed in read-only mode',
+        );
+      }
+      if ((subCmd == 'branch' || subCmd == 'tag') &&
+          subArgs.any(
+            (a) =>
+                a == '-d' ||
+                a == '-D' ||
+                a == '--delete' ||
+                a == '-m' ||
+                a == '-M' ||
+                a == '-f' ||
+                a == '--force',
+          )) {
+        return (
+          isSafe: false,
+          reason: 'Mutating git $subCmd flags are not allowed in read-only mode',
+        );
+      }
+      if (subCmd == 'remote' &&
+          subArgs.isNotEmpty &&
+          subArgs.first != '-v' &&
+          subArgs.first != '--verbose' &&
+          subArgs.first != 'show' &&
+          subArgs.first != 'get-url') {
+        return (
+          isSafe: false,
+          reason: 'Mutating git remote subcommand is not allowed in read-only mode',
+        );
+      }
+      continue;
     }
 
-    // Check sed -i (in-place edit)
-    if (cmd == 'sed' && (parts.contains('-i') || parts.contains('-i.bak'))) {
+    if (!_readOnlySafeCommands.contains(cmd)) {
+      return (isSafe: false, reason: '$cmd is not allowed in read-only mode');
+    }
+
+    final args = parts.sublist(1);
+
+    // Check sed in-place flags (-i, -i.bak, --in-place)
+    if (cmd == 'sed' &&
+        args.any(
+          (a) =>
+              a == '-i' ||
+              a.startsWith('-i') ||
+              a == '--in-place' ||
+              a.startsWith('--in-place='),
+        )) {
       return (
         isSafe: false,
         reason: 'sed -i (in-place edit) is not allowed in read-only mode',
       );
     }
 
-    // Check output redirection
-    if (seg.contains('>') || seg.contains('>>')) {
+    // Check find mutating / exec / file-writing primaries
+    if (cmd == 'find' &&
+        args.any((a) => _findDangerousFlags.contains(a.toLowerCase()))) {
       return (
         isSafe: false,
-        reason: 'Output redirection is not allowed in read-only mode',
+        reason: 'find with -delete/-exec/-ok/-fprint is not allowed in read-only mode',
       );
+    }
+
+    // Check awk system() execution
+    if (cmd == 'awk' && trimmedSeg.contains('system(')) {
+      return (
+        isSafe: false,
+        reason: 'awk system() is not allowed in read-only mode',
+      );
+    }
+
+    // Check package & container CLI subcommand allowlists
+    if (cmd == 'npm' || cmd == 'yarn' || cmd == 'pnpm') {
+      final sub = args.isEmpty ? '' : args.first;
+      if (!_readOnlyNodeSubcommands.contains(sub)) {
+        return (
+          isSafe: false,
+          reason: '$cmd $sub is not allowed in read-only mode',
+        );
+      }
+    } else if (cmd == 'pip' || cmd == 'pip3') {
+      final sub = args.isEmpty ? '' : args.first;
+      if (!_readOnlyPipSubcommands.contains(sub)) {
+        return (
+          isSafe: false,
+          reason: '$cmd $sub is not allowed in read-only mode',
+        );
+      }
+    } else if (cmd == 'gem') {
+      final sub = args.isEmpty ? '' : args.first.toLowerCase();
+      if (!_readOnlyGemSubcommands.contains(sub)) {
+        return (
+          isSafe: false,
+          reason: 'gem $sub is not allowed in read-only mode',
+        );
+      }
+    } else if (cmd == 'cargo') {
+      final sub = args.isEmpty ? '' : args.first;
+      if (!_readOnlyCargoSubcommands.contains(sub)) {
+        return (
+          isSafe: false,
+          reason: 'cargo $sub is not allowed in read-only mode',
+        );
+      }
+    } else if (cmd == 'docker') {
+      final sub = args.isEmpty ? '' : args.first;
+      if (!_readOnlyDockerSubcommands.contains(sub)) {
+        return (
+          isSafe: false,
+          reason: 'docker $sub is not allowed in read-only mode',
+        );
+      }
+    } else if (cmd == 'gh') {
+      if (args.isEmpty || !_readOnlyGhResources.contains(args.first)) {
+        return (
+          isSafe: false,
+          reason: 'gh subcommand is not allowed in read-only mode',
+        );
+      }
+      if (args.first != 'status' &&
+          (args.length < 2 || !_readOnlyGhActions.contains(args[1]))) {
+        return (
+          isSafe: false,
+          reason: 'gh ${args.join(" ")} is not allowed in read-only mode',
+        );
+      }
     }
   }
 
@@ -665,14 +897,14 @@ Future<BashToolOutput> executeCommand(
     );
   }
 
-  // 3. Determine timeout
+  // 3. Determine timeout (clamped 1s..10m)
   final timeout = input.timeoutMs != null
-      ? Duration(milliseconds: input.timeoutMs!)
+      ? Duration(milliseconds: input.timeoutMs!.clamp(1000, 600000))
       : options.timeout;
 
-  // 4. Build environment
+  // 4. Build sanitized environment
   final env = <String, String>{
-    ...?options.environment,
+    ...NeomageNetworkGuard.sanitizeSubprocessEnv(options.environment),
     'NEOMAGECODE': '1', // Side-channel hint
     'TERM': 'dumb', // Disable terminal features
   };
@@ -696,6 +928,7 @@ Future<BashToolOutput> executeCommand(
     final stdoutBuf = StringBuffer();
     final stderrBuf = StringBuffer();
     var totalBytes = 0;
+    var stderrBytes = 0;
     var interrupted = false;
 
     // Capture output with size limiting
@@ -714,7 +947,10 @@ Future<BashToolOutput> executeCommand(
           stdoutBuf.write(chunk);
         }
       } else {
-        stderrBuf.write(chunk);
+        stderrBytes += chunk.length;
+        if (stderrBytes <= options.maxOutputBytes) {
+          stderrBuf.write(chunk);
+        }
       }
     });
 
@@ -852,11 +1088,23 @@ class CwdTracker {
   }
 
   bool _isUnderProject(String path) {
-    final normalized = path.endsWith('/') ? path : '$path/';
-    final projectNorm = _projectRoot.endsWith('/')
-        ? _projectRoot
-        : '$_projectRoot/';
-    return normalized.startsWith(projectNorm) || path == _projectRoot;
+    if (path.isEmpty ||
+        path.contains('\x00') ||
+        path.startsWith(r'\\') ||
+        path.startsWith('//')) {
+      return false;
+    }
+    final resolvedTarget = p.posix.normalize(
+      path.replaceAll(r'\', '/'),
+    );
+    final resolvedRoot = p.posix.normalize(
+      _projectRoot.replaceAll(r'\', '/'),
+    );
+    if (resolvedTarget == resolvedRoot) return true;
+    final rootPrefix = resolvedRoot.endsWith('/')
+        ? resolvedRoot
+        : '$resolvedRoot/';
+    return resolvedTarget.startsWith(rootPrefix);
   }
 }
 
@@ -888,9 +1136,12 @@ String? extractHeredocBaseCommand(String command) {
 // ── Safe Wrapper Stripping ──
 
 /// Safe command prefixes that can be stripped for permission checking.
-const _safeWrappers = {'timeout', 'time', 'nice', 'nohup', 'stdbuf', 'env'};
+/// (`env` is excluded because `env -S` / `env PATH=...` can hijack execution.)
+const _safeWrappers = {'timeout', 'time', 'nice', 'nohup', 'stdbuf'};
 
-/// Safe environment variables that don't affect security.
+/// Safe environment variables that don't affect binary resolution, config loading,
+/// or compiler/linker behavior (`PATH`, `HOME`, `SHELL`, `GOFLAGS`, `RUSTFLAGS`
+/// are intentionally excluded to prevent binary/config hijacking).
 const _safeEnvVars = {
   'NODE_ENV',
   'LANG',
@@ -903,13 +1154,6 @@ const _safeEnvVars = {
   'CI',
   'DEBIAN_FRONTEND',
   'PYTHONDONTWRITEBYTECODE',
-  'GOFLAGS',
-  'RUSTFLAGS',
-  'HOME',
-  'PATH',
-  'SHELL',
-  'USER',
-  'LOGNAME',
 };
 
 /// Strip safe wrappers and env vars from a command for permission checking.

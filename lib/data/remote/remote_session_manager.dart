@@ -5,9 +5,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'dart:io';
 
+import 'package:http/http.dart' as http;
 import 'package:neomage/data/remote/sessions_websocket.dart';
+
+import '../../utils/security/neomage_network_guard.dart';
 
 // ---------------------------------------------------------------------------
 // Remote permission response
@@ -131,6 +133,9 @@ class RemoteSessionManager {
   final RemoteSessionConfig _config;
   final RemoteSessionCallbacks _callbacks;
 
+  static const int _maxPendingPermissions = 64;
+  static const Duration _sendTimeout = Duration(seconds: 15);
+
   SessionsWebSocket? _websocket;
   final Map<String, Map<String, dynamic>> _pendingPermissionRequests = {};
 
@@ -143,6 +148,15 @@ class RemoteSessionManager {
 
   /// Connect to the remote session via WebSocket.
   void connect() {
+    if (!NeomageNetworkGuard.isSafeIdentifier(_config.sessionId) ||
+        !NeomageNetworkGuard.isSafeIdentifier(_config.orgUuid)) {
+      _callbacks.onError?.call(
+        ArgumentError('Unsafe remote session or organization identifier'),
+      );
+      _callbacks.onDisconnected?.call();
+      return;
+    }
+
     developer.log(
       'Connecting to session ${_config.sessionId}',
       name: 'RemoteSessionManager',
@@ -163,7 +177,10 @@ class RemoteSessionManager {
         _callbacks.onReconnecting?.call();
       },
       onError: (error) {
-        developer.log('Error: $error', name: 'RemoteSessionManager');
+        final safeErr = NeomageNetworkGuard.redactTransportError(
+          error.toString(),
+        );
+        developer.log('Error: $safeErr', name: 'RemoteSessionManager');
         _callbacks.onError?.call(error);
       },
     );
@@ -185,31 +202,48 @@ class RemoteSessionManager {
     Object content, {
     String? uuid,
   }) async {
+    if (!NeomageNetworkGuard.isSafeIdentifier(_config.sessionId)) {
+      developer.log(
+        'Blocked sendMessage with unsafe sessionId',
+        name: 'RemoteSessionManager',
+      );
+      return false;
+    }
+    if (uuid != null && !NeomageNetworkGuard.isSafeIdentifier(uuid)) {
+      developer.log(
+        'Blocked sendMessage with unsafe uuid',
+        name: 'RemoteSessionManager',
+      );
+      return false;
+    }
+
+    final token = NeomageNetworkGuard.sanitizeHeaderValue(
+      _config.getAccessToken(),
+    );
+    if (token.isEmpty) return false;
+
     developer.log(
       'Sending message to session ${_config.sessionId}',
       name: 'RemoteSessionManager',
     );
 
+    final client = http.Client();
     try {
-      final client = HttpClient();
-      // POST to the teleport API endpoint.
-      final uri = Uri.parse(
-        'https://api.anthropic.com/v1/sessions/${_config.sessionId}/events',
+      final uri = Uri.https(
+        'api.anthropic.com',
+        '/v1/sessions/${Uri.encodeComponent(_config.sessionId)}/events',
       );
-      final request = await client.postUrl(uri);
-      request.headers.set(
-        'Authorization',
-        'Bearer ${_config.getAccessToken()}',
-      );
-      request.headers.set('Content-Type', 'application/json');
-      request.headers.set('anthropic-version', '2023-06-01');
+      final request = http.Request('POST', uri)..followRedirects = false;
+      request.headers['Authorization'] = 'Bearer $token';
+      request.headers['Content-Type'] = 'application/json';
+      request.headers['anthropic-version'] = '2023-06-01';
 
       final body = <String, dynamic>{'content': content};
       if (uuid != null) body['uuid'] = uuid;
-      request.add(utf8.encode(jsonEncode(body)));
+      request.body = jsonEncode(body);
 
-      final response = await request.close();
-      client.close(force: false);
+      final response = await client.send(request).timeout(_sendTimeout);
+      await response.stream.drain<void>();
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return true;
@@ -221,10 +255,12 @@ class RemoteSessionManager {
       return false;
     } catch (e) {
       developer.log(
-        'Failed to send message: $e',
+        'Failed to send message: ${NeomageNetworkGuard.redactTransportError(e.toString())}',
         name: 'RemoteSessionManager',
       );
       return false;
+    } finally {
+      client.close();
     }
   }
 
@@ -339,11 +375,28 @@ class RemoteSessionManager {
   void _handleControlRequest(SessionsMessage message) {
     final requestId = message.requestId;
     final inner = message.request;
-    if (requestId == null || inner == null) return;
+    if (requestId == null ||
+        inner == null ||
+        !NeomageNetworkGuard.isSafeIdentifier(requestId)) {
+      return;
+    }
 
     final subtype = inner['subtype'] as String?;
 
     if (subtype == 'can_use_tool') {
+      if (_pendingPermissionRequests.length >= _maxPendingPermissions &&
+          !_pendingPermissionRequests.containsKey(requestId)) {
+        final response = <String, dynamic>{
+          'type': 'control_response',
+          'response': {
+            'subtype': 'error',
+            'request_id': requestId,
+            'error': 'Too many pending permission requests',
+          },
+        };
+        _websocket?.sendControlResponse(response);
+        return;
+      }
       developer.log(
         'Permission request for tool: ${inner['tool_name']}',
         name: 'RemoteSessionManager',

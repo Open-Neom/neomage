@@ -21,7 +21,9 @@ dependencies:
     sdk: flutter
 
   # Sint framework (S.I.N.T. — State, Injection, Navigation, Translation)
-  sint: ^1.3.0
+  sint: ^2.0.2
+
+
   sint_sentinel: ^1.1.0
   neom_cli: ^1.0.0
   neom_docs: ^1.0.0
@@ -31,42 +33,58 @@ dependencies:
   # and plain-text tool-call recovery for models that don't return
   # structured tool_calls (Llama 3.2, Phi, Qwen, Hermes, DeepSeek, …).
   neom_ollama: ^1.2.0
-  saia_core: ^1.0.1
-  # Las habilidades salieron de aquí a su propio paquete: son contenido, y
-  # tenerlas dentro obligaba a cualquier consumidor a cargar también con
-  # llamadart y el resto del motor. Ver saia_skills/README.md.
-  saia_skills: ^0.1.0
-  llamadart: ">=0.5.4 <0.7.0"
-  flutter_js: ^0.8.1
+  llamadart: ^0.19.11
+  flutter_js: ^0.8.7
+
 
   # HTTP + Streaming
-  http: ^1.4.0
-  crypto: ^3.0.0
-  web_socket_channel: ^3.0.0    # Gemini Live realtime client
+  http: ^1.6.0
+
+  crypto: ^3.0.8
+
+
+  web: ^1.1.2
+
+  web_socket_channel: ^3.0.3    # Gemini Live realtime client
 
   # Storage
-  shared_preferences: ^2.5.0
-  path_provider: ^2.1.0
+  shared_preferences: ^2.5.6
+
+  path_provider: ^2.1.6
+
+
 
   # UI
-  flutter_markdown_plus: ^1.0.1
-  google_fonts: ^8.0.2
-  url_launcher: ^6.3.0
-  file_picker: ^11.0.2
-  image_picker: ^1.1.0
+  flutter_markdown_plus: ^1.0.12
+
+  google_fonts: ^9.0.0
+
+  url_launcher: ^6.3.3
+
+
+  file_picker: ^13.3.3
+
+  image_picker: ^1.2.4
+
 
   # Persistence
   hive_flutter: ^1.1.0
 
+
   # Utils
-  characters: ^1.4.0
-  path: ^1.9.0
-  uuid: ^4.5.0
+  characters: ^1.4.1
+
+  path: ^1.9.1
+
+  uuid: ^4.6.0
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+
 
 flutter:
   uses-material-design: true

@@ -11,10 +11,11 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 import 'package:path/path.dart' as p;
-import 'package:sint/sint.dart';
 
 import '../config/config_full.dart';
 
@@ -857,12 +858,48 @@ class EditorResult {
 }
 
 /// Map of editor command overrides (e.g. to add wait flags).
-const _editorOverrides = <String, String>{
-  'code': 'code -w', // VS Code: wait for file to be closed
-  'subl': 'subl --wait', // Sublime Text: wait for file to be closed
+const _editorOverrides = <String, List<String>>{
+  'code': ['code', '-w'], // VS Code: wait for file to be closed
+  'subl': ['subl', '--wait'], // Sublime Text: wait for file to be closed
 };
 
-/// Edit a file in an external editor (synchronous).
+/// Shell metacharacters forbidden in `EDITOR` / `VISUAL` specifications to
+/// prevent shell command injection when launching external editors.
+final RegExp _unsafeEditorSpecRegex = RegExp(r'[;&|`$<>()\{\}\[\]\r\n\x00]');
+
+/// Parses and validates an external editor command specification into an
+/// executable and safe flag arguments (without shell evaluation).
+///
+/// Returns `null` if [editor] is empty or contains shell metacharacters,
+/// NUL/CR/LF bytes, UNC paths, or option-prefixed binary names.
+({String executable, List<String> args})? parseSafeEditorCommand(
+  String? editor,
+) {
+  if (editor == null) return null;
+  final trimmed = editor.trim();
+  if (trimmed.isEmpty || trimmed.length > 512) return null;
+  if (_unsafeEditorSpecRegex.hasMatch(trimmed)) return null;
+
+  final override = _editorOverrides[trimmed];
+  if (override != null) {
+    return (executable: override.first, args: override.sublist(1));
+  }
+
+  final tokens = trimmed
+      .split(RegExp(r'\s+'))
+      .where((t) => t.isNotEmpty)
+      .toList();
+  if (tokens.isEmpty) return null;
+  final executable = tokens.first;
+  if (executable.startsWith('-') ||
+      executable.startsWith('//') ||
+      executable.startsWith(r'\\')) {
+    return null;
+  }
+  return (executable: executable, args: tokens.sublist(1));
+}
+
+/// Edit a file in an external editor (synchronous, shell-less).
 ///
 /// Terminal editors (vi, nano) take over the terminal.
 /// GUI editors (code, subl) open in a separate window.
@@ -870,8 +907,33 @@ EditorResult editFileInEditor({
   required String filePath,
   required String? editor,
 }) {
-  if (editor == null || editor.isEmpty) {
-    return const EditorResult(content: null);
+  final parsedEditor = parseSafeEditorCommand(editor);
+  if (parsedEditor == null) {
+    return EditorResult(
+      content: null,
+      error: editor == null || editor.isEmpty
+          ? null
+          : 'Rejected unsafe editor command specification',
+    );
+  }
+
+  if (filePath.isEmpty ||
+      filePath.contains('\x00') ||
+      filePath.startsWith('-') ||
+      filePath.startsWith('//') ||
+      filePath.startsWith(r'\\') ||
+      NeomageNetworkGuard.isProtectedSystemOrCredentialPath(filePath)) {
+    return const EditorResult(
+      content: null,
+      error: 'Rejected unsafe file path for external editor',
+    );
+  }
+
+  if (FileSystemEntity.isLinkSync(filePath)) {
+    return const EditorResult(
+      content: null,
+      error: 'Refusing to open symbolic link in external editor',
+    );
   }
 
   final file = File(filePath);
@@ -879,24 +941,42 @@ EditorResult editFileInEditor({
     return const EditorResult(content: null);
   }
 
-  final editorCommand = _editorOverrides[editor] ?? editor;
-
   try {
-    final result = Process.runSync('sh', [
-      '-c',
-      '$editorCommand "$filePath"',
-    ], runInShell: false);
+    final result = Process.runSync(
+      parsedEditor.executable,
+      [...parsedEditor.args, filePath],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    );
 
     if (result.exitCode != 0) {
       return EditorResult(
         content: null,
-        error: '$editor exited with code ${result.exitCode}',
+        error: '${parsedEditor.executable} exited with code ${result.exitCode}',
       );
     }
 
-    final editedContent = file.readAsStringSync();
+    if (FileSystemEntity.isLinkSync(filePath)) {
+      return const EditorResult(
+        content: null,
+        error: 'Edited file was replaced with a symbolic link',
+      );
+    }
+    final stat = file.statSync();
+    if (stat.size > 4 * 1024 * 1024) {
+      return const EditorResult(
+        content: null,
+        error: 'Edited prompt exceeds 4 MiB limit',
+      );
+    }
+
+    final editedContent = utf8.decode(
+      file.readAsBytesSync(),
+      allowMalformed: true,
+    );
     return EditorResult(content: editedContent);
-  } catch (e) {
+  } catch (_) {
     return const EditorResult(content: null);
   }
 }
@@ -930,27 +1010,24 @@ String recollapsePastedContent({
   return collapsed;
 }
 
-/// Edit a prompt in an external editor.
+/// Edit a prompt in an external editor using an isolated private temp directory.
 EditorResult editPromptInEditor({
   required String currentPrompt,
   required String? editor,
   Map<int, PastedContent>? pastedContents,
 }) {
-  final tempDir = Directory.systemTemp;
-  final tempFile = File(
-    p.join(
-      tempDir.path,
-      'neomage_prompt_${DateTime.now().millisecondsSinceEpoch}.txt',
-    ),
-  );
-
+  Directory? isolatedTempDir;
   try {
+    isolatedTempDir = Directory.systemTemp.createTempSync('neomage_prompt_');
+    final tempFile = File(p.join(isolatedTempDir.path, 'prompt.txt'));
+
     // Expand pasted text references before editing.
     final expandedPrompt = pastedContents != null
         ? expandPastedTextRefs(currentPrompt, pastedContents)
         : currentPrompt;
 
-    tempFile.writeAsStringSync(expandedPrompt);
+    tempFile.createSync(exclusive: true);
+    tempFile.writeAsStringSync(expandedPrompt, flush: true);
 
     final result = editFileInEditor(filePath: tempFile.path, editor: editor);
 
@@ -972,10 +1049,16 @@ EditorResult editPromptInEditor({
     }
 
     return EditorResult(content: finalContent);
+  } catch (_) {
+    return const EditorResult(content: null);
   } finally {
-    try {
-      if (tempFile.existsSync()) tempFile.deleteSync();
-    } catch (_) {}
+    if (isolatedTempDir != null) {
+      try {
+        if (isolatedTempDir.existsSync()) {
+          isolatedTempDir.deleteSync(recursive: true);
+        }
+      } catch (_) {}
+    }
   }
 }
 

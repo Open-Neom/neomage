@@ -4,6 +4,36 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+
+/// Default cap (`16 MiB`) per stream when `maxOutputBytes` is omitted.
+const int defaultMaxProcessOutputBytes = 16 * 1024 * 1024;
+
+void _assertSafeProcessArgs(
+  String command,
+  List<String> args,
+  String? workingDirectory,
+) {
+  if (command.isEmpty || command.contains('\x00')) {
+    throw ArgumentError.value(command, 'command', 'Invalid executable');
+  }
+  for (final arg in args) {
+    if (arg.contains('\x00')) {
+      throw ArgumentError('Process argument contains NUL byte');
+    }
+  }
+  if (workingDirectory != null) {
+    if (workingDirectory.contains('\x00') ||
+        workingDirectory.startsWith('//') ||
+        workingDirectory.startsWith(r'\\')) {
+      throw ArgumentError.value(
+        workingDirectory,
+        'workingDirectory',
+        'Unsafe working directory',
+      );
+    }
+  }
+}
 
 /// Result of a process execution.
 class ProcessOutput {
@@ -35,13 +65,17 @@ Future<ProcessOutput> runCommand(
   int? maxOutputBytes,
 }) async {
   final sw = Stopwatch()..start();
+  final effectiveMaxBytes = maxOutputBytes ?? defaultMaxProcessOutputBytes;
 
   try {
+    _assertSafeProcessArgs(command, args, workingDirectory);
     final process = await Process.start(
       command,
       args,
       workingDirectory: workingDirectory,
-      environment: environment,
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(null, environment),
+      includeParentEnvironment: false,
     );
 
     final stdoutBuf = StringBuffer();
@@ -51,15 +85,23 @@ Future<ProcessOutput> runCommand(
 
     final stdoutSub = process.stdout.transform(utf8.decoder).listen((chunk) {
       stdoutBytes += chunk.length;
-      if (maxOutputBytes == null || stdoutBytes <= maxOutputBytes) {
+      if (stdoutBytes <= effectiveMaxBytes) {
         stdoutBuf.write(chunk);
+      } else if (stdoutBuf.length < effectiveMaxBytes) {
+        stdoutBuf.write(
+          chunk.substring(0, effectiveMaxBytes - stdoutBuf.length),
+        );
       }
     });
 
     final stderrSub = process.stderr.transform(utf8.decoder).listen((chunk) {
       stderrBytes += chunk.length;
-      if (maxOutputBytes == null || stderrBytes <= maxOutputBytes) {
+      if (stderrBytes <= effectiveMaxBytes) {
         stderrBuf.write(chunk);
+      } else if (stderrBuf.length < effectiveMaxBytes) {
+        stderrBuf.write(
+          chunk.substring(0, effectiveMaxBytes - stderrBuf.length),
+        );
       }
     });
 
@@ -96,11 +138,11 @@ Future<ProcessOutput> runCommand(
     var stdout = stdoutBuf.toString();
     var stderr = stderrBuf.toString();
 
-    if (maxOutputBytes != null && stdoutBytes > maxOutputBytes) {
-      stdout += '\n[... output truncated at $maxOutputBytes bytes]';
+    if (stdoutBytes > effectiveMaxBytes) {
+      stdout += '\n[... output truncated at $effectiveMaxBytes bytes]';
     }
-    if (maxOutputBytes != null && stderrBytes > maxOutputBytes) {
-      stderr += '\n[... output truncated at $maxOutputBytes bytes]';
+    if (stderrBytes > effectiveMaxBytes) {
+      stderr += '\n[... output truncated at $effectiveMaxBytes bytes]';
     }
 
     return ProcessOutput(
@@ -157,11 +199,14 @@ Future<ManagedProcess> spawnProcess(
   String? workingDirectory,
   Map<String, String>? environment,
 }) async {
+  _assertSafeProcessArgs(command, args, workingDirectory);
   final process = await Process.start(
     command,
     args,
     workingDirectory: workingDirectory,
-    environment: environment,
+    runInShell: false,
+    environment: NeomageNetworkGuard.sanitizeSubprocessEnv(null, environment),
+    includeParentEnvironment: false,
   );
 
   return ManagedProcess._(process);
@@ -236,10 +281,19 @@ class ManagedProcess {
 
 /// Check if a command is available on PATH.
 Future<bool> commandExists(String command) async {
+  if (command.isEmpty ||
+      command.startsWith('-') ||
+      !RegExp(r'^[A-Za-z0-9._+-]{1,128}$').hasMatch(command)) {
+    return false;
+  }
   try {
-    final result = await Process.run(Platform.isWindows ? 'where' : 'which', [
-      command,
-    ]);
+    final result = await Process.run(
+      Platform.isWindows ? 'where' : 'which',
+      [command],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     return result.exitCode == 0;
   } catch (_) {
     return false;

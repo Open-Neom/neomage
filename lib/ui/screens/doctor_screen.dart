@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
 import 'package:neomage/data/auth/auth_service.dart';
 import 'package:neomage/utils/constants/system.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'package:sint/sint.dart';
 
 import 'package:flutter/material.dart';
@@ -343,6 +344,7 @@ class _DoctorScreenState extends State<DoctorScreen> {
 
   /// Try a minimal HEAD request to the configured provider endpoint.
   Future<void> _checkProviderConnectivity(DiagnosticCheck check) async {
+    HttpClient? client;
     try {
       final authService = AuthService();
       final config = await authService.loadApiConfig();
@@ -352,13 +354,27 @@ class _DoctorScreenState extends State<DoctorScreen> {
         return;
       }
 
-      final baseUrl = config.baseUrl;
-      final client = HttpClient()
-        ..connectionTimeout = const Duration(seconds: 5);
-      final request = await client.headUrl(Uri.parse(baseUrl));
-      final response = await request.close();
-      await response.drain<void>();
-      client.close();
+      final uri = Uri.tryParse(config.baseUrl.trim());
+      if (!NeomageNetworkGuard.isSafeEndpointUri(
+        uri,
+        allowLoopbackInsecure: true,
+        allowPrivateLanHttp: true,
+        allowPublicInsecure: false,
+      )) {
+        check.status = DiagnosticStatus.fail;
+        check.detail = 'Blocked unsafe provider endpoint URL';
+        return;
+      }
+
+      client = HttpClient()..connectionTimeout = const Duration(seconds: 5);
+      final request = await client
+          .headUrl(uri!)
+          .timeout(const Duration(seconds: 5));
+      request.followRedirects = false;
+      final response = await request
+          .close()
+          .timeout(const Duration(seconds: 5));
+      await response.drain<void>().timeout(const Duration(seconds: 5));
 
       if (response.statusCode < 500) {
         check.status = DiagnosticStatus.pass;
@@ -371,13 +387,18 @@ class _DoctorScreenState extends State<DoctorScreen> {
       }
     } on SocketException catch (e) {
       check.status = DiagnosticStatus.fail;
-      check.detail = 'Socket error: ${e.message}';
+      check.detail =
+          'Socket error: ${NeomageNetworkGuard.redactTransportError(e.message)}';
     } on HttpException catch (e) {
       check.status = DiagnosticStatus.fail;
-      check.detail = 'HTTP error: ${e.message}';
+      check.detail =
+          'HTTP error: ${NeomageNetworkGuard.redactTransportError(e.message)}';
     } catch (e) {
       check.status = DiagnosticStatus.fail;
-      check.detail = 'Cannot reach provider: $e';
+      check.detail =
+          'Cannot reach provider: ${NeomageNetworkGuard.redactTransportError(e.toString())}';
+    } finally {
+      client?.close(force: true);
     }
   }
 
@@ -421,10 +442,22 @@ class _DoctorScreenState extends State<DoctorScreen> {
   /// Check if ~/.neomage/ directory exists and is writable.
   Future<void> _checkMemoryDirectory(DiagnosticCheck check) async {
     try {
-      final configDir = Directory(SystemConstants.configDir);
+      final dirPath = SystemConstants.configDir;
+      if (FileSystemEntity.isLinkSync(dirPath)) {
+        check.status = DiagnosticStatus.fail;
+        check.detail = 'Refused symlinked config directory: $dirPath';
+        return;
+      }
+      final configDir = Directory(dirPath);
       if (await configDir.exists()) {
-        // Test writability by creating and removing a temp file.
-        final testFile = File('${configDir.path}/.doctor_write_test');
+        // Test writability by creating and removing a temp file (rejecting symlinks).
+        final probePath = '${configDir.path}/.doctor_write_test';
+        if (FileSystemEntity.isLinkSync(probePath)) {
+          check.status = DiagnosticStatus.fail;
+          check.detail = 'Refused symlinked probe file in $dirPath';
+          return;
+        }
+        final testFile = File(probePath);
         try {
           await testFile.writeAsString('test');
           await testFile.delete();
@@ -452,7 +485,10 @@ class _DoctorScreenState extends State<DoctorScreen> {
     try {
       final sessionDir = Directory(SystemConstants.sessionDir);
       if (await sessionDir.exists()) {
-        final entries = await sessionDir.list().toList();
+        final entries = await sessionDir
+            .list(followLinks: false)
+            .take(5000)
+            .toList();
         final sessionCount =
             entries.where((e) => e.path.endsWith('.json')).length;
         check.status = DiagnosticStatus.pass;
@@ -474,7 +510,16 @@ class _DoctorScreenState extends State<DoctorScreen> {
   /// Check config directory size on disk.
   Future<void> _checkDiskSpace(DiagnosticCheck check) async {
     try {
-      final configDir = Directory(SystemConstants.configDir);
+      final dirPath = SystemConstants.configDir;
+      if (dirPath.isEmpty ||
+          dirPath.startsWith('-') ||
+          dirPath.contains('\x00') ||
+          FileSystemEntity.isLinkSync(dirPath)) {
+        check.status = DiagnosticStatus.warn;
+        check.detail = 'Skipped unsafe config directory path';
+        return;
+      }
+      final configDir = Directory(dirPath);
       if (!await configDir.exists()) {
         check.status = DiagnosticStatus.warn;
         check.detail = 'Config directory does not exist yet';
@@ -484,8 +529,11 @@ class _DoctorScreenState extends State<DoctorScreen> {
       if (Platform.isMacOS || Platform.isLinux) {
         final result = await Process.run(
           'du',
-          ['-sh', SystemConstants.configDir],
-        );
+          ['-sh', '--', dirPath],
+          runInShell: false,
+          environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+          includeParentEnvironment: false,
+        ).timeout(const Duration(seconds: 5));
         if (result.exitCode == 0) {
           final output = (result.stdout as String).trim();
           final size = output.split(RegExp(r'\s+')).first;
@@ -504,15 +552,24 @@ class _DoctorScreenState extends State<DoctorScreen> {
 
   /// Check if Ollama is reachable on localhost:11434.
   Future<void> _checkOllama(DiagnosticCheck check) async {
+    HttpClient? client;
     try {
-      final client = HttpClient()
-        ..connectionTimeout = const Duration(seconds: 3);
-      final request = await client.getUrl(
-        Uri.parse('http://localhost:11434/api/tags'),
-      );
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
-      client.close();
+      client = HttpClient()..connectionTimeout = const Duration(seconds: 3);
+      final request = await client
+          .getUrl(Uri.parse('http://127.0.0.1:11434/api/tags'))
+          .timeout(const Duration(seconds: 3));
+      request.followRedirects = false;
+      final response = await request
+          .close()
+          .timeout(const Duration(seconds: 5));
+      final builder = BytesBuilder(copy: false);
+      var total = 0;
+      await for (final chunk in response.timeout(const Duration(seconds: 5))) {
+        total += chunk.length;
+        if (total > 256 * 1024) break;
+        builder.add(chunk);
+      }
+      final body = utf8.decode(builder.takeBytes(), allowMalformed: true);
 
       if (response.statusCode == 200) {
         // Try to parse the model list.
@@ -531,10 +588,13 @@ class _DoctorScreenState extends State<DoctorScreen> {
       }
     } on SocketException {
       check.status = DiagnosticStatus.warn;
-      check.detail = 'Ollama not reachable on localhost:11434 (not running?)';
+      check.detail = 'Ollama not reachable on 127.0.0.1:11434 (not running?)';
     } catch (e) {
       check.status = DiagnosticStatus.warn;
-      check.detail = 'Could not connect to Ollama: $e';
+      check.detail =
+          'Could not connect to Ollama: ${NeomageNetworkGuard.redactTransportError(e.toString())}';
+    } finally {
+      client?.close(force: true);
     }
   }
 
@@ -543,17 +603,25 @@ class _DoctorScreenState extends State<DoctorScreen> {
     try {
       final mcpFile = File(SystemConstants.mcpConfigFile);
       final localFile = File('.mcp.json');
-      final hasMcp = await mcpFile.exists();
-      final hasLocal = await localFile.exists();
+      final hasMcp =
+          !FileSystemEntity.isLinkSync(mcpFile.path) && await mcpFile.exists();
+      final hasLocal =
+          !FileSystemEntity.isLinkSync(localFile.path) &&
+          await localFile.exists();
 
       if (hasMcp || hasLocal) {
         final found = <String>[];
         if (hasMcp) {
-          // Validate JSON.
+          // Validate JSON with bounded size check.
           try {
-            final content = await mcpFile.readAsString();
-            jsonDecode(content);
-            found.add('~/.neomage/mcp.json (valid JSON)');
+            final stat = await mcpFile.stat();
+            if (stat.size <= 1024 * 1024) {
+              final content = await mcpFile.readAsString();
+              jsonDecode(content);
+              found.add('~/.neomage/mcp.json (valid JSON)');
+            } else {
+              found.add('~/.neomage/mcp.json (exceeds 1 MiB limit)');
+            }
           } catch (_) {
             found.add('~/.neomage/mcp.json (invalid JSON!)');
           }
@@ -604,16 +672,25 @@ class _DoctorScreenState extends State<DoctorScreen> {
 
   Future<void> _checkGitRepo(DiagnosticCheck check) async {
     try {
-      final result = await Process.run('git', [
-        'rev-parse',
-        '--is-inside-work-tree',
-      ]);
+      final gitEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(
+        null,
+        const <String, String>{'GIT_TERMINAL_PROMPT': '0'},
+      );
+      final result = await Process.run(
+        'git',
+        ['rev-parse', '--is-inside-work-tree'],
+        runInShell: false,
+        environment: gitEnv,
+        includeParentEnvironment: false,
+      ).timeout(const Duration(seconds: 5));
       if (result.exitCode == 0 && (result.stdout as String).trim() == 'true') {
-        final branch = await Process.run('git', [
-          'rev-parse',
-          '--abbrev-ref',
-          'HEAD',
-        ]);
+        final branch = await Process.run(
+          'git',
+          ['rev-parse', '--abbrev-ref', 'HEAD'],
+          runInShell: false,
+          environment: gitEnv,
+          includeParentEnvironment: false,
+        ).timeout(const Duration(seconds: 5));
         check.status = DiagnosticStatus.pass;
         check.detail =
             'Inside git repo, branch: ${(branch.stdout as String).trim()}';

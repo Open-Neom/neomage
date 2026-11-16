@@ -4,10 +4,13 @@
 library;
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
+import 'package:path/path.dart' as p;
 import 'dart:math';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -234,6 +237,11 @@ class WorktreeManager extends SintController {
   void Function(String message, {String? level}) _logForDebugging =
       (message, {level}) {};
 
+  /// Whether repository-checked-in git hooks (`.husky`, `.git/hooks`) may be
+  /// wired into newly created worktrees. Disabled (`false`) by default so
+  /// untrusted repositories cannot execute arbitrary `.husky/*` shell scripts.
+  bool _allowRepoHooks = false;
+
   // ---------------------------------------------------------------------------
   // Configuration
   // ---------------------------------------------------------------------------
@@ -251,8 +259,11 @@ class WorktreeManager extends SintController {
     bool Function()? hasWorktreeCreateHook,
     Future<String?> Function(String)? readWorktreeHeadSha,
     void Function(String, {String? level})? logForDebugging,
+    bool? allowRepoHooks,
   }) {
-    if (gitExe != null) _gitExe = gitExe;
+    if (gitExe != null && NeomageNetworkGuard.isSafeMcpCommand(gitExe)) {
+      _gitExe = gitExe;
+    }
     if (getCwd != null) _getCwd = getCwd;
     if (findGitRoot != null) _findGitRoot = findGitRoot;
     if (findCanonicalGitRoot != null) {
@@ -274,30 +285,44 @@ class WorktreeManager extends SintController {
       _readWorktreeHeadSha = readWorktreeHeadSha;
     }
     if (logForDebugging != null) _logForDebugging = logForDebugging;
+    if (allowRepoHooks != null) _allowRepoHooks = allowRepoHooks;
   }
 
   // ---------------------------------------------------------------------------
   // Slug validation
   // ---------------------------------------------------------------------------
 
-  /// Validates a worktree slug to prevent path traversal and directory escape.
-  ///
-  /// The slug is joined into `.neomage/worktrees/<slug>` via path.join, which
-  /// normalizes `..` segments. Forward slashes are allowed for nesting (e.g.
-  /// `asm/feature-foo`); each segment is validated independently.
+  /// Validates a worktree slug to prevent path traversal, git option injection
+  /// (`-foo` / `--upload-pack=...`), and directory escape.
   ///
   /// Throws synchronously -- callers rely on this running before any side effects.
   static void validateWorktreeSlug(String slug) {
+    if (slug.isEmpty) {
+      throw ArgumentError('Invalid worktree name: must not be empty');
+    }
     if (slug.length > _maxWorktreeSlugLength) {
       throw ArgumentError(
         'Invalid worktree name: must be $_maxWorktreeSlugLength characters '
         'or fewer (got ${slug.length})',
       );
     }
+    if (slug.contains('\x00') ||
+        slug.contains(r'\') ||
+        slug.startsWith('/') ||
+        slug.endsWith('/')) {
+      throw ArgumentError(
+        'Invalid worktree name "$slug": contains forbidden path separators or NUL bytes',
+      );
+    }
     for (final segment in slug.split('/')) {
-      if (segment == '.' || segment == '..') {
+      if (segment.isEmpty || segment == '.' || segment == '..') {
         throw ArgumentError(
-          'Invalid worktree name "$slug": must not contain "." or ".." path segments',
+          'Invalid worktree name "$slug": must not contain empty, "." or ".." path segments',
+        );
+      }
+      if (segment.startsWith('-')) {
+        throw ArgumentError(
+          'Invalid worktree name "$slug": segment "$segment" must not start with "-"',
         );
       }
       if (!_validWorktreeSlugSegment.hasMatch(segment)) {
@@ -380,19 +405,53 @@ class WorktreeManager extends SintController {
     List<String> args, {
     String? cwd,
     Map<String, String>? env,
+    Duration timeout = const Duration(seconds: 60),
   }) async {
+    if (!NeomageNetworkGuard.isSafeMcpCommand(command)) {
+      return ExecResult(
+        code: -1,
+        stderr: 'Blocked unsafe executable: $command',
+        error: 'Blocked unsafe executable: $command',
+      );
+    }
+    final targetCwd = cwd ?? _getCwd();
+    if (targetCwd.contains('\x00') ||
+        targetCwd.startsWith('//') ||
+        targetCwd.startsWith(r'\\')) {
+      return const ExecResult(
+        code: -1,
+        stderr: 'Blocked invalid workingDirectory',
+        error: 'Blocked invalid workingDirectory',
+      );
+    }
     try {
-      final result = await Process.run(
+      final cleanEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(
+        env ?? Platform.environment,
+      );
+      final proc = await Process.start(
         command,
         args,
-        workingDirectory: cwd ?? _getCwd(),
-        environment: env,
+        workingDirectory: targetCwd,
+        environment: cleanEnv,
       );
-      return ExecResult(
-        code: result.exitCode,
-        stdout: result.stdout as String? ?? '',
-        stderr: result.stderr as String? ?? '',
+      final outFuture = proc.stdout.transform(utf8.decoder).join();
+      final errFuture = proc.stderr.transform(utf8.decoder).join();
+      final exitCode = await proc.exitCode.timeout(
+        timeout,
+        onTimeout: () {
+          proc.kill();
+          return -2;
+        },
       );
+      final stdoutStr = await outFuture.timeout(
+        const Duration(seconds: 1),
+        onTimeout: () => '',
+      );
+      final stderrStr = await errFuture.timeout(
+        const Duration(seconds: 1),
+        onTimeout: () => '',
+      );
+      return ExecResult(code: exitCode, stdout: stdoutStr, stderr: stderrStr);
     } catch (e) {
       return ExecResult(code: -1, stderr: e.toString(), error: e.toString());
     }
@@ -424,7 +483,10 @@ class WorktreeManager extends SintController {
     // New worktree: fetch base branch then add
     await Directory(_worktreesDir(repoRoot)).create(recursive: true);
 
-    final fetchEnv = {...Platform.environment, ..._gitNoPromptEnv};
+    final fetchEnv = {
+      ...NeomageNetworkGuard.sanitizeSubprocessEnv(Platform.environment),
+      ..._gitNoPromptEnv,
+    };
 
     String baseBranch;
     String? baseSha;
@@ -486,6 +548,7 @@ class WorktreeManager extends SintController {
       'add',
       '-B',
       worktreeBranch,
+      '--',
       worktreePath,
       baseBranch,
     ];
@@ -504,20 +567,27 @@ class WorktreeManager extends SintController {
   }
 
   /// Post-creation setup for a newly created worktree.
-  /// Propagates settings, configures git hooks, and symlinks directories.
+  /// Propagates settings, optionally configures trusted git hooks, and copies
+  /// safe `.worktreeinclude` files.
   Future<void> _performPostCreationSetup(
     String repoRoot,
     String worktreePath,
   ) async {
-    // Copy settings.local.json to the worktree's .neomage directory
-    final localSettingsRelPath = '.neomage/settings.local.json';
+    // Copy settings.local.json to the worktree's .neomage directory (never following symlinks).
+    const localSettingsRelPath = '.neomage/settings.local.json';
     final sourceSettings = '$repoRoot/$localSettingsRelPath';
     try {
-      final destSettings = '$worktreePath/$localSettingsRelPath';
-      final destDir = destSettings.substring(0, destSettings.lastIndexOf('/'));
-      await Directory(destDir).create(recursive: true);
-      await File(sourceSettings).copy(destSettings);
-      _logForDebugging('Copied settings.local.json to worktree: $destSettings');
+      if (!await FileSystemEntity.isLink(sourceSettings)) {
+        final destSettings = '$worktreePath/$localSettingsRelPath';
+        final destDir = destSettings.substring(0, destSettings.lastIndexOf('/'));
+        await Directory(destDir).create(recursive: true);
+        if (!await FileSystemEntity.isLink(destSettings)) {
+          await File(sourceSettings).copy(destSettings);
+          _logForDebugging(
+            'Copied settings.local.json to worktree: $destSettings',
+          );
+        }
+      }
     } catch (e) {
       if (e is! PathNotFoundException) {
         _logForDebugging(
@@ -527,38 +597,42 @@ class WorktreeManager extends SintController {
       }
     }
 
-    // Configure the worktree to use hooks from the main repository
-    final huskyPath = '$repoRoot/.husky';
-    final gitHooksPath = '$repoRoot/.git/hooks';
-    String? hooksPath;
+    // SECURITY: Do NOT automatically wire repository `.husky` or `.git/hooks`
+    // unless `allowRepoHooks` was explicitly enabled by a trusted caller.
+    if (_allowRepoHooks) {
+      final huskyPath = '$repoRoot/.husky';
+      final gitHooksPath = '$repoRoot/.git/hooks';
+      String? hooksPath;
 
-    for (final candidatePath in [huskyPath, gitHooksPath]) {
-      try {
-        final stat = await FileStat.stat(candidatePath);
-        if (stat.type == FileSystemEntityType.directory) {
-          hooksPath = candidatePath;
-          break;
+      for (final candidatePath in [huskyPath, gitHooksPath]) {
+        try {
+          if (await FileSystemEntity.isLink(candidatePath)) continue;
+          final stat = await FileStat.stat(candidatePath);
+          if (stat.type == FileSystemEntityType.directory) {
+            hooksPath = candidatePath;
+            break;
+          }
+        } catch (_) {
+          // Path doesn't exist or can't be accessed
         }
-      } catch (_) {
-        // Path doesn't exist or can't be accessed
       }
-    }
 
-    if (hooksPath != null) {
-      final configResult = await _execGit([
-        'config',
-        'core.hooksPath',
-        hooksPath,
-      ], cwd: worktreePath);
-      if (configResult.code == 0) {
-        _logForDebugging(
-          'Configured worktree to use hooks from main repository: $hooksPath',
-        );
-      } else {
-        _logForDebugging(
-          'Failed to configure hooks path: ${configResult.stderr}',
-          level: 'error',
-        );
+      if (hooksPath != null) {
+        final configResult = await _execGit([
+          'config',
+          'core.hooksPath',
+          hooksPath,
+        ], cwd: worktreePath);
+        if (configResult.code == 0) {
+          _logForDebugging(
+            'Configured worktree to use hooks from main repository: $hooksPath',
+          );
+        } else {
+          _logForDebugging(
+            'Failed to configure hooks path: ${configResult.stderr}',
+            level: 'error',
+          );
+        }
       }
     }
 
@@ -581,7 +655,9 @@ class WorktreeManager extends SintController {
   ) async {
     String includeContent;
     try {
-      includeContent = await File('$repoRoot/.worktreeinclude').readAsString();
+      final includePath = '$repoRoot/.worktreeinclude';
+      if (await FileSystemEntity.isLink(includePath)) return [];
+      includeContent = await File(includePath).readAsString();
     } catch (_) {
       return [];
     }
@@ -624,8 +700,8 @@ class WorktreeManager extends SintController {
 
     // Expand collapsed directories if patterns target paths inside them
     final dirsToExpand = collapsedDirs.where((dir) {
-      return patterns.any((p) {
-        final normalized = p.startsWith('/') ? p.substring(1) : p;
+      return patterns.any((pat) {
+        final normalized = pat.startsWith('/') ? pat.substring(1) : pat;
         if (normalized.startsWith(dir)) return true;
         final globIdx = normalized.indexOf(RegExp(r'[*?[]'));
         if (globIdx > 0) {
@@ -655,11 +731,25 @@ class WorktreeManager extends SintController {
       }
     }
 
+    final normWorktree = p.posix.normalize(worktreePath.replaceAll('\\', '/'));
     final copied = <String>[];
     for (final relativePath in files) {
+      if (relativePath.contains('\x00') ||
+          relativePath.startsWith('/') ||
+          relativePath.contains(r'\') ||
+          relativePath.split('/').contains('..')) {
+        continue;
+      }
       final srcPath = '$repoRoot/$relativePath';
-      final destPath = '$worktreePath/$relativePath';
+      final destPath = p.posix.normalize(
+        '$normWorktree/$relativePath'.replaceAll('\\', '/'),
+      );
+      if (!destPath.startsWith('$normWorktree/')) continue;
       try {
+        if (await FileSystemEntity.isLink(srcPath) ||
+            await FileSystemEntity.isLink(destPath)) {
+          continue;
+        }
         final destDir = destPath.substring(0, destPath.lastIndexOf('/'));
         await Directory(destDir).create(recursive: true);
         await File(srcPath).copy(destPath);
@@ -681,20 +771,44 @@ class WorktreeManager extends SintController {
     return copied;
   }
 
-  /// Simple gitignore-style pattern matching.
+  /// Linear ReDoS-safe gitignore-style pattern matching with regex escaping.
   static bool _matchesAnyPattern(String path, List<String> patterns) {
     for (final pattern in patterns) {
+      if (pattern.length > 512) continue;
       final normalized = pattern.startsWith('/')
           ? pattern.substring(1)
           : pattern;
-      // Simple glob matching (supports * and **)
-      final regexStr = normalized
-          .replaceAll('.', r'\.')
-          .replaceAll('**/', '(.+/)?')
-          .replaceAll('**', '.*')
-          .replaceAll('*', '[^/]*')
-          .replaceAll('?', '[^/]');
-      if (RegExp('^$regexStr\$').hasMatch(path)) return true;
+      final buf = StringBuffer('^');
+      var i = 0;
+      while (i < normalized.length) {
+        final ch = normalized[i];
+        if (ch == '*') {
+          var stars = 1;
+          while (i + stars < normalized.length && normalized[i + stars] == '*') {
+            stars++;
+          }
+          if (stars >= 2) {
+            if (i + stars < normalized.length && normalized[i + stars] == '/') {
+              buf.write('(?:[^/]+/)*');
+              i += stars + 1;
+            } else {
+              buf.write('.*');
+              i += stars;
+            }
+          } else {
+            buf.write('[^/]*');
+            i++;
+          }
+        } else if (ch == '?') {
+          buf.write('[^/]');
+          i++;
+        } else {
+          buf.write(RegExp.escape(ch));
+          i++;
+        }
+      }
+      buf.write(r'$');
+      if (RegExp(buf.toString()).hasMatch(path)) return true;
     }
     return false;
   }
@@ -877,6 +991,7 @@ class WorktreeManager extends SintController {
           'worktree',
           'remove',
           '--force',
+          '--',
           session.worktreePath,
         ], cwd: session.originalCwd);
 
@@ -902,6 +1017,7 @@ class WorktreeManager extends SintController {
         final deleteResult = await _execGit([
           'branch',
           '-D',
+          '--',
           session.worktreeBranch!,
         ], cwd: session.originalCwd);
 
@@ -971,10 +1087,7 @@ class WorktreeManager extends SintController {
       await _performPostCreationSetup(gitRoot, result.worktreePath);
     } else {
       // Bump mtime so periodic cleanup doesn't consider this stale
-      final now = DateTime.now();
-      try {
-        await Process.run('touch', [result.worktreePath]);
-      } catch (_) {}
+      await _execFileNoThrow('touch', ['--', result.worktreePath]);
       _logForDebugging(
         'Resuming existing agent worktree at: ${result.worktreePath}',
       );
@@ -1021,6 +1134,7 @@ class WorktreeManager extends SintController {
       'worktree',
       'remove',
       '--force',
+      '--',
       worktreePath,
     ], cwd: gitRoot);
 
@@ -1039,6 +1153,7 @@ class WorktreeManager extends SintController {
     final deleteResult = await _execGit([
       'branch',
       '-D',
+      '--',
       worktreeBranch,
     ], cwd: gitRoot);
 
@@ -1069,7 +1184,7 @@ class WorktreeManager extends SintController {
     final dir = _worktreesDir(gitRoot);
     List<FileSystemEntity> entries;
     try {
-      entries = await Directory(dir).list().toList();
+      entries = await Directory(dir).list(followLinks: false).toList();
     } catch (_) {
       return 0;
     }

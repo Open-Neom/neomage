@@ -6,8 +6,10 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/native_installer/native_installer_guard.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ---------------------------------------------------------------------------
 // IDE type definitions
@@ -513,10 +515,12 @@ class IdeUtils extends SintController {
           final dir = Directory(ideLockFilePath);
           if (!await dir.exists()) continue;
 
-          await for (final file in dir.list()) {
+          await for (final file in dir.list(followLinks: false)) {
             if (file is File && file.path.endsWith('.lock')) {
               try {
+                if (await FileSystemEntity.isLink(file.path)) continue;
                 final stat = await file.stat();
+                if (stat.type != FileSystemEntityType.file) continue;
                 allLockfiles.add((path: file.path, mtime: stat.modified));
               } catch (_) {}
             }
@@ -535,10 +539,26 @@ class IdeUtils extends SintController {
     }
   }
 
-  /// Read and parse an IDE lockfile.
+  static const int _maxLockfileBytes = 256 * 1024; // 256 KiB
+
+  /// Read and parse an IDE lockfile safely (rejects symlinks, oversized files,
+  /// and ports outside `1..65535`).
   Future<IdeLockfileInfo?> readIdeLockfile(String path) async {
     try {
-      final content = await File(path).readAsString();
+      if (path.isEmpty ||
+          path.contains('\x00') ||
+          path.startsWith('//') ||
+          path.startsWith(r'\\')) {
+        return null;
+      }
+      if (await FileSystemEntity.isLink(path)) return null;
+      final file = File(path);
+      final stat = await file.stat();
+      if (stat.type != FileSystemEntityType.file ||
+          stat.size > _maxLockfileBytes) {
+        return null;
+      }
+      final content = await file.readAsString();
 
       List<String> workspaceFolders = [];
       int? pid;
@@ -561,11 +581,14 @@ class IdeUtils extends SintController {
         workspaceFolders = content.split('\n').map((l) => l.trim()).toList();
       }
 
-      // Extract port from filename
-      final filename = path.split(Platform.pathSeparator).last;
-      final portStr = filename.replaceAll('.lock', '');
+      // Extract and validate TCP port from filename
+      final normalized = path.replaceAll(r'\', '/');
+      final filename = normalized.split('/').last;
+      if (!filename.endsWith('.lock')) return null;
+      final portStr = filename.substring(0, filename.length - '.lock'.length);
       final port = int.tryParse(portStr);
-      if (port == null) return null;
+      if (port == null || port < 1 || port > 65535) return null;
+      if (pid != null && pid <= 0) pid = null;
 
       return IdeLockfileInfo(
         workspaceFolders: workspaceFolders,
@@ -588,6 +611,7 @@ class IdeUtils extends SintController {
     int port, {
     Duration timeout = const Duration(milliseconds: 500),
   }) async {
+    if (port < 1 || port > 65535 || !isSafeIdeHost(host)) return false;
     try {
       final socket = await Socket.connect(host, port, timeout: timeout);
       socket.destroy();
@@ -597,13 +621,21 @@ class IdeUtils extends SintController {
     }
   }
 
-  /// Check if a process is running by PID.
-  bool isProcessRunning(int pid) {
-    try {
-      return Process.killPid(pid, ProcessSignal.sigcont);
-    } catch (_) {
-      return false;
+  /// Check if a process is running by PID without sending `SIGCONT` or
+  /// throwing on Windows.
+  bool isProcessRunning(int pid) => checkProcessRunningSafe(pid);
+
+  /// Validates that an IDE host is loopback or a safe private WSL bridge IP
+  /// (never cloud metadata `169.254.169.254`, `0.0.0.0`, or public WAN hosts).
+  static bool isSafeIdeHost(String host) {
+    final trimmed = host.trim().toLowerCase();
+    if (trimmed == '127.0.0.1' ||
+        trimmed == 'localhost' ||
+        trimmed == '::1' ||
+        trimmed == '[::1]') {
+      return true;
     }
+    return NeomageNetworkGuard.isSafeLanDiscoveryHost(trimmed);
   }
 
   // ---------------------------------------------------------------------------
@@ -739,16 +771,19 @@ class IdeUtils extends SintController {
     return null;
   }
 
-  /// Detects running IDEs by process inspection.
+  /// Detects running IDEs by direct `ps` process inspection (no shell).
   Future<List<IdeType>> detectRunningIDEs() async {
     final runningIDEs = <IdeType>[];
 
     try {
+      final env = NeomageNetworkGuard.sanitizeSubprocessEnv();
       if (Platform.isMacOS) {
-        final result = await Process.run('bash', [
-          '-c',
-          'ps aux | grep -E "Visual Studio Code|Code Helper|Cursor Helper|Windsurf Helper|IntelliJ IDEA|PyCharm|WebStorm|PhpStorm|RubyMine|CLion|GoLand|Rider|DataGrip|AppCode|DataSpell|Android Studio" | grep -v grep',
-        ]);
+        final result = await Process.run(
+          'ps',
+          ['-ax', '-o', 'command='],
+          environment: env,
+          includeParentEnvironment: false,
+        ).timeout(const Duration(seconds: 5));
         final stdout = result.stdout as String? ?? '';
 
         for (final entry in supportedIdeConfigs.entries) {
@@ -760,10 +795,12 @@ class IdeUtils extends SintController {
           }
         }
       } else if (Platform.isLinux) {
-        final result = await Process.run('bash', [
-          '-c',
-          'ps aux | grep -E "code|cursor|windsurf|idea|pycharm|webstorm|phpstorm|rubymine|clion|goland|rider|datagrip|dataspell|android-studio" | grep -v grep',
-        ]);
+        final result = await Process.run(
+          'ps',
+          ['-eo', 'args='],
+          environment: env,
+          includeParentEnvironment: false,
+        ).timeout(const Duration(seconds: 5));
         final stdout = (result.stdout as String? ?? '').toLowerCase();
 
         for (final entry in supportedIdeConfigs.entries) {
@@ -808,10 +845,19 @@ class IdeUtils extends SintController {
   // IDE extension checks
   // ---------------------------------------------------------------------------
 
+  Future<ProcessResult> _runIdeCli(String command, List<String> args) {
+    return Process.run(
+      command,
+      args,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 15));
+  }
+
   /// Check if cursor IDE is installed.
   Future<bool> isCursorInstalled() async {
     try {
-      final result = await Process.run('cursor', ['--version']);
+      final result = await _runIdeCli('cursor', ['--version']);
       return result.exitCode == 0;
     } catch (_) {
       return false;
@@ -821,7 +867,7 @@ class IdeUtils extends SintController {
   /// Check if Windsurf IDE is installed.
   Future<bool> isWindsurfInstalled() async {
     try {
-      final result = await Process.run('windsurf', ['--version']);
+      final result = await _runIdeCli('windsurf', ['--version']);
       return result.exitCode == 0;
     } catch (_) {
       return false;
@@ -831,7 +877,7 @@ class IdeUtils extends SintController {
   /// Check if VS Code is installed.
   Future<bool> isVSCodeInstalled() async {
     try {
-      final result = await Process.run('code', ['--help']);
+      final result = await _runIdeCli('code', ['--help']);
       return result.exitCode == 0 &&
           (result.stdout as String?)?.contains('Visual Studio Code') == true;
     } catch (_) {
@@ -844,11 +890,14 @@ class IdeUtils extends SintController {
     IdeType ideType, {
     String extensionId = 'neom.neomage',
   }) async {
+    if (!RegExp(r'^[A-Za-z0-9._-]{1,128}$').hasMatch(extensionId)) {
+      return false;
+    }
     if (isVSCodeIde(ideType)) {
       final command = getVSCodeIDECommand(ideType);
       if (command != null) {
         try {
-          final result = await Process.run(command, ['--list-extensions']);
+          final result = await _runIdeCli(command, ['--list-extensions']);
           return (result.stdout as String?)?.contains(extensionId) == true;
         } catch (_) {}
       }
@@ -872,8 +921,11 @@ class IdeUtils extends SintController {
 
   /// Get the installed VSCode extension version.
   Future<String?> getInstalledVSCodeExtensionVersion(String command) async {
+    if (command != 'code' && command != 'cursor' && command != 'windsurf') {
+      return null;
+    }
     try {
-      final result = await Process.run(command, [
+      final result = await _runIdeCli(command, [
         '--list-extensions',
         '--show-versions',
       ]);
@@ -896,7 +948,7 @@ class IdeUtils extends SintController {
       if (isVSCodeIde(ideType)) {
         final command = getVSCodeIDECommand(ideType);
         if (command != null) {
-          final result = await Process.run(command, [
+          final result = await _runIdeCli(command, [
             '--force',
             '--install-extension',
             'neom.neomage',
@@ -985,31 +1037,36 @@ class IdeUtils extends SintController {
       return _hostIPCache[cacheKey]!;
     }
 
-    final envOverride = Platform.environment['MAGE_IDE_HOST_OVERRIDE'];
-    if (envOverride != null) {
-      _hostIPCache[cacheKey] = envOverride;
-      return envOverride;
+    const defaultHost = '127.0.0.1';
+    final envOverride = Platform.environment['MAGE_IDE_HOST_OVERRIDE']?.trim();
+    if (envOverride != null && envOverride.isNotEmpty) {
+      if (isSafeIdeHost(envOverride)) {
+        _hostIPCache[cacheKey] = envOverride;
+        return envOverride;
+      }
+      _hostIPCache[cacheKey] = defaultHost;
+      return defaultHost;
     }
 
-    // Default to localhost
-    const defaultHost = '127.0.0.1';
-
-    // WSL-specific host detection
+    // WSL-specific host detection (direct `ip route show default` without shell)
     if (Platform.isLinux &&
         Platform.environment.containsKey('WSL_DISTRO_NAME') &&
         isIdeRunningInWindows) {
       try {
-        final result = await Process.run('bash', [
-          '-c',
-          'ip route show | grep -i default',
-        ]);
+        final result = await Process.run(
+          'ip',
+          ['route', 'show', 'default'],
+          environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+          includeParentEnvironment: false,
+        ).timeout(const Duration(seconds: 3));
         if (result.exitCode == 0) {
           final match = RegExp(
             r'default via (\d+\.\d+\.\d+\.\d+)',
           ).firstMatch(result.stdout as String);
           if (match != null) {
             final gatewayIP = match.group(1)!;
-            if (await checkIdeConnection(gatewayIP, port)) {
+            if (isSafeIdeHost(gatewayIP) &&
+                await checkIdeConnection(gatewayIP, port)) {
               _hostIPCache[cacheKey] = gatewayIP;
               return gatewayIP;
             }

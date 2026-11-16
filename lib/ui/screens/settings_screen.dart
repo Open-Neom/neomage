@@ -10,6 +10,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ import 'package:sint/sint.dart';
 import '../../utils/constants/neomage_translation_constants.dart';
 import 'package:neomage/data/api/api_provider.dart';
 import 'package:neomage/data/auth/auth_service.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import '../controllers/chat_controller.dart';
 import 'ollama_setup_screen.dart';
 import '../widgets/design_system.dart';
@@ -232,10 +234,80 @@ class SettingsController extends SintController {
       testResult.value = response;
       testError.value = null;
     } catch (e) {
-      testError.value = e.toString().replaceFirst('Exception: ', '');
+      testError.value = NeomageNetworkGuard.redactTransportError(
+        e.toString().replaceFirst('Exception: ', ''),
+      );
       testResult.value = null;
     } finally {
       isTesting.value = false;
+    }
+  }
+
+  static const int _maxTestResponseBytes = 256 * 1024; // 256 KiB
+
+  /// Validates a model identifier to prevent URL path/query smuggling.
+  static bool isSafeModelIdentifier(String rawModel) =>
+      NeomageNetworkGuard.isSafeModelIdentifier(rawModel);
+
+  /// Validates a provider test base URL via [NeomageNetworkGuard].
+  static Uri? validateProviderTestBaseUri(
+    ApiProviderType provider,
+    String rawBaseUrl, {
+    bool hasApiKey = false,
+  }) => NeomageNetworkGuard.validateProviderBaseUri(
+    rawBaseUrl,
+    allowLocalHttp:
+        provider == ApiProviderType.ollama ||
+        provider == ApiProviderType.custom,
+    hasApiKey: hasApiKey,
+  );
+
+  static Future<http.Response> _postJsonNoRedirect(
+    Uri url, {
+    required Map<String, String> headers,
+    required String body,
+    http.Client? httpClient,
+  }) async {
+    final client = httpClient ?? http.Client();
+    final ownsClient = httpClient == null;
+    try {
+      final request = http.Request('POST', url)..followRedirects = false;
+      headers.forEach((k, v) {
+        if (NeomageNetworkGuard.isValidHeaderName(k)) {
+          request.headers[k] = NeomageNetworkGuard.sanitizeHeaderValue(v);
+        }
+      });
+      request.body = body;
+
+      final streamed = await client
+          .send(request)
+          .timeout(const Duration(seconds: 15));
+      if (streamed.isRedirect ||
+          (streamed.statusCode >= 300 && streamed.statusCode < 400)) {
+        throw Exception(
+          'Refused HTTP ${streamed.statusCode} redirect from provider endpoint',
+        );
+      }
+      final builder = BytesBuilder(copy: false);
+      var total = 0;
+      await for (final chunk in streamed.stream.timeout(
+        const Duration(seconds: 15),
+      )) {
+        total += chunk.length;
+        if (total > _maxTestResponseBytes) {
+          throw Exception('Provider test response exceeded 256 KiB limit');
+        }
+        builder.add(chunk);
+      }
+      return http.Response.bytes(
+        builder.takeBytes(),
+        streamed.statusCode,
+        headers: streamed.headers,
+      );
+    } finally {
+      if (ownsClient) {
+        client.close();
+      }
     }
   }
 
@@ -245,6 +317,21 @@ class SettingsController extends SintController {
     required String model,
     required String baseUrl,
   }) async {
+    if (!isSafeModelIdentifier(model)) {
+      throw Exception('Invalid model identifier');
+    }
+    final safeBase = validateProviderTestBaseUri(
+      provider,
+      baseUrl,
+      hasApiKey: apiKey.isNotEmpty,
+    );
+    if (safeBase == null) {
+      throw Exception(
+        'Unsafe or disallowed provider endpoint URL (HTTPS required for cloud API keys)',
+      );
+    }
+    final normalizedBase = safeBase.toString();
+
     const prompt =
         'Introduce yourself briefly: what model are you, '
         'who made you, and what are your main capabilities? '
@@ -252,18 +339,18 @@ class SettingsController extends SintController {
 
     switch (provider) {
       case ApiProviderType.gemini:
-        return _testGemini(apiKey, model, baseUrl, prompt);
+        return _testGemini(apiKey, model, normalizedBase, prompt);
       case ApiProviderType.anthropic:
-        return _testAnthropic(apiKey, model, baseUrl, prompt);
+        return _testAnthropic(apiKey, model, normalizedBase, prompt);
       case ApiProviderType.openai:
       case ApiProviderType.deepseek:
       case ApiProviderType.qwen:
       case ApiProviderType.ollama:
       case ApiProviderType.custom:
-        return _testOpenAiCompat(apiKey, model, baseUrl, prompt);
+        return _testOpenAiCompat(apiKey, model, normalizedBase, prompt);
       case ApiProviderType.bedrock:
       case ApiProviderType.vertex:
-        return _testOpenAiCompat(apiKey, model, baseUrl, prompt);
+        return _testOpenAiCompat(apiKey, model, normalizedBase, prompt);
     }
   }
 
@@ -273,10 +360,18 @@ class SettingsController extends SintController {
     String baseUrl,
     String prompt,
   ) async {
-    final url = Uri.parse('$baseUrl/models/$model:generateContent?key=$apiKey');
-    final resp = await http.post(
+    final cleanModel = model.startsWith('models/')
+        ? model.substring('models/'.length)
+        : model;
+    final url = Uri.parse(
+      '$baseUrl/models/${Uri.encodeComponent(cleanModel)}:generateContent',
+    );
+    final resp = await _postJsonNoRedirect(
       url,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey,
+      },
       body: jsonEncode({
         'contents': [
           {
@@ -289,8 +384,8 @@ class SettingsController extends SintController {
       }),
     );
     if (resp.statusCode != 200) {
-      final body = jsonDecode(resp.body);
-      throw Exception(body['error']?['message'] ?? 'HTTP ${resp.statusCode}');
+      final summary = NeomageNetworkGuard.sanitizeApiErrorBody(resp.body);
+      throw Exception('HTTP ${resp.statusCode}: $summary');
     }
     final body = jsonDecode(resp.body);
     final candidates = body['candidates'] as List?;
@@ -308,7 +403,7 @@ class SettingsController extends SintController {
     String prompt,
   ) async {
     final url = Uri.parse('$baseUrl/v1/messages');
-    final resp = await http.post(
+    final resp = await _postJsonNoRedirect(
       url,
       headers: {
         'Content-Type': 'application/json',
@@ -324,8 +419,8 @@ class SettingsController extends SintController {
       }),
     );
     if (resp.statusCode != 200) {
-      final body = jsonDecode(resp.body);
-      throw Exception(body['error']?['message'] ?? 'HTTP ${resp.statusCode}');
+      final summary = NeomageNetworkGuard.sanitizeApiErrorBody(resp.body);
+      throw Exception('HTTP ${resp.statusCode}: $summary');
     }
     final body = jsonDecode(resp.body);
     final content = body['content'] as List?;
@@ -344,7 +439,7 @@ class SettingsController extends SintController {
     if (apiKey.isNotEmpty) {
       headers['Authorization'] = 'Bearer $apiKey';
     }
-    final resp = await http.post(
+    final resp = await _postJsonNoRedirect(
       url,
       headers: headers,
       body: jsonEncode({
@@ -356,11 +451,8 @@ class SettingsController extends SintController {
       }),
     );
     if (resp.statusCode != 200) {
-      final body = jsonDecode(resp.body);
-      final msg = body['error']?['message'] ?? body['message'] ?? '';
-      throw Exception(
-        msg.toString().isNotEmpty ? msg : 'HTTP ${resp.statusCode}',
-      );
+      final summary = NeomageNetworkGuard.sanitizeApiErrorBody(resp.body);
+      throw Exception('HTTP ${resp.statusCode}: $summary');
     }
     final body = jsonDecode(resp.body);
     final choices = body['choices'] as List?;
@@ -1139,7 +1231,7 @@ class _SettingTile extends StatelessWidget {
                     : null,
                 onTap: () {
                   item.onChange?.call(opt);
-                  Navigator.pop(ctx);
+                  Sint.pop();
                 },
               ),
             ),

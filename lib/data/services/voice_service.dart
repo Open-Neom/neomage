@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -266,6 +267,9 @@ class AudioRecorder {
       ? DateTime.now().difference(_startTime!)
       : Duration.zero;
 
+  /// Maximum raw audio buffer size (`64 MiB`) to prevent OOM on long recordings.
+  static const int maxRecordingBufferBytes = 64 * 1024 * 1024;
+
   /// Start recording audio.
   Future<void> start() async {
     if (_isRecording) return;
@@ -274,38 +278,60 @@ class AudioRecorder {
     _startTime = DateTime.now();
     _isRecording = true;
 
+    final safeSampleRate = sampleRate.clamp(8000, 96000);
+    final env = NeomageNetworkGuard.sanitizeSubprocessEnv();
+
     // Use platform-appropriate recording command.
     if (Platform.isMacOS) {
-      _process = await Process.start('rec', [
-        '-q', // Quiet
-        '-r', '$sampleRate', // Sample rate
-        '-c', '1', // Mono
-        '-b', '16', // 16-bit
-        '-t', _formatExtension(), // Output format
-        '-', // Stdout
-      ]);
+      _process = await Process.start(
+        'rec',
+        [
+          '-q', // Quiet
+          '-r', '$safeSampleRate', // Sample rate
+          '-c', '1', // Mono
+          '-b', '16', // 16-bit
+          '-t', _formatExtension(), // Output format
+          '-', // Stdout
+        ],
+        environment: env,
+        includeParentEnvironment: false,
+      );
     } else if (Platform.isLinux) {
-      _process = await Process.start('arecord', [
-        '-q',
-        '-r',
-        '$sampleRate',
-        '-c',
-        '1',
-        '-f',
-        'S16_LE',
-        '-t',
-        _formatExtension(),
-        '-',
-      ]);
+      _process = await Process.start(
+        'arecord',
+        [
+          '-q',
+          '-r',
+          '$safeSampleRate',
+          '-c',
+          '1',
+          '-f',
+          'S16_LE',
+          '-t',
+          _formatExtension(),
+          '-',
+        ],
+        environment: env,
+        includeParentEnvironment: false,
+      );
     } else {
+      _isRecording = false;
       throw UnsupportedError(
         'Audio recording not supported on ${Platform.operatingSystem}',
       );
     }
 
-    // Collect audio data and compute levels.
+    // Collect audio data up to [maxRecordingBufferBytes] and compute levels.
     _process!.stdout.listen((data) {
-      _buffer.addAll(data);
+      final remaining = maxRecordingBufferBytes - _buffer.length;
+      if (remaining > 0) {
+        if (data.length <= remaining) {
+          _buffer.addAll(data);
+        } else {
+          _buffer.addAll(data.sublist(0, remaining));
+          _process?.kill(ProcessSignal.sigterm);
+        }
+      }
 
       // Compute audio level from PCM data.
       if (data.length >= 2) {
@@ -391,6 +417,20 @@ abstract class SttEngine {
 
 /// OpenAI Whisper STT.
 class WhisperSttEngine implements SttEngine {
+  static const int _maxSttResponseBytes = 16 * 1024 * 1024; // 16 MiB
+  static const int _maxSttStreamAudioBytes = 64 * 1024 * 1024; // 64 MiB
+
+  static Random _createCsprng() {
+    try {
+      return Random.secure();
+    } catch (_) {
+      return Random();
+    }
+  }
+
+  static String _sanitizeMultipartValue(String value) =>
+      value.replaceAll(RegExp(r'[\r\n\x00"]'), '');
+
   @override
   Future<TranscriptionResult> transcribe(
     Uint8List audio,
@@ -398,30 +438,63 @@ class WhisperSttEngine implements SttEngine {
   ) async {
     final apiKey = config.apiKey;
     if (apiKey == null) throw StateError('API key required for Whisper STT');
+    if (audio.length > _maxSttStreamAudioBytes) {
+      throw ArgumentError('Audio payload exceeds 64 MiB limit');
+    }
 
     final baseUrl = config.baseUrl ?? 'https://api.openai.com/v1';
+    final uri = Uri.parse('$baseUrl/audio/transcriptions');
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      uri,
+      allowLoopbackHttp: true,
+      allowPrivateLanHttp: true,
+    )) {
+      throw ArgumentError('Rejected unsafe Whisper STT endpoint: $uri');
+    }
 
-    // Create multipart request.
-    final boundary = 'dart-voice-${DateTime.now().millisecondsSinceEpoch}';
+    final rng = _createCsprng();
+    final nonce = List<int>.generate(12, (_) => rng.nextInt(256))
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join();
+    final boundary = 'dart-voice-$nonce';
     final body = _buildMultipartBody(audio, config, boundary);
 
-    final client = HttpClient();
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 15);
     try {
-      final request = await client.postUrl(
-        Uri.parse('$baseUrl/audio/transcriptions'),
+      final request = await client.postUrl(uri);
+      request.followRedirects = false;
+      request.maxRedirects = 0;
+      request.headers.set(
+        'Authorization',
+        'Bearer ${NeomageNetworkGuard.sanitizeHeaderValue(apiKey)}',
       );
-      request.headers.set('Authorization', 'Bearer $apiKey');
       request.headers.set(
         'Content-Type',
         'multipart/form-data; boundary=$boundary',
       );
       request.add(body);
 
-      final response = await request.close();
-      final responseBody = await response.transform(utf8.decoder).join();
+      final response = await request.close().timeout(
+        const Duration(seconds: 120),
+      );
+      final responseBytes = BytesBuilder(copy: false);
+      await for (final chunk in response) {
+        if (responseBytes.length + chunk.length > _maxSttResponseBytes) {
+          throw StateError('Whisper API response exceeded 16 MiB limit');
+        }
+        responseBytes.add(chunk);
+      }
+      final responseBody = utf8.decode(
+        responseBytes.takeBytes(),
+        allowMalformed: true,
+      );
 
       if (response.statusCode != 200) {
-        throw Exception('Whisper API error: $responseBody');
+        throw Exception(
+          'Whisper API error (${response.statusCode}): '
+          '${NeomageNetworkGuard.sanitizeApiErrorBody(responseBody)}',
+        );
       }
 
       final json = jsonDecode(responseBody) as Map<String, dynamic>;
@@ -454,7 +527,7 @@ class WhisperSttEngine implements SttEngine {
         rawResponse: responseBody,
       );
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 
@@ -463,25 +536,45 @@ class WhisperSttEngine implements SttEngine {
     Stream<Uint8List> audioStream,
     VoiceConfig config,
   ) async {
-    // Whisper doesn't support streaming — buffer and transcribe.
+    // Whisper doesn't support streaming — buffer up to 64 MiB and transcribe.
     final controller = StreamController<String>();
-    final buffer = <int>[];
+    final buffer = BytesBuilder(copy: false);
+    StreamSubscription<Uint8List>? sub;
 
-    audioStream.listen(
-      (chunk) => buffer.addAll(chunk),
+    sub = audioStream.listen(
+      (chunk) {
+        if (buffer.length + chunk.length > _maxSttStreamAudioBytes) {
+          sub?.cancel();
+          if (!controller.isClosed) {
+            controller.addError(
+              StateError('Audio stream exceeded 64 MiB limit'),
+            );
+            controller.close();
+          }
+          return;
+        }
+        buffer.add(chunk);
+      },
       onDone: () async {
+        if (controller.isClosed) return;
         try {
-          final result = await transcribe(Uint8List.fromList(buffer), config);
-          controller.add(result.text);
-          controller.close();
+          final result = await transcribe(buffer.takeBytes(), config);
+          if (!controller.isClosed) {
+            controller.add(result.text);
+            await controller.close();
+          }
         } catch (e) {
-          controller.addError(e);
-          controller.close();
+          if (!controller.isClosed) {
+            controller.addError(e);
+            await controller.close();
+          }
         }
       },
       onError: (e) {
-        controller.addError(e);
-        controller.close();
+        if (!controller.isClosed) {
+          controller.addError(e);
+          controller.close();
+        }
       },
     );
 
@@ -497,18 +590,24 @@ class WhisperSttEngine implements SttEngine {
     final encoder = utf8.encoder;
 
     void addField(String name, String value) {
-      buffer.add(encoder.convert('--$boundary\r\n'));
-      buffer.add(
-        encoder.convert('Content-Disposition: form-data; name="$name"\r\n\r\n'),
-      );
-      buffer.add(encoder.convert('$value\r\n'));
-    }
-
-    void addFile(String name, String filename, Uint8List data) {
+      final safeName = _sanitizeMultipartValue(name);
+      final safeVal = _sanitizeMultipartValue(value);
       buffer.add(encoder.convert('--$boundary\r\n'));
       buffer.add(
         encoder.convert(
-          'Content-Disposition: form-data; name="$name"; filename="$filename"\r\n',
+          'Content-Disposition: form-data; name="$safeName"\r\n\r\n',
+        ),
+      );
+      buffer.add(encoder.convert('$safeVal\r\n'));
+    }
+
+    void addFile(String name, String filename, Uint8List data) {
+      final safeName = _sanitizeMultipartValue(name);
+      final safeFilename = _sanitizeMultipartValue(filename);
+      buffer.add(encoder.convert('--$boundary\r\n'));
+      buffer.add(
+        encoder.convert(
+          'Content-Disposition: form-data; name="$safeName"; filename="$safeFilename"\r\n',
         ),
       );
       buffer.add(encoder.convert('Content-Type: audio/wav\r\n\r\n'));
@@ -542,38 +641,50 @@ class SystemSttEngine implements SttEngine {
     Uint8List audio,
     VoiceConfig config,
   ) async {
-    // On macOS, use the system speech recognition (limited).
-    // In practice, this delegates to a more capable provider.
     if (Platform.isMacOS) {
-      // Save audio to temp file and use macOS Dictation API via osascript.
-      final tempFile = File(
-        '${Directory.systemTemp.path}/neomage_audio_${DateTime.now().millisecondsSinceEpoch}.wav',
-      );
-      await tempFile.writeAsBytes(audio);
+      final tempDir = await Directory.systemTemp.createTemp('neomage_stt_');
+      final tempFile = File('${tempDir.path}/audio.wav');
+      final env = NeomageNetworkGuard.sanitizeSubprocessEnv();
 
       try {
-        // Fallback: use a local whisper binary if available.
-        final whisperResult = await Process.run('which', ['whisper']);
+        await tempFile.writeAsBytes(audio, flush: true);
+        final rawLang = config.language.code.split('-').first;
+        final safeLang = RegExp(r'^[a-zA-Z]{2,8}$').hasMatch(rawLang)
+            ? rawLang
+            : 'en';
+
+        final whisperResult = await Process.run(
+          'which',
+          ['whisper'],
+          environment: env,
+          includeParentEnvironment: false,
+        ).timeout(const Duration(seconds: 5));
         if (whisperResult.exitCode == 0) {
-          final result = await Process.run('whisper', [
-            tempFile.path,
-            '--model',
-            'base',
-            '--language',
-            config.language.code.split('-').first,
-            '--output_format',
-            'json',
-            '--output_dir',
-            Directory.systemTemp.path,
-          ]);
+          final result = await Process.run(
+            'whisper',
+            [
+              '--model',
+              'base',
+              '--language',
+              safeLang,
+              '--output_format',
+              'json',
+              '--output_dir',
+              tempDir.path,
+              '--',
+              tempFile.path,
+            ],
+            environment: env,
+            includeParentEnvironment: false,
+          ).timeout(const Duration(seconds: 120));
 
           if (result.exitCode == 0) {
-            final jsonFile = File(tempFile.path.replaceAll('.wav', '.json'));
-            if (await jsonFile.exists()) {
+            final jsonFile = File('${tempDir.path}/audio.json');
+            if (await jsonFile.exists() &&
+                !await FileSystemEntity.isLink(jsonFile.path)) {
               final json =
                   jsonDecode(await jsonFile.readAsString())
                       as Map<String, dynamic>;
-              await jsonFile.delete();
               return TranscriptionResult(
                 text: json['text'] as String? ?? '',
                 duration: Duration.zero,
@@ -584,7 +695,11 @@ class SystemSttEngine implements SttEngine {
 
         return const TranscriptionResult(text: '', duration: Duration.zero);
       } finally {
-        if (await tempFile.exists()) await tempFile.delete();
+        try {
+          if (await tempDir.exists()) {
+            await tempDir.delete(recursive: true);
+          }
+        } catch (_) {}
       }
     }
 
@@ -615,23 +730,68 @@ abstract class TtsEngine {
 class SystemTtsEngine implements TtsEngine {
   Process? _speakProcess;
 
+  static int _safeWordsPerMinute(double speed) {
+    final safeSpeed = speed.isFinite ? speed.clamp(0.25, 4.0) : 1.0;
+    return (175 * safeSpeed).round();
+  }
+
+  static String _sanitizeSpeechText(String text) =>
+      text.replaceAll('\x00', '');
+
+  /// Builds safe `say` arguments with `'--'` before [text] so leading `-f` or
+  /// `-o` in spoken text cannot read or overwrite local files on macOS.
+  static List<String> buildMacOsSayArgs(
+    String text, {
+    required double speed,
+    String? outputPath,
+  }) {
+    final wpm = _safeWordsPerMinute(speed);
+    return <String>[
+      if (outputPath != null) ...['-o', outputPath],
+      '-r',
+      '$wpm',
+      '--',
+      _sanitizeSpeechText(text),
+    ];
+  }
+
+  /// Builds safe `espeak` arguments with `'--'` before [text].
+  static List<String> buildLinuxEspeakArgs(
+    String text, {
+    required double speed,
+  }) {
+    final wpm = _safeWordsPerMinute(speed);
+    return <String>['-s', '$wpm', '--', _sanitizeSpeechText(text)];
+  }
+
   @override
   Future<Uint8List> synthesize(String text, VoiceConfig config) async {
     if (Platform.isMacOS) {
-      final tempFile = File(
-        '${Directory.systemTemp.path}/neomage_tts_${DateTime.now().millisecondsSinceEpoch}.aiff',
-      );
+      final tempDir = await Directory.systemTemp.createTemp('neomage_tts_');
+      final tempFile = File('${tempDir.path}/speech.aiff');
 
-      await Process.run('say', [
-        '-o', tempFile.path,
-        '-r', '${(175 * config.speed).round()}', // Words per minute
-        text,
-      ]);
+      try {
+        await Process.run(
+          'say',
+          buildMacOsSayArgs(
+            text,
+            speed: config.speed,
+            outputPath: tempFile.path,
+          ),
+          environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+          includeParentEnvironment: false,
+        ).timeout(const Duration(seconds: 60));
 
-      if (await tempFile.exists()) {
-        final data = await tempFile.readAsBytes();
-        await tempFile.delete();
-        return data;
+        if (await tempFile.exists() &&
+            !await FileSystemEntity.isLink(tempFile.path)) {
+          return await tempFile.readAsBytes();
+        }
+      } finally {
+        try {
+          if (await tempDir.exists()) {
+            await tempDir.delete(recursive: true);
+          }
+        } catch (_) {}
       }
     }
 
@@ -641,21 +801,24 @@ class SystemTtsEngine implements TtsEngine {
   @override
   Future<void> speak(String text, VoiceConfig config) async {
     await stop(); // Stop any current speech.
+    final env = NeomageNetworkGuard.sanitizeSubprocessEnv();
 
     if (Platform.isMacOS) {
-      _speakProcess = await Process.start('say', [
-        '-r',
-        '${(175 * config.speed).round()}',
-        text,
-      ]);
+      _speakProcess = await Process.start(
+        'say',
+        buildMacOsSayArgs(text, speed: config.speed),
+        environment: env,
+        includeParentEnvironment: false,
+      );
       await _speakProcess!.exitCode;
       _speakProcess = null;
     } else if (Platform.isLinux) {
-      _speakProcess = await Process.start('espeak', [
-        '-s',
-        '${(175 * config.speed).round()}',
-        text,
-      ]);
+      _speakProcess = await Process.start(
+        'espeak',
+        buildLinuxEspeakArgs(text, speed: config.speed),
+        environment: env,
+        includeParentEnvironment: false,
+      );
       await _speakProcess!.exitCode;
       _speakProcess = null;
     }
@@ -670,6 +833,7 @@ class SystemTtsEngine implements TtsEngine {
 
 /// OpenAI TTS engine.
 class OpenAiTtsEngine implements TtsEngine {
+  static const int _maxTtsAudioBytes = 32 * 1024 * 1024; // 32 MiB
   Process? _playProcess;
 
   @override
@@ -678,11 +842,26 @@ class OpenAiTtsEngine implements TtsEngine {
     if (apiKey == null) throw StateError('API key required for OpenAI TTS');
 
     final baseUrl = config.baseUrl ?? 'https://api.openai.com/v1';
+    final uri = Uri.parse('$baseUrl/audio/speech');
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      uri,
+      allowLoopbackHttp: true,
+      allowPrivateLanHttp: true,
+    )) {
+      throw ArgumentError('Rejected unsafe OpenAI TTS endpoint: $uri');
+    }
 
-    final client = HttpClient();
+    final safeSpeed = config.speed.isFinite ? config.speed.clamp(0.25, 4.0) : 1.0;
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 15);
     try {
-      final request = await client.postUrl(Uri.parse('$baseUrl/audio/speech'));
-      request.headers.set('Authorization', 'Bearer $apiKey');
+      final request = await client.postUrl(uri);
+      request.followRedirects = false;
+      request.maxRedirects = 0;
+      request.headers.set(
+        'Authorization',
+        'Bearer ${NeomageNetworkGuard.sanitizeHeaderValue(apiKey)}',
+      );
       request.headers.set('Content-Type', 'application/json');
       request.add(
         utf8.encode(
@@ -690,50 +869,71 @@ class OpenAiTtsEngine implements TtsEngine {
             'model': 'tts-1',
             'input': text,
             'voice': config.voice ?? 'alloy',
-            'speed': config.speed,
+            'speed': safeSpeed,
             'response_format': 'mp3',
           }),
         ),
       );
 
-      final response = await request.close();
+      final response = await request.close().timeout(
+        const Duration(seconds: 60),
+      );
       if (response.statusCode != 200) {
-        final body = await response.transform(utf8.decoder).join();
-        throw Exception('OpenAI TTS error: $body');
+        final errBytes = BytesBuilder(copy: false);
+        await for (final chunk in response) {
+          if (errBytes.length < 16384) errBytes.add(chunk);
+        }
+        final body = utf8.decode(errBytes.takeBytes(), allowMalformed: true);
+        throw Exception(
+          'OpenAI TTS error (${response.statusCode}): '
+          '${NeomageNetworkGuard.sanitizeApiErrorBody(body)}',
+        );
       }
 
-      final bytes = <int>[];
+      final bytes = BytesBuilder(copy: false);
       await for (final chunk in response) {
-        bytes.addAll(chunk);
+        if (bytes.length + chunk.length > _maxTtsAudioBytes) {
+          throw StateError('OpenAI TTS audio stream exceeded 32 MiB limit');
+        }
+        bytes.add(chunk);
       }
-      return Uint8List.fromList(bytes);
+      return bytes.takeBytes();
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 
   @override
   Future<void> speak(String text, VoiceConfig config) async {
     final audio = await synthesize(text, config);
-
-    // Save to temp file and play.
-    final tempFile = File(
-      '${Directory.systemTemp.path}/neomage_speech_${DateTime.now().millisecondsSinceEpoch}.mp3',
-    );
-    await tempFile.writeAsBytes(audio);
+    final tempDir = await Directory.systemTemp.createTemp('neomage_speech_');
+    final tempFile = File('${tempDir.path}/speech.mp3');
+    final env = NeomageNetworkGuard.sanitizeSubprocessEnv();
 
     try {
+      await tempFile.writeAsBytes(audio, flush: true);
       if (Platform.isMacOS) {
-        _playProcess = await Process.start('afplay', [tempFile.path]);
+        _playProcess = await Process.start(
+          'afplay',
+          ['--', tempFile.path],
+          environment: env,
+          includeParentEnvironment: false,
+        );
       } else if (Platform.isLinux) {
-        _playProcess = await Process.start('mpv', [
-          '--no-video',
-          tempFile.path,
-        ]);
+        _playProcess = await Process.start(
+          'mpv',
+          ['--no-video', '--', tempFile.path],
+          environment: env,
+          includeParentEnvironment: false,
+        );
       }
       await _playProcess?.exitCode;
     } finally {
-      if (await tempFile.exists()) await tempFile.delete();
+      try {
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      } catch (_) {}
       _playProcess = null;
     }
   }
@@ -918,11 +1118,24 @@ class VoiceService {
   /// Check if voice input is available on this platform.
   Future<bool> isAvailable() async {
     try {
+      final cleanEnv = NeomageNetworkGuard.sanitizeSubprocessEnv();
       if (Platform.isMacOS) {
-        final result = await Process.run('which', ['rec']);
+        final result = await Process.run(
+          'which',
+          ['rec'],
+          environment: cleanEnv,
+          includeParentEnvironment: false,
+          runInShell: false,
+        ).timeout(const Duration(seconds: 5));
         return result.exitCode == 0;
       } else if (Platform.isLinux) {
-        final result = await Process.run('which', ['arecord']);
+        final result = await Process.run(
+          'which',
+          ['arecord'],
+          environment: cleanEnv,
+          includeParentEnvironment: false,
+          runInShell: false,
+        ).timeout(const Duration(seconds: 5));
         return result.exitCode == 0;
       }
       return false;
@@ -934,13 +1147,24 @@ class VoiceService {
   /// List available TTS voices.
   Future<List<String>> listVoices() async {
     if (Platform.isMacOS) {
-      final result = await Process.run('say', ['-v', '?']);
-      if (result.exitCode == 0) {
-        return (result.stdout as String)
-            .split('\n')
-            .where((l) => l.trim().isNotEmpty)
-            .map((l) => l.split(RegExp(r'\s+')).first)
-            .toList();
+      try {
+        final cleanEnv = NeomageNetworkGuard.sanitizeSubprocessEnv();
+        final result = await Process.run(
+          'say',
+          ['-v', '?'],
+          environment: cleanEnv,
+          includeParentEnvironment: false,
+          runInShell: false,
+        ).timeout(const Duration(seconds: 5));
+        if (result.exitCode == 0) {
+          return (result.stdout as String)
+              .split('\n')
+              .where((l) => l.trim().isNotEmpty)
+              .map((l) => l.split(RegExp(r'\s+')).first)
+              .toList();
+        }
+      } catch (_) {
+        return [];
       }
     }
     return [];

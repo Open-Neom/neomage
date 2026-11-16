@@ -435,16 +435,33 @@ List<String> getPathsForPermissionCheck(String inputPath) {
 
 /// Concrete filesystem implementation using dart:io.
 class DartFsOperations extends FsOperations {
+  /// Maximum bytes allocated in a single synchronous read (`64 MiB`).
+  static const int maxSyncReadBytes = 64 * 1024 * 1024;
+
+  static void _assertSafeFsPath(String fsPath) {
+    if (fsPath.contains('\x00') ||
+        fsPath.startsWith('//') ||
+        fsPath.startsWith(r'\\')) {
+      throw FileSystemException('Unsafe filesystem path rejected', fsPath);
+    }
+  }
+
   @override
   String cwd() => Directory.current.path;
 
   @override
   bool existsSync(String path) {
+    if (path.contains('\x00') ||
+        path.startsWith('//') ||
+        path.startsWith(r'\\')) {
+      return false;
+    }
     return File(path).existsSync() || Directory(path).existsSync();
   }
 
   @override
   Future<FileStat> stat(String fsPath) async {
+    _assertSafeFsPath(fsPath);
     // Use dart:io FileStat
     final s = await File(fsPath).stat();
     return FileStat(
@@ -457,15 +474,17 @@ class DartFsOperations extends FsOperations {
 
   @override
   Future<List<Dirent>> readdir(String fsPath) async {
+    _assertSafeFsPath(fsPath);
     final dir = Directory(fsPath);
     final entries = <Dirent>[];
-    await for (final entity in dir.list()) {
+    await for (final entity in dir.list(followLinks: false)) {
+      final isLink = await FileSystemEntity.isLink(entity.path);
       final entityStat = await entity.stat();
       entries.add(
         Dirent(
           name: p.basename(entity.path),
           type: entityStat.type,
-          isSymLink: await FileSystemEntity.isLink(entity.path),
+          isSymLink: isLink,
         ),
       );
     }
@@ -474,11 +493,13 @@ class DartFsOperations extends FsOperations {
 
   @override
   Future<void> unlink(String fsPath) async {
+    _assertSafeFsPath(fsPath);
     await File(fsPath).delete();
   }
 
   @override
   Future<void> rmdir(String fsPath) async {
+    _assertSafeFsPath(fsPath);
     await Directory(fsPath).delete();
   }
 
@@ -488,8 +509,10 @@ class DartFsOperations extends FsOperations {
     bool recursive = false,
     bool force = false,
   }) async {
+    _assertSafeFsPath(fsPath);
     try {
-      if (FileSystemEntity.isDirectorySync(fsPath)) {
+      if (!FileSystemEntity.isLinkSync(fsPath) &&
+          FileSystemEntity.isDirectorySync(fsPath)) {
         await Directory(fsPath).delete(recursive: recursive);
       } else {
         await File(fsPath).delete();
@@ -501,6 +524,7 @@ class DartFsOperations extends FsOperations {
 
   @override
   Future<void> mkdir(String dirPath, {int? mode}) async {
+    _assertSafeFsPath(dirPath);
     try {
       await Directory(dirPath).create(recursive: true);
     } on FileSystemException catch (e) {
@@ -511,16 +535,20 @@ class DartFsOperations extends FsOperations {
 
   @override
   Future<String> readFile(String fsPath, {String encoding = 'utf-8'}) async {
+    _assertSafeFsPath(fsPath);
     return await File(fsPath).readAsString();
   }
 
   @override
   Future<void> rename(String oldPath, String newPath) async {
+    _assertSafeFsPath(oldPath);
+    _assertSafeFsPath(newPath);
     await File(oldPath).rename(newPath);
   }
 
   @override
   FileStat statSync(String fsPath) {
+    _assertSafeFsPath(fsPath);
     final s = File(fsPath).statSync();
     return FileStat(
       size: s.size,
@@ -532,6 +560,7 @@ class DartFsOperations extends FsOperations {
 
   @override
   FileStat lstatSync(String fsPath) {
+    _assertSafeFsPath(fsPath);
     final isLink = FileSystemEntity.isLinkSync(fsPath);
     final s = File(fsPath).statSync();
     return FileStat(
@@ -545,19 +574,26 @@ class DartFsOperations extends FsOperations {
 
   @override
   String readFileSync(String fsPath, {String encoding = 'utf-8'}) {
+    _assertSafeFsPath(fsPath);
     return File(fsPath).readAsStringSync();
   }
 
   @override
   Uint8List readFileBytesSync(String fsPath) {
+    _assertSafeFsPath(fsPath);
     return File(fsPath).readAsBytesSync();
   }
 
   @override
   ReadSyncResult readSync(String fsPath, {required int length}) {
+    _assertSafeFsPath(fsPath);
+    if (length < 0) {
+      throw RangeError.value(length, 'length', 'Must be non-negative');
+    }
+    final clampedLength = min(length, maxSyncReadBytes);
     final raf = File(fsPath).openSync(mode: FileMode.read);
     try {
-      final buffer = Uint8List(length);
+      final buffer = Uint8List(clampedLength);
       final bytesRead = raf.readIntoSync(buffer);
       return ReadSyncResult(buffer: buffer, bytesRead: bytesRead);
     } finally {
@@ -567,6 +603,7 @@ class DartFsOperations extends FsOperations {
 
   @override
   void appendFileSync(String path, String data, {int? mode}) {
+    _assertSafeFsPath(path);
     final file = File(path);
     if (mode != null && !file.existsSync()) {
       // Create with explicit mode for new files
@@ -583,41 +620,53 @@ class DartFsOperations extends FsOperations {
 
   @override
   void copyFileSync(String src, String dest) {
+    _assertSafeFsPath(src);
+    _assertSafeFsPath(dest);
     File(src).copySync(dest);
   }
 
   @override
   void unlinkSync(String path) {
+    _assertSafeFsPath(path);
     File(path).deleteSync();
   }
 
   @override
   void renameSync(String oldPath, String newPath) {
+    _assertSafeFsPath(oldPath);
+    _assertSafeFsPath(newPath);
     File(oldPath).renameSync(newPath);
   }
 
   @override
   void linkSync(String target, String path) {
+    _assertSafeFsPath(target);
+    _assertSafeFsPath(path);
     Link(path).createSync(target);
   }
 
   @override
   void symlinkSync(String target, String path, {String? type}) {
+    _assertSafeFsPath(target);
+    _assertSafeFsPath(path);
     Link(path).createSync(target);
   }
 
   @override
   String readlinkSync(String path) {
+    _assertSafeFsPath(path);
     return Link(path).targetSync();
   }
 
   @override
   String realpathSync(String path) {
+    _assertSafeFsPath(path);
     return File(path).resolveSymbolicLinksSync();
   }
 
   @override
   void mkdirSync(String dirPath, {int? mode}) {
+    _assertSafeFsPath(dirPath);
     try {
       Directory(dirPath).createSync(recursive: true);
     } on FileSystemException catch (e) {
@@ -628,21 +677,27 @@ class DartFsOperations extends FsOperations {
 
   @override
   List<Dirent> readdirSync(String dirPath) {
+    _assertSafeFsPath(dirPath);
     final dir = Directory(dirPath);
-    return dir.listSync().map((entity) {
+    return dir.listSync(followLinks: false).map((entity) {
+      final isLink = FileSystemEntity.isLinkSync(entity.path);
       final stat = entity.statSync();
       return Dirent(
         name: p.basename(entity.path),
         type: stat.type,
-        isSymLink: FileSystemEntity.isLinkSync(entity.path),
+        isSymLink: isLink,
       );
     }).toList();
   }
 
   @override
   List<String> readdirStringSync(String dirPath) {
+    _assertSafeFsPath(dirPath);
     final dir = Directory(dirPath);
-    return dir.listSync().map((entity) => p.basename(entity.path)).toList();
+    return dir
+        .listSync(followLinks: false)
+        .map((entity) => p.basename(entity.path))
+        .toList();
   }
 
   @override
@@ -652,13 +707,16 @@ class DartFsOperations extends FsOperations {
 
   @override
   void rmdirSync(String dirPath) {
+    _assertSafeFsPath(dirPath);
     Directory(dirPath).deleteSync();
   }
 
   @override
   void rmSync(String path, {bool recursive = false, bool force = false}) {
+    _assertSafeFsPath(path);
     try {
-      if (FileSystemEntity.isDirectorySync(path)) {
+      if (!FileSystemEntity.isLinkSync(path) &&
+          FileSystemEntity.isDirectorySync(path)) {
         Directory(path).deleteSync(recursive: recursive);
       } else {
         File(path).deleteSync();
@@ -670,13 +728,17 @@ class DartFsOperations extends FsOperations {
 
   @override
   Future<Uint8List> readFileBytes(String fsPath, {int? maxBytes}) async {
-    if (maxBytes == null) {
-      return await File(fsPath).readAsBytes();
+    _assertSafeFsPath(fsPath);
+    if (maxBytes != null && maxBytes < 0) {
+      throw RangeError.value(maxBytes, 'maxBytes', 'Must be non-negative');
     }
+    final effectiveCap = maxBytes != null
+        ? min(maxBytes, maxSyncReadBytes)
+        : maxSyncReadBytes;
     final raf = await File(fsPath).open(mode: FileMode.read);
     try {
       final size = (await raf.length());
-      final readSize = min(size, maxBytes);
+      final readSize = min(size, effectiveCap);
       final buffer = Uint8List(readSize);
       int offset = 0;
       while (offset < readSize) {
@@ -740,13 +802,21 @@ Future<ReadFileRangeResult?> readFileRange(
   int offset,
   int maxBytes,
 ) async {
+  DartFsOperations._assertSafeFsPath(path);
+  if (offset < 0) {
+    throw RangeError.value(offset, 'offset', 'Must be non-negative');
+  }
+  if (maxBytes < 0) {
+    throw RangeError.value(maxBytes, 'maxBytes', 'Must be non-negative');
+  }
+  final effectiveMax = min(maxBytes, DartFsOperations.maxSyncReadBytes);
   final raf = await File(path).open(mode: FileMode.read);
   try {
     final size = await raf.length();
     if (size <= offset) {
       return null;
     }
-    final bytesToRead = min(size - offset, maxBytes);
+    final bytesToRead = min(size - offset, effectiveMax);
     final buffer = Uint8List(bytesToRead);
     await raf.setPosition(offset);
 
@@ -770,13 +840,18 @@ Future<ReadFileRangeResult?> readFileRange(
 /// Read the last [maxBytes] of a file.
 /// Returns the whole file if it's smaller than maxBytes.
 Future<ReadFileRangeResult> tailFile(String path, int maxBytes) async {
+  DartFsOperations._assertSafeFsPath(path);
+  if (maxBytes < 0) {
+    throw RangeError.value(maxBytes, 'maxBytes', 'Must be non-negative');
+  }
+  final effectiveMax = min(maxBytes, DartFsOperations.maxSyncReadBytes);
   final raf = await File(path).open(mode: FileMode.read);
   try {
     final size = await raf.length();
     if (size == 0) {
       return ReadFileRangeResult(content: '', bytesRead: 0, bytesTotal: 0);
     }
-    final offset = max(0, size - maxBytes);
+    final offset = max(0, size - effectiveMax);
     final bytesToRead = size - offset;
     final buffer = Uint8List(bytesToRead);
     await raf.setPosition(offset);

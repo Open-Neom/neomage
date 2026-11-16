@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -394,19 +395,64 @@ class NotificationServiceFull {
   // Native notifications
   // -------------------------------------------------------------------------
 
+  /// Builds parameterized `osascript` arguments (`on run argv`) so untrusted
+  /// notification titles or bodies can never inject AppleScript (`do shell script`).
+  static List<String> buildMacOsNotificationArgs(String title, String body) {
+    final cleanTitle = title.replaceAll('\x00', '').trim();
+    final cleanBody = body.replaceAll('\x00', '').trim();
+    final cappedTitle = cleanTitle.length > 256
+        ? cleanTitle.substring(0, 256)
+        : cleanTitle;
+    final cappedBody = cleanBody.length > 2048
+        ? cleanBody.substring(0, 2048)
+        : cleanBody;
+    return <String>[
+      '-e',
+      'on run argv\ndisplay notification (item 1 of argv) with title (item 2 of argv)\nend run',
+      '--',
+      cappedBody,
+      cappedTitle,
+    ];
+  }
+
+  /// Builds option-safe `notify-send` arguments (`--` before positional text).
+  static List<String> buildLinuxNotifySendArgs(String title, String body) {
+    final cleanTitle = title.replaceAll('\x00', '').trim();
+    final cleanBody = body.replaceAll('\x00', '').trim();
+    final cappedTitle = cleanTitle.length > 256
+        ? cleanTitle.substring(0, 256)
+        : cleanTitle;
+    final cappedBody = cleanBody.length > 2048
+        ? cleanBody.substring(0, 2048)
+        : cleanBody;
+    return <String>['--', cappedTitle, cappedBody];
+  }
+
   /// Sends a native OS notification.
   ///
-  /// On macOS uses `osascript`, on Linux uses `notify-send`.
-  /// Falls back silently on unsupported platforms.
+  /// On macOS uses parameterized `osascript` (`on run argv`), on Linux uses
+  /// `notify-send --`. Falls back silently on unsupported platforms.
   Future<void> sendNative(String title, String body) async {
     try {
+      final cleanEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(
+        Platform.environment,
+      );
       if (Platform.isMacOS) {
-        await Process.run('osascript', [
-          '-e',
-          'display notification "$body" with title "$title"',
-        ]);
+        await Process.run(
+          'osascript',
+          buildMacOsNotificationArgs(title, body),
+          environment: cleanEnv,
+          includeParentEnvironment: false,
+          runInShell: false,
+        ).timeout(const Duration(seconds: 10));
       } else if (Platform.isLinux) {
-        await Process.run('notify-send', [title, body]);
+        await Process.run(
+          'notify-send',
+          buildLinuxNotifySendArgs(title, body),
+          environment: cleanEnv,
+          includeParentEnvironment: false,
+          runInShell: false,
+        ).timeout(const Duration(seconds: 10));
       }
       // Windows and others: no-op for now.
     } catch (_) {

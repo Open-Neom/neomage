@@ -1224,9 +1224,9 @@ Future<ValidationResult> validateManifest(String filePath) async {
 
   switch (manifestType) {
     case 'plugin':
-      return validatePluginManifest(filePath);
+      return await validatePluginManifest(filePath);
     case 'marketplace':
-      return validateMarketplaceManifest(filePath);
+      return await validateMarketplaceManifest(filePath);
     case 'unknown':
     default:
       // Try to parse and guess based on content
@@ -1234,7 +1234,7 @@ Future<ValidationResult> validateManifest(String filePath) async {
         final content = await File(absolutePath).readAsString();
         final parsed = _jsonDecode(content);
         if (parsed is Map<String, dynamic> && parsed['plugins'] is List) {
-          return validateMarketplaceManifest(filePath);
+          return await validateMarketplaceManifest(filePath);
         }
       } on FileSystemException catch (e) {
         if (e.osError?.errorCode == 2) {
@@ -1254,7 +1254,7 @@ Future<ValidationResult> validateManifest(String filePath) async {
       } catch (_) {
         // Fall through to default
       }
-      return validatePluginManifest(filePath);
+      return await validatePluginManifest(filePath);
   }
 }
 

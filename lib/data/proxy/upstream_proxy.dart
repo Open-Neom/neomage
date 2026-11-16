@@ -7,6 +7,7 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 /// Configuration for [UpstreamProxy].
 class ProxyConfig {
@@ -120,10 +121,10 @@ class ProxyRequest {
     DateTime? timestamp,
   }) : timestamp = timestamp ?? DateTime.now();
 
-  /// Generates a cache key from method, path, and body.
+  /// Generates a collision-resistant SHA-256 cache key from method, path, and body.
   String get cacheKey {
-    final hash = '$method:$path:${body ?? ''}';
-    return hash.hashCode.toRadixString(36);
+    final payload = '${method.toUpperCase()}:$path:${body ?? ''}';
+    return NeomageNetworkGuard.sha256Hex(payload);
   }
 }
 
@@ -192,6 +193,9 @@ class CacheEntry {
 /// Supports optional caching, request/response transforms, streaming,
 /// and health checks.
 class UpstreamProxy {
+  static const int maxResponseBytes = 16 * 1024 * 1024;
+  static const int maxMemoryCacheEntries = 256;
+
   ProxyConfig _config;
   final ProxyStats _stats = ProxyStats();
   final Map<String, String> _extraHeaders = {};
@@ -292,16 +296,27 @@ class UpstreamProxy {
     }
 
     final uri = _buildUri(req);
-    final httpReq = await _client!.openUrl(req.method, uri);
+    final httpReq = await _client!
+        .openUrl(req.method.toUpperCase(), uri)
+        .timeout(_config.timeout);
+    httpReq.followRedirects = false;
     _applyHeaders(httpReq, req);
     if (req.body != null) {
       httpReq.write(req.body);
     }
-    final httpResp = await httpReq.close();
+    final httpResp = await httpReq.close().timeout(_config.timeout);
 
     _stats.requestCount++;
 
-    await for (final chunk in httpResp) {
+    var streamedBytes = 0;
+    await for (final chunk in httpResp.timeout(_config.timeout)) {
+      streamedBytes += chunk.length;
+      if (streamedBytes > maxResponseBytes) {
+        throw HttpException(
+          'Upstream proxy stream exceeds ${maxResponseBytes ~/ (1024 * 1024)} MiB',
+          uri: uri,
+        );
+      }
       _stats.bytesTransferred += chunk.length;
       yield chunk;
     }
@@ -351,14 +366,27 @@ class UpstreamProxy {
     _config = _config.copyWith(cacheEnabled: false);
   }
 
+  bool _isSafeCacheDir(String? dirPath) {
+    if (dirPath == null ||
+        dirPath.trim().isEmpty ||
+        dirPath.contains('\x00') ||
+        dirPath.startsWith('//') ||
+        dirPath.startsWith(r'\\')) {
+      return false;
+    }
+    return !NeomageNetworkGuard.isProtectedSystemOrCredentialPath(dirPath);
+  }
+
   /// Clears all cached responses (memory and disk).
   Future<void> clearCache() async {
     _memoryCache.clear();
-    if (_config.cacheDir != null) {
+    if (_isSafeCacheDir(_config.cacheDir)) {
       final dir = Directory(_config.cacheDir!);
-      if (await dir.exists()) {
-        await for (final entity in dir.list()) {
-          if (entity is File && entity.path.endsWith('.cache.json')) {
+      if (await dir.exists() && !await FileSystemEntity.isLink(dir.path)) {
+        await for (final entity in dir.list(followLinks: false)) {
+          if (entity is File &&
+              entity.path.endsWith('.cache.json') &&
+              !await FileSystemEntity.isLink(entity.path)) {
             await entity.delete();
           }
         }
@@ -384,9 +412,10 @@ class UpstreamProxy {
   /// Returns `true` if the proxy responds with a 2xx status.
   Future<bool> health() async {
     try {
-      final uri = Uri.parse(_config.proxyUrl);
-      final req = await _client!.headUrl(uri);
-      final resp = await req.close();
+      final uri = _validateEndpoint(_config.proxyUrl, 'proxyUrl');
+      final req = await _client!.headUrl(uri).timeout(_config.timeout);
+      req.followRedirects = false;
+      final resp = await req.close().timeout(_config.timeout);
       await resp.drain<void>();
       return resp.statusCode >= 200 && resp.statusCode < 300;
     } catch (_) {
@@ -398,9 +427,10 @@ class UpstreamProxy {
   Future<Duration> testLatency() async {
     final sw = Stopwatch()..start();
     try {
-      final uri = Uri.parse(_config.proxyUrl);
-      final req = await _client!.headUrl(uri);
-      final resp = await req.close();
+      final uri = _validateEndpoint(_config.proxyUrl, 'proxyUrl');
+      final req = await _client!.headUrl(uri).timeout(_config.timeout);
+      req.followRedirects = false;
+      final resp = await req.close().timeout(_config.timeout);
       await resp.drain<void>();
     } catch (_) {
       // Latency is still measured even on failure.
@@ -420,40 +450,123 @@ class UpstreamProxy {
   // Private helpers
   // ---------------------------------------------------------------------------
 
+  static Uri _validateEndpoint(String rawUrl, String fieldName) {
+    final uri = Uri.tryParse(rawUrl.trim());
+    if (!NeomageNetworkGuard.isSafeEndpointUri(uri)) {
+      throw ArgumentError.value(
+        NeomageNetworkGuard.redactUrlCredentials(rawUrl),
+        fieldName,
+        'Unsafe or private upstream endpoint URL',
+      );
+    }
+    return uri!;
+  }
+
+  static String _validateRequestPath(String rawPath) {
+    if (rawPath.isEmpty) return '';
+    if (!rawPath.startsWith('/') ||
+        rawPath.startsWith('//') ||
+        rawPath.contains('://') ||
+        rawPath.contains('\\') ||
+        RegExp(r'[\x00-\x1F\x7F]').hasMatch(rawPath)) {
+      throw ArgumentError.value(rawPath, 'path', 'Invalid proxy request path');
+    }
+    final qIdx = rawPath.indexOf('?');
+    final pathOnly = qIdx >= 0 ? rawPath.substring(0, qIdx) : rawPath;
+    for (final seg in pathOnly.split('/')) {
+      if (seg == '..' || seg == '.') {
+        throw ArgumentError.value(
+          rawPath,
+          'path',
+          'Path traversal not allowed in proxy request',
+        );
+      }
+      try {
+        final decoded = Uri.decodeComponent(seg);
+        if (decoded == '..' ||
+            decoded == '.' ||
+            decoded.contains('/') ||
+            decoded.contains('\\')) {
+          throw ArgumentError.value(
+            rawPath,
+            'path',
+            'Encoded path traversal not allowed in proxy request',
+          );
+        }
+      } on ArgumentError {
+        rethrow;
+      } catch (_) {
+        throw ArgumentError.value(rawPath, 'path', 'Malformed percent-encoding');
+      }
+    }
+    return rawPath;
+  }
+
   Uri _buildUri(ProxyRequest req) {
+    _validateEndpoint(_config.proxyUrl, 'proxyUrl');
+    _validateEndpoint(_config.targetUrl, 'targetUrl');
+    final safePath = _validateRequestPath(req.path);
+
     // Route through proxy to the target.
     final proxyBase = _config.proxyUrl.endsWith('/')
         ? _config.proxyUrl.substring(0, _config.proxyUrl.length - 1)
         : _config.proxyUrl;
-    final targetBase = _config.targetUrl.endsWith('/')
-        ? _config.targetUrl.substring(0, _config.targetUrl.length - 1)
-        : _config.targetUrl;
-    final fullPath = '$targetBase${req.path}';
-    // The proxy URL is used as the actual HTTP target; the real target is
-    // communicated via the X-Target-Url header.
-    return Uri.parse('$proxyBase${req.path}');
+    return Uri.parse('$proxyBase$safePath');
   }
 
   void _applyHeaders(HttpClientRequest httpReq, ProxyRequest req) {
+    void setSafeHeader(String k, String v) {
+      final cleanKey = k.trim();
+      if (!NeomageNetworkGuard.isValidHeaderName(cleanKey)) return;
+      if (cleanKey.toLowerCase() == 'host') return;
+      httpReq.headers.set(
+        cleanKey,
+        NeomageNetworkGuard.sanitizeHeaderValue(v),
+      );
+    }
+
     // Config-level headers.
-    _config.headers.forEach((k, v) => httpReq.headers.set(k, v));
+    _config.headers.forEach(setSafeHeader);
     // Extra runtime headers.
-    _extraHeaders.forEach((k, v) => httpReq.headers.set(k, v));
+    _extraHeaders.forEach(setSafeHeader);
     // Per-request headers.
-    req.headers.forEach((k, v) => httpReq.headers.set(k, v));
+    req.headers.forEach(setSafeHeader);
     // Target routing header.
-    httpReq.headers.set('X-Target-Url', _config.targetUrl);
+    httpReq.headers.set(
+      'X-Target-Url',
+      NeomageNetworkGuard.sanitizeHeaderValue(_config.targetUrl),
+    );
   }
 
   Future<ProxyResponse> _doForward(ProxyRequest req) async {
     final uri = _buildUri(req);
-    final httpReq = await _client!.openUrl(req.method, uri);
+    final httpReq = await _client!
+        .openUrl(req.method.toUpperCase(), uri)
+        .timeout(_config.timeout);
+    httpReq.followRedirects = false;
     _applyHeaders(httpReq, req);
     if (req.body != null) {
       httpReq.write(req.body);
     }
-    final httpResp = await httpReq.close();
-    final body = await httpResp.transform(utf8.decoder).join();
+    final httpResp = await httpReq.close().timeout(_config.timeout);
+    if (httpResp.contentLength > maxResponseBytes) {
+      await httpResp.drain<void>();
+      throw HttpException(
+        'Upstream proxy response exceeds ${maxResponseBytes ~/ (1024 * 1024)} MiB',
+        uri: uri,
+      );
+    }
+    final buffer = BytesBuilder(copy: false);
+    await for (final chunk in httpResp.timeout(_config.timeout)) {
+      if (buffer.length + chunk.length > maxResponseBytes) {
+        throw HttpException(
+          'Upstream proxy stream exceeds ${maxResponseBytes ~/ (1024 * 1024)} MiB',
+          uri: uri,
+        );
+      }
+      buffer.add(chunk);
+    }
+    final body = utf8.decode(buffer.takeBytes(), allowMalformed: true);
     final headers = <String, String>{};
     httpResp.headers.forEach((name, values) {
       headers[name] = values.join(', ');
@@ -466,6 +579,14 @@ class UpstreamProxy {
   }
 
   void _putCache(String key, ProxyResponse response) {
+    if (!NeomageNetworkGuard.isSafeCacheKey(key)) return;
+    if (_memoryCache.length >= maxMemoryCacheEntries &&
+        !_memoryCache.containsKey(key)) {
+      _memoryCache.removeWhere((_, e) => e.isExpired);
+      while (_memoryCache.length >= maxMemoryCacheEntries) {
+        _memoryCache.remove(_memoryCache.keys.first);
+      }
+    }
     final now = DateTime.now();
     final entry = CacheEntry(
       response: ProxyResponse(
@@ -484,13 +605,17 @@ class UpstreamProxy {
   }
 
   Future<void> _writeCacheToDisk(CacheEntry entry) async {
-    if (_config.cacheDir == null) return;
+    if (!_isSafeCacheDir(_config.cacheDir)) return;
+    if (!NeomageNetworkGuard.isSafeCacheKey(entry.key)) return;
     try {
       final dir = Directory(_config.cacheDir!);
+      if (await FileSystemEntity.isLink(dir.path)) return;
       if (!await dir.exists()) {
         await dir.create(recursive: true);
       }
-      final file = File('${dir.path}/${entry.key}.cache.json');
+      final filePath = '${dir.path}/${entry.key}.cache.json';
+      if (await FileSystemEntity.isLink(filePath)) return;
+      final file = File(filePath);
       await file.writeAsString(jsonEncode(entry.toJson()));
     } catch (_) {
       // Disk cache write failures are non-fatal.

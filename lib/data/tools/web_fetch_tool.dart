@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 /// Maximum markdown content length before truncation.
 const maxMarkdownLength = 100000;
@@ -91,15 +92,60 @@ class InvalidUrl extends UrlValidation {
   const InvalidUrl(this.reason);
 }
 
+final RegExp _unsafeFetchUrlChars = RegExp(
+  r'[\x00-\x1F\x7F-\x9F\u061C\u200B-\u200F\u2028\u2029\u202A-\u202E\u2060\u2066-\u2069\uFEFF]',
+);
+
+final RegExp _webPromptInjectionTokens = RegExp(
+  r'<\s*(think|thinking|thought|memory_recall|auto_memory|system_context)\b[^>]*>[\s\S]*?<\s*/\s*\1\s*>|<\s*(?:think|thinking|thought|memory_recall|auto_memory|system_context)\b[^>]*>[\s\S]*$|<\|channel>\s*thought\b[\s\S]*?<channel\|>|<\|channel>\s*thought\b[\s\S]*$|<\|(?:im_start|im_end|endoftext|eot_id|start_header_id|end_header_id|/?turn)\|>|<\|channel>|<channel\|>|<(?:start|end)_of_turn>',
+  caseSensitive: false,
+);
+
+final RegExp _webUnsafeTextControls = RegExp(
+  r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u061C\u202A-\u202E\u2066-\u2069]',
+);
+
+String _truncateUtf16Safe(String input, int maxChars) {
+  if (input.length <= maxChars) return input;
+  var end = maxChars;
+  if (end > 0) {
+    final prev = input.codeUnitAt(end - 1);
+    if (prev >= 0xD800 && prev <= 0xDBFF) {
+      end -= 1;
+    }
+  }
+  return input.substring(0, end);
+}
+
+String _sanitizePromptContentBlock(String raw) {
+  return raw
+      .replaceAll(_webPromptInjectionTokens, '')
+      .replaceAll(_webUnsafeTextControls, '')
+      .replaceAllMapped(
+        RegExp(r'<\s*/?\s*content\b', caseSensitive: false),
+        (m) => m.group(0)!.replaceFirst('<', '<\u200B'),
+      );
+}
+
 /// Validate a URL for fetching.
 UrlValidation validateUrl(String urlString) {
-  if (urlString.length > maxUrlLength) {
+  if (_unsafeFetchUrlChars.hasMatch(urlString)) {
+    return const InvalidUrl('URL contains disallowed control characters');
+  }
+  final trimmed = urlString.trim();
+  if (trimmed.isEmpty) {
+    return const InvalidUrl('URL cannot be empty');
+  }
+  if (trimmed.length > maxUrlLength) {
     return InvalidUrl('URL exceeds maximum length of $maxUrlLength characters');
+  }
+  if (trimmed.contains(r'\') || trimmed.toLowerCase().contains('%5c')) {
+    return const InvalidUrl('URL contains disallowed backslash separator');
   }
 
   Uri uri;
   try {
-    uri = Uri.parse(urlString);
+    uri = Uri.parse(trimmed);
   } catch (_) {
     return const InvalidUrl('Invalid URL format');
   }
@@ -112,14 +158,26 @@ UrlValidation validateUrl(String urlString) {
     return const InvalidUrl('URL must have a hostname');
   }
 
-  // Require at least 2 parts in hostname
-  if (!uri.host.contains('.')) {
-    return const InvalidUrl('Single-label hostname not allowed');
-  }
-
   // Block embedded credentials
   if (uri.userInfo.isNotEmpty) {
     return const InvalidUrl('URLs with embedded credentials not allowed');
+  }
+
+  // Block loopback, RFC1918 private LAN, CGNAT, link-local cloud metadata
+  // (169.254.169.254 / 100.100.100.200 / metadata.google.internal), IPv6 ULA,
+  // and decimal/hex/octal IP obfuscations.
+  if (NeomageNetworkGuard.isPrivateOrReservedHost(
+    uri.host,
+    allowLoopback: false,
+  )) {
+    return const InvalidUrl(
+      'Private, loopback, link-local, or reserved host not allowed',
+    );
+  }
+
+  // Require at least 2 parts in hostname (or valid public IPv6 literal)
+  if (!uri.host.contains('.') && !uri.host.contains(':')) {
+    return const InvalidUrl('Single-label hostname not allowed');
   }
 
   return ValidUrl(uri);
@@ -132,6 +190,14 @@ bool isPermittedRedirect(Uri original, Uri redirect) {
 
   // No credentials in redirect
   if (redirect.userInfo.isNotEmpty) return false;
+
+  // Target host must also pass full SSRF validation
+  if (NeomageNetworkGuard.isPrivateOrReservedHost(
+    redirect.host,
+    allowLoopback: false,
+  )) {
+    return false;
+  }
 
   // Same port
   if (original.port != redirect.port) return false;
@@ -271,6 +337,11 @@ String htmlToMarkdown(String html) {
   );
   text = text.replaceAll(RegExp(r'<!--[\s\S]*?-->'), '');
 
+  // Strip raw Gemma-4 / reasoning / chat control blocks BEFORE generic HTML
+  // tag stripping so `<|channel>` delimiters are not stripped while leaving
+  // their hidden payload intact.
+  text = text.replaceAll(_webPromptInjectionTokens, '');
+
   // Convert headers
   for (var i = 6; i >= 1; i--) {
     text = text.replaceAllMapped(
@@ -361,6 +432,11 @@ String htmlToMarkdown(String html) {
 
   // Decode HTML entities
   text = _decodeHtmlEntities(text);
+
+  // Strip leaked chat control tokens and BiDi/C0/C1 controls
+  text = text
+      .replaceAll(_webPromptInjectionTokens, '')
+      .replaceAll(_webUnsafeTextControls, '');
 
   // Clean up whitespace
   text = text.replaceAll(RegExp(r'\n{3,}'), '\n\n');
@@ -456,28 +532,33 @@ final _cache = _FetchCache();
 // ── Prompt Templates ──
 
 /// Prompt for preapproved domains (allows full extraction).
-String preapprovedPrompt(String markdown, String userPrompt) =>
-    '''
+String preapprovedPrompt(String markdown, String userPrompt) {
+  final safeMd = _sanitizePromptContentBlock(markdown);
+  final safePrompt = _sanitizePromptContentBlock(userPrompt);
+  return '''
 Here is the content from a documentation page:
 
 <content>
-$markdown
+$safeMd
 </content>
 
-User request: $userPrompt
+User request: $safePrompt
 
 Extract the relevant information from the content above. You may include code examples, API signatures, and technical details as needed.''';
+}
 
 /// Prompt for non-preapproved domains (copyright restrictions).
-String copyrightPrompt(String markdown, String userPrompt) =>
-    '''
+String copyrightPrompt(String markdown, String userPrompt) {
+  final safeMd = _sanitizePromptContentBlock(markdown);
+  final safePrompt = _sanitizePromptContentBlock(userPrompt);
+  return '''
 Here is the content from a web page:
 
 <content>
-$markdown
+$safeMd
 </content>
 
-User request: $userPrompt
+User request: $safePrompt
 
 IMPORTANT COPYRIGHT GUIDELINES:
 - Maximum 125-character quotes from the source
@@ -486,6 +567,7 @@ IMPORTANT COPYRIGHT GUIDELINES:
 - Do not reproduce song lyrics, poems, or similar creative works
 - Summarize and paraphrase instead of copying
 - Note: This is not legal advice''';
+}
 
 // ── Fetch Execution ──
 
@@ -537,18 +619,88 @@ Future<WebFetchOutput> fetchUrl(
     );
   }
 
-  // Fetch
+  // Fetch with manual redirect validation (HttpClient defaults to
+  // followRedirects = true, which would otherwise follow 30x redirects to
+  // internal/metadata hosts before isPermittedRedirect runs).
   final client = httpClient ?? HttpClient();
   try {
-    final request = await client.getUrl(uri).timeout(fetchTimeout);
-    request.headers.set('User-Agent', 'Neomage/1.0 (AI Coding Assistant)');
-    request.headers.set('Accept', 'text/markdown, text/html, */*');
+    HttpClientResponse? finalResponse;
+    var currentUri = uri;
 
-    final response = await request.close().timeout(fetchTimeout);
+    for (var hop = 0; hop <= maxRedirects; hop++) {
+      final request = await client.getUrl(currentUri).timeout(fetchTimeout);
+      request.followRedirects = false;
+      request.maxRedirects = 0;
+      request.headers.set('User-Agent', 'Neomage/1.0 (AI Coding Assistant)');
+      request.headers.set('Accept', 'text/markdown, text/html, */*');
+
+      final response = await request.close().timeout(fetchTimeout);
+
+      final isRedirectStatus =
+          response.isRedirect ||
+          (response.statusCode >= 300 && response.statusCode < 400);
+      if (isRedirectStatus) {
+        final location = response.headers.value('location');
+        await response.drain<void>().timeout(fetchTimeout);
+        if (location == null || location.trim().isEmpty) {
+          finalResponse = response;
+          break;
+        }
+        if (hop == maxRedirects) {
+          return WebFetchOutput(
+            bytes: 0,
+            code: response.statusCode,
+            codeText: 'too_many_redirects',
+            result: 'Exceeded maximum redirect limit ($maxRedirects)',
+            durationMs: sw.elapsedMilliseconds,
+            url: currentUri.toString(),
+          );
+        }
+
+        Uri redirectUri;
+        try {
+          redirectUri = currentUri.resolve(location.trim());
+        } catch (_) {
+          return WebFetchOutput(
+            bytes: 0,
+            code: response.statusCode,
+            codeText: 'invalid_redirect',
+            result: 'Malformed redirect Location header',
+            durationMs: sw.elapsedMilliseconds,
+            url: currentUri.toString(),
+          );
+        }
+
+        if (!isPermittedRedirect(uri, redirectUri) ||
+            validateUrl(redirectUri.toString()) is! ValidUrl) {
+          final redactedLoc = NeomageNetworkGuard.redactUrlCredentials(
+            location,
+          );
+          return WebFetchOutput(
+            bytes: 0,
+            code: response.statusCode,
+            codeText: 'cross_origin_redirect',
+            result: 'Redirect to different domain not followed: $redactedLoc',
+            durationMs: sw.elapsedMilliseconds,
+            url: currentUri.toString(),
+          );
+        }
+
+        currentUri = redirectUri;
+        continue;
+      }
+
+      finalResponse = response;
+      break;
+    }
+
+    final response = finalResponse!;
+    uri = currentUri;
 
     // Check content length
     final contentLength = response.contentLength;
     if (contentLength > maxHttpContentLength) {
+      await response.drain<void>().timeout(fetchTimeout);
       return WebFetchOutput(
         bytes: contentLength,
         code: response.statusCode,
@@ -560,34 +712,15 @@ Future<WebFetchOutput> fetchUrl(
       );
     }
 
-    // Handle redirects
-    if (response.isRedirect ||
-        (response.statusCode >= 300 && response.statusCode < 400)) {
-      final location = response.headers.value('location');
-      if (location != null) {
-        final redirectUri = Uri.parse(location);
-        if (!isPermittedRedirect(uri, redirectUri)) {
-          return WebFetchOutput(
-            bytes: 0,
-            code: response.statusCode,
-            codeText: 'cross_origin_redirect',
-            result: 'Redirect to different domain not followed: $location',
-            durationMs: sw.elapsedMilliseconds,
-            url: uri.toString(),
-          );
-        }
+    // Stream response body in O(N) via BytesBuilder with hard byte cap.
+    final byteBuffer = BytesBuilder(copy: false);
+    await for (final chunk in response.timeout(fetchTimeout)) {
+      if (byteBuffer.length + chunk.length > maxHttpContentLength) {
+        throw Exception('Response body exceeds maximum size');
       }
+      byteBuffer.add(chunk);
     }
-
-    // Read response body
-    final bytes = await response
-        .fold<List<int>>([], (prev, chunk) {
-          if (prev.length + chunk.length > maxHttpContentLength) {
-            throw Exception('Response body exceeds maximum size');
-          }
-          return [...prev, ...chunk];
-        })
-        .timeout(fetchTimeout);
+    final bytes = byteBuffer.takeBytes();
 
     final contentType = response.headers.contentType?.mimeType ?? 'text/html';
 
@@ -614,10 +747,10 @@ Future<WebFetchOutput> fetchUrl(
     // Cache
     _cache.put(uri.toString(), text);
 
-    // Truncate if needed
+    // Truncate if needed (UTF-16 surrogate-safe)
     if (text.length > maxMarkdownLength) {
-      text =
-          '${text.substring(0, maxMarkdownLength)}\n\n[Content truncated due to length...]';
+      final slice = _truncateUtf16Safe(text, maxMarkdownLength);
+      text = '$slice\n\n[Content truncated due to length...]';
     }
 
     // Apply prompt
@@ -642,11 +775,12 @@ Future<WebFetchOutput> fetchUrl(
       url: uri.toString(),
     );
   } catch (e) {
+    final safeErr = NeomageNetworkGuard.redactTransportError(e.toString());
     return WebFetchOutput(
       bytes: 0,
       code: 0,
       codeText: 'error',
-      result: 'Fetch error: $e',
+      result: 'Fetch error: $safeErr',
       durationMs: sw.elapsedMilliseconds,
       url: uri.toString(),
     );

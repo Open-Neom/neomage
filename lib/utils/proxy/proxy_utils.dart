@@ -7,10 +7,30 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 // ---------------------------------------------------------------------------
 // caCerts.ts  --  CA certificate loading
 // ---------------------------------------------------------------------------
+
+const int _maxPemFileBytes = 1024 * 1024; // 1 MiB
+
+String _readSafePemFileSync(String path) {
+  if (path.isEmpty ||
+      path.contains('\x00') ||
+      path.startsWith('//') ||
+      path.startsWith(r'\\')) {
+    throw const FileSystemException('Unsafe or UNC certificate/key path');
+  }
+  final stat = FileStat.statSync(path);
+  if (stat.type != FileSystemEntityType.file) {
+    throw const FileSystemException('Certificate/key path is not a regular file');
+  }
+  if (stat.size > _maxPemFileBytes) {
+    throw const FileSystemException('Certificate/key file exceeds 1 MiB limit');
+  }
+  return File(path).readAsStringSync();
+}
 
 /// Cached CA certificates.
 List<String>? _caCertsCache;
@@ -50,7 +70,7 @@ List<String>? getCACertificates() {
 
   if (extraCertsPath != null && extraCertsPath.isNotEmpty) {
     try {
-      final extraCert = File(extraCertsPath).readAsStringSync();
+      final extraCert = _readSafePemFileSync(extraCertsPath);
       certs.add(extraCert);
     } catch (error) {
       stderr.writeln(
@@ -171,7 +191,7 @@ MTLSConfig? getMTLSConfig() {
   final certPath = Platform.environment['MAGE_CLIENT_CERT'];
   if (certPath != null && certPath.isNotEmpty) {
     try {
-      cert = File(certPath).readAsStringSync();
+      cert = _readSafePemFileSync(certPath);
     } catch (error) {
       stderr.writeln('mTLS: Failed to load client certificate: $error');
     }
@@ -181,7 +201,7 @@ MTLSConfig? getMTLSConfig() {
   final keyPath = Platform.environment['MAGE_CLIENT_KEY'];
   if (keyPath != null && keyPath.isNotEmpty) {
     try {
-      key = File(keyPath).readAsStringSync();
+      key = _readSafePemFileSync(keyPath);
     } catch (error) {
       stderr.writeln('mTLS: Failed to load client key: $error');
     }
@@ -417,13 +437,16 @@ HttpClient createProxiedHttpClient({
 
   final proxy = proxyUrl ?? getProxyUrl();
   if (proxy != null && proxy.isNotEmpty) {
-    client.findProxy = (uri) {
-      if (shouldBypassProxy(uri.toString())) {
-        return 'DIRECT';
-      }
-      final proxyUri = Uri.parse(proxy);
-      return 'PROXY ${proxyUri.host}:${proxyUri.port}';
-    };
+    final parsedProxy = parseProxyUrl(proxy);
+    if (parsedProxy != null) {
+      final pacEndpoint = parsedProxy.pacHostPort;
+      client.findProxy = (uri) {
+        if (shouldBypassProxy(uri.toString())) {
+          return 'DIRECT';
+        }
+        return 'PROXY $pacEndpoint';
+      };
+    }
   }
 
   return client;
@@ -525,13 +548,16 @@ String getUserAgent({
   String? clientApp,
   String? workload,
 }) {
+  String clean(String s) => NeomageNetworkGuard.sanitizeHeaderValue(s).trim();
   final parts = <String>[];
-  if (agentSdkVersion != null) parts.add('agent-sdk/$agentSdkVersion');
-  if (clientApp != null) parts.add('client-app/$clientApp');
-  if (workload != null) parts.add('workload/$workload');
+  if (agentSdkVersion != null) {
+    parts.add('agent-sdk/${clean(agentSdkVersion)}');
+  }
+  if (clientApp != null) parts.add('client-app/${clean(clientApp)}');
+  if (workload != null) parts.add('workload/${clean(workload)}');
 
   final suffix = parts.isNotEmpty ? ', ${parts.join(", ")}' : '';
-  return 'neomage-cli/$version (${userType ?? "external"}, ${entrypoint ?? "cli"}$suffix)';
+  return 'neomage-cli/${clean(version)} (${clean(userType ?? "external")}, ${clean(entrypoint ?? "cli")}$suffix)';
 }
 
 /// Get the MCP user agent string.
@@ -541,18 +567,24 @@ String getMCPUserAgent({
   String? agentSdkVersion,
   String? clientApp,
 }) {
+  String clean(String s) => NeomageNetworkGuard.sanitizeHeaderValue(s).trim();
   final parts = <String>[];
-  if (entrypoint != null) parts.add(entrypoint);
-  if (agentSdkVersion != null) parts.add('agent-sdk/$agentSdkVersion');
-  if (clientApp != null) parts.add('client-app/$clientApp');
+  if (entrypoint != null) parts.add(clean(entrypoint));
+  if (agentSdkVersion != null) {
+    parts.add('agent-sdk/${clean(agentSdkVersion)}');
+  }
+  if (clientApp != null) parts.add('client-app/${clean(clientApp)}');
 
   final suffix = parts.isNotEmpty ? ' (${parts.join(", ")})' : '';
-  return 'neomage/$version$suffix';
+  return 'neomage/${clean(version)}$suffix';
 }
 
 /// Get the WebFetch user agent string.
 String getWebFetchUserAgent({required String neomageUserAgent}) {
-  return 'Neomage-User ($neomageUserAgent; +https://support.anthropic.com/)';
+  final cleanUa = NeomageNetworkGuard.sanitizeHeaderValue(
+    neomageUserAgent,
+  ).trim();
+  return 'Neomage-User ($cleanUa; +https://support.anthropic.com/)';
 }
 
 /// Authentication headers result.
@@ -578,20 +610,29 @@ AuthHeaders getAuthHeaders({
   String oauthBetaHeader = '',
 }) {
   if (isSubscriber) {
-    final accessToken = getOAuthAccessToken?.call();
-    if (accessToken == null || accessToken.isEmpty) {
+    final rawToken = getOAuthAccessToken?.call();
+    final accessToken = rawToken == null
+        ? ''
+        : NeomageNetworkGuard.sanitizeHeaderValue(rawToken).trim();
+    if (accessToken.isEmpty) {
       return const AuthHeaders(headers: {}, error: 'No OAuth token available');
     }
+    final cleanBeta = NeomageNetworkGuard.sanitizeHeaderValue(
+      oauthBetaHeader,
+    ).trim();
     return AuthHeaders(
       headers: {
         'Authorization': 'Bearer $accessToken',
-        if (oauthBetaHeader.isNotEmpty) 'anthropic-beta': oauthBetaHeader,
+        if (cleanBeta.isNotEmpty) 'anthropic-beta': cleanBeta,
       },
     );
   }
 
-  final apiKey = getApiKey?.call();
-  if (apiKey == null || apiKey.isEmpty) {
+  final rawKey = getApiKey?.call();
+  final apiKey = rawKey == null
+      ? ''
+      : NeomageNetworkGuard.sanitizeHeaderValue(rawKey).trim();
+  if (apiKey.isEmpty) {
     return const AuthHeaders(headers: {}, error: 'No API key available');
   }
   return AuthHeaders(headers: {'x-api-key': apiKey});
@@ -756,23 +797,29 @@ class ProxyConfiguration {
         : HttpClient();
 
     if (hasProxy) {
-      final proxy = effectiveProxy!;
-      client.findProxy = (uri) {
-        if (shouldBypass(uri.toString())) {
-          return 'DIRECT';
-        }
-        final proxyUri = Uri.parse(proxy);
-        return 'PROXY ${proxyUri.host}:${proxyUri.port}';
-      };
+      final parsedProxy = parseProxyUrl(effectiveProxy!);
+      if (parsedProxy != null) {
+        final pacEndpoint = parsedProxy.pacHostPort;
+        client.findProxy = (uri) {
+          if (shouldBypass(uri.toString())) {
+            return 'DIRECT';
+          }
+          return 'PROXY $pacEndpoint';
+        };
+      }
     }
 
     return client;
   }
 
-  /// Returns a description of this configuration for debugging.
+  /// Returns a description of this configuration for debugging (redacts proxy credentials).
   String describe() {
     final parts = <String>[];
-    if (hasProxy) parts.add('proxy=$effectiveProxy');
+    if (hasProxy) {
+      parts.add(
+        'proxy=${NeomageNetworkGuard.redactUrlCredentials(effectiveProxy!)}',
+      );
+    }
     if (noProxy != null) parts.add('noProxy=$noProxy');
     if (hasMTLS) parts.add('mTLS=enabled');
     if (hasCustomCA) parts.add('customCA=${caCertificates!.length} cert(s)');
@@ -783,16 +830,9 @@ class ProxyConfiguration {
   }
 }
 
-/// Validates that the proxy URL is well-formed.
+/// Validates that the proxy URL is well-formed and safe against PAC directive injection.
 bool isValidProxyUrl(String url) {
-  try {
-    final uri = Uri.parse(url);
-    return uri.hasScheme &&
-        (uri.scheme == 'http' || uri.scheme == 'https') &&
-        uri.host.isNotEmpty;
-  } catch (_) {
-    return false;
-  }
+  return parseProxyUrl(url) != null;
 }
 
 /// Parse a proxy URL into its components.
@@ -814,8 +854,12 @@ class ParsedProxyUrl {
   /// Whether this proxy requires authentication.
   bool get requiresAuth => username != null && username!.isNotEmpty;
 
+  /// Host:port formatted safely for PAC `PROXY` directives (brackets IPv6).
+  String get pacHostPort =>
+      host.contains(':') ? '[$host]:$port' : '$host:$port';
+
   /// The full URL without credentials.
-  String get urlWithoutCredentials => '$scheme://$host:$port';
+  String get urlWithoutCredentials => '$scheme://$pacHostPort';
 
   /// The full URL with credentials.
   String get urlWithCredentials {
@@ -824,26 +868,43 @@ class ParsedProxyUrl {
     final encodedPass = password != null
         ? ':${Uri.encodeComponent(password!)}'
         : '';
-    return '$scheme://$encodedUser$encodedPass@$host:$port';
+    return '$scheme://$encodedUser$encodedPass@$pacHostPort';
   }
 }
 
+final RegExp _unsafeProxyHostChars = RegExp(r'[\x00-\x20\x7F;,\\/\[\]@#?]');
+
 /// Parse a proxy URL into structured components.
 ParsedProxyUrl? parseProxyUrl(String url) {
+  if (url.isEmpty || RegExp(r'[\x00-\x1F\x7F;\s\\]').hasMatch(url)) {
+    return null;
+  }
   try {
     final uri = Uri.parse(url);
-    if (!uri.hasScheme || uri.host.isEmpty) return null;
+    final scheme = uri.scheme.toLowerCase();
+    if ((scheme != 'http' && scheme != 'https') || uri.host.isEmpty) {
+      return null;
+    }
+    var host = uri.host;
+    if (host.startsWith('[') && host.endsWith(']')) {
+      host = host.substring(1, host.length - 1);
+    }
+    if (host.isEmpty || _unsafeProxyHostChars.hasMatch(host)) {
+      return null;
+    }
+    final port = uri.hasPort ? uri.port : (scheme == 'https' ? 443 : 80);
+    if (port < 1 || port > 65535) return null;
     return ParsedProxyUrl(
-      scheme: uri.scheme,
-      host: uri.host,
-      port: uri.port != 0 ? uri.port : (uri.scheme == 'https' ? 443 : 80),
+      scheme: scheme,
+      host: host,
+      port: port,
       username: uri.userInfo.contains(':')
-          ? uri.userInfo.split(':').first
+          ? Uri.decodeComponent(uri.userInfo.split(':').first)
           : uri.userInfo.isNotEmpty
-          ? uri.userInfo
+          ? Uri.decodeComponent(uri.userInfo)
           : null,
       password: uri.userInfo.contains(':')
-          ? uri.userInfo.split(':').sublist(1).join(':')
+          ? Uri.decodeComponent(uri.userInfo.split(':').sublist(1).join(':'))
           : null,
     );
   } catch (_) {

@@ -7,8 +7,9 @@
 
 import 'package:neomage/core/platform/neomage_io.dart';
 
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'package:path/path.dart' as p;
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 import '../../tools/tool.dart';
 import '../command.dart';
@@ -156,6 +157,7 @@ Future<String?> getThinkbackSkillDir() async {
   ];
 
   for (final path in candidatePaths) {
+    if (await FileSystemEntity.isLink(path)) continue;
     if (await Directory(path).exists()) {
       return path;
     }
@@ -166,6 +168,7 @@ Future<String?> getThinkbackSkillDir() async {
 
 /// Check if a file exists at the given path.
 Future<bool> _pathExists(String path) async {
+  if (await FileSystemEntity.isLink(path)) return false;
   return File(path).exists();
 }
 
@@ -179,6 +182,14 @@ Future<bool> _pathExists(String path) async {
 /// directory. Launches the Node.js player in the terminal's alternate screen,
 /// then opens the HTML file in the browser for video download.
 Future<({bool success, String message})> playAnimation(String skillDir) async {
+  if (skillDir.isEmpty ||
+      skillDir.contains('\x00') ||
+      skillDir.startsWith('//') ||
+      skillDir.startsWith(r'\\') ||
+      NeomageNetworkGuard.isProtectedSystemOrCredentialPath(skillDir) ||
+      await FileSystemEntity.isLink(skillDir)) {
+    return (success: false, message: 'Unsafe skill directory rejected.');
+  }
   final dataPath = p.join(skillDir, 'year_in_review.js');
   final playerPath = p.join(skillDir, 'player.js');
 
@@ -202,9 +213,14 @@ Future<({bool success, String message})> playAnimation(String skillDir) async {
 
   // Run the player script.
   try {
-    final result = await Process.run('node', [
-      playerPath,
-    ], workingDirectory: skillDir);
+    final result = await Process.run(
+      'node',
+      ['--', playerPath],
+      workingDirectory: skillDir,
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(minutes: 10));
 
     if (result.exitCode != 0) {
       // Animation may have been interrupted (e.g., Ctrl+C).
@@ -216,13 +232,32 @@ Future<({bool success, String message})> playAnimation(String skillDir) async {
   // Open the HTML file in browser for video download.
   final htmlPath = p.join(skillDir, 'year_in_review.html');
   if (await _pathExists(htmlPath)) {
-    final openCmd = Platform.isMacOS
-        ? 'open'
-        : Platform.isWindows
-        ? 'start'
-        : 'xdg-open';
     try {
-      await Process.start(openCmd, [htmlPath]);
+      if (Platform.isMacOS) {
+        await Process.start(
+          'open',
+          ['--', htmlPath],
+          runInShell: false,
+          environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+          includeParentEnvironment: false,
+        );
+      } else if (Platform.isWindows) {
+        await Process.start(
+          'rundll32.exe',
+          ['url.dll,FileProtocolHandler', htmlPath],
+          runInShell: false,
+          environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+          includeParentEnvironment: false,
+        );
+      } else {
+        await Process.start(
+          'xdg-open',
+          [htmlPath],
+          runInShell: false,
+          environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+          includeParentEnvironment: false,
+        );
+      }
     } catch (_) {
       // Ignore errors opening browser.
     }

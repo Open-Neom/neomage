@@ -11,6 +11,7 @@ import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'package:path/path.dart' as p;
 
 import '../../tools/tool.dart';
@@ -196,6 +197,12 @@ Future<String> installBindingsForVSCodeTerminal({
   final keybindingsPath = p.join(userDirPath, 'keybindings.json');
 
   try {
+    if (await FileSystemEntity.isLink(keybindingsPath)) {
+      throw FileSystemException(
+        'Refusing to modify symlinked keybindings.json',
+        keybindingsPath,
+      );
+    }
     // Ensure user directory exists.
     await Directory(userDirPath).create(recursive: true);
 
@@ -270,23 +277,60 @@ Future<String> installBindingsForVSCodeTerminal({
 // Apple Terminal.app Setup
 // ============================================================================
 
+/// Validates a Terminal.app profile name against `PlistBuddy -c` command and
+/// keypath injection (`'`, `"`, `\`, `:`, `;`, or control characters).
+void validatePlistProfileName(String profileName) {
+  if (profileName.isEmpty || profileName.length > 128) {
+    throw ArgumentError.value(
+      profileName,
+      'profileName',
+      'Invalid Terminal.app profile name length',
+    );
+  }
+  if (RegExp(r'''[\x00-\x1F\x7F'"\\:;]''').hasMatch(profileName)) {
+    throw ArgumentError.value(
+      profileName,
+      'profileName',
+      'Unsafe characters in Terminal.app profile name',
+    );
+  }
+}
+
+Future<ProcessResult> _runTerminalSetupCmd(
+  String executable,
+  List<String> args,
+) {
+  return Process.run(
+    executable,
+    args,
+    runInShell: false,
+    environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+    includeParentEnvironment: false,
+  ).timeout(const Duration(seconds: 10));
+}
+
 /// Enable Option as Meta key for a Terminal.app profile.
 ///
 /// Uses PlistBuddy to modify the profile's useOptionAsMetaKey setting.
 Future<bool> enableOptionAsMetaForProfile(String profileName) async {
+  validatePlistProfileName(profileName);
+  final plistPath = getTerminalPlistPath();
+  if (await FileSystemEntity.isLink(plistPath)) {
+    throw FileSystemException('Refusing to modify symlinked plist', plistPath);
+  }
   // First try to add the property (in case it doesn't exist).
-  var result = await Process.run('/usr/libexec/PlistBuddy', [
+  var result = await _runTerminalSetupCmd('/usr/libexec/PlistBuddy', [
     '-c',
     "Add :'Window Settings':'$profileName':useOptionAsMetaKey bool true",
-    getTerminalPlistPath(),
+    plistPath,
   ]);
 
   // If adding fails (likely because it already exists), try setting it.
   if (result.exitCode != 0) {
-    result = await Process.run('/usr/libexec/PlistBuddy', [
+    result = await _runTerminalSetupCmd('/usr/libexec/PlistBuddy', [
       '-c',
       "Set :'Window Settings':'$profileName':useOptionAsMetaKey true",
-      getTerminalPlistPath(),
+      plistPath,
     ]);
     if (result.exitCode != 0) return false;
   }
@@ -295,17 +339,22 @@ Future<bool> enableOptionAsMetaForProfile(String profileName) async {
 
 /// Disable audio bell for a Terminal.app profile.
 Future<bool> disableAudioBellForProfile(String profileName) async {
-  var result = await Process.run('/usr/libexec/PlistBuddy', [
+  validatePlistProfileName(profileName);
+  final plistPath = getTerminalPlistPath();
+  if (await FileSystemEntity.isLink(plistPath)) {
+    throw FileSystemException('Refusing to modify symlinked plist', plistPath);
+  }
+  var result = await _runTerminalSetupCmd('/usr/libexec/PlistBuddy', [
     '-c',
     "Add :'Window Settings':'$profileName':Bell bool false",
-    getTerminalPlistPath(),
+    plistPath,
   ]);
 
   if (result.exitCode != 0) {
-    result = await Process.run('/usr/libexec/PlistBuddy', [
+    result = await _runTerminalSetupCmd('/usr/libexec/PlistBuddy', [
       '-c',
       "Set :'Window Settings':'$profileName':Bell false",
-      getTerminalPlistPath(),
+      plistPath,
     ]);
     if (result.exitCode != 0) return false;
   }
@@ -320,6 +369,12 @@ Future<String> enableOptionAsMetaForTerminal() async {
   try {
     // Create a backup of the current plist file.
     final plistPath = getTerminalPlistPath();
+    if (await FileSystemEntity.isLink(plistPath)) {
+      throw FileSystemException(
+        'Refusing to modify symlinked Terminal.app plist',
+        plistPath,
+      );
+    }
     final backupPath = '$plistPath.${_randomHex(4)}.bak';
     try {
       await File(plistPath).copy(backupPath);
@@ -330,7 +385,7 @@ Future<String> enableOptionAsMetaForTerminal() async {
     }
 
     // Read the current default profile.
-    final defaultResult = await Process.run('defaults', [
+    final defaultResult = await _runTerminalSetupCmd('defaults', [
       'read',
       'com.apple.Terminal',
       'Default Window Settings',
@@ -340,7 +395,7 @@ Future<String> enableOptionAsMetaForTerminal() async {
       throw Exception('Failed to read default Terminal.app profile');
     }
 
-    final startupResult = await Process.run('defaults', [
+    final startupResult = await _runTerminalSetupCmd('defaults', [
       'read',
       'com.apple.Terminal',
       'Startup Window Settings',
@@ -386,7 +441,7 @@ Future<String> enableOptionAsMetaForTerminal() async {
     }
 
     // Flush the preferences cache.
-    await Process.run('killall', ['cfprefsd']);
+    await _runTerminalSetupCmd('killall', ['cfprefsd']);
 
     return 'Configured Terminal.app settings:\n'
         '- Enabled "Use Option as Meta key"\n'
@@ -453,6 +508,12 @@ chars = "\\u001B\\r"''';
   }
 
   try {
+    if (await FileSystemEntity.isLink(configPath)) {
+      throw FileSystemException(
+        'Refusing to modify symlinked alacritty.toml',
+        configPath,
+      );
+    }
     if (configExists) {
       // Check if keybinding already exists.
       if (configContent.contains('mods = "Shift"') &&
@@ -506,6 +567,12 @@ Future<String> installBindingsForZed() async {
   final keymapPath = p.join(zedDir, 'keymap.json');
 
   try {
+    if (await FileSystemEntity.isLink(keymapPath)) {
+      throw FileSystemException(
+        'Refusing to modify symlinked Zed keymap.json',
+        keymapPath,
+      );
+    }
     await Directory(zedDir).create(recursive: true);
 
     String keymapContent = '[]';

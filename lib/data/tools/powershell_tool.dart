@@ -2,7 +2,9 @@
 // Uses pwsh (PowerShell Core) on macOS/Linux, powershell.exe on Windows.
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 import 'tool.dart';
 
@@ -27,7 +29,9 @@ class PowerShellInput {
     return PowerShellInput(
       command: map['command'] as String? ?? '',
       workDir:
-          map['work_dir'] as String? ?? map['working_directory'] as String?,
+          map['work_dir'] as String? ??
+          map['working_directory'] as String? ??
+          map['workDir'] as String?,
       timeout: timeoutMs != null
           ? Duration(milliseconds: timeoutMs.toInt())
           : const Duration(minutes: 2),
@@ -39,12 +43,24 @@ class PowerShellInput {
     final errors = <String>[];
     if (command.isEmpty) {
       errors.add('Missing required parameter: command');
+    } else if (command.contains('\x00')) {
+      errors.add('Invalid NUL byte in command');
+    }
+    if (workDir != null) {
+      if (workDir!.contains('\x00')) {
+        errors.add('Invalid NUL byte in work_dir');
+      } else if (workDir!.startsWith(r'\\') || workDir!.startsWith('//')) {
+        errors.add('UNC paths are not allowed for work_dir');
+      }
     }
     if (executionPolicy != null &&
         !_validPolicies.contains(executionPolicy!.toLowerCase())) {
       errors.add(
         'execution_policy must be one of: ${_validPolicies.join(", ")}',
       );
+    }
+    if (timeout.inMilliseconds <= 0) {
+      errors.add('timeout must be positive');
     }
     if (timeout.inMilliseconds > _maxTimeoutMs) {
       errors.add('timeout must not exceed ${_maxTimeoutMs ~/ 1000} seconds');
@@ -111,20 +127,34 @@ final _unsafePatterns = <RegExp>[
   // Registry modifications.
   RegExp(r'Remove-ItemProperty\s+.*HKLM', caseSensitive: false),
   RegExp(r'Set-ItemProperty\s+.*HKLM', caseSensitive: false),
-  // System alteration.
+  // System / security alteration.
   RegExp(r'Stop-Computer', caseSensitive: false),
   RegExp(r'Restart-Computer', caseSensitive: false),
   RegExp(r'Disable-NetAdapter', caseSensitive: false),
+  RegExp(r'(?:Set|Add)-MpPreference\b', caseSensitive: false),
   // Credential exposure.
   RegExp(r'ConvertFrom-SecureString', caseSensitive: false),
   RegExp(r'Get-Credential.*Export', caseSensitive: false),
-  // Script download and execution.
+  // Base64 / encoded payload obfuscation (-e / -ec / -enc / -EncodedCommand).
+  RegExp(
+    r'(?:^|\s)-(?:e|ec|enc|encodedcommand)\b',
+    caseSensitive: false,
+  ),
+  // Script download and execution cradles.
   RegExp(
     r'Invoke-Expression\s*\(\s*\(?\s*Invoke-WebRequest',
     caseSensitive: false,
   ),
   RegExp(r'iex\s*\(\s*irm\s', caseSensitive: false),
   RegExp(r'iex\s*\(\s*iwr\s', caseSensitive: false),
+  RegExp(
+    r'(?:Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b.*\|\s*(?:Invoke-Expression|iex)\b',
+    caseSensitive: false,
+  ),
+  RegExp(
+    r'(?:Net\.WebClient|DownloadString|DownloadFile|Start-BitsTransfer)',
+    caseSensitive: false,
+  ),
 ];
 
 // ─── Tool ────────────────────────────────────────────────────────────────────
@@ -247,6 +277,12 @@ class PowerShellTool extends Tool with ShellToolMixin {
     if (errors.isNotEmpty) {
       return ValidationResult.invalid(errors.first);
     }
+    if (enableSafetyChecks) {
+      final safetyError = _checkCommandSafety(parsed.command);
+      if (safetyError != null) {
+        return ValidationResult.invalid(safetyError);
+      }
+    }
     return const ValidationResult.valid();
   }
 
@@ -285,30 +321,85 @@ class PowerShellTool extends Tool with ShellToolMixin {
 
     // Resolve working directory.
     final effectiveWorkDir = parsed.workDir ?? workingDirectory;
+    if (effectiveWorkDir != null &&
+        (effectiveWorkDir.contains('\x00') ||
+            effectiveWorkDir.startsWith(r'\\') ||
+            effectiveWorkDir.startsWith('//'))) {
+      return ToolResult.error('Unsafe working directory rejected');
+    }
 
-    // Build environment.
-    final effectiveEnv = <String, String>{
+    // Build sanitized environment.
+    final effectiveEnv = NeomageNetworkGuard.sanitizeSubprocessEnv({
       ...Platform.environment,
-      if (environment != null) ...environment!,
-    };
+      ...?environment,
+    });
 
-    // Execute.
+    // Execute with Process.start + bounded streams + child termination on timeout.
+    const maxStreamBytes = 4 * 1024 * 1024;
     final stopwatch = Stopwatch()..start();
 
     try {
-      final result = await Process.run(
+      final process = await Process.start(
         executable,
         args,
         workingDirectory: effectiveWorkDir,
         environment: effectiveEnv,
-      ).timeout(parsed.timeout);
+        includeParentEnvironment: false,
+      );
 
+      final stdoutBuf = StringBuffer();
+      final stderrBuf = StringBuffer();
+      var stdoutBytes = 0;
+      var stderrBytes = 0;
+
+      final stdoutSub = process.stdout
+          .transform(const Utf8Decoder(allowMalformed: true))
+          .listen((chunk) {
+            if (stdoutBytes < maxStreamBytes) {
+              final rem = maxStreamBytes - stdoutBytes;
+              stdoutBuf.write(
+                chunk.length <= rem ? chunk : chunk.substring(0, rem),
+              );
+            }
+            stdoutBytes += chunk.length;
+          });
+
+      final stderrSub = process.stderr
+          .transform(const Utf8Decoder(allowMalformed: true))
+          .listen((chunk) {
+            if (stderrBytes < maxStreamBytes) {
+              final rem = maxStreamBytes - stderrBytes;
+              stderrBuf.write(
+                chunk.length <= rem ? chunk : chunk.substring(0, rem),
+              );
+            }
+            stderrBytes += chunk.length;
+          });
+
+      int exitCode;
+      try {
+        exitCode = await process.exitCode.timeout(parsed.timeout);
+      } on TimeoutException {
+        process.kill(ProcessSignal.sigterm);
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+        process.kill(ProcessSignal.sigkill);
+        await stdoutSub.cancel();
+        await stderrSub.cancel();
+        stopwatch.stop();
+        return ToolResult.error(
+          'PowerShell command timed out after '
+          '${parsed.timeout.inSeconds}s',
+        );
+      }
+
+      await stdoutSub.cancel();
+      await stderrSub.cancel();
       stopwatch.stop();
 
       final output = PowerShellOutput(
-        exitCode: result.exitCode,
-        stdout: (result.stdout as String).trim(),
-        stderr: (result.stderr as String).trim(),
+        exitCode: exitCode,
+        stdout: stdoutBuf.toString().trim(),
+        stderr: stderrBuf.toString().trim(),
         duration: stopwatch.elapsed,
       );
 
@@ -327,12 +418,6 @@ class PowerShellTool extends Tool with ShellToolMixin {
     } on ProcessException catch (e) {
       stopwatch.stop();
       return ToolResult.error('PowerShell process error: ${e.message}');
-    } on TimeoutException {
-      stopwatch.stop();
-      return ToolResult.error(
-        'PowerShell command timed out after '
-        '${parsed.timeout.inSeconds}s',
-      );
     } catch (e) {
       stopwatch.stop();
       return ToolResult.error('PowerShell execution error: $e');

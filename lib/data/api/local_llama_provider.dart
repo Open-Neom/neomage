@@ -1,15 +1,17 @@
-import 'dart:io';
-import 'package:saia_core/saia_core.dart' as saia;
 import 'package:llamadart/llamadart.dart' as llama;
 import 'package:neom_ollama/neom_ollama.dart';
-import 'package:sint_sentinel/sint_sentinel.dart';
+import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:sint_sentinel/sint_sentinel_core.dart';
+
+import '../../domain/services/local_ai_service.dart';
+import '../../utils/security/neomage_network_guard.dart';
 
 /// Local in-process GGUF LLM inference provider for Neomage.
 ///
-/// Implements SAIA's [saia.LocalAiService] interface.
+/// Implements Neomage's open [LocalAiService] interface.
 /// Integrates with the [HardwareProfiler] from neom_ollama to dynamically
 /// profile device resources at runtime and optimize context size/thread settings.
-class LocalLlamaProvider implements saia.LocalAiService {
+class LocalLlamaProvider implements LocalAiService {
 
   llama.LlamaEngine? _engine;
   String _loadedModelPath = '';
@@ -36,10 +38,14 @@ class LocalLlamaProvider implements saia.LocalAiService {
     if (_isInitializing) return false;
 
     _isInitializing = true;
-    final path = modelPath ?? '';
+    final path = (modelPath ?? '').trim();
 
-    if (path.isEmpty || !File(path).existsSync()) {
-      SintSentinel.logger.e('LocalLlamaProvider: Cannot initialize, model file does not exist at: "$path"');
+    if (!_isSafeGgufPath(path) ||
+        FileSystemEntity.isLinkSync(path) ||
+        !File(path).existsSync()) {
+      SintSentinel.logger.e(
+        'LocalLlamaProvider: Cannot initialize, unsafe or missing GGUF model path',
+      );
       _isInitializing = false;
       return false;
     }
@@ -89,10 +95,11 @@ class LocalLlamaProvider implements saia.LocalAiService {
     }
 
     try {
+      final boundedMaxTokens = maxTokens.clamp(1, 8192);
       final session = llama.ChatSession(_engine!);
       final responseChunks = await session.create(
         [llama.LlamaTextContent(prompt)],
-        params: llama.GenerationParams(maxTokens: maxTokens),
+        params: llama.GenerationParams(maxTokens: boundedMaxTokens),
       ).toList();
       
       final buffer = StringBuffer();
@@ -135,20 +142,19 @@ class LocalLlamaProvider implements saia.LocalAiService {
   // Helper Formatter
   // ═══════════════════════════════════════════
 
-  String _formatChatTemplate(List<Map<String, String>> messages) {
-    final buffer = StringBuffer();
-    for (final msg in messages) {
-      final role = msg['role'] ?? 'user';
-      final content = msg['content'] ?? '';
-      
-      // Standard ChatML tokens
-      buffer.write('<|im_start|>$role\n$content<|im_end|>\n');
+  static bool _isSafeGgufPath(String path) {
+    if (path.isEmpty || path.contains('\x00')) return false;
+    if (!path.toLowerCase().endsWith('.gguf')) return false;
+    final segments = path.replaceAll(r'\', '/').split('/');
+    if (segments.contains('..')) return false;
+    if (NeomageNetworkGuard.checkProtectedFilesystemPath(path) != null) {
+      return false;
     }
-    
-    // Inject start of assistant turn to prompt completion
-    buffer.write('<|im_start|>assistant\n');
-    return buffer.toString();
+    return true;
   }
+
+  String _formatChatTemplate(List<Map<String, String>> messages) =>
+      NeomageNetworkGuard.formatChatMlSafe(messages);
 
   // ═══════════════════════════════════════════
   // Disposal

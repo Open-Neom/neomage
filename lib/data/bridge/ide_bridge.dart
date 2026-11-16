@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 import 'package:uuid/uuid.dart';
 
@@ -180,8 +181,10 @@ class BridgeMessage {
       BridgeMessage.fromJson(jsonDecode(raw) as Map<String, dynamic>);
 
   @override
-  String toString() =>
-      'BridgeMessage(${type.wireName}, id=${id.substring(0, 8)})';
+  String toString() {
+    final shortId = id.length <= 8 ? id : id.substring(0, 8);
+    return 'BridgeMessage(${type.wireName}, id=$shortId)';
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -532,6 +535,13 @@ class IdeBridge {
     _socketSubscription = _webSocket!.listen(
       (data) {
         if (data is String) {
+          if (data.length > IdeBridgeServer.maxMessageChars) {
+            _webSocket?.close(
+              WebSocketStatus.messageTooBig,
+              'Bridge frame exceeds maximum allowed size',
+            );
+            return;
+          }
           _handleRawMessage(data);
         }
       },
@@ -791,8 +801,13 @@ class IdeBridge {
 /// Runs a local WebSocket server on a configurable port or Unix socket.
 /// Multiple IDE connections can be active simultaneously.
 class IdeBridgeServer {
+  static const int maxMessageChars = 4 * 1024 * 1024;
+
   final int port;
   final String host;
+  final String? authToken;
+  final List<String> allowedOrigins;
+  final int maxConnections;
   HttpServer? _httpServer;
   final Map<String, IdeBridge> _connections = {};
   final StreamController<IdeBridge> _connectionController =
@@ -801,7 +816,13 @@ class IdeBridgeServer {
   /// Handler for incoming messages that aren't correlated responses.
   void Function(IdeBridge bridge, BridgeMessage message)? onMessage;
 
-  IdeBridgeServer({this.port = 19836, this.host = 'localhost'});
+  IdeBridgeServer({
+    this.port = 19836,
+    this.host = 'localhost',
+    this.authToken,
+    this.allowedOrigins = const [],
+    this.maxConnections = 16,
+  });
 
   /// All active connections.
   Iterable<IdeBridge> get connections => _connections.values;
@@ -812,6 +833,9 @@ class IdeBridgeServer {
   /// Number of active connections.
   int get connectionCount => _connections.length;
 
+  /// Bound TCP port once running (useful when `port == 0`).
+  int? get boundPort => _httpServer?.port;
+
   /// Start listening for IDE connections.
   Future<void> start() async {
     _httpServer = await HttpServer.bind(host, port);
@@ -819,6 +843,46 @@ class IdeBridgeServer {
   }
 
   void _handleHttpRequest(HttpRequest request) {
+    // Reject cross-site browser Origin headers (CSWSH defense on localhost:19836,
+    // which exposes run_command, apply_edit, and open_file).
+    final origin = request.headers.value('origin');
+    if (!NeomageNetworkGuard.isAllowedLocalServerOrigin(
+      origin,
+      allowedOrigins: allowedOrigins,
+      allowIdeSchemes: true,
+    )) {
+      request.response.statusCode = HttpStatus.forbidden;
+      request.response.write('Cross-origin IDE bridge connection blocked');
+      request.response.close();
+      return;
+    }
+
+    // Verify optional bearer / X-IDE-Token secret in constant time.
+    if (authToken != null && authToken!.isNotEmpty) {
+      final cleanExpected = NeomageNetworkGuard.sanitizeHeaderValue(authToken!);
+      final authHeader = request.headers.value('authorization');
+      final ideToken = request.headers.value('x-ide-token');
+      final authorized =
+          NeomageNetworkGuard.constantTimeEquals(
+            authHeader,
+            'Bearer $cleanExpected',
+          ) ||
+          NeomageNetworkGuard.constantTimeEquals(ideToken, cleanExpected);
+      if (!authorized) {
+        request.response.statusCode = HttpStatus.unauthorized;
+        request.response.write('Unauthorized IDE bridge connection');
+        request.response.close();
+        return;
+      }
+    }
+
+    if (_connections.length >= maxConnections) {
+      request.response.statusCode = HttpStatus.serviceUnavailable;
+      request.response.write('Maximum IDE bridge connections reached');
+      request.response.close();
+      return;
+    }
+
     // Only accept WebSocket upgrade requests.
     if (!WebSocketTransformer.isUpgradeRequest(request)) {
       request.response.statusCode = HttpStatus.badRequest;

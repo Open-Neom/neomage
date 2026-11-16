@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 // ---------------------------------------------------------------------------
 // Enums
@@ -336,6 +337,48 @@ class ProjectService {
     }
   }
 
+  static bool _isSafeProjectDirectory(String path) {
+    final trimmed = path.trim();
+    if (trimmed.isEmpty ||
+        path.contains('\x00') ||
+        trimmed.startsWith('//') ||
+        trimmed.startsWith(r'\\')) {
+      return false;
+    }
+    return !NeomageNetworkGuard.isProtectedSystemOrCredentialPath(trimmed);
+  }
+
+  /// Validates and tokenizes a project command (`executable` + `args`),
+  /// rejecting empty commands, leading `-` flag injection on the executable,
+  /// shell metacharacters, path traversal `..`, NUL bytes, and unsafe `workDir`.
+  static (String executable, List<String> args) validateProjectCommand(
+    String command, {
+    String? workDir,
+  }) {
+    final trimmed = command.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Empty command');
+    }
+    if (command.contains('\x00')) {
+      throw ArgumentError('Command contains NUL byte');
+    }
+    final parts = trimmed.split(RegExp(r'\s+'));
+    final executable = parts.first;
+    if (!NeomageNetworkGuard.isSafeMcpCommand(executable)) {
+      throw ArgumentError('Unsafe project command executable: $executable');
+    }
+    final args = parts.sublist(1);
+    for (final arg in args) {
+      if (arg.contains('\x00')) {
+        throw ArgumentError('Command argument contains NUL byte');
+      }
+    }
+    if (workDir != null && !_isSafeProjectDirectory(workDir)) {
+      throw ArgumentError('Unsafe project working directory');
+    }
+    return (executable, args);
+  }
+
   // -------------------------------------------------------------------------
   // File listing
   // -------------------------------------------------------------------------
@@ -345,14 +388,20 @@ class ProjectService {
     String path, {
     bool respectGitignore = true,
   }) async {
+    if (!_isSafeProjectDirectory(path)) {
+      return const <String>[];
+    }
     if (respectGitignore) {
       try {
         final result = await Process.run(
           'git',
           ['ls-files', '--cached', '--others', '--exclude-standard'],
           workingDirectory: path,
+          environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+          includeParentEnvironment: false,
+          runInShell: false,
           stdoutEncoding: utf8,
-        );
+        ).timeout(const Duration(seconds: 15));
         if (result.exitCode == 0) {
           final output = (result.stdout as String).trim();
           if (output.isNotEmpty) {
@@ -471,23 +520,27 @@ class ProjectService {
   // Run project command
   // -------------------------------------------------------------------------
 
-  /// Runs a shell command in the project directory.
+  /// Runs a project command directly without shell interpolation.
   Future<ProcessResult> runProjectCommand(
     String command, {
     String? workDir,
+    Duration timeout = const Duration(minutes: 2),
   }) async {
-    final parts = command.split(RegExp(r'\s+'));
-    if (parts.isEmpty) {
-      throw ArgumentError('Empty command');
-    }
+    final (executable, args) = validateProjectCommand(
+      command,
+      workDir: workDir,
+    );
 
     return Process.run(
-      parts.first,
-      parts.sublist(1),
+      executable,
+      args,
       workingDirectory: workDir,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+      runInShell: false,
       stdoutEncoding: utf8,
       stderrEncoding: utf8,
-    );
+    ).timeout(timeout);
   }
 
   // -------------------------------------------------------------------------
@@ -1061,14 +1114,18 @@ class ProjectService {
   }
 
   Future<List<String>> _listFilesRecursively(String path) async {
+    if (!_isSafeProjectDirectory(path)) return const <String>[];
     final files = <String>[];
+    final normalizedPrefix = path.endsWith('/') ? path : '$path/';
     try {
       await for (final entity in Directory(
         path,
       ).list(recursive: true, followLinks: false)) {
         if (entity is File && !_shouldIgnore(entity.path)) {
-          // Return relative path.
-          files.add(entity.path.substring(path.length + 1));
+          final rel = entity.path.startsWith(normalizedPrefix)
+              ? entity.path.substring(normalizedPrefix.length)
+              : entity.path;
+          files.add(rel);
         }
       }
     } catch (_) {}

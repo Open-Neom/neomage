@@ -4,7 +4,9 @@
 // macOS/Linux/Windows and a stub WebNativeBridge.
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 // ── Enums ──────────────────────────────────────────────────────────────────
 
@@ -237,6 +239,151 @@ class DesktopNativeBridge implements NativeBridge {
     return null;
   }
 
+  static final RegExp _safeFilterToken = RegExp(r'^[A-Za-z0-9._-]{1,32}$');
+  static final RegExp _controlChars = RegExp(r'[\x00-\x1F\x7F]');
+
+  /// Strictly validates external browser URLs (`https://`, `http://`, `mailto:`),
+  /// blocking `file://`, `javascript:`, `smb://`, UNC paths, and CLI options (`-a`).
+  static bool isAllowedBrowserUrl(String rawUrl) {
+    final trimmed = rawUrl.trim();
+    if (trimmed.isEmpty || trimmed.length > 4096) return false;
+    if (trimmed.startsWith('-') ||
+        trimmed.startsWith('//') ||
+        trimmed.startsWith(r'\\')) {
+      return false;
+    }
+    if (_controlChars.hasMatch(trimmed)) return false;
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null || !uri.hasScheme) return false;
+    final scheme = uri.scheme.toLowerCase();
+    if (scheme == 'https' || scheme == 'http') {
+      return uri.host.isNotEmpty;
+    }
+    if (scheme == 'mailto') {
+      return uri.path.isNotEmpty && !uri.path.startsWith('-');
+    }
+    return false;
+  }
+
+  /// Parameterizes macOS `choose file name` via `on run argv` (zero string interpolation).
+  static List<String> buildMacOsSaveDialogArgs({
+    String? title,
+    String? defaultName,
+  }) {
+    final cleanTitle = (title ?? '').replaceAll('\x00', '').trim();
+    final cleanDefault = (defaultName ?? '')
+        .replaceAll(RegExp(r'[\x00/\\:]'), '')
+        .trim();
+    const script = '''
+on run argv
+  set hasPrompt to (item 1 of argv) is "1"
+  set promptText to item 2 of argv
+  set hasDefault to (item 3 of argv) is "1"
+  set defaultText to item 4 of argv
+  if hasPrompt and hasDefault then
+    return POSIX path of (choose file name with prompt promptText default name defaultText)
+  else if hasPrompt then
+    return POSIX path of (choose file name with prompt promptText)
+  else if hasDefault then
+    return POSIX path of (choose file name default name defaultText)
+  else
+    return POSIX path of (choose file name)
+  end if
+end run''';
+    return <String>[
+      '-e',
+      script,
+      '--',
+      cleanTitle.isNotEmpty ? '1' : '0',
+      cleanTitle,
+      cleanDefault.isNotEmpty ? '1' : '0',
+      cleanDefault,
+    ];
+  }
+
+  /// Parameterizes macOS `display notification` via `on run argv` (zero string interpolation).
+  static List<String> buildMacOsNotificationArgs(
+    String title,
+    String body, {
+    bool sound = false,
+  }) {
+    final cleanTitle = title.replaceAll('\x00', '').trim();
+    final cleanBody = body.replaceAll('\x00', '').trim();
+    final cappedTitle = cleanTitle.length > 256
+        ? cleanTitle.substring(0, 256)
+        : cleanTitle;
+    final cappedBody = cleanBody.length > 2048
+        ? cleanBody.substring(0, 2048)
+        : cleanBody;
+    const script = '''
+on run argv
+  set bodyText to item 1 of argv
+  set titleText to item 2 of argv
+  set playSound to (item 3 of argv) is "1"
+  if playSound then
+    display notification bodyText with title titleText sound name "default"
+  else
+    display notification bodyText with title titleText
+  end if
+end run''';
+    return <String>[
+      '-e',
+      script,
+      '--',
+      cappedBody,
+      cappedTitle,
+      sound ? '1' : '0',
+    ];
+  }
+
+  /// Parameterizes macOS `choose file` / `choose folder` via `on run argv` and
+  /// strictly validates file-type filter tokens against `^[A-Za-z0-9._-]{1,32}$`.
+  static List<String> buildMacOsFileDialogArgs({
+    String? title,
+    List<String>? filters,
+    bool multiple = false,
+    bool directory = false,
+  }) {
+    final cleanTitle = (title ?? '').replaceAll('\x00', '').trim();
+    final safeFilters = (filters ?? const <String>[])
+        .map((f) => f.trim())
+        .where(_safeFilterToken.hasMatch)
+        .take(32)
+        .toList();
+
+    final typeClause = (!directory && safeFilters.isNotEmpty)
+        ? ' of type {${safeFilters.map((f) => '"$f"').join(', ')}}'
+        : '';
+    final multiClause = (!directory && multiple)
+        ? ' with multiple selections allowed'
+        : '';
+    final targetCmd = directory ? 'choose folder' : 'choose file';
+    final script = '''
+on run argv
+  set hasPrompt to (item 1 of argv) is "1"
+  set promptText to item 2 of argv
+  if hasPrompt then
+    return $targetCmd with prompt promptText$multiClause$typeClause
+  else
+    return $targetCmd$multiClause$typeClause
+  end if
+end run''';
+    return <String>[
+      '-e',
+      script,
+      '--',
+      cleanTitle.isNotEmpty ? '1' : '0',
+      cleanTitle,
+    ];
+  }
+
+  static bool _isSafeLocalPathArg(String path) {
+    if (path.isEmpty || path.length > 4096) return false;
+    if (path.contains('\x00') || path.startsWith('-')) return false;
+    if (path.startsWith('//') || path.startsWith(r'\\')) return false;
+    return true;
+  }
+
   @override
   Future<String?> showSaveDialog({
     String? title,
@@ -244,10 +391,11 @@ class DesktopNativeBridge implements NativeBridge {
     List<String>? filters,
   }) async {
     if (_platform == NativePlatform.macos) {
-      final script = StringBuffer('choose file name');
-      if (title != null) script.write(' with prompt "$title"');
-      if (defaultName != null) script.write(' default name "$defaultName"');
-      final result = await _runSimple('osascript', ['-e', script.toString()]);
+      final result = await _runSimple(
+        'osascript',
+        buildMacOsSaveDialogArgs(title: title, defaultName: defaultName),
+        timeout: const Duration(seconds: 120),
+      );
       return result.trim().isEmpty ? null : result.trim();
     }
     return null;
@@ -257,6 +405,9 @@ class DesktopNativeBridge implements NativeBridge {
 
   @override
   Future<void> setClipboard(String text) async {
+    if (text.length > 4 * 1024 * 1024) {
+      throw ArgumentError('Clipboard payload exceeds 4 MiB limit');
+    }
     if (_platform == NativePlatform.macos) {
       await _runPiped('pbcopy', text);
     } else if (_platform == NativePlatform.linux) {
@@ -291,13 +442,18 @@ class DesktopNativeBridge implements NativeBridge {
     bool sound = false,
   }) async {
     if (_platform == NativePlatform.macos) {
-      final soundPart = sound ? ' sound name "default"' : '';
-      final script =
-          'display notification "$body" with title "$title"$soundPart';
-      await _runSimple('osascript', ['-e', script]);
+      await _runSimple(
+        'osascript',
+        buildMacOsNotificationArgs(title, body, sound: sound),
+      );
     } else if (_platform == NativePlatform.linux) {
-      final args = <String>[title, body];
-      if (icon != null) args.addAll(['-i', icon]);
+      final cleanTitle = title.replaceAll('\x00', '').trim();
+      final cleanBody = body.replaceAll('\x00', '').trim();
+      final args = <String>[];
+      if (icon != null && _isSafeLocalPathArg(icon)) {
+        args.addAll(['-i', icon]);
+      }
+      args.addAll(['--', cleanTitle, cleanBody]);
       await _runSimple('notify-send', args);
     }
   }
@@ -306,29 +462,40 @@ class DesktopNativeBridge implements NativeBridge {
 
   @override
   Future<void> openUrl(String url) async {
-    final cmd = switch (_platform) {
-      NativePlatform.macos => 'open',
-      NativePlatform.linux => 'xdg-open',
-      NativePlatform.windows => 'start',
-      _ => null,
-    };
-    if (cmd != null) await _runSimple(cmd, [url]);
+    final trimmed = url.trim();
+    if (!isAllowedBrowserUrl(trimmed)) {
+      throw ArgumentError(
+        'Blocked unsafe URL scheme or format in openUrl: only http, https, and mailto are allowed',
+      );
+    }
+    if (_platform == NativePlatform.macos) {
+      await _runSimple('open', [trimmed]);
+    } else if (_platform == NativePlatform.linux) {
+      await _runSimple('xdg-open', [trimmed]);
+    } else if (_platform == NativePlatform.windows) {
+      await _runSimple('rundll32', ['url.dll,FileProtocolHandler', trimmed]);
+    }
   }
 
   @override
   Future<void> openInEditor(String path, {int? line, int? column}) async {
-    final editor = Platform.environment['EDITOR'] ?? 'code';
+    if (!_isSafeLocalPathArg(path)) {
+      throw ArgumentError('Invalid file path for openInEditor');
+    }
+    final rawEditor = (Platform.environment['EDITOR'] ?? 'code').trim();
+    final editor = NeomageNetworkGuard.isSafeMcpCommand(rawEditor)
+        ? rawEditor
+        : 'code';
     final args = <String>[];
 
     if (editor.contains('code') || editor.contains('cursor')) {
       // VS Code / Cursor support --goto file:line:column.
       final loc = StringBuffer(path);
-      if (line != null) loc.write(':$line');
-      if (column != null) loc.write(':$column');
+      if (line != null && line > 0) loc.write(':$line');
+      if (column != null && column > 0) loc.write(':$column');
       args.addAll(['--goto', loc.toString()]);
     } else {
-      // Fallback: just open the file.
-      args.add(path);
+      args.addAll(['--', path]);
     }
 
     await _runSimple(editor, args);
@@ -336,10 +503,16 @@ class DesktopNativeBridge implements NativeBridge {
 
   @override
   Future<void> revealInFinder(String path) async {
+    if (!_isSafeLocalPathArg(path)) {
+      throw ArgumentError('Invalid file path for revealInFinder');
+    }
     if (_platform == NativePlatform.macos) {
-      await _runSimple('open', ['-R', path]);
+      await _runSimple('open', ['-R', '--', path]);
     } else if (_platform == NativePlatform.linux) {
-      await _runSimple('xdg-open', [File(path).parent.path]);
+      final parentPath = File(path).parent.path;
+      if (_isSafeLocalPathArg(parentPath)) {
+        await _runSimple('xdg-open', [parentPath]);
+      }
     } else if (_platform == NativePlatform.windows) {
       await _runSimple('explorer', ['/select,', path]);
     }
@@ -354,7 +527,20 @@ class DesktopNativeBridge implements NativeBridge {
 
   @override
   Future<void> executeDetached(String command, List<String> args) async {
-    await Process.start(command, args, mode: ProcessStartMode.detached);
+    if (!NeomageNetworkGuard.isSafeMcpCommand(command)) {
+      throw ArgumentError('Blocked unsafe executable in executeDetached');
+    }
+    if (args.any((a) => a.contains('\x00'))) {
+      throw ArgumentError('Blocked NUL byte in executeDetached arguments');
+    }
+    await Process.start(
+      command,
+      args,
+      mode: ProcessStartMode.detached,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+        Platform.environment,
+      ),
+    );
   }
 
   // ── Global hotkeys ────────────────────────────────────────────────────
@@ -387,10 +573,42 @@ class DesktopNativeBridge implements NativeBridge {
     return NativePlatform.linux; // Fallback.
   }
 
-  Future<String> _runSimple(String cmd, List<String> args) async {
+  Future<String> _runSimple(
+    String cmd,
+    List<String> args, {
+    Duration timeout = const Duration(seconds: 15),
+  }) async {
+    if (!NeomageNetworkGuard.isSafeMcpCommand(cmd)) return '';
     try {
-      final result = await Process.run(cmd, args);
-      return result.stdout.toString();
+      final proc = await Process.start(
+        cmd,
+        args,
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+          Platform.environment,
+        ),
+      );
+      final chunks = <int>[];
+      const maxBytes = 2 * 1024 * 1024;
+      final sub = proc.stdout.listen((chunk) {
+        if (chunks.length < maxBytes) {
+          final rem = maxBytes - chunks.length;
+          chunks.addAll(chunk.length <= rem ? chunk : chunk.sublist(0, rem));
+        }
+      });
+      final errSub = proc.stderr.listen((_) {});
+      try {
+        await proc.exitCode.timeout(
+          timeout,
+          onTimeout: () {
+            proc.kill();
+            return -1;
+          },
+        );
+      } finally {
+        await sub.cancel();
+        await errSub.cancel();
+      }
+      return utf8.decode(chunks, allowMalformed: true);
     } catch (_) {
       return '';
     }
@@ -401,10 +619,23 @@ class DesktopNativeBridge implements NativeBridge {
     String input, {
     List<String> args = const [],
   }) async {
-    final process = await Process.start(cmd, args);
+    if (!NeomageNetworkGuard.isSafeMcpCommand(cmd)) return;
+    final process = await Process.start(
+      cmd,
+      args,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+        Platform.environment,
+      ),
+    );
     process.stdin.write(input);
     await process.stdin.close();
-    await process.exitCode;
+    await process.exitCode.timeout(
+      const Duration(seconds: 15),
+      onTimeout: () {
+        process.kill();
+        return -1;
+      },
+    );
   }
 
   Future<List<String>?> _macosFileDialog({
@@ -413,22 +644,16 @@ class DesktopNativeBridge implements NativeBridge {
     bool multiple = false,
     bool directory = false,
   }) async {
-    final script = StringBuffer();
-    if (directory) {
-      script.write('choose folder');
-    } else {
-      script.write('choose file');
-    }
-    if (title != null) script.write(' with prompt "$title"');
-    if (multiple && !directory) {
-      script.write(' with multiple selections allowed');
-    }
-    if (filters != null && filters.isNotEmpty && !directory) {
-      final types = filters.map((f) => '"$f"').join(', ');
-      script.write(' of type {$types}');
-    }
-
-    final result = await _runSimple('osascript', ['-e', script.toString()]);
+    final result = await _runSimple(
+      'osascript',
+      buildMacOsFileDialogArgs(
+        title: title,
+        filters: filters,
+        multiple: multiple,
+        directory: directory,
+      ),
+      timeout: const Duration(seconds: 120),
+    );
     if (result.trim().isEmpty) return null;
 
     // osascript returns alias paths — convert.
@@ -446,16 +671,25 @@ class DesktopNativeBridge implements NativeBridge {
     bool directory = false,
   }) async {
     final args = <String>['--file-selection'];
-    if (title != null) args.add('--title=$title');
+    if (title != null) {
+      args.add('--title=${title.replaceAll('\x00', '')}');
+    }
     if (multiple) args.add('--multiple');
     if (directory) args.add('--directory');
     if (filters != null) {
       for (final f in filters) {
-        args.add('--file-filter=*.$f');
+        final trimmed = f.trim();
+        if (_safeFilterToken.hasMatch(trimmed)) {
+          args.add('--file-filter=*.$trimmed');
+        }
       }
     }
 
-    final result = await _runSimple('zenity', args);
+    final result = await _runSimple(
+      'zenity',
+      args,
+      timeout: const Duration(seconds: 120),
+    );
     if (result.trim().isEmpty) return null;
     return result.trim().split('|');
   }

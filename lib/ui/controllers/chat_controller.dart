@@ -41,6 +41,7 @@ import 'package:neomage/data/commands/builtin/model_command.dart';
 import 'package:neomage/data/commands/builtin/session_command.dart';
 import 'package:neomage/data/commands/builtin/extended_commands.dart';
 import 'package:neomage/utils/constants/system.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'package:neomage/utils/telemetry/telemetry_service.dart';
 import 'package:neomage/data/analytics/analytics_service.dart';
 import 'package:neomage/data/services/rate_limit_service.dart';
@@ -206,16 +207,32 @@ class ChatController extends SintController {
     String? platformInfo;
     if (!kIsWeb) {
       workingDir = Directory.current.path;
+      final subEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(
+        null,
+        const <String, String>{'GIT_TERMINAL_PROMPT': '0'},
+      );
       try {
-        final branchResult = await Process.run('git', ['branch', '--show-current'],
-            workingDirectory: workingDir);
+        final branchResult = await Process.run(
+          'git',
+          ['branch', '--show-current'],
+          workingDirectory: workingDir,
+          runInShell: false,
+          environment: subEnv,
+          includeParentEnvironment: false,
+        ).timeout(const Duration(seconds: 5));
         if (branchResult.exitCode == 0) {
           gitBranch = (branchResult.stdout as String).trim();
           isGitRepo = true;
         }
       } catch (_) {}
       try {
-        final unameResult = await Process.run('uname', ['-sr']);
+        final unameResult = await Process.run(
+          'uname',
+          ['-sr'],
+          runInShell: false,
+          environment: subEnv,
+          includeParentEnvironment: false,
+        ).timeout(const Duration(seconds: 5));
         if (unameResult.exitCode == 0) {
           platformInfo = (unameResult.stdout as String).trim();
         }

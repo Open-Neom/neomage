@@ -508,7 +508,7 @@ class TeleportView extends StatelessWidget {
             controller.clearError();
             controller.localErrors.clear();
           },
-          onDismiss: () => Navigator.of(context).maybePop(),
+          onDismiss: () => Sint.maybePop(),
         );
       }
 

@@ -2,6 +2,7 @@
 // Spawns sub-agents to handle complex, multi-step tasks autonomously.
 
 import 'dart:async';
+import 'dart:math';
 
 import '../../domain/models/message.dart';
 import '../api/api_provider.dart';
@@ -35,6 +36,23 @@ class AgentDefinition {
 
 /// Built-in agent definitions.
 class BuiltInAgents {
+  static const Set<String> _readOnlyAgentDisallowedTools = {
+    'Agent',
+    'Subagent',
+    'Bash',
+    'PowerShell',
+    'Edit',
+    'Write',
+    'NotebookEdit',
+    'DiffApply',
+    'MultiEdit',
+    'Memory',
+    'ComputerUse',
+    'JsSandbox',
+    'Config',
+    'ExitPlanMode',
+  };
+
   static const generalPurpose = AgentDefinition(
     agentType: 'general-purpose',
     name: 'General Purpose',
@@ -50,8 +68,8 @@ class BuiltInAgents {
     description:
         'Fast agent specialized for exploring codebases. '
         'Use for finding files, searching code, or answering codebase questions.',
-    tools: {'Read', 'Glob', 'Grep', 'Bash', 'WebSearch', 'WebFetch'},
-    disallowedTools: {'Agent', 'Edit', 'Write', 'NotebookEdit'},
+    tools: {'Read', 'Glob', 'Grep', 'LSP', 'WebSearch', 'WebFetch'},
+    disallowedTools: _readOnlyAgentDisallowedTools,
     background: false,
   );
 
@@ -59,7 +77,7 @@ class BuiltInAgents {
     agentType: 'Plan',
     name: 'Plan',
     description: 'Software architect agent for designing implementation plans.',
-    disallowedTools: {'Agent', 'Edit', 'Write', 'NotebookEdit'},
+    disallowedTools: _readOnlyAgentDisallowedTools,
     background: false,
   );
 
@@ -118,6 +136,11 @@ class AgentTool extends Tool {
   final ToolRegistry toolRegistry;
   final String Function() systemPromptBuilder;
   final OnAgentProgress? onProgress;
+
+  /// Maximum concurrent sub-agents per AgentTool instance.
+  static const int maxConcurrentAgents = 8;
+
+  static final Random _secureRandom = Random.secure();
 
   /// Active sub-agents tracked by ID.
   final Map<String, _RunningAgent> _activeAgents = {};
@@ -178,19 +201,51 @@ class AgentTool extends Tool {
   }
 
   @override
-  Future<ToolResult> execute(Map<String, dynamic> input) async {
+  ValidationResult validateInput(Map<String, dynamic> input) {
     final prompt = input['prompt'] as String?;
     final description = input['description'] as String?;
+    if (prompt == null || prompt.trim().isEmpty) {
+      return const ValidationResult.invalid(
+        'Missing required parameter: prompt',
+      );
+    }
+    if (prompt.contains('\x00')) {
+      return const ValidationResult.invalid('Invalid NUL byte in prompt');
+    }
+    if (prompt.length > 200000) {
+      return const ValidationResult.invalid(
+        'Prompt exceeds maximum length (200000 chars)',
+      );
+    }
+    if (description == null || description.trim().isEmpty) {
+      return const ValidationResult.invalid(
+        'Missing required parameter: description',
+      );
+    }
+    if (description.contains('\x00') || description.length > 500) {
+      return const ValidationResult.invalid('Invalid description parameter');
+    }
+    return const ValidationResult.valid();
+  }
+
+  @override
+  Future<ToolResult> execute(Map<String, dynamic> input) async {
+    final validation = validateInput(input);
+    if (!validation.isValid) {
+      return ToolResult.error(validation.error ?? 'Invalid Agent input');
+    }
+
+    if (_activeAgents.length >= maxConcurrentAgents) {
+      return ToolResult.error(
+        'Maximum concurrent sub-agents ($maxConcurrentAgents) reached',
+      );
+    }
+
+    final prompt = input['prompt'] as String;
+    final description = input['description'] as String;
     final subagentType = input['subagent_type'] as String?;
     final modelOverride = input['model'] as String?;
     final runInBackground = input['run_in_background'] as bool? ?? false;
-
-    if (prompt == null || prompt.isEmpty) {
-      return ToolResult.error('Missing required parameter: prompt');
-    }
-    if (description == null || description.isEmpty) {
-      return ToolResult.error('Missing required parameter: description');
-    }
 
     // Resolve agent definition
     final effectiveType = subagentType ?? 'general-purpose';
@@ -208,7 +263,8 @@ class AgentTool extends Tool {
     // Resolve available tools for this agent
     final agentTools = _resolveAgentTools(agentDef);
 
-    final agentId = 'agent_${DateTime.now().millisecondsSinceEpoch}';
+    final nonce = _secureRandom.nextInt(1 << 30).toRadixString(16);
+    final agentId = 'agent_${DateTime.now().millisecondsSinceEpoch}_$nonce';
     final startTime = DateTime.now();
 
     if (runInBackground) {
@@ -294,7 +350,9 @@ class AgentTool extends Tool {
     }
 
     // Never allow recursive agent spawning from sub-agents
-    tools = tools.where((t) => t.name != 'Agent').toList();
+    tools = tools
+        .where((t) => t.name != 'Agent' && t.name != 'Subagent')
+        .toList();
 
     return tools;
   }
@@ -365,13 +423,18 @@ class AgentTool extends Tool {
             ),
           );
 
-          // Find and execute tool
+          // Find and execute tool after validating input
           final tool = tools.firstWhere(
             (t) => t.name == toolUse.name,
             orElse: () => _unknownTool,
           );
 
-          final result = await tool.execute(toolUse.input);
+          final inputValidation = tool.validateInput(toolUse.input);
+          final result = inputValidation.isValid
+              ? await tool.execute(toolUse.input)
+              : ToolResult.error(
+                  inputValidation.error ?? 'Invalid tool input',
+                );
           resultBlocks.add(
             ToolResultBlock(
               toolUseId: toolUse.id,

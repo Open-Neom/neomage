@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -581,30 +582,61 @@ class FastModeManager {
     }
   }
 
+  static const int _maxFastModeResponseBytes = 1024 * 1024; // 1 MiB
+
   Future<FastModeResponse> _fetchFastModeStatus(
     String? apiKey,
     Map<String, String>? oauthTokens,
   ) async {
     final endpoint = '${_config.getBaseApiUrl()}/api/neomage_penguin_mode';
+    final uri = Uri.parse(endpoint);
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      uri,
+      allowLoopbackHttp: true,
+      allowPrivateLanHttp: true,
+    )) {
+      throw HttpException('Rejected unsafe fast mode endpoint', uri: uri);
+    }
+
     final accessToken = oauthTokens?['accessToken'];
     final hasOAuth = accessToken != null && _config.hasProfileScope();
 
-    final client = HttpClient();
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 10);
     try {
-      final uri = Uri.parse(endpoint);
       final request = await client.getUrl(uri);
+      request.followRedirects = false;
+      request.maxRedirects = 0;
 
       if (hasOAuth) {
-        request.headers.set('Authorization', 'Bearer $accessToken');
-        request.headers.set('anthropic-beta', _config.getOAuthBetaHeader());
+        request.headers.set(
+          'Authorization',
+          'Bearer ${NeomageNetworkGuard.sanitizeHeaderValue(accessToken)}',
+        );
+        request.headers.set(
+          'anthropic-beta',
+          NeomageNetworkGuard.sanitizeHeaderValue(_config.getOAuthBetaHeader()),
+        );
       } else if (apiKey != null) {
-        request.headers.set('x-api-key', apiKey);
+        request.headers.set(
+          'x-api-key',
+          NeomageNetworkGuard.sanitizeHeaderValue(apiKey),
+        );
       } else {
         throw Exception('No auth available');
       }
 
-      final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      final response = await request.close().timeout(
+        const Duration(seconds: 15),
+      );
+      final bodyBytes = BytesBuilder(copy: false);
+      await for (final chunk in response) {
+        if (bodyBytes.length + chunk.length > _maxFastModeResponseBytes) {
+          throw HttpException('Fast mode response exceeded 1 MiB', uri: uri);
+        }
+        bodyBytes.add(chunk);
+      }
+      final body = utf8.decode(bodyBytes.takeBytes(), allowMalformed: true);
 
       if (response.statusCode != 200) {
         throw HttpException(
@@ -616,7 +648,7 @@ class FastModeManager {
       final data = jsonDecode(body) as Map<String, dynamic>;
       return FastModeResponse.fromJson(data);
     } finally {
-      client.close();
+      client.close(force: true);
     }
   }
 

@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:sint/sint.dart';
 
 // ── Enums ──────────────────────────────────────────────────────────────────
 
@@ -434,7 +435,7 @@ class _BuddyWidgetState extends State<BuddyWidget>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
+            onPressed: () => Sint.pop(),
             child: const Text('Close'),
           ),
         ],
@@ -477,12 +478,12 @@ class _BuddyWidgetState extends State<BuddyWidget>
   void _showPersonalityPicker() {
     showDialog(
       context: context,
-      builder: (ctx) => SimpleDialog(
+      builder: (_) => SimpleDialog(
         title: const Text('Choose Personality'),
         children: BuddyPersonality.values.map((p) {
           return SimpleDialogOption(
             onPressed: () {
-              Navigator.of(ctx).pop();
+              Sint.pop();
               widget.onPersonalityChanged?.call(p);
             },
             child: Text(p.name),

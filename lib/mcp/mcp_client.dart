@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:neomage/core/platform/neomage_io.dart';
+
+import '../utils/security/neomage_network_guard.dart';
 import 'mcp_models.dart';
 
 /// Abstract transport layer for MCP communication.
@@ -13,6 +15,10 @@ abstract class McpTransport {
 
 /// Transport implementation using stdio pipes for a local subprocess.
 class StdioMcpTransport implements McpTransport {
+  static const int maxStdoutLineChars = 8 * 1024 * 1024;
+  static const int maxStderrLineChars = 4096;
+  static const int maxArgsCount = 64;
+
   final String command;
   final List<String> args;
   final Map<String, String>? environment;
@@ -28,10 +34,20 @@ class StdioMcpTransport implements McpTransport {
   });
 
   Future<void> start() async {
+    if (!NeomageNetworkGuard.isSafeMcpCommand(command)) {
+      throw ArgumentError('Blocked unsafe MCP stdio command');
+    }
+    if (args.length > maxArgsCount ||
+        args.any((a) => a.contains('\x00') || a.length > 8192)) {
+      throw ArgumentError('Invalid MCP stdio arguments');
+    }
+
+    final safeEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(environment);
     _process = await Process.start(
-      command,
+      command.trim(),
       args,
-      environment: environment,
+      environment: safeEnv.isEmpty ? null : safeEnv,
+      runInShell: false,
     );
 
     // Read stdout line by line
@@ -40,12 +56,21 @@ class StdioMcpTransport implements McpTransport {
         .transform(const LineSplitter())
         .listen(
       (line) {
-        if (line.trim().isNotEmpty) {
+        if (line.length > maxStdoutLineChars) return;
+        if (line.trim().isNotEmpty && !_messageController.isClosed) {
           _messageController.add(line);
         }
       },
-      onError: (err) => _messageController.addError(err),
-      onDone: () => _messageController.close(),
+      onError: (Object err) {
+        if (!_messageController.isClosed) {
+          _messageController.addError(err);
+        }
+      },
+      onDone: () {
+        if (!_messageController.isClosed) {
+          _messageController.close();
+        }
+      },
     );
 
     // Pipe stderr to system error stream to avoid hanging
@@ -53,7 +78,11 @@ class StdioMcpTransport implements McpTransport {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((line) {
-      stderr.writeln('[MCP SERVER STDERR] $line');
+      final redacted = NeomageNetworkGuard.redactTransportError(
+        line,
+        maxChars: maxStderrLineChars,
+      );
+      stderr.writeln('[MCP SERVER STDERR] $redacted');
     });
   }
 
@@ -155,7 +184,12 @@ class McpClient {
   // Internal Helpers
   // ═══════════════════════════════════════════
 
+  static const int maxPendingRequests = 256;
+
   Future<McpResponse> _sendRequest(String method, Map<String, dynamic> params) async {
+    if (_pendingRequests.length >= maxPendingRequests) {
+      throw StateError('MCP pending request queue full ($maxPendingRequests)');
+    }
     final id = _requestIdCounter++;
     final completer = Completer<McpResponse>();
     _pendingRequests[id] = completer;
@@ -170,7 +204,7 @@ class McpClient {
       await transport.send(request.toJsonString());
     } catch (e) {
       _pendingRequests.remove(id);
-      completer.completeError(e);
+      if (!completer.isCompleted) completer.completeError(e);
     }
 
     // Set a default timeout of 30 seconds for tool execution/response
@@ -184,6 +218,7 @@ class McpClient {
   }
 
   void _handleIncomingMessage(String rawLine) {
+    if (rawLine.length > StdioMcpTransport.maxStdoutLineChars) return;
     try {
       final json = jsonDecode(rawLine);
       if (json is! Map<String, dynamic>) return;
@@ -192,13 +227,15 @@ class McpClient {
       if (json.containsKey('id') && (json.containsKey('result') || json.containsKey('error'))) {
         final id = json['id'];
         final completer = _pendingRequests.remove(id);
-        if (completer != null) {
+        if (completer != null && !completer.isCompleted) {
           final response = McpResponse.fromJson(json);
           completer.complete(response);
         }
       }
     } catch (e) {
-      stderr.writeln('[MCP CLIENT PARSE ERROR] $e on message: $rawLine');
+      stderr.writeln(
+        '[MCP CLIENT PARSE ERROR] ${NeomageNetworkGuard.redactTransportError(e.toString())}',
+      );
     }
   }
 }

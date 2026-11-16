@@ -5,6 +5,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 /// LSP server states.
 enum LspServerState { stopped, starting, running, stopping, error }
@@ -176,6 +177,12 @@ class LspServerInstance {
 
 /// LSP server manager — manages multiple LSP servers and routes requests.
 class LspServerManager {
+  /// Maximum LSP header block length (`8 KiB`) before framing abort.
+  static const int maxHeaderChars = 8 * 1024;
+
+  /// Maximum LSP JSON-RPC frame body size (`16 MiB`).
+  static const int maxFrameChars = 16 * 1024 * 1024;
+
   final Map<String, LspServerInstance> _servers = {};
   final Map<String, String> _openFiles = {}; // filePath → serverName
   final Map<String, int> _fileVersions = {}; // filePath → version
@@ -312,37 +319,99 @@ class LspServerManager {
   // ── Private ──
 
   Future<LspServerInstance> _startServer(LspServerConfig config) async {
+    if (config.command.isEmpty ||
+        config.command.startsWith('-') ||
+        config.command.contains('\x00')) {
+      throw ArgumentError.value(
+        config.command,
+        'config.command',
+        'Unsafe LSP server command',
+      );
+    }
+    for (final arg in config.args) {
+      if (arg.contains('\x00')) {
+        throw ArgumentError('LSP argument contains NUL byte');
+      }
+    }
+    final workspace = config.workspaceFolder;
+    if (workspace != null &&
+        (workspace.contains('\x00') ||
+            workspace.startsWith('//') ||
+            workspace.startsWith(r'\\') ||
+            NeomageNetworkGuard.isProtectedSystemOrCredentialPath(workspace))) {
+      throw ArgumentError.value(
+        workspace,
+        'config.workspaceFolder',
+        'Unsafe LSP workspace folder',
+      );
+    }
+
     final process = await Process.start(
       config.command,
       config.args,
-      environment: config.env.isNotEmpty ? config.env : null,
-      workingDirectory: config.workspaceFolder,
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(null, config.env),
+      includeParentEnvironment: false,
+      workingDirectory: workspace,
     );
 
     // Parse LSP Content-Length framed messages from stdout
     final controller = StreamController<String>();
     final buffer = StringBuffer();
     int? expectedLength;
+    late final LspServerInstance server;
 
     process.stdout.transform(utf8.decoder).listen((chunk) {
       buffer.write(chunk);
-      final str = buffer.toString();
 
       while (true) {
+        final current = buffer.toString();
         if (expectedLength == null) {
-          final headerEnd = str.indexOf('\r\n\r\n');
-          if (headerEnd == -1) break;
+          final headerEnd = current.indexOf('\r\n\r\n');
+          if (headerEnd == -1) {
+            if (current.length > maxHeaderChars) {
+              buffer.clear();
+              server.state = LspServerState.error;
+              server.lastError = 'LSP header exceeded $maxHeaderChars chars';
+              process.kill(ProcessSignal.sigterm);
+            }
+            break;
+          }
+          if (headerEnd > maxHeaderChars) {
+            buffer.clear();
+            server.state = LspServerState.error;
+            server.lastError = 'LSP header exceeded $maxHeaderChars chars';
+            process.kill(ProcessSignal.sigterm);
+            break;
+          }
 
-          final header = str.substring(0, headerEnd);
-          final match = RegExp(r'Content-Length:\s*(\d+)').firstMatch(header);
-          if (match == null) break;
+          final header = current.substring(0, headerEnd);
+          final match = RegExp(
+            r'Content-Length:\s*(\d+)',
+            caseSensitive: false,
+          ).firstMatch(header);
+          if (match == null) {
+            buffer.clear();
+            break;
+          }
 
-          expectedLength = int.parse(match.group(1)!);
+          final parsedLen = int.tryParse(match.group(1)!);
+          if (parsedLen == null ||
+              parsedLen < 0 ||
+              parsedLen > maxFrameChars) {
+            buffer.clear();
+            expectedLength = null;
+            server.state = LspServerState.error;
+            server.lastError =
+                'LSP Content-Length invalid or exceeded $maxFrameChars';
+            process.kill(ProcessSignal.sigterm);
+            break;
+          }
+          expectedLength = parsedLen;
           final bodyStart = headerEnd + 4;
           buffer.clear();
-          buffer.write(str.substring(bodyStart));
+          buffer.write(current.substring(bodyStart));
         } else {
-          final current = buffer.toString();
           if (current.length >= expectedLength!) {
             controller.add(current.substring(0, expectedLength!));
             buffer.clear();
@@ -355,7 +424,6 @@ class LspServerManager {
       }
     });
 
-    late final LspServerInstance server;
     final stdoutSub = controller.stream.listen((message) {
       try {
         final json = jsonDecode(message) as Map<String, dynamic>;

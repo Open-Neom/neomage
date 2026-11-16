@@ -17,8 +17,12 @@ import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:neomage/utils/native_installer/native_installer_guard.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'package:path/path.dart' as p;
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
+
+export 'package:neomage/utils/native_installer/native_installer_guard.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -182,7 +186,13 @@ Future<bool> detectPacman() async {
   if (osRelease != null && !isDistroFamily(osRelease, ['arch'])) return false;
   final execPath = Platform.resolvedExecutable;
   try {
-    final result = await Process.run('pacman', ['-Qo', execPath]);
+    final result = await Process.run(
+      'pacman',
+      ['-Qo', '--', execPath],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     return result.exitCode == 0 && (result.stdout as String).isNotEmpty;
   } catch (_) {
     return false;
@@ -196,7 +206,13 @@ Future<bool> detectDeb() async {
   if (osRelease != null && !isDistroFamily(osRelease, ['debian'])) return false;
   final execPath = Platform.resolvedExecutable;
   try {
-    final result = await Process.run('dpkg', ['-S', execPath]);
+    final result = await Process.run(
+      'dpkg',
+      ['-S', '--', execPath],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     return result.exitCode == 0 && (result.stdout as String).isNotEmpty;
   } catch (_) {
     return false;
@@ -213,7 +229,13 @@ Future<bool> detectRpm() async {
   }
   final execPath = Platform.resolvedExecutable;
   try {
-    final result = await Process.run('rpm', ['-qf', execPath]);
+    final result = await Process.run(
+      'rpm',
+      ['-qf', '--', execPath],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     return result.exitCode == 0 && (result.stdout as String).isNotEmpty;
   } catch (_) {
     return false;
@@ -227,7 +249,13 @@ Future<bool> detectApk() async {
   if (osRelease != null && !isDistroFamily(osRelease, ['alpine'])) return false;
   final execPath = Platform.resolvedExecutable;
   try {
-    final result = await Process.run('apk', ['info', '--who-owns', execPath]);
+    final result = await Process.run(
+      'apk',
+      ['info', '--who-owns', '--', execPath],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
     return result.exitCode == 0 && (result.stdout as String).isNotEmpty;
   } catch (_) {
     return false;
@@ -321,43 +349,13 @@ bool isPidBasedLockingEnabled() {
 }
 
 /// Check if a process with the given PID is currently running.
-/// Uses signal 0 which checks permission without sending a signal.
-bool isProcessRunning(int pid) {
-  if (pid <= 1) return false;
-  try {
-    return Process.killPid(pid, ProcessSignal.sigusr1) || _checkPidExists(pid);
-  } catch (_) {
-    return false;
-  }
-}
-
-/// Platform-specific PID existence check.
-bool _checkPidExists(int pid) {
-  try {
-    // On Unix-like systems, sending signal 0 checks if process exists
-    final result = Process.runSync('kill', ['-0', '$pid']);
-    return result.exitCode == 0;
-  } catch (_) {
-    return false;
-  }
-}
+/// Uses signal 0 (`kill -0`) / `tasklist` without sending a fatal signal.
+bool isProcessRunning(int targetPid) => checkProcessRunningSafe(targetPid);
 
 /// Validate that a running process is actually a Neomage process.
 /// Helps mitigate PID reuse issues.
-bool _isNeomageProcess(int pid, String expectedExecPath) {
-  if (!isProcessRunning(pid)) return false;
-  if (pid == pid) return true; // Current process always valid
-
-  try {
-    final result = Process.runSync('ps', ['-p', '$pid', '-o', 'command=']);
-    if (result.exitCode != 0) return true; // Trust PID check if command fails
-    final command = (result.stdout as String).toLowerCase();
-    return command.contains('neomage') ||
-        command.contains(expectedExecPath.toLowerCase());
-  } catch (_) {
-    return true; // Trust PID check on failure
-  }
-}
+bool _isNeomageProcess(int targetPid, String expectedExecPath) =>
+    isExpectedInstallerProcess(targetPid, pid, expectedExecPath);
 
 /// Read and parse a lock file's content.
 VersionLockContent? readLockContent(String lockFilePath) {
@@ -540,10 +538,13 @@ int cleanupStaleLocks(String locksDir) {
     final dir = Directory(locksDir);
     if (!dir.existsSync()) return 0;
 
-    final lockEntries = dir.listSync().where((e) => e.path.endsWith('.lock'));
+    final lockEntries = dir
+        .listSync(followLinks: false)
+        .where((e) => e.path.endsWith('.lock'));
 
     for (final entry in lockEntries) {
       try {
+        if (FileSystemEntity.isLinkSync(entry.path)) continue;
         final stat = entry.statSync();
         if (stat.type == FileSystemEntityType.directory) {
           // Legacy proper-lockfile directory lock
@@ -583,6 +584,29 @@ int getStallTimeoutMs() {
   return defaultStallTimeoutMs;
 }
 
+/// Maximum bytes read from a channel version endpoint.
+const int _maxVersionBytes = 256;
+
+/// Maximum bytes read from a release manifest (`1 MiB`).
+const int _maxManifestBytes = 1024 * 1024;
+
+/// Maximum binary size accepted during download (`256 MiB`).
+const int _maxBinaryBytes = 256 * 1024 * 1024;
+
+Future<Uint8List> _readResponseBounded(
+  HttpClientResponse response,
+  int maxBytes,
+) async {
+  final builder = BytesBuilder(copy: false);
+  await for (final chunk in response) {
+    if (builder.length + chunk.length > maxBytes) {
+      throw StateError('Response exceeded $maxBytes bytes');
+    }
+    builder.add(chunk);
+  }
+  return builder.takeBytes();
+}
+
 /// Get the latest version from a binary repo channel endpoint.
 Future<String> getLatestVersionFromBinaryRepo({
   String channel = 'latest',
@@ -590,22 +614,42 @@ Future<String> getLatestVersionFromBinaryRepo({
   String? authUsername,
   String? authPassword,
 }) async {
+  if (!NeomageNetworkGuard.isSafeIdentifier(channel, maxLength: 32)) {
+    throw ArgumentError('Invalid release channel: $channel');
+  }
+  final uri = Uri.tryParse('$baseUrl/$channel');
+  if (!NeomageNetworkGuard.isSafeEndpointUri(
+    uri,
+    allowLoopbackInsecure: true,
+    secureSchemes: const <String>{'https'},
+    insecureSchemes: const <String>{'http'},
+  )) {
+    throw ArgumentError('Unsafe binary repository URL');
+  }
   final startTime = DateTime.now().millisecondsSinceEpoch;
   final client = HttpClient();
   try {
-    final request = await client.getUrl(Uri.parse('$baseUrl/$channel'));
+    final request = await client.getUrl(uri!);
+    request.followRedirects = false;
     request.headers.set('Accept', 'text/plain');
     if (authUsername != null && authPassword != null) {
       request.headers.set(
         'Authorization',
-        'Basic ${base64Encode(utf8.encode('$authUsername:$authPassword'))}',
+        NeomageNetworkGuard.sanitizeHeaderValue(
+          'Basic ${base64Encode(utf8.encode('$authUsername:$authPassword'))}',
+        ),
       );
     }
     final response = await request.close().timeout(const Duration(seconds: 30));
-    final body = await response.transform(utf8.decoder).join();
+    if (response.statusCode != 200) {
+      await response.drain<void>();
+      throw HttpException('Version lookup failed with HTTP ${response.statusCode}');
+    }
+    final bytes = await _readResponseBounded(response, _maxVersionBytes);
+    final body = utf8.decode(bytes, allowMalformed: true);
     final latencyMs = DateTime.now().millisecondsSinceEpoch - startTime;
     _logDebug('Version check from $baseUrl/$channel took ${latencyMs}ms');
-    return body.trim();
+    return normalizeAndValidateVersionSlug(body);
   } catch (e) {
     final latencyMs = DateTime.now().millisecondsSinceEpoch - startTime;
     _logDebug('Version check failed after ${latencyMs}ms: $e');
@@ -617,22 +661,11 @@ Future<String> getLatestVersionFromBinaryRepo({
 
 /// Get the latest version, either from direct version string or channel lookup.
 Future<String> getLatestVersion(String channelOrVersion) async {
-  // Direct version — match internal format too
-  if (RegExp(r'^v?\d+\.\d+\.\d+(-\S+)?$').hasMatch(channelOrVersion)) {
-    final normalized = channelOrVersion.startsWith('v')
-        ? channelOrVersion.substring(1)
-        : channelOrVersion;
-    // 99.99.x is reserved for CI smoke-test fixtures
-    if (RegExp(r'^99\.99\.').hasMatch(normalized)) {
-      throw Exception(
-        'Version $normalized is not available for installation. Use \'stable\' or \'latest\'.',
-      );
+  final trimmed = channelOrVersion.trim();
+  if (trimmed != 'stable' && trimmed != 'latest') {
+    if (RegExp(r'^v?\d+\.').hasMatch(trimmed)) {
+      return normalizeAndValidateVersionSlug(trimmed);
     }
-    return normalized;
-  }
-
-  // ReleaseChannel validation
-  if (channelOrVersion != 'stable' && channelOrVersion != 'latest') {
     throw Exception(
       'Invalid channel: $channelOrVersion. Use \'stable\' or \'latest\'',
     );
@@ -640,7 +673,7 @@ Future<String> getLatestVersion(String channelOrVersion) async {
 
   // Use GCS for downloads
   return getLatestVersionFromBinaryRepo(
-    channel: channelOrVersion,
+    channel: trimmed,
     baseUrl: gcsBucketUrl,
   );
 }
@@ -653,6 +686,22 @@ Future<void> downloadAndVerifyBinary({
   String? authUsername,
   String? authPassword,
 }) async {
+  final uri = Uri.tryParse(binaryUrl);
+  if (!NeomageNetworkGuard.isSafeEndpointUri(
+    uri,
+    allowLoopbackInsecure: true,
+    secureSchemes: const <String>{'https'},
+    insecureSchemes: const <String>{'http'},
+  )) {
+    throw ArgumentError('Unsafe binary download URL');
+  }
+  if (!isValidSha256Hex(expectedChecksum)) {
+    throw ArgumentError('Invalid SHA-256 checksum format');
+  }
+  if (await FileSystemEntity.isLink(binaryPath)) {
+    throw FileSystemException('Refusing to overwrite symlink binary target', binaryPath);
+  }
+
   Exception? lastError;
 
   for (int attempt = 1; attempt <= maxDownloadRetries; attempt++) {
@@ -676,48 +725,60 @@ Future<void> downloadAndVerifyBinary({
     try {
       resetStallTimer();
 
-      final request = await client.getUrl(Uri.parse(binaryUrl));
+      final request = await client.getUrl(uri!);
+      request.followRedirects = false;
       if (authUsername != null && authPassword != null) {
         request.headers.set(
           'Authorization',
-          'Basic ${base64Encode(utf8.encode('$authUsername:$authPassword'))}',
+          NeomageNetworkGuard.sanitizeHeaderValue(
+            'Basic ${base64Encode(utf8.encode('$authUsername:$authPassword'))}',
+          ),
         );
       }
 
       final response = await request.close().timeout(
         const Duration(minutes: 5),
       );
-      final chunks = <List<int>>[];
-      int totalBytes = 0;
+      if (response.statusCode != 200) {
+        await response.drain<void>();
+        throw HttpException('Binary download failed with HTTP ${response.statusCode}');
+      }
+      if (response.contentLength > _maxBinaryBytes) {
+        await response.drain<void>();
+        throw StateError('Binary exceeds $_maxBinaryBytes bytes');
+      }
 
+      final builder = BytesBuilder(copy: false);
       await for (final chunk in response) {
         if (aborted) throw StallTimeoutError();
         resetStallTimer();
-        chunks.add(chunk);
-        totalBytes += chunk.length;
+        if (builder.length + chunk.length > _maxBinaryBytes) {
+          throw StateError('Binary exceeds $_maxBinaryBytes bytes');
+        }
+        builder.add(chunk);
       }
 
       clearStallTimer();
+      final data = builder.takeBytes();
 
-      // Combine chunks
-      final data = Uint8List(totalBytes);
-      int offset = 0;
-      for (final chunk in chunks) {
-        data.setRange(offset, offset + chunk.length, chunk);
-        offset += chunk.length;
-      }
-
-      // Verify checksum
-      final actualChecksum = sha256.convert(data).toString();
-      if (actualChecksum != expectedChecksum) {
+      // Verify checksum in constant time
+      if (!verifySha256ConstantTime(data, expectedChecksum)) {
+        final actualChecksum = sha256.convert(data).toString();
         throw Exception(
           'Checksum mismatch: expected $expectedChecksum, got $actualChecksum',
         );
       }
 
+      if (await FileSystemEntity.isLink(binaryPath)) {
+        throw FileSystemException(
+          'Refusing to overwrite symlink binary target',
+          binaryPath,
+        );
+      }
+
       // Write binary to disk
       final file = File(binaryPath);
-      await file.writeAsBytes(data);
+      await file.writeAsBytes(data, flush: true);
       if (!Platform.isWindows) {
         await Process.run('chmod', ['755', binaryPath]);
       }
@@ -758,6 +819,20 @@ Future<void> downloadVersionFromBinaryRepo({
   String? authUsername,
   String? authPassword,
 }) async {
+  final safeVersion = normalizeAndValidateVersionSlug(version);
+  final manifestUri = Uri.tryParse('$baseUrl/$safeVersion/manifest.json');
+  if (!NeomageNetworkGuard.isSafeEndpointUri(
+    manifestUri,
+    allowLoopbackInsecure: true,
+    secureSchemes: const <String>{'https'},
+    insecureSchemes: const <String>{'http'},
+  )) {
+    throw ArgumentError('Unsafe manifest URL');
+  }
+  if (await FileSystemEntity.isLink(stagingPath)) {
+    throw FileSystemException('Refusing to use symlink staging path', stagingPath);
+  }
+
   // Clean up any partial download
   final stagingDir = Directory(stagingPath);
   if (stagingDir.existsSync()) {
@@ -771,18 +846,23 @@ Future<void> downloadVersionFromBinaryRepo({
   final client = HttpClient();
   Map<String, dynamic> manifest;
   try {
-    final request = await client.getUrl(
-      Uri.parse('$baseUrl/$version/manifest.json'),
-    );
+    final request = await client.getUrl(manifestUri!);
+    request.followRedirects = false;
     if (authUsername != null && authPassword != null) {
       request.headers.set(
         'Authorization',
-        'Basic ${base64Encode(utf8.encode('$authUsername:$authPassword'))}',
+        NeomageNetworkGuard.sanitizeHeaderValue(
+          'Basic ${base64Encode(utf8.encode('$authUsername:$authPassword'))}',
+        ),
       );
     }
     final response = await request.close().timeout(const Duration(seconds: 10));
-    final body = await response.transform(utf8.decoder).join();
-    manifest = jsonDecode(body) as Map<String, dynamic>;
+    if (response.statusCode != 200) {
+      await response.drain<void>();
+      throw HttpException('Manifest fetch failed with HTTP ${response.statusCode}');
+    }
+    final bytes = await _readResponseBounded(response, _maxManifestBytes);
+    manifest = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
   } catch (e) {
     final latencyMs = DateTime.now().millisecondsSinceEpoch - startTime;
     _logDebug('Manifest fetch failed after ${latencyMs}ms: $e');
@@ -795,13 +875,13 @@ Future<void> downloadVersionFromBinaryRepo({
   final platformInfo = platforms?[platform] as Map<String, dynamic>?;
   if (platformInfo == null) {
     throw Exception(
-      'Platform $platform not found in manifest for version $version',
+      'Platform $platform not found in manifest for version $safeVersion',
     );
   }
 
-  final expectedChecksum = platformInfo['checksum'] as String;
+  final expectedChecksum = (platformInfo['checksum'] as String?) ?? '';
   final binaryName = getBinaryName(platform);
-  final binaryUrl = '$baseUrl/$version/$platform/$binaryName';
+  final binaryUrl = '$baseUrl/$safeVersion/$platform/$binaryName';
 
   // Write to staging
   await stagingDir.create(recursive: true);
@@ -1188,7 +1268,7 @@ class NativeInstallerController extends SintController {
       final versionsDir = Directory(dirs.versions);
       if (!await versionsDir.exists()) return 0;
 
-      final entries = await versionsDir.list().toList();
+      final entries = await versionsDir.list(followLinks: false).toList();
       if (entries.length <= versionRetentionCount) return 0;
 
       // Sort by modification time (newest first)
@@ -1232,15 +1312,8 @@ class NativeInstallerController extends SintController {
   }
 
   /// Static helper to check if a process is running.
-  static bool isProcessRunning(int pid) {
-    if (pid <= 1) return false;
-    try {
-      final result = Process.runSync('kill', ['-0', '$pid']);
-      return result.exitCode == 0;
-    } catch (_) {
-      return false;
-    }
-  }
+  static bool isProcessRunning(int targetPid) =>
+      checkProcessRunningSafe(targetPid);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

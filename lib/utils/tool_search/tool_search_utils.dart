@@ -10,7 +10,7 @@ library;
 
 import 'dart:convert';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ---------------------------------------------------------------------------
 // Tool Search Mode

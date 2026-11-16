@@ -6,7 +6,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:neomage/core/platform/neomage_io.dart';
-import 'package:saia_skills/saia_skills.dart';
+import 'package:neomage/data/skills/skill_catalog_source.dart';
 
 // ─── Types ───
 
@@ -242,11 +242,92 @@ class SkillResult {
 
 /// Registry for managing and executing skills.
 class SkillRegistry {
+  static final List<SkillCatalogSource> _globalCatalogSources = [];
+
+  /// Registers an external [SkillCatalogSource] globally so both [SkillRegistry]
+  /// instances and UI panels (such as `SkillsPanel`) can discover host-provided
+  /// skill catalogs without coupling `neomage` to private packages.
+  static void registerCatalogSource(SkillCatalogSource source) {
+    if (!_globalCatalogSources.contains(source)) {
+      _globalCatalogSources.add(source);
+    }
+  }
+
+  /// Removes a previously registered global [SkillCatalogSource].
+  static void unregisterCatalogSource(SkillCatalogSource source) {
+    _globalCatalogSources.remove(source);
+  }
+
+  /// Clears all globally registered external [SkillCatalogSource]s.
+  static void clearCatalogSources() {
+    _globalCatalogSources.clear();
+  }
+
+  /// Read-only view of globally registered external [SkillCatalogSource]s.
+  static List<SkillCatalogSource> get catalogSources =>
+      List.unmodifiable(_globalCatalogSources);
+
+  /// Discovers skills across bundled Flutter assets and any registered
+  /// [SkillCatalogSource]s, grouped by category.
+  static Future<Map<String, List<CatalogSkillEntry>>> discoverCatalogSkills({
+    String preferLanguage = 'es',
+    List<SkillCatalogSource>? extraSources,
+    bool includeAssetManifest = true,
+  }) async {
+    final sources = <SkillCatalogSource>[
+      if (includeAssetManifest) const AssetManifestSkillCatalogSource(),
+      ..._globalCatalogSources,
+      ...?extraSources,
+    ];
+
+    final merged = <String, Map<String, CatalogSkillEntry>>{};
+    for (final source in sources) {
+      try {
+        final byCat = await source.loadByCategory(
+          preferLanguage: preferLanguage,
+        );
+        byCat.forEach((category, entries) {
+          final bucket = merged.putIfAbsent(
+            category,
+            () => <String, CatalogSkillEntry>{},
+          );
+          for (final entry in entries) {
+            bucket[entry.id] = entry;
+          }
+        });
+      } catch (_) {
+        // Ignore unavailable sources (e.g. AssetManifest outside Flutter test bindings).
+      }
+    }
+
+    final result = <String, List<CatalogSkillEntry>>{};
+    merged.forEach((category, bucket) {
+      final list = bucket.values.toList()..sort((a, b) => a.id.compareTo(b.id));
+      if (list.isNotEmpty) {
+        result[category] = list;
+      }
+    });
+    return result;
+  }
+
   final Map<String, SkillDefinition> _skills = {};
+  final Map<String, Future<String> Function()> _skillLoaders = {};
+  final List<SkillCatalogSource> _instanceCatalogSources = [];
   final List<String> _searchPaths = [];
   bool _initialized = false;
 
-  SkillRegistry();
+  SkillRegistry({List<SkillCatalogSource>? catalogSources}) {
+    if (catalogSources != null) {
+      _instanceCatalogSources.addAll(catalogSources);
+    }
+  }
+
+  /// Adds an instance-scoped [SkillCatalogSource] before [initialize].
+  void addCatalogSource(SkillCatalogSource source) {
+    if (!_instanceCatalogSources.contains(source)) {
+      _instanceCatalogSources.add(source);
+    }
+  }
 
   /// All registered skills.
   List<SkillDefinition> get skills => _skills.values.toList();
@@ -628,35 +709,35 @@ Include:
     );
   }
 
-  /// Load bundled skills from assets/skills/ via AssetManifest.
+  /// Load bundled and injected catalog skills via [SkillCatalogSource]s.
   /// Skills are registered with source=builtin and grouped by category.
   Future<void> _loadBundledSkills() async {
     try {
-      // El catálogo lo resuelve `saia_skills`.
-      //
-      // Aquí había una expresión regular propia —`assets/skills/<cat>/…`—
-      // que dejó de casar cuando el contenido se mudó a su paquete y la
-      // ruta perdió el segmento `skills/`. No fallaba: cargaba cero
-      // habilidades y seguía adelante, porque el `catch` de abajo existe
-      // para los contextos sin Flutter. Un catálogo vacío y uno no
-      // disponible se veían igual.
-      //
-      // Era la segunda copia del mismo parseo en este paquete; el panel de
-      // la interfaz tenía otra. Las dos podían desincronizarse por su
-      // cuenta, y lo hicieron.
-      final porCategoria = await SaiaSkillCatalog.byCategory();
+      final porCategoria = await discoverCatalogSkills(
+        extraSources: _instanceCatalogSources,
+      );
 
       porCategoria.forEach((category, skills) {
         for (final s in skills) {
+          final description = s.description.isNotEmpty
+              ? s.description
+              : 'Bundled skill: ${s.displayName}';
           final skill = SkillDefinition(
             name: s.id,
-            description: 'Bundled skill: ${_humanize(s.id)}',
-            prompt: '', // Se carga bajo demanda vía loadSkillContent()
+            description: description,
+            prompt: '', // Loaded on-demand via loadSkillContent()
             source: SkillSource.builtin,
             tags: [category],
-            metadata: {'assetPath': s.assetPath, 'category': category},
+            metadata: {
+              if (s.assetPath != null) 'assetPath': s.assetPath,
+              'category': category,
+              'language': s.language,
+            },
           );
 
+          if (s.contentLoader != null) {
+            _skillLoaders[s.id] = s.contentLoader!;
+          }
           register(skill);
           bundledByCategory.putIfAbsent(category, () => []);
           bundledByCategory[category]!.add(skill);
@@ -667,18 +748,23 @@ Include:
         list.sort((a, b) => a.name.compareTo(b.name));
       }
     } catch (_) {
-      // El manifiesto de assets no existe fuera de Flutter (CLI, tests).
+      // Asset manifest may not exist outside Flutter (CLI, pure Dart tests).
     }
   }
 
-  /// Load the full markdown content of a bundled skill on-demand.
-  /// Returns null if the skill has no asset path or loading fails.
+  /// Load the full markdown content of a bundled or catalog skill on-demand.
+  /// Returns null if the skill has no loader/asset path or loading fails.
   Future<String?> loadSkillContent(SkillDefinition skill) async {
+    final customLoader = _skillLoaders[skill.name];
     final assetPath = skill.metadata?['assetPath'] as String?;
-    if (assetPath == null) return skill.prompt.isNotEmpty ? skill.prompt : null;
+    if (customLoader == null && assetPath == null) {
+      return skill.prompt.isNotEmpty ? skill.prompt : null;
+    }
 
     try {
-      final content = await rootBundle.loadString(assetPath);
+      final content = customLoader != null
+          ? await customLoader()
+          : await rootBundle.loadString(assetPath!);
 
       // Update the skill's prompt with full content.
       final parsed = SkillDefinition.fromMarkdown(content, source: skill.source);
@@ -708,12 +794,6 @@ Include:
   /// Total number of bundled skills.
   int get bundledSkillCount =>
       bundledByCategory.values.fold(0, (sum, list) => sum + list.length);
-
-  static String _humanize(String snakeCase) {
-    return snakeCase
-        .replaceAll('_', ' ')
-        .replaceAllMapped(RegExp(r'(^|\s)\w'), (m) => m[0]!.toUpperCase());
-  }
 
   Future<void> _loadFromPaths() async {
     for (final searchPath in _searchPaths) {

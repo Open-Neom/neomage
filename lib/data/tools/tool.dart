@@ -124,12 +124,70 @@ abstract class Tool {
   // ── Permissions ──
 
   /// Check if this tool use is permitted. Returns a PermissionDecision.
-  /// Override in subclasses for tool-specific permission logic.
+  ///
+  /// Read-only, non-destructive tools auto-allow unless explicitly denied by a
+  /// rule. Non-read-only, destructive, or user-interactive tools fail-closed to
+  /// [AskDecision] (or [DenyDecision] in [PermissionMode.plan]) unless an
+  /// explicit allow rule or non-interactive permission mode applies.
   Future<PermissionDecision> checkPermissions(
     Map<String, dynamic> input,
     ToolPermissionContext permContext,
   ) async {
-    return const AllowDecision(PermissionAllowDecision());
+    // 1. Explicit deny rules always take precedence.
+    for (final rules in permContext.rulesBySource.values) {
+      for (final rule in rules) {
+        if (rule.behavior == PermissionBehavior.deny &&
+            rule.value.toolName == name &&
+            (rule.value.ruleContent == null ||
+                rule.value.ruleContent!.isEmpty)) {
+          return DenyDecision(
+            PermissionDenyDecision(
+              reason: 'Blocked by permission rule for $name',
+            ),
+          );
+        }
+      }
+    }
+
+    // 2. Pure read-only tools are safe in all modes (including plan mode).
+    if (isReadOnly && !isDestructive && !requiresUserInteraction) {
+      return const AllowDecision(PermissionAllowDecision());
+    }
+
+    // 3. Plan mode forbids all non-read-only / destructive tools.
+    if (permContext.mode == PermissionMode.plan) {
+      return DenyDecision(
+        PermissionDenyDecision(
+          reason: 'Tool "$name" is not permitted while in plan mode',
+        ),
+      );
+    }
+
+    // 4. Explicit tool-level allow rules (when not constrained by pattern).
+    for (final rules in permContext.rulesBySource.values) {
+      for (final rule in rules) {
+        if (rule.behavior == PermissionBehavior.allow &&
+            rule.value.toolName == name &&
+            (rule.value.ruleContent == null ||
+                rule.value.ruleContent!.isEmpty)) {
+          return AllowDecision(PermissionAllowDecision(matchedRule: rule));
+        }
+      }
+    }
+
+    // 5. Mode-based overrides.
+    if (permContext.mode == PermissionMode.bypassPermissions) {
+      return const AllowDecision(PermissionAllowDecision());
+    }
+    if (permContext.mode == PermissionMode.dontAsk &&
+        !requiresUserInteraction) {
+      return const AllowDecision(PermissionAllowDecision());
+    }
+
+    // 6. Default fail-closed prompt for mutating / destructive tools.
+    return AskDecision(
+      PermissionAskDecision(message: 'Allow $userFacingName?'),
+    );
   }
 
   /// Validate input before execution and permission checks.
@@ -201,6 +259,14 @@ mixin ShellToolMixin on Tool {
 
   @override
   InterruptBehavior get interruptBehavior => InterruptBehavior.finishThenYield;
+
+  @override
+  PermissionExplanation? getPermissionExplanation(Map<String, dynamic> input) =>
+      PermissionExplanation(
+        title: 'Execute $userFacingName command',
+        description: 'Executes a system shell command on the host machine.',
+        riskLevel: RiskLevel.high,
+      );
 }
 
 /// Mixin for tools that only read files/data.
@@ -216,6 +282,20 @@ mixin ReadOnlyToolMixin on Tool {
     Map<String, dynamic> input,
     ToolPermissionContext permContext,
   ) async {
+    for (final rules in permContext.rulesBySource.values) {
+      for (final rule in rules) {
+        if (rule.behavior == PermissionBehavior.deny &&
+            rule.value.toolName == name &&
+            (rule.value.ruleContent == null ||
+                rule.value.ruleContent!.isEmpty)) {
+          return DenyDecision(
+            PermissionDenyDecision(
+              reason: 'Blocked by permission rule for $name',
+            ),
+          );
+        }
+      }
+    }
     return const AllowDecision(PermissionAllowDecision());
   }
 }
@@ -227,4 +307,27 @@ mixin FileWriteToolMixin on Tool {
 
   @override
   bool get isConcurrencySafe => false;
+
+  @override
+  PermissionExplanation? getPermissionExplanation(Map<String, dynamic> input) =>
+      PermissionExplanation(
+        title: 'Modify file with $userFacingName',
+        description: 'Creates or modifies a file on the local filesystem.',
+        riskLevel: RiskLevel.medium,
+      );
+
+  @override
+  Future<PermissionDecision> checkPermissions(
+    Map<String, dynamic> input,
+    ToolPermissionContext permContext,
+  ) async {
+    final baseDecision = await super.checkPermissions(input, permContext);
+    if (baseDecision is DenyDecision || baseDecision is AllowDecision) {
+      return baseDecision;
+    }
+    if (permContext.mode == PermissionMode.acceptEdits) {
+      return const AllowDecision(PermissionAllowDecision());
+    }
+    return baseDecision;
+  }
 }

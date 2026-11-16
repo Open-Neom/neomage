@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:neomage/core/platform/neomage_io.dart';
 import 'package:neomage/core/platform/shell_executor.dart';
 
+import 'bash_tool_full.dart' show checkPathSafety;
 import 'tool.dart';
 
 /// Execute shell commands via neom_cli's CliExecutor.
@@ -63,15 +64,44 @@ class BashTool extends Tool with ShellToolMixin {
       Platform.isMacOS || Platform.isLinux || Platform.isWindows;
 
   @override
-  Future<ToolResult> execute(Map<String, dynamic> input) async {
+  ValidationResult validateInput(Map<String, dynamic> input) {
     final command = input['command'] as String?;
     if (command == null || command.isEmpty) {
-      return ToolResult.error('Missing required parameter: command');
+      return const ValidationResult.invalid(
+        'Missing required parameter: command',
+      );
     }
+    if (command.contains('\x00')) {
+      return const ValidationResult.invalid('Invalid NUL byte in command');
+    }
+    if (workingDirectory != null &&
+        (workingDirectory!.contains('\x00') ||
+            workingDirectory!.startsWith(r'\\') ||
+            workingDirectory!.startsWith('//'))) {
+      return const ValidationResult.invalid(
+        'Unsafe workingDirectory configuration',
+      );
+    }
+    final pathCheck = checkPathSafety(command);
+    if (pathCheck.isDangerous) {
+      return ValidationResult.invalid(
+        pathCheck.reason ?? 'Dangerous path operation blocked',
+      );
+    }
+    return const ValidationResult.valid();
+  }
 
-    final timeoutMs = input['timeout'] as int?;
-    final effectiveTimeout = timeoutMs != null
-        ? Duration(milliseconds: timeoutMs)
+  @override
+  Future<ToolResult> execute(Map<String, dynamic> input) async {
+    final validation = validateInput(input);
+    if (!validation.isValid) {
+      return ToolResult.error(validation.error!);
+    }
+    final command = input['command'] as String;
+
+    final rawTimeoutMs = (input['timeout'] as num?)?.toInt();
+    final effectiveTimeout = rawTimeoutMs != null
+        ? Duration(milliseconds: rawTimeoutMs.clamp(1000, 600000))
         : timeout;
 
     try {

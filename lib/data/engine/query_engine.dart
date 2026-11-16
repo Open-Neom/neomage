@@ -139,18 +139,25 @@ class QueryEngine {
       for (final toolUse in toolUses) {
         final tool = toolRegistry.get(toolUse.name);
 
-        // Permission check
-        if (tool != null && onPermissionRequest != null) {
+        // Permission check (enforced whenever permissionContext OR
+        // onPermissionRequest is configured — fail-closed if AskDecision has
+        // no interactive callback).
+        if (tool != null &&
+            (permissionContext != null || onPermissionRequest != null)) {
           final permResult = await _checkPermission(
             tool,
             toolUse.input,
             onPermissionRequest,
           );
           if (!permResult) {
+            final deniedResult = ToolResult.error(
+              'Permission denied for ${toolUse.name}.',
+            );
+            onToolResult?.call(toolUse.name, deniedResult);
             toolResults.add(
               ToolResultBlock(
                 toolUseId: toolUse.id,
-                content: 'Permission denied by user for ${toolUse.name}.',
+                content: deniedResult.content,
                 isError: true,
               ),
             );
@@ -189,12 +196,10 @@ class QueryEngine {
   Future<bool> _checkPermission(
     Tool tool,
     Map<String, dynamic> input,
-    OnPermissionRequest onPermissionRequest,
+    OnPermissionRequest? onPermissionRequest,
   ) async {
-    // Read-only tools are auto-allowed
-    if (tool.isReadOnly) return true;
-
-    // Check tool's own permission logic
+    // Check tool's own permission logic first when context is present so
+    // explicit deny rules and plan-mode restrictions are always honored.
     if (permissionContext != null) {
       final decision = await tool.checkPermissions(input, permissionContext!);
       switch (decision) {
@@ -203,9 +208,19 @@ class QueryEngine {
         case DenyDecision():
           return false;
         case AskDecision():
-          // Fall through to user prompt
+          if (onPermissionRequest == null) {
+            return false; // Fail-closed when no interactive handler exists.
+          }
           break;
       }
+    } else if (tool.isReadOnly &&
+        !tool.isDestructive &&
+        !tool.requiresUserInteraction) {
+      return true;
+    }
+
+    if (onPermissionRequest == null) {
+      return false;
     }
 
     // Ask user
@@ -247,7 +262,7 @@ class QueryEngine {
             textBuffers[idx]!.write(text);
             onTextDelta?.call(text);
           } else if (toolUseBuffers.containsKey(idx)) {
-            toolUseBuffers[idx]!.jsonBuffer.write(text);
+            toolUseBuffers[idx]!.appendDelta(text);
           }
 
         case ContentBlockStopEvent(index: final idx):
@@ -286,13 +301,27 @@ class QueryEngine {
 }
 
 class _ToolUseBuildState {
+  static const int _maxToolInputJsonChars = 2 * 1024 * 1024;
+
   final String id;
   final String name;
   final StringBuffer jsonBuffer = StringBuffer();
+  bool _overflowed = false;
 
   _ToolUseBuildState({required this.id, required this.name});
 
+  void appendDelta(String delta) {
+    if (_overflowed) return;
+    if (jsonBuffer.length + delta.length > _maxToolInputJsonChars) {
+      _overflowed = true;
+      jsonBuffer.clear();
+      return;
+    }
+    jsonBuffer.write(delta);
+  }
+
   Map<String, dynamic> get parsedInput {
+    if (_overflowed) return {};
     final json = jsonBuffer.toString().trim();
     if (json.isEmpty) return {};
     try {

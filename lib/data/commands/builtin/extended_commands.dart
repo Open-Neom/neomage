@@ -2,6 +2,7 @@
 // All commands not already ported as individual files are collected here.
 
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 
 import '../../tools/tool.dart';
 import '../command.dart';
@@ -50,7 +51,19 @@ class AddDirCommand extends LocalCommand {
     final errors = <String>[];
 
     for (final path in paths) {
+      if (path.contains('\x00') ||
+          path.startsWith('//') ||
+          path.startsWith(r'\\')) {
+        errors.add('$path — unsafe directory path');
+        continue;
+      }
       final resolved = _resolvePath(path, context.cwd);
+      if (resolved.startsWith('//') ||
+          resolved.startsWith(r'\\') ||
+          NeomageNetworkGuard.isProtectedSystemOrCredentialPath(resolved)) {
+        errors.add('$path — protected or unsafe directory');
+        continue;
+      }
       final dir = Directory(resolved);
       if (await dir.exists()) {
         if (!_extraDirs.contains(resolved)) {
@@ -1124,7 +1137,13 @@ class DoctorCommand extends LocalCommand {
 
   Future<String?> _runCommand(String executable, List<String> args) async {
     try {
-      final result = await Process.run(executable, args);
+      final result = await Process.run(
+        executable,
+        args,
+        runInShell: false,
+        environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+        includeParentEnvironment: false,
+      ).timeout(const Duration(seconds: 5));
       if (result.exitCode == 0) {
         return (result.stdout as String).trim();
       }

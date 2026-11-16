@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'dart:math';
 
 import 'mcp_types.dart';
@@ -169,6 +170,8 @@ abstract class McpTransport {
 class ContentLengthCodec {
   static const _headerSeparator = '\r\n\r\n';
   static const _contentLengthPrefix = 'Content-Length: ';
+  static const int maxHeaderBytes = 16 * 1024;
+  static const int maxMessageBytes = 16 * 1024 * 1024;
 
   final _buffer = BytesBuilder(copy: false);
 
@@ -184,6 +187,12 @@ class ContentLengthCodec {
   /// Feed raw bytes from stdout and yield complete messages.
   /// Handles partial reads and multiple messages in a single chunk.
   Iterable<JsonRpcMessage> decode(List<int> chunk) sync* {
+    if (_buffer.length + chunk.length > maxMessageBytes * 2) {
+      _buffer.clear();
+      throw const McpTransportException(
+        'MCP stdio frame buffer exceeded maximum size (32 MiB)',
+      );
+    }
     _buffer.add(chunk);
     final bytes = _buffer.toBytes();
 
@@ -191,23 +200,53 @@ class ContentLengthCodec {
     while (offset < bytes.length) {
       // Find header separator
       final headerEnd = _indexOf(bytes, _headerSeparator, offset);
-      if (headerEnd < 0) break;
+      if (headerEnd < 0) {
+        if (bytes.length - offset > maxHeaderBytes) {
+          _buffer.clear();
+          throw const McpTransportException(
+            'MCP stdio header exceeded maximum size (16 KiB)',
+          );
+        }
+        break;
+      }
+
+      if (headerEnd - offset > maxHeaderBytes) {
+        _buffer.clear();
+        throw const McpTransportException(
+          'MCP stdio header exceeded maximum size (16 KiB)',
+        );
+      }
 
       // Parse Content-Length from header block
-      final headerStr = utf8.decode(bytes.sublist(offset, headerEnd));
+      final headerStr = utf8.decode(
+        bytes.sublist(offset, headerEnd),
+        allowMalformed: true,
+      );
       final contentLength = _parseContentLength(headerStr);
-      if (contentLength == null) break;
+      if (contentLength == null ||
+          contentLength < 0 ||
+          contentLength > maxMessageBytes) {
+        _buffer.clear();
+        throw McpTransportException(
+          'Invalid MCP Content-Length: $contentLength',
+        );
+      }
 
       final bodyStart = headerEnd + _headerSeparator.length;
       final bodyEnd = bodyStart + contentLength;
       if (bodyEnd > bytes.length) break; // incomplete body
 
-      final bodyStr = utf8.decode(bytes.sublist(bodyStart, bodyEnd));
+      final bodyStr = utf8.decode(
+        bytes.sublist(bodyStart, bodyEnd),
+        allowMalformed: true,
+      );
       offset = bodyEnd;
 
       try {
-        final json = jsonDecode(bodyStr) as Map<String, dynamic>;
-        yield JsonRpcMessage.fromJson(json);
+        final decoded = jsonDecode(bodyStr);
+        if (decoded is Map<String, dynamic>) {
+          yield JsonRpcMessage.fromJson(decoded);
+        }
       } on FormatException {
         // Skip malformed messages
       }
@@ -289,15 +328,41 @@ class StdioTransport extends McpTransport {
   /// Recent stderr output from the child process (for diagnostics).
   List<String> get stderrLog => List.unmodifiable(_stderrLog);
 
+  static const int maxArgsCount = 64;
+  static const int maxArgLength = 8192;
+  static const int maxStderrLineChars = 4096;
+
   @override
   Future<void> connect() async {
     if (_connected) return;
 
+    if (!NeomageNetworkGuard.isSafeMcpCommand(command)) {
+      throw const McpTransportException('Blocked unsafe MCP stdio command');
+    }
+    if (args.length > maxArgsCount ||
+        args.any((a) => a.contains('\x00') || a.length > maxArgLength)) {
+      throw const McpTransportException('Invalid MCP stdio arguments');
+    }
+    String? safeCwd;
+    if (workingDirectory != null) {
+      final rawCwd = workingDirectory!;
+      final trimmedCwd = rawCwd.trim();
+      if (trimmedCwd.isEmpty ||
+          trimmedCwd.length > 4096 ||
+          trimmedCwd.split(RegExp(r'[/\\]')).contains('..') ||
+          NeomageNetworkGuard.isProtectedSystemOrCredentialPath(rawCwd)) {
+        throw const McpTransportException('Blocked unsafe MCP workingDirectory');
+      }
+      safeCwd = trimmedCwd;
+    }
+
+    final safeEnv = NeomageNetworkGuard.sanitizeSubprocessEnv(environment);
     _process = await Process.start(
-      command,
+      command.trim(),
       args,
-      environment: environment,
-      workingDirectory: workingDirectory,
+      environment: safeEnv.isEmpty ? null : safeEnv,
+      workingDirectory: safeCwd,
+      runInShell: false,
     );
 
     _connected = true;
@@ -310,7 +375,8 @@ class StdioTransport extends McpTransport {
         }
       },
       onError: (Object e) {
-        _controller.addError(McpTransportException('Stdout error: $e'));
+        final redacted = NeomageNetworkGuard.redactTransportError(e.toString());
+        _controller.addError(McpTransportException('Stdout error: $redacted'));
       },
       onDone: () {
         _connected = false;
@@ -325,10 +391,14 @@ class StdioTransport extends McpTransport {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .map((line) {
+          final redacted = NeomageNetworkGuard.redactTransportError(
+            line,
+            maxChars: maxStderrLineChars,
+          );
           // Keep last 200 lines
-          _stderrLog.add(line);
+          _stderrLog.add(redacted);
           if (_stderrLog.length > 200) _stderrLog.removeAt(0);
-          return utf8.encode(line);
+          return utf8.encode(redacted);
         })
         .listen(null);
 
@@ -421,11 +491,23 @@ class SseTransport extends McpTransport {
   @override
   Future<void> connect() async {
     if (_connected) return;
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      endpoint,
+      allowLoopbackInsecure: true,
+      allowPrivateLanHttp: false,
+      allowPublicInsecure: false,
+      secureSchemes: const <String>{'https'},
+      insecureSchemes: const <String>{'http'},
+    )) {
+      throw const McpTransportException('Blocked unsafe MCP SSE endpoint URI');
+    }
     _closing = false;
     _httpClient = HttpClient();
 
     await _connectSse();
   }
+
+  static const int maxSseEventChars = 8 * 1024 * 1024;
 
   Future<void> _connectSse() async {
     final client = _httpClient;
@@ -433,12 +515,16 @@ class SseTransport extends McpTransport {
 
     try {
       final request = await client.getUrl(endpoint);
+      request.followRedirects = false;
       request.headers.set('Accept', 'text/event-stream');
       request.headers.set('Cache-Control', 'no-cache');
       if (_lastEventId != null) {
-        request.headers.set('Last-Event-ID', _lastEventId!);
+        final cleanId = NeomageNetworkGuard.sanitizeHeaderValue(_lastEventId!);
+        if (cleanId.isNotEmpty) {
+          request.headers.set('Last-Event-ID', cleanId);
+        }
       }
-      headers?.forEach((k, v) => request.headers.set(k, v));
+      _applySanitizedHeaders(request.headers, headers);
 
       final response = await request.close();
       if (response.statusCode != 200) {
@@ -500,12 +586,24 @@ class SseTransport extends McpTransport {
 
     switch (field) {
       case 'event':
-        _sseEventType = value;
+        if (value.length <= 128) {
+          _sseEventType = value;
+        }
       case 'data':
+        if (_sseDataBuffer.length + value.length > maxSseEventChars) {
+          _sseDataBuffer.clear();
+          _sseEventType = 'message';
+          return;
+        }
         if (_sseDataBuffer.isNotEmpty) _sseDataBuffer.write('\n');
         _sseDataBuffer.write(value);
       case 'id':
-        if (!value.contains('0')) _lastEventId = value;
+        if (!value.contains('\x00') &&
+            !value.contains('\r') &&
+            !value.contains('\n') &&
+            value.length <= 1024) {
+          _lastEventId = value;
+        }
       case 'retry':
         // Could adjust reconnect delay here; ignored for simplicity.
         break;
@@ -517,22 +615,52 @@ class SseTransport extends McpTransport {
 
     switch (type) {
       case 'endpoint':
-        // Server tells us where to POST messages.
-        _postEndpoint = _resolveEndpoint(data.trim());
+        // Server tells us where to POST messages; enforce same-origin to
+        // prevent second-order SSRF / Authorization header exfiltration.
+        final resolved = resolvePostEndpoint(data.trim());
+        if (resolved != null) {
+          _postEndpoint = resolved;
+        }
       case 'message':
         try {
-          final json = jsonDecode(data) as Map<String, dynamic>;
-          _controller.add(JsonRpcMessage.fromJson(json));
+          final decoded = jsonDecode(data);
+          if (decoded is Map<String, dynamic>) {
+            _controller.add(JsonRpcMessage.fromJson(decoded));
+          }
         } on FormatException {
           // Ignore malformed messages.
         }
     }
   }
 
-  String _resolveEndpoint(String path) {
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    // Relative path: resolve against the SSE endpoint.
-    return endpoint.resolve(path).toString();
+  /// Resolves an SSE-supplied POST endpoint against [endpoint] and enforces
+  /// strict same-origin matching (`scheme`, `host`, effective `port`).
+  String? resolvePostEndpoint(String path) {
+    final trimmed = path.trim();
+    if (trimmed.isEmpty ||
+        trimmed.contains('\r') ||
+        trimmed.contains('\n') ||
+        trimmed.contains('\x00')) {
+      return null;
+    }
+    final Uri resolved;
+    try {
+      resolved = endpoint.resolve(trimmed);
+    } catch (_) {
+      return null;
+    }
+    if (resolved.scheme != endpoint.scheme) return null;
+    if (resolved.host.toLowerCase() != endpoint.host.toLowerCase()) {
+      return null;
+    }
+    final expectedPort = endpoint.hasPort
+        ? endpoint.port
+        : (endpoint.scheme == 'https' ? 443 : 80);
+    final actualPort = resolved.hasPort
+        ? resolved.port
+        : (resolved.scheme == 'https' ? 443 : 80);
+    if (actualPort != expectedPort) return null;
+    return resolved.toString();
   }
 
   void _scheduleReconnect() {
@@ -566,8 +694,9 @@ class SseTransport extends McpTransport {
     }
 
     final request = await client.postUrl(Uri.parse(postUrl));
+    request.followRedirects = false;
     request.headers.set('Content-Type', 'application/json');
-    headers?.forEach((k, v) => request.headers.set(k, v));
+    _applySanitizedHeaders(request.headers, headers);
     request.write(jsonEncode(message.toJson()));
 
     final response = await request.close();
@@ -629,9 +758,21 @@ class HttpTransport extends McpTransport {
   @override
   Future<void> connect() async {
     if (_connected) return;
+    if (!NeomageNetworkGuard.isSafeEndpointUri(
+      endpoint,
+      allowLoopbackInsecure: true,
+      allowPrivateLanHttp: false,
+      allowPublicInsecure: false,
+      secureSchemes: const <String>{'https'},
+      insecureSchemes: const <String>{'http'},
+    )) {
+      throw const McpTransportException('Blocked unsafe MCP HTTP endpoint URI');
+    }
     _httpClient = HttpClient();
     _connected = true;
   }
+
+  static const int maxResponseBytes = 16 * 1024 * 1024;
 
   @override
   Future<void> send(JsonRpcMessage message) async {
@@ -641,26 +782,39 @@ class HttpTransport extends McpTransport {
     }
 
     final request = await client.postUrl(endpoint);
+    request.followRedirects = false;
     request.headers.set('Content-Type', 'application/json');
     request.headers.set('Accept', 'application/json, text/event-stream');
     if (_sessionId != null) {
-      request.headers.set('Mcp-Session-Id', _sessionId!);
+      final cleanSid = NeomageNetworkGuard.sanitizeHeaderValue(_sessionId!);
+      if (cleanSid.isNotEmpty) {
+        request.headers.set('Mcp-Session-Id', cleanSid);
+      }
     }
-    headers?.forEach((k, v) => request.headers.set(k, v));
+    _applySanitizedHeaders(request.headers, headers);
     request.write(jsonEncode(message.toJson()));
 
     final response = await request.close().timeout(requestTimeout);
 
     // Capture session id from response headers.
     final sid = response.headers.value('Mcp-Session-Id');
-    if (sid != null) _sessionId = sid;
+    if (sid != null) {
+      final cleanSid = NeomageNetworkGuard.sanitizeHeaderValue(sid);
+      if (cleanSid.isNotEmpty && cleanSid.length <= 512) {
+        _sessionId = cleanSid;
+      }
+    }
 
     final contentType = response.headers.contentType;
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      final body = await response.transform(utf8.decoder).join();
+      final body = await _readBoundedUtf8(response, 64 * 1024);
+      final sanitized = NeomageNetworkGuard.sanitizeOAuthErrorBody(
+        body,
+        maxChars: 256,
+      );
       throw McpTransportException(
-        'HTTP POST failed: ${response.statusCode} — $body',
+        'HTTP POST failed: ${response.statusCode} — $sanitized',
       );
     }
 
@@ -670,7 +824,7 @@ class HttpTransport extends McpTransport {
       await _readSseResponse(response);
     } else {
       // Single JSON response.
-      final body = await response.transform(utf8.decoder).join();
+      final body = await _readBoundedUtf8(response, maxResponseBytes);
       if (body.isEmpty) return;
 
       try {
@@ -678,9 +832,9 @@ class HttpTransport extends McpTransport {
         final decoded = jsonDecode(body);
         if (decoded is List) {
           for (final item in decoded) {
-            _controller.add(
-              JsonRpcMessage.fromJson(item as Map<String, dynamic>),
-            );
+            if (item is Map<String, dynamic>) {
+              _controller.add(JsonRpcMessage.fromJson(item));
+            }
           }
         } else if (decoded is Map<String, dynamic>) {
           _controller.add(JsonRpcMessage.fromJson(decoded));
@@ -704,8 +858,10 @@ class HttpTransport extends McpTransport {
           dataBuf.clear();
           if (eventType == 'message' && data.isNotEmpty) {
             try {
-              final json = jsonDecode(data) as Map<String, dynamic>;
-              _controller.add(JsonRpcMessage.fromJson(json));
+              final decoded = jsonDecode(data);
+              if (decoded is Map<String, dynamic>) {
+                _controller.add(JsonRpcMessage.fromJson(decoded));
+              }
             } on FormatException {
               // skip
             }
@@ -723,8 +879,13 @@ class HttpTransport extends McpTransport {
 
       switch (field) {
         case 'event':
-          eventType = value;
+          if (value.length <= 128) eventType = value;
         case 'data':
+          if (dataBuf.length + value.length > SseTransport.maxSseEventChars) {
+            dataBuf.clear();
+            eventType = 'message';
+            continue;
+          }
           if (dataBuf.isNotEmpty) dataBuf.write('\n');
           dataBuf.write(value);
       }
@@ -741,8 +902,12 @@ class HttpTransport extends McpTransport {
         final client = _httpClient;
         if (client != null) {
           final request = await client.deleteUrl(endpoint);
-          request.headers.set('Mcp-Session-Id', _sessionId!);
-          headers?.forEach((k, v) => request.headers.set(k, v));
+          request.followRedirects = false;
+          final cleanSid = NeomageNetworkGuard.sanitizeHeaderValue(_sessionId!);
+          if (cleanSid.isNotEmpty) {
+            request.headers.set('Mcp-Session-Id', cleanSid);
+          }
+          _applySanitizedHeaders(request.headers, headers);
           final response = await request.close().timeout(
             const Duration(seconds: 5),
           );
@@ -800,15 +965,30 @@ class WebSocketTransport extends McpTransport {
   @override
   Future<void> connect() async {
     if (_connected) return;
+    if (!NeomageNetworkGuard.isSafeWebSocketEndpointUri(
+      endpoint,
+      allowLoopbackInsecure: true,
+      allowPrivateLanWs: false,
+    )) {
+      throw const McpTransportException(
+        'Blocked unsafe MCP WebSocket endpoint URI',
+      );
+    }
     _closing = false;
     await _connectWs();
   }
+
+  static const int maxFrameChars = 16 * 1024 * 1024;
 
   Future<void> _connectWs() async {
     if (_closing) return;
 
     try {
-      _socket = await WebSocket.connect(endpoint.toString(), headers: headers);
+      final safeHeaders = _sanitizeHeaderMap(headers);
+      _socket = await WebSocket.connect(
+        endpoint.toString(),
+        headers: safeHeaders,
+      );
       _connected = true;
       _reconnectAttempts = 0;
 
@@ -817,9 +997,12 @@ class WebSocketTransport extends McpTransport {
       _socketSub = _socket!.listen(
         (dynamic data) {
           if (data is! String) return; // ignore binary frames
+          if (data.length > maxFrameChars) return;
           try {
-            final json = jsonDecode(data) as Map<String, dynamic>;
-            _controller.add(JsonRpcMessage.fromJson(json));
+            final decoded = jsonDecode(data);
+            if (decoded is Map<String, dynamic>) {
+              _controller.add(JsonRpcMessage.fromJson(decoded));
+            }
           } on FormatException {
             // skip
           }
@@ -906,6 +1089,62 @@ class McpTransportException implements Exception {
   String toString() => 'McpTransportException: $message';
 }
 
+const Set<String> _forbiddenMcpHeaders = <String>{
+  'host',
+  'content-length',
+  'transfer-encoding',
+  'proxy-authorization',
+  'proxy-connection',
+  'connection',
+  'upgrade',
+  'te',
+  '__proto__',
+  'constructor',
+  'prototype',
+};
+
+void _applySanitizedHeaders(HttpHeaders target, Map<String, String>? headers) {
+  if (headers == null) return;
+  for (final entry in headers.entries) {
+    final name = entry.key.trim();
+    if (!NeomageNetworkGuard.isValidHeaderName(name)) continue;
+    final lower = name.toLowerCase();
+    if (_forbiddenMcpHeaders.contains(lower)) {
+      continue;
+    }
+    final cleanVal = NeomageNetworkGuard.sanitizeHeaderValue(entry.value);
+    target.set(name, cleanVal);
+  }
+}
+
+Map<String, String>? _sanitizeHeaderMap(Map<String, String>? headers) {
+  if (headers == null || headers.isEmpty) return null;
+  final out = <String, String>{};
+  for (final entry in headers.entries) {
+    final name = entry.key.trim();
+    if (!NeomageNetworkGuard.isValidHeaderName(name)) continue;
+    final lower = name.toLowerCase();
+    if (_forbiddenMcpHeaders.contains(lower)) {
+      continue;
+    }
+    out[name] = NeomageNetworkGuard.sanitizeHeaderValue(entry.value);
+  }
+  return out.isEmpty ? null : out;
+}
+
+Future<String> _readBoundedUtf8(HttpClientResponse response, int maxBytes) async {
+  final builder = BytesBuilder(copy: false);
+  await for (final chunk in response) {
+    if (builder.length + chunk.length > maxBytes) {
+      throw McpTransportException(
+        'MCP HTTP response exceeded maximum size ($maxBytes bytes)',
+      );
+    }
+    builder.add(chunk);
+  }
+  return utf8.decode(builder.takeBytes(), allowMalformed: true);
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 // MCP protocol handler
 // ════════════════════════════════════════════════════════════════════════════
@@ -961,12 +1200,19 @@ class McpProtocolHandler {
     }
   }
 
+  static const int maxPendingRequests = 512;
+
   /// Send a JSON-RPC request and wait for the correlated response.
   Future<JsonRpcResponse> sendRequest(
     String method, {
     Map<String, dynamic>? params,
     Duration? timeout,
   }) async {
+    if (_pending.length >= maxPendingRequests) {
+      throw const McpTransportException(
+        'MCP pending request queue full (max 512)',
+      );
+    }
     final id = _nextId++;
     final request = JsonRpcRequest(id: id, method: method, params: params);
     final completer = Completer<JsonRpcResponse>();
@@ -1077,7 +1323,6 @@ class McpCapabilities {
   /// Parse capabilities from a server's initialize response.
   factory McpCapabilities.fromInitializeResult(Map<String, dynamic> result) {
     final caps = result['capabilities'] as Map<String, dynamic>? ?? {};
-    final info = result['serverInfo'] as Map<String, dynamic>?;
     return McpCapabilities(
       supportsTools: caps.containsKey('tools'),
       supportsResources: caps.containsKey('resources'),
@@ -1446,23 +1691,38 @@ enum McpLifecycleState {
 // Transport factory
 // ════════════════════════════════════════════════════════════════════════════
 
+Uri _parseSafeMcpUri(String rawUrl) {
+  final trimmed = rawUrl.trim();
+  final uri = Uri.tryParse(trimmed);
+  if (uri == null || !uri.hasScheme || uri.host.isEmpty) {
+    throw const McpTransportException('Invalid MCP server URL');
+  }
+  return uri;
+}
+
 /// Create the appropriate [McpTransport] for a given [McpServerConfig].
+///
+/// Note: `config.env` is strictly scoped to local subprocesses (`McpStdioConfig`)
+/// and is NEVER merged into HTTP/SSE/WebSocket request headers, preventing
+/// accidental exfiltration of local environment secrets to remote MCP endpoints.
 McpTransport createTransport(McpServerConfig config) => switch (config) {
   McpStdioConfig(:final command, :final args, :final env) => StdioTransport(
     command: command,
     args: args,
     environment: env.isNotEmpty ? env : null,
   ),
-  McpSseConfig(:final url, :final headers, :final env) => SseTransport(
-    endpoint: Uri.parse(url),
-    headers: {...headers, ...env},
+  McpSseConfig(:final url, :final headers) => SseTransport(
+    endpoint: _parseSafeMcpUri(url),
+    headers: headers.isNotEmpty ? Map<String, String>.from(headers) : null,
   ),
-  McpHttpConfig(:final url, :final headers, :final env) => HttpTransport(
-    endpoint: Uri.parse(url),
-    headers: {...headers, ...env},
+  McpHttpConfig(:final url, :final headers) => HttpTransport(
+    endpoint: _parseSafeMcpUri(url),
+    headers: headers.isNotEmpty ? Map<String, String>.from(headers) : null,
   ),
-  McpWebSocketConfig(:final url, :final headers, :final env) =>
-    WebSocketTransport(endpoint: Uri.parse(url), headers: {...headers, ...env}),
+  McpWebSocketConfig(:final url, :final headers) => WebSocketTransport(
+    endpoint: _parseSafeMcpUri(url),
+    headers: headers.isNotEmpty ? Map<String, String>.from(headers) : null,
+  ),
   McpSdkConfig() => throw UnsupportedError(
     'SDK transport is not supported in the Flutter runtime',
   ),

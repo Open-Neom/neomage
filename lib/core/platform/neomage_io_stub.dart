@@ -477,10 +477,14 @@ enum FileSystemEntityType {
 }
 
 class FileSystemEntity {
-  static Future<FileSystemEntityType> type(String path) async =>
-      FileSystemEntityType.notFound;
-  static FileSystemEntityType typeSync(String path) =>
-      FileSystemEntityType.notFound;
+  static Future<FileSystemEntityType> type(
+    String path, {
+    bool followLinks = true,
+  }) async => FileSystemEntityType.notFound;
+  static FileSystemEntityType typeSync(
+    String path, {
+    bool followLinks = true,
+  }) => FileSystemEntityType.notFound;
   static Future<bool> isFile(String path) async => false;
   static Future<bool> isDirectory(String path) async => false;
   static Future<bool> isLink(String path) async => false;
@@ -869,6 +873,10 @@ class HttpClient {
 }
 
 abstract class HttpClientRequest {
+  bool get followRedirects => true;
+  set followRedirects(bool value) {}
+  int get maxRedirects => 5;
+  set maxRedirects(int value) {}
   HttpHeaders get headers;
   void add(List<int> data);
   void write(Object? obj);

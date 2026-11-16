@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'dart:math';
 
 import 'package:path/path.dart' as p;
@@ -150,6 +151,43 @@ class _RipgrepRawResult {
   });
 }
 
+/// Strips dangerous ripgrep preprocessor flags (`--pre`, `--pre-glob`) so
+/// untrusted caller arguments cannot execute arbitrary binaries on matched files.
+List<String> sanitizeRipgrepArgs(List<String> args) {
+  final safe = <String>[];
+  for (var i = 0; i < args.length; i++) {
+    final arg = args[i];
+    if (arg.contains('\x00')) continue;
+    final lower = arg.toLowerCase();
+    if (lower == '--pre' || lower == '--pre-glob') {
+      i++;
+      continue;
+    }
+    if (lower.startsWith('--pre=') || lower.startsWith('--pre-glob=')) {
+      continue;
+    }
+    safe.add(arg);
+  }
+  return safe;
+}
+
+void _assertSafeRipgrepTarget(String target) {
+  if (target.isEmpty ||
+      target.contains('\x00') ||
+      target.startsWith('//') ||
+      target.startsWith(r'\\') ||
+      NeomageNetworkGuard.isProtectedSystemOrCredentialPath(target)) {
+    throw ArgumentError.value(target, 'target', 'Unsafe ripgrep search target');
+  }
+}
+
+List<String> _appendTargetSafely(List<String> prefixArgs, String target) {
+  if (prefixArgs.contains('--')) {
+    return <String>[...prefixArgs, target];
+  }
+  return <String>[...prefixArgs, '--', target];
+}
+
 /// Execute ripgrep with the given arguments and target.
 Future<_RipgrepRawResult> _ripGrepRaw(
   List<String> args,
@@ -157,11 +195,16 @@ Future<_RipgrepRawResult> _ripGrepRaw(
   bool singleThread = false,
   Duration? timeout,
 }) async {
+  _assertSafeRipgrepTarget(target);
   final (:rgPath, :rgArgs, :argv0) = ripgrepCommand();
 
   // Use single-threaded mode only if explicitly requested for retry.
   final threadArgs = singleThread ? ['-j', '1'] : <String>[];
-  final fullArgs = [...rgArgs, ...threadArgs, ...args, target];
+  final safeArgs = sanitizeRipgrepArgs(args);
+  final fullArgs = _appendTargetSafely(
+    [...rgArgs, ...threadArgs, ...safeArgs],
+    target,
+  );
 
   // Allow timeout to be configured, otherwise use platform defaults.
   final effectiveTimeout =
@@ -174,7 +217,12 @@ Future<_RipgrepRawResult> _ripGrepRaw(
     final process = await Process.start(
       rgPath,
       fullArgs,
-      environment: argv0 != null ? {'ARGV0': argv0} : null,
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+        null,
+        argv0 != null ? {'ARGV0': argv0} : null,
+      ),
+      includeParentEnvironment: false,
     );
 
     final stdoutBuffer = StringBuffer();
@@ -259,15 +307,23 @@ Future<void> ripGrepStream(
   String target, {
   required void Function(List<String> lines) onLines,
 }) async {
+  _assertSafeRipgrepTarget(target);
   await _codesignRipgrepIfNecessary();
   final (:rgPath, :rgArgs, :argv0) = ripgrepCommand();
+  final safeArgs = sanitizeRipgrepArgs(args);
 
-  final process = await Process.start(rgPath, [
-    ...rgArgs,
-    ...args,
-    target,
-  ], environment: argv0 != null ? {'ARGV0': argv0} : null);
+  final process = await Process.start(
+    rgPath,
+    _appendTargetSafely([...rgArgs, ...safeArgs], target),
+    runInShell: false,
+    environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+      null,
+      argv0 != null ? {'ARGV0': argv0} : null,
+    ),
+    includeParentEnvironment: false,
+  );
 
+  const maxLineChars = 1024 * 1024;
   String remainder = '';
   await process.stdout.transform(const SystemEncoding().decoder).forEach((
     chunk,
@@ -275,6 +331,10 @@ Future<void> ripGrepStream(
     final data = remainder + chunk;
     final lines = data.split('\n');
     remainder = lines.removeLast();
+    if (remainder.length > maxLineChars) {
+      onLines([_stripCR(remainder.substring(0, maxLineChars))]);
+      remainder = '';
+    }
     if (lines.isNotEmpty) {
       onLines(lines.map(_stripCR).toList());
     }
@@ -308,14 +368,21 @@ Future<int> ripGrepFileCount(
   String target, {
   Duration? timeout,
 }) async {
+  _assertSafeRipgrepTarget(target);
   await _codesignRipgrepIfNecessary();
   final (:rgPath, :rgArgs, :argv0) = ripgrepCommand();
+  final safeArgs = sanitizeRipgrepArgs(args);
 
-  final process = await Process.start(rgPath, [
-    ...rgArgs,
-    ...args,
-    target,
-  ], environment: argv0 != null ? {'ARGV0': argv0} : null);
+  final process = await Process.start(
+    rgPath,
+    _appendTargetSafely([...rgArgs, ...safeArgs], target),
+    runInShell: false,
+    environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+      null,
+      argv0 != null ? {'ARGV0': argv0} : null,
+    ),
+    includeParentEnvironment: false,
+  );
 
   int lines = 0;
   await process.stdout.forEach((chunk) {
@@ -543,8 +610,13 @@ Future<void> _testRipgrepOnFirstUse() async {
     final result = await Process.run(
       config.command,
       [...config.args, '--version'],
-      environment: config.argv0 != null ? {'ARGV0': config.argv0!} : null,
-    );
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(
+        null,
+        config.argv0 != null ? {'ARGV0': config.argv0!} : null,
+      ),
+      includeParentEnvironment: false,
+    ).timeout(const Duration(seconds: 5));
 
     final working =
         result.exitCode == 0 &&
@@ -626,10 +698,17 @@ bool _isEnvDefinedFalsy(String name) {
 
 /// Find an executable on the system PATH.
 String? _findExecutable(String name) {
+  if (name.isEmpty || name.startsWith('-') || name.contains('\x00')) {
+    return null;
+  }
   try {
-    final result = Process.runSync(Platform.isWindows ? 'where' : 'which', [
-      name,
-    ]);
+    final result = Process.runSync(
+      Platform.isWindows ? 'where' : 'which',
+      [name],
+      runInShell: false,
+      environment: NeomageNetworkGuard.sanitizeSubprocessEnv(),
+      includeParentEnvironment: false,
+    );
     if (result.exitCode == 0) {
       final path = (result.stdout as String).trim().split('\n').first;
       return path.isNotEmpty ? path : null;

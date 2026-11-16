@@ -14,7 +14,7 @@ library;
 
 import 'dart:math';
 
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ---------------------------------------------------------------------------
 // Constants

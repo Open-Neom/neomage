@@ -13,7 +13,7 @@ import 'package:neomage/core/platform/neomage_io.dart';
 import 'dart:math';
 
 import 'package:path/path.dart' as p;
-import 'package:sint/sint.dart';
+import 'package:sint/rx.dart';
 
 // ---------------------------------------------------------------------------
 // Image dimension info for coordinate mapping (only set when image was resized)

@@ -15,6 +15,8 @@ library;
 
 import 'dart:async';
 
+import '../security/neomage_network_guard.dart';
+
 // ---------------------------------------------------------------------------
 // Hook event types (from agentSdkTypes)
 // ---------------------------------------------------------------------------
@@ -1081,56 +1083,28 @@ class HookEventEmitter {
 // ---------------------------------------------------------------------------
 
 /// Returns true if the address is in a range that HTTP hooks should not reach.
-/// Loopback (127.0.0.0/8, ::1) is intentionally ALLOWED for local dev hooks.
+/// Loopback (`127.0.0.1`, `::1`, `localhost`) is intentionally ALLOWED for
+/// local dev hooks, while private LAN, link-local/IMDS (`169.254.169.254`),
+/// IPv4-mapped IPv6 (`::ffff:169.254.169.254`), obfuscated numeric/hex IPs,
+/// CGNAT, multicast, unspecified (`0.0.0.0`, `::`), and `.internal`/`.local`
+/// hosts are blocked.
 bool isBlockedAddress(String address) {
-  // Simple IPv4 check
-  final v4Parts = address.split('.');
-  if (v4Parts.length == 4) {
-    final nums = v4Parts.map(int.tryParse).toList();
-    if (nums.every((n) => n != null)) {
-      return _isBlockedV4(nums.cast<int>());
-    }
-  }
-
-  // IPv6 check
-  final lower = address.toLowerCase();
-  if (lower == '::1') return false; // loopback allowed
-  if (lower == '::') return true; // unspecified
-
-  // fc00::/7 unique local
-  if (lower.startsWith('fc') || lower.startsWith('fd')) return true;
-
-  // fe80::/10 link-local
-  final firstHextet = lower.split(':').first;
-  if (firstHextet.length == 4) {
-    final val = int.tryParse(firstHextet, radix: 16);
-    if (val != null && val >= 0xfe80 && val <= 0xfebf) return true;
-  }
-
-  return false;
+  return NeomageNetworkGuard.isPrivateOrReservedHost(
+    address,
+    allowLoopback: true,
+  );
 }
 
-bool _isBlockedV4(List<int> parts) {
-  final a = parts[0];
-  final b = parts[1];
-
-  // Loopback explicitly allowed
-  if (a == 127) return false;
-
-  // 0.0.0.0/8
-  if (a == 0) return true;
-  // 10.0.0.0/8
-  if (a == 10) return true;
-  // 169.254.0.0/16 link-local (cloud metadata)
-  if (a == 169 && b == 254) return true;
-  // 172.16.0.0/12
-  if (a == 172 && b >= 16 && b <= 31) return true;
-  // 100.64.0.0/10 shared address space
-  if (a == 100 && b >= 64 && b <= 127) return true;
-  // 192.168.0.0/16
-  if (a == 192 && b == 168) return true;
-
-  return false;
+/// Validates a full HTTP(S) hook URL against SSRF, scheme, and credential
+/// injection (`https://` for public hosts, `http://` strictly on loopback).
+bool isSafeHookUrl(String rawUrl) {
+  final uri = Uri.tryParse(rawUrl.trim());
+  return NeomageNetworkGuard.isSafeEndpointUri(
+    uri,
+    allowLoopbackInsecure: true,
+    secureSchemes: const <String>{'https'},
+    insecureSchemes: const <String>{'http'},
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1166,9 +1140,14 @@ class PendingAsyncHook {
 
 /// Registry for tracking async hooks awaiting completion.
 class AsyncHookRegistry {
+  static const int maxPendingHooks = 256;
   final Map<String, PendingAsyncHook> _pendingHooks = {};
 
   void register(PendingAsyncHook hook) {
+    while (_pendingHooks.length >= maxPendingHooks &&
+        !_pendingHooks.containsKey(hook.processId)) {
+      _pendingHooks.remove(_pendingHooks.keys.first);
+    }
     _pendingHooks[hook.processId] = hook;
   }
 

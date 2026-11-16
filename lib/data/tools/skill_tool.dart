@@ -631,8 +631,25 @@ class SkillTool extends Tool {
     Map<String, dynamic> input,
     ToolPermissionContext permContext,
   ) async {
-    final skill = (input['skill'] as String).trim();
+    final rawSkill = input['skill'];
+    if (rawSkill is! String || rawSkill.trim().isEmpty) {
+      return const DenyDecision(
+        PermissionDenyDecision(reason: 'Invalid skill parameter'),
+      );
+    }
+    final skill = rawSkill.trim();
     final commandName = skill.startsWith('/') ? skill.substring(1) : skill;
+
+    final command = _registry.findCommand(commandName);
+    if (command != null && command.disableModelInvocation) {
+      return DenyDecision(
+        PermissionDenyDecision(
+          reason:
+              'Skill $commandName cannot be used with $skillToolName tool '
+              'due to disable-model-invocation',
+        ),
+      );
+    }
 
     // Check deny rules from permission context.
     for (final rules in permContext.rulesBySource.values) {
@@ -663,7 +680,6 @@ class SkillTool extends Tool {
     }
 
     // Auto-allow skills with only safe properties.
-    final command = _registry.findCommand(commandName);
     if (command != null && command.type == 'prompt') {
       final commandData = command.toJson();
       if (skillHasOnlySafeProperties(commandData)) {
@@ -679,6 +695,10 @@ class SkillTool extends Tool {
 
   @override
   Future<ToolResult> execute(Map<String, dynamic> input) async {
+    final rawSkill = input['skill'];
+    if (rawSkill is! String || rawSkill.trim().isEmpty) {
+      return ToolResult.error('Invalid skill format: $rawSkill');
+    }
     final parsed = SkillToolInput.fromJson(input);
     final trimmed = parsed.skill.trim();
     final commandName = trimmed.startsWith('/')
@@ -688,6 +708,17 @@ class SkillTool extends Tool {
     final command = _registry.findCommand(commandName);
     if (command == null) {
       return ToolResult.error('Unknown skill: $commandName');
+    }
+
+    if (command.disableModelInvocation) {
+      return ToolResult.error(
+        'Skill $commandName cannot be used with $skillToolName tool '
+        'due to disable-model-invocation',
+      );
+    }
+
+    if (command.type != 'prompt') {
+      return ToolResult.error('Skill $commandName is not a prompt-based skill');
     }
 
     // Track skill usage.
@@ -718,14 +749,12 @@ class SkillTool extends Tool {
     String commandName,
     String? args,
   ) async {
-    final startTime = DateTime.now();
     final agentId = _generateAgentId();
 
     try {
       // In a full implementation this would run a sub-agent with the skill
       // content. For the port, we simulate the forked execution pattern.
-      final resultText = 'Skill execution completed';
-      final durationMs = DateTime.now().difference(startTime).inMilliseconds;
+      const resultText = 'Skill execution completed';
 
       return ToolResult.success(
         'Skill "$commandName" completed (forked execution).\n\n'
@@ -742,10 +771,11 @@ class SkillTool extends Tool {
     }
   }
 
-  /// Generate a unique agent ID for forked skills.
+  static final Random _secureRandom = Random.secure();
+
+  /// Generate a unique CSPRNG agent ID for forked skills.
   String _generateAgentId() {
-    final random = Random();
-    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    final bytes = List<int>.generate(16, (_) => _secureRandom.nextInt(256));
     return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
 

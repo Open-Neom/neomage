@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'package:neomage/core/platform/neomage_io.dart';
+import 'package:neomage/utils/security/neomage_network_guard.dart';
 import 'dart:math';
 
 // ─── Types ───
@@ -181,11 +182,15 @@ class FileCompletionProvider implements CompletionProvider {
         query.contains('/');
   }
 
+  static const int maxDirectoryScanEntries = 500;
+
   @override
   Future<List<CompletionSuggestion>> getSuggestions(
     String query,
     SuggestionContext context,
   ) async {
+    if (query.contains('\x00')) return const <CompletionSuggestion>[];
+
     String searchPath;
     String prefix;
 
@@ -197,8 +202,19 @@ class FileCompletionProvider implements CompletionProvider {
       searchPath = context.currentDirectory ?? '.';
     }
 
+    if (prefix.startsWith('//') ||
+        prefix.startsWith(r'\\') ||
+        searchPath.contains('\x00') ||
+        searchPath.startsWith('//') ||
+        searchPath.startsWith(r'\\')) {
+      return const <CompletionSuggestion>[];
+    }
+
     // Resolve path.
     final parts = prefix.split('/');
+    if (parts.contains('..')) {
+      return const <CompletionSuggestion>[];
+    }
     final dirPart = parts.length > 1
         ? parts.sublist(0, parts.length - 1).join('/')
         : '';
@@ -209,9 +225,15 @@ class FileCompletionProvider implements CompletionProvider {
       targetDir = dirPart.isEmpty ? '/' : dirPart;
     } else if (prefix.startsWith('~/')) {
       final home = Platform.environment['HOME'] ?? '.';
-      targetDir = dirPart.isEmpty ? home : '$home/${dirPart.substring(2)}';
+      targetDir = (dirPart.isEmpty || dirPart == '~')
+          ? home
+          : '$home/${dirPart.substring(2)}';
     } else {
       targetDir = dirPart.isEmpty ? searchPath : '$searchPath/$dirPart';
+    }
+
+    if (NeomageNetworkGuard.isProtectedSystemOrCredentialPath(targetDir)) {
+      return const <CompletionSuggestion>[];
     }
 
     final suggestions = <CompletionSuggestion>[];
@@ -220,7 +242,14 @@ class FileCompletionProvider implements CompletionProvider {
       final dir = Directory(targetDir);
       if (!await dir.exists()) return suggestions;
 
-      await for (final entity in dir.list()) {
+      var scanned = 0;
+      await for (final entity in dir.list(followLinks: false)) {
+        if (++scanned > maxDirectoryScanEntries) break;
+        if (NeomageNetworkGuard.isProtectedSystemOrCredentialPath(
+          entity.path,
+        )) {
+          continue;
+        }
         final name =
             entity.uri.pathSegments.where((s) => s.isNotEmpty).lastOrNull ?? '';
 
@@ -402,12 +431,29 @@ class GitCompletionProvider implements CompletionProvider {
     final search = query.substring(1).toLowerCase(); // Remove '#'
     final suggestions = <CompletionSuggestion>[];
 
+    final workDir = context.currentDirectory;
+    if (workDir != null &&
+        (workDir.contains('\x00') ||
+            workDir.startsWith('//') ||
+            workDir.startsWith(r'\\') ||
+            NeomageNetworkGuard.isProtectedSystemOrCredentialPath(workDir))) {
+      return suggestions;
+    }
+
     try {
-      final result = await Process.run('git', [
-        'branch',
-        '-a',
-        '--format=%(refname:short)',
-      ], workingDirectory: context.currentDirectory);
+      final cleanEnv = NeomageNetworkGuard.sanitizeSubprocessEnv();
+      final result = await Process.run(
+        'git',
+        [
+          'branch',
+          '-a',
+          '--format=%(refname:short)',
+        ],
+        workingDirectory: workDir,
+        environment: cleanEnv,
+        includeParentEnvironment: false,
+        runInShell: false,
+      ).timeout(const Duration(seconds: 5));
       if (result.exitCode == 0) {
         final branches = (result.stdout as String)
             .split('\n')
@@ -433,11 +479,18 @@ class GitCompletionProvider implements CompletionProvider {
       }
 
       // Also add recent tags.
-      final tagResult = await Process.run('git', [
-        'tag',
-        '-l',
-        '--sort=-version:refname',
-      ], workingDirectory: context.currentDirectory);
+      final tagResult = await Process.run(
+        'git',
+        [
+          'tag',
+          '-l',
+          '--sort=-version:refname',
+        ],
+        workingDirectory: workDir,
+        environment: cleanEnv,
+        includeParentEnvironment: false,
+        runInShell: false,
+      ).timeout(const Duration(seconds: 5));
       if (tagResult.exitCode == 0) {
         final tags = (tagResult.stdout as String)
             .split('\n')
@@ -693,9 +746,10 @@ class AutocompleteService {
     final input = context.currentInput;
     if (input.isEmpty) return [];
 
-    // Determine the word being completed.
-    final wordStart = _findWordStart(input, context.cursorPosition);
-    final query = input.substring(wordStart, context.cursorPosition);
+    // Determine the word being completed (clamp out-of-range cursor safely).
+    final safeCursor = context.cursorPosition.clamp(0, input.length);
+    final wordStart = _findWordStart(input, safeCursor);
+    final query = input.substring(wordStart, safeCursor);
 
     if (query.isEmpty) return [];
 
@@ -835,8 +889,9 @@ class AutocompleteService {
   // ─── Internal ───
 
   int _findWordStart(String text, int cursor) {
-    if (cursor <= 0) return 0;
-    int i = cursor - 1;
+    final clamped = cursor.clamp(0, text.length);
+    if (clamped <= 0) return 0;
+    int i = clamped - 1;
     // Walk backwards to find word boundary.
     while (i >= 0) {
       final c = text[i];
