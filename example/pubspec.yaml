@@ -21,7 +21,7 @@ dependencies:
   # Explicit dependencies imported in main.dart
   sint: ^1.3.0
   sint_sentinel: ^1.1.0
-  hive_flutter: ^1.1.0
+  hive_ce_flutter: ^2.5.0
 
 dev_dependencies:
   flutter_test:

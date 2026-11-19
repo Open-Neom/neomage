@@ -1,4 +1,4 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:neomage/core/platform/neomage_io.dart' show Platform;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sint_sentinel/sint_sentinel_core.dart';
