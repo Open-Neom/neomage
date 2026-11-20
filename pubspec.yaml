@@ -33,7 +33,7 @@ dependencies:
   # and plain-text tool-call recovery for models that don't return
   # structured tool_calls (Llama 3.2, Phi, Qwen, Hermes, DeepSeek, …).
   neom_ollama: ^1.2.0
-  llamadart: ^0.19.11
+  llamadart: ^0.20.3
   flutter_js: ^0.8.7
 
 
