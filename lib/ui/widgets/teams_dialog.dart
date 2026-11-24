@@ -387,9 +387,11 @@ class TeamsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Sint.put(
-      TeamsDialogController(initialTeams: initialTeams, onDone: onDone),
-    );
+    final controller = Sint.isRegistered<TeamsDialogController>()
+        ? Sint.find<TeamsDialogController>()
+        : Sint.put(
+            TeamsDialogController(initialTeams: initialTeams, onDone: onDone),
+          );
 
     return Focus(
       autofocus: true,

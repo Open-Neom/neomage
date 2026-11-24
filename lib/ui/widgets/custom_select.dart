@@ -444,20 +444,22 @@ class CustomSelect<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controllerTag = tag ?? 'select_${identityHashCode(this)}';
-    final controller = Sint.put(
-      SelectController<T>(
-        options: options,
-        defaultValue: defaultValue,
-        visibleOptionCount: visibleOptionCount,
-        onChange: onChange,
-        onCancel: onCancel,
-        onFocus: onFocus,
-        defaultFocusValue: defaultFocusValue,
-        onUpFromFirstItem: onUpFromFirstItem,
-        onDownFromLastItem: onDownFromLastItem,
-      ),
-      tag: controllerTag,
-    );
+    final controller = Sint.isRegistered<SelectController<T>>(tag: controllerTag)
+        ? Sint.find<SelectController<T>>(tag: controllerTag)
+        : Sint.put(
+            SelectController<T>(
+              options: options,
+              defaultValue: defaultValue,
+              visibleOptionCount: visibleOptionCount,
+              onChange: onChange,
+              onCancel: onCancel,
+              onFocus: onFocus,
+              defaultFocusValue: defaultFocusValue,
+              onUpFromFirstItem: onUpFromFirstItem,
+              onDownFromLastItem: onDownFromLastItem,
+            ),
+            tag: controllerTag,
+          );
 
     return Focus(
       autofocus: true,
@@ -853,15 +855,18 @@ class CustomMultiSelect<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controllerTag = tag ?? 'multi_select_${identityHashCode(this)}';
-    final controller = Sint.put(
-      MultiSelectController<T>(
-        options: options,
-        initialSelected: initialSelected,
-        onChange: onChange,
-        onCancel: onCancel,
-      ),
-      tag: controllerTag,
-    );
+    final controller =
+        Sint.isRegistered<MultiSelectController<T>>(tag: controllerTag)
+        ? Sint.find<MultiSelectController<T>>(tag: controllerTag)
+        : Sint.put(
+            MultiSelectController<T>(
+              options: options,
+              initialSelected: initialSelected,
+              onChange: onChange,
+              onCancel: onCancel,
+            ),
+            tag: controllerTag,
+          );
 
     final theme = Theme.of(context);
 

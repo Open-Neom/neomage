@@ -131,7 +131,9 @@ class OllamaSetupScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Sint.put(OllamaSetupController());
+    final ctrl = Sint.isRegistered<OllamaSetupController>()
+        ? Sint.find<OllamaSetupController>()
+        : Sint.put(OllamaSetupController());
     final cs = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 

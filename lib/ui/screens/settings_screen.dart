@@ -641,7 +641,9 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Sint.put(SettingsController());
+    final controller = Sint.isRegistered<SettingsController>()
+        ? Sint.find<SettingsController>()
+        : Sint.put(SettingsController());
 
     return Scaffold(
       appBar: AppBar(

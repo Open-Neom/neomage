@@ -21,7 +21,7 @@ dependencies:
     sdk: flutter
 
   # Sint framework (S.I.N.T. — State, Injection, Navigation, Translation)
-  sint: ^2.0.2
+  sint: ^2.3.0
 
 
   sint_sentinel: ^1.1.0

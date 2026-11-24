@@ -291,15 +291,18 @@ class ShellDetailDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Sint.put(
-      ShellDetailController(
-        shell: shell,
-        onDone: onDone,
-        onKillShell: onKillShell,
-        onBack: onBack,
-      ),
-      tag: 'shell-${shell.id}',
-    );
+    final shellTag = 'shell-${shell.id}';
+    final controller = Sint.isRegistered<ShellDetailController>(tag: shellTag)
+        ? Sint.find<ShellDetailController>(tag: shellTag)
+        : Sint.put(
+            ShellDetailController(
+              shell: shell,
+              onDone: onDone,
+              onKillShell: onKillShell,
+              onBack: onBack,
+            ),
+            tag: shellTag,
+          );
 
     final theme = Theme.of(context);
     final displayCommand = shell.kind == 'monitor'
@@ -539,15 +542,19 @@ class AsyncAgentDetailDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Sint.put(
-      AsyncAgentDetailController(
-        agent: agent,
-        onDone: onDone,
-        onKillAgent: onKillAgent,
-        onBack: onBack,
-      ),
-      tag: 'agent-${agent.id}',
-    );
+    final agentTag = 'agent-${agent.id}';
+    final controller =
+        Sint.isRegistered<AsyncAgentDetailController>(tag: agentTag)
+        ? Sint.find<AsyncAgentDetailController>(tag: agentTag)
+        : Sint.put(
+            AsyncAgentDetailController(
+              agent: agent,
+              onDone: onDone,
+              onKillAgent: onKillAgent,
+              onBack: onBack,
+            ),
+            tag: agentTag,
+          );
 
     final theme = Theme.of(context);
     final agentType = 'agent';
@@ -794,15 +801,19 @@ class RemoteSessionDetailDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Sint.put(
-      RemoteSessionDetailController(
-        session: session,
-        onDone: onDone,
-        onBack: onBack,
-        onKill: onKill,
-      ),
-      tag: 'remote-${session.id}',
-    );
+    final remoteTag = 'remote-${session.id}';
+    final controller =
+        Sint.isRegistered<RemoteSessionDetailController>(tag: remoteTag)
+        ? Sint.find<RemoteSessionDetailController>(tag: remoteTag)
+        : Sint.put(
+            RemoteSessionDetailController(
+              session: session,
+              onDone: onDone,
+              onBack: onBack,
+              onKill: onKill,
+            ),
+            tag: remoteTag,
+          );
 
     final theme = Theme.of(context);
     final running =
@@ -1046,16 +1057,20 @@ class InProcessTeammateDetailDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Sint.put(
-      TeammateDetailController(
-        teammate: teammate,
-        onDone: onDone,
-        onKill: onKill,
-        onBack: onBack,
-        onForeground: onForeground,
-      ),
-      tag: 'teammate-${teammate.id}',
-    );
+    final teammateTag = 'teammate-${teammate.id}';
+    final controller =
+        Sint.isRegistered<TeammateDetailController>(tag: teammateTag)
+        ? Sint.find<TeammateDetailController>(tag: teammateTag)
+        : Sint.put(
+            TeammateDetailController(
+              teammate: teammate,
+              onDone: onDone,
+              onKill: onKill,
+              onBack: onBack,
+              onForeground: onForeground,
+            ),
+            tag: teammateTag,
+          );
 
     final theme = Theme.of(context);
     final identity = teammate.identity;

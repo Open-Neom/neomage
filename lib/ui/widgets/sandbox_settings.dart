@@ -356,10 +356,13 @@ class SandboxSettings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Sint.put(
-      SandboxSettingsController(onComplete: onComplete),
-      tag: 'sandbox_settings',
-    );
+    final controller =
+        Sint.isRegistered<SandboxSettingsController>(tag: 'sandbox_settings')
+        ? Sint.find<SandboxSettingsController>(tag: 'sandbox_settings')
+        : Sint.put(
+            SandboxSettingsController(onComplete: onComplete),
+            tag: 'sandbox_settings',
+          );
 
     return Obx(() {
       final tabs = controller.availableTabs;
